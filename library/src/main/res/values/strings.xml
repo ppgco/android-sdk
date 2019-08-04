@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">PushPushGoSDK</string>
+<string name="notification_channel_id">pushpushgo_sdk_notification_channel</string>
+</resources>

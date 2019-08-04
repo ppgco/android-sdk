@@ -1,0 +1,11 @@
+$dokka.format:html
+$dokka.linkExtension:html
+
+com.pushpushgo.sdk
+com.pushpushgo.sdk.exception
+com.pushpushgo.sdk.facade
+com.pushpushgo.sdk.fcm
+com.pushpushgo.sdk.network
+com.pushpushgo.sdk.network.data
+com.pushpushgo.sdk.network.impl
+com.pushpushgo.sdk.utils
