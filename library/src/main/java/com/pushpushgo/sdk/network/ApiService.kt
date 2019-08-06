@@ -13,22 +13,33 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
+import retrofit2.http.*
 import java.util.*
 
-interface ApiService {
+internal interface ApiService {
 
-    @Multipart
-    @POST("api/v1/device/create")
-    fun sendTokenAsync(
-        @Part("name") name: RequestBody,
-        @Part("os") os: RequestBody,
-        @Part("version") version: RequestBody,
-        @Part("token") token: RequestBody,
-        @Part("apiKey") apiKey: RequestBody
+    @FormUrlEncoded
+    @POST("/v1/android/{projectId}/subscriber")
+    fun registerSubscriberAsync(
+        @Path("projectId") projectId: String,
+        @Field("version") version: String
     ): Deferred<ObjectResponse>
+
+    @FormUrlEncoded
+    @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}")
+    fun unregisterSubscriberAsync(
+        @Path("projectId") projectId: String,
+        @Field("subscriberId") version: String
+    ): Deferred<ObjectResponse>
+
+    @FormUrlEncoded
+    @POST("/v1/android/{projectId}/subscriber/{subscriberId}/beacon")
+    fun sendBeaconAsync(
+        @Path("projectId") projectId: String,
+        @Path("subscriberId") version: String,
+        @Field("token") token: String
+    ): Deferred<ObjectResponse>
+
 
     companion object {
         operator fun invoke(

@@ -7,7 +7,7 @@ import okhttp3.Response
 import com.pushpushgo.sdk.network.ConnectivityInterceptor
 import com.pushpushgo.sdk.exception.NoConnectivityException
 
-class ConnectivityInterceptorImpl(context: Context) : ConnectivityInterceptor {
+internal class ConnectivityInterceptorImpl(context: Context) : ConnectivityInterceptor {
 
     private val appContext = context.applicationContext
 

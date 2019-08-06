@@ -6,7 +6,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 
 
-class ResponseInterceptorImpl(context: Context) : ResponseInterceptor {
+internal class ResponseInterceptorImpl(context: Context) : ResponseInterceptor {
 
     private val appContext = context.applicationContext
 

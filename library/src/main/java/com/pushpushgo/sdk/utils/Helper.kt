@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.utils
 import android.os.Build
 import android.text.TextUtils
 
-class Helper {
+internal class Helper {
     companion object{
         fun getDeviceName(): String? {
             val manufacturer = Build.MANUFACTURER

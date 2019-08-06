@@ -1,6 +1,6 @@
 package com.pushpushgo.sdk.network.data
 
-data class ObjectResponse(
+internal data class ObjectResponse(
 
     var message: String? = ""
 )
