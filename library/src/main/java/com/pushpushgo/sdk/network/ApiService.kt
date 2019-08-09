@@ -1,43 +1,47 @@
 package com.pushpushgo.sdk.network
 
-import android.content.res.Resources
-import android.os.Build
 import com.google.gson.GsonBuilder
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.pushpushgo.sdk.BuildConfig
+import com.pushpushgo.sdk.facade.PushPushGoFacade
+import com.pushpushgo.sdk.data.Beacon
+import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.network.data.ObjectResponse
+import com.pushpushgo.sdk.network.data.TokenRequest
 import com.readystatesoftware.chuck.ChuckInterceptor
 import kotlinx.coroutines.Deferred
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.RequestBody
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
-import java.util.*
 
 internal interface ApiService {
 
-    @FormUrlEncoded
     @POST("/v1/android/{projectId}/subscriber")
     fun registerSubscriberAsync(
-        @Path("projectId") projectId: String,
-        @Field("version") version: String
+        @Path("projectId") projectId: String, //projectId - id projektu z pushpushGO
+        @Body body: TokenRequest //TokenRequest {"token":""}
     ): Deferred<ObjectResponse>
 
-    @FormUrlEncoded
-    @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}")
+    @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}") //gdy chcemy sie wyrejestrowac z pushy
     fun unregisterSubscriberAsync(
         @Path("projectId") projectId: String,
-        @Field("subscriberId") version: String
-    ): Deferred<ObjectResponse>
+        @Path("subscriberId") subscriberId: String
+    ): Deferred<Response<Void>>
 
-    @FormUrlEncoded
     @POST("/v1/android/{projectId}/subscriber/{subscriberId}/beacon")
     fun sendBeaconAsync(
         @Path("projectId") projectId: String,
         @Path("subscriberId") version: String,
-        @Field("token") token: String
+        @Body body: Beacon
+    ): Deferred<ObjectResponse>
+
+    @POST("/v1/android/{projectId}/event/")
+    fun sendEventAsync(
+        @Path("projectId") projectId: String,
+        @Body body: Event
     ): Deferred<ObjectResponse>
 
 
@@ -47,17 +51,14 @@ internal interface ApiService {
             connectivityInstance: ConnectivityInterceptor,
             responseInterceptor: ResponseInterceptor
         ): ApiService {
-            val locale: Locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                Resources.getSystem().configuration.locales.get(0)
-            } else {
 
-                Resources.getSystem().configuration.locale
-            }
 
             val requestInterceptor = Interceptor { chain ->
 
                 val request = chain.request()
                     .newBuilder()
+                    .header("Content-Type", "application/json")
+                    .header("X-Token", PushPushGoFacade.INSTANCE!!.getApiKey())
                     .build()
 
 

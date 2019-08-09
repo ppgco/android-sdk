@@ -33,23 +33,26 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
+    dexOptions {
+        javaMaxHeapSize "12g"
+    }
 }
 
 dependencies {
     implementation 'com.google.firebase:firebase-core:17.0.1'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
+    //todo change to debugImplementation for later usage and uncomment releaseImplementation
     //Chuck
-    debugImplementation('com.readystatesoftware.chuck:library:1.1.0') {
+    implementation('com.readystatesoftware.chuck:library:1.1.0') {
         exclude group: 'com.android.support', module: 'support-v13'
     }
-    releaseImplementation 'com.readystatesoftware.chuck:library-no-op:1.1.0'
+//    releaseImplementation 'com.readystatesoftware.chuck:library-no-op:1.1.0'
 
 
     // Kotlin Android Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.1.1"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.0-RC'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.0-RC'
 
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'

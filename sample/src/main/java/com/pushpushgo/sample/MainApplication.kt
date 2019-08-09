@@ -4,7 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
-import com.pushpushgo.sdk.fcm.data.Message
+import com.pushpushgo.sdk.data.Message
 
 class MainApplication: Application(), PushPushGoMessagingListener {
 

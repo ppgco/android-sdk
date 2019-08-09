@@ -1,6 +1,5 @@
-package com.pushpushgo.sdk.fcm.data
+package com.pushpushgo.sdk.data
 
-import org.json.JSONObject
 import java.io.Serializable
 
 data class Message(

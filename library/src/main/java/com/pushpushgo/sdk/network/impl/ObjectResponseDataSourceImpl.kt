@@ -1,28 +1,30 @@
 package com.pushpushgo.sdk.network.impl
 
-import com.pushpushgo.sdk.BuildConfig
-import com.pushpushgo.sdk.PushPushGo
+import android.preference.PreferenceManager
 import com.pushpushgo.sdk.exception.NoConnectivityException
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.network.ApiService
 import com.pushpushgo.sdk.network.ObjectResponseDataSource
-import com.pushpushgo.sdk.utils.Helper
+import com.pushpushgo.sdk.network.data.TokenRequest
 import retrofit2.HttpException
 import timber.log.Timber
-import java.lang.Exception
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
 internal class ObjectResponseDataSourceImpl(
     private val apiService: ApiService
 ) : ObjectResponseDataSource {
-    override suspend fun unregisterSubscriber(apiKey: String,token: String) {
+    override suspend fun unregisterSubscriber(token: String) {
         try {
             apiService.unregisterSubscriberAsync(
-                apiKey,
-                token).await()
+                PushPushGoFacade.INSTANCE!!.getProjectId(),
+                token
+            ).await()
             Timber.tag(PushPushGoFacade.TAG).d("unregisterSubscriberAsync invoked")
-
+            PreferenceManager
+                .getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
+                .edit().putString(PushPushGoFacade.SUBSCRIBER_ID,"")
+                .apply()
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGoFacade.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {
@@ -32,21 +34,30 @@ internal class ObjectResponseDataSourceImpl(
         } catch (e: HttpException) {
             Timber.tag(PushPushGoFacade.TAG).e("Connection forbidden %s", e.message)
 
-        }catch (e: Exception){
+        } catch (e: Exception) {
             Timber.tag(PushPushGoFacade.TAG).e("Unknown exception %s", e.message)
         }
     }
 
-    override suspend fun registerApiKey(apiKey: String) {
+    override suspend fun registerToken(token: String) {
         try {
-            val model = Helper.getDeviceName()
-            val type = "android"
-            val version = BuildConfig.VERSION_NAME
-            apiService.registerSubscriberAsync(
-                apiKey,
-                version).await()
+
             Timber.tag(PushPushGoFacade.TAG).d("RegisterSubscriberAsync invoked")
-
+            val data = apiService.registerSubscriberAsync(
+                PushPushGoFacade.INSTANCE!!.getProjectId(),
+                TokenRequest(token)
+            ).await()
+            if(!data._id.isNullOrBlank()){
+                PreferenceManager
+                    .getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
+                    .edit().putString(PushPushGoFacade.SUBSCRIBER_ID,data._id)
+                    .apply()
+                PreferenceManager
+                    .getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
+                    .edit().putString(PushPushGoFacade.LAST_TOKEN,token)
+                    .apply()
+            }
+            Timber.tag(PushPushGoFacade.TAG).d("RegisterSubscriberAsync received: $data")
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGoFacade.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {
@@ -56,36 +67,9 @@ internal class ObjectResponseDataSourceImpl(
         } catch (e: HttpException) {
             Timber.tag(PushPushGoFacade.TAG).e("Connection forbidden %s", e.message)
 
-        }catch (e: Exception){
+        } catch (e: Exception) {
             Timber.tag(PushPushGoFacade.TAG).e("Unknown exception %s", e.message)
         }
     }
 
-    override suspend fun sendToken(apiKey: String, token: String) {
-        try {
-            val model = Helper.getDeviceName()
-            val type = "android"
-            val version = BuildConfig.VERSION_NAME
-
-            apiService.sendBeaconAsync(
-                apiKey,
-                version,
-                token).await()
-
-            Timber.tag(PushPushGoFacade.TAG).d("sendBeaconAsync invoked")
-
-        } catch (e: NoConnectivityException) {
-            Timber.tag(PushPushGoFacade.TAG).e("Connection error %s", e.message)
-        } catch (e: ConnectException) {
-            Timber.tag(PushPushGoFacade.TAG).e("Connection error %s", e.message)
-        } catch (e: SocketTimeoutException) {
-            Timber.tag(PushPushGoFacade.TAG).e("Connection error %s", e.message)
-        } catch (e: HttpException) {
-            Timber.tag(PushPushGoFacade.TAG).e("Connection forbidden %s", e.message)
-
-        }catch (e: Exception){
-            Timber.tag(PushPushGoFacade.TAG).e("Unknown exception %s", e.message)
-        }
-
-    }
 }

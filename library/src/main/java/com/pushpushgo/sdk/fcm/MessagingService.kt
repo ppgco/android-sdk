@@ -13,14 +13,11 @@ import com.google.firebase.messaging.RemoteMessage
 import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.facade.PushPushGoFacade
-import com.pushpushgo.sdk.fcm.data.Message
-import com.pushpushgo.sdk.network.ObjectResponseDataSource
-import kotlinx.coroutines.Dispatchers
+import com.pushpushgo.sdk.data.Message
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.kodein.di.KodeinAware
 import org.kodein.di.android.closestKodein
-import org.kodein.di.generic.instance
 import timber.log.Timber
 
 
@@ -32,8 +29,9 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
     private val NOTIFICATION_ID = 1958643221
     override val kodein by closestKodein()
     private var channelNotCreated = true
-    private val network: ObjectResponseDataSource by instance()
+//    private val network: ObjectResponseDataSource by instance()
     private var notificationManager: NotificationManager? = null
+
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         try{
@@ -141,7 +139,8 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
         // manage this apps subscriptions on the server side, send the
         // Instance ID token to your app server.
         if (PushPushGoFacade.INSTANCE != null && !PushPushGoFacade.INSTANCE?.getApiKey().isNullOrBlank()) {
-            GlobalScope.launch(Dispatchers.Default) { network.sendToken(PushPushGoFacade.INSTANCE?.getApiKey()!!,token) }
+
+            GlobalScope.launch {  PushPushGoFacade.INSTANCE!!.getNetwork().registerToken(token) }
         }
 
     }

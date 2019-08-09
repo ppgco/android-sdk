@@ -5,4 +5,4 @@ com.pushpushgo.sdk
 com.pushpushgo.sdk.exception
 com.pushpushgo.sdk.facade
 com.pushpushgo.sdk.fcm
-com.pushpushgo.sdk.fcm.data
+com.pushpushgo.sdk.data

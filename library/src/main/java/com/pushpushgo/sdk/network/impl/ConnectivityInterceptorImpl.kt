@@ -6,13 +6,15 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import com.pushpushgo.sdk.network.ConnectivityInterceptor
 import com.pushpushgo.sdk.exception.NoConnectivityException
+import com.pushpushgo.sdk.facade.PushPushGoFacade
+import timber.log.Timber
 
 internal class ConnectivityInterceptorImpl(context: Context) : ConnectivityInterceptor {
 
     private val appContext = context.applicationContext
 
     override fun intercept(chain: Interceptor.Chain): Response {
-
+            Timber.tag(PushPushGoFacade.TAG).d("address: ${chain.request().url()}")
             if (!isOnline())
                 throw NoConnectivityException("You are offline")
 

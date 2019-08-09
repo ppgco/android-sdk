@@ -24,7 +24,10 @@
         </activity>
         <meta-data
                 android:name="com.pushpushgo.apikey"
-                android:value="abcXJ434"/>
+                android:value="f9a93f7c-5470-43ff-ace2-d2d1814edaf4"/>
+        <meta-data
+                android:name="com.pushpushgo.projectId"
+                android:value="5d411352784425000bd02a15"/>
     </application>
 
 </manifest>
