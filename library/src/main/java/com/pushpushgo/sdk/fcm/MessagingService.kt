@@ -10,10 +10,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.google.gson.Gson
 import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.data.Message
+import com.pushpushgo.sdk.data.PushPushNotification
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.kodein.di.KodeinAware
@@ -29,34 +31,35 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
     private val NOTIFICATION_ID = 1958643221
     override val kodein by closestKodein()
     private var channelNotCreated = true
-//    private val network: ObjectResponseDataSource by instance()
+    //    private val network: ObjectResponseDataSource by instance()
     private var notificationManager: NotificationManager? = null
 
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        try{
+        try {
             val listener = PushPushGoFacade.INSTANCE?.getListener()
-            val msg = Message(remoteMessage.from,remoteMessage.data,remoteMessage.notification?.body)
+            val msg = Message(remoteMessage.from, remoteMessage.data, remoteMessage.notification?.body)
             listener?.onMessageReceived(msg)
             Timber.tag(PushPushGoFacade.TAG).d("Message sent to listener: $msg$")
-        }catch (ex: PushPushException) {
+        } catch (ex: PushPushException) {
             // handle remote message inside library
             if (channelNotCreated) {
-                createNotificationChannel()
+                createNotificationWithBadges()
             }
             Timber.tag(PushPushGoFacade.TAG).d("From: %s", remoteMessage.from!!)
 
             // Check if message contains a data payload.
             if (remoteMessage.data.isNotEmpty()) {
                 Timber.tag(PushPushGoFacade.TAG).d("Message data payload: %s", remoteMessage.data)
+                val gson = Gson()
+                val notif = gson.fromJson(remoteMessage.data["notification"], PushPushNotification::class.java)
                 NotificationManagerCompat
                     .from(this)
                     .notify(
                         1746,
                         NotificationUtils.createNotification(
                             this,
-                            getString(R.string.app_name),
-                            remoteMessage.data["title"] + "\n" + remoteMessage.data["body"],
+                            notif,
                             playSound = true,
                             ongoing = false
                         )
@@ -76,6 +79,24 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
 
             // Also if you intend on generating your own notifications as a result of a received FCM
             // message, here is where that should be initiated. See sendNotification method below.
+        }
+    }
+
+    private fun createNotificationWithBadges() {
+        channelNotCreated = false
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        // Android O requires a Notification Channel.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.app_name)
+            val channel = NotificationChannel(
+                getString(R.string.notification_channel_id),
+                name,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                setShowBadge(true)
+            }
+            channel.enableVibration(true)
+            notificationManager!!.createNotificationChannel(channel)
         }
     }
 
@@ -140,7 +161,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
         // Instance ID token to your app server.
         if (PushPushGoFacade.INSTANCE != null && !PushPushGoFacade.INSTANCE?.getApiKey().isNullOrBlank()) {
 
-            GlobalScope.launch {  PushPushGoFacade.INSTANCE!!.getNetwork().registerToken(token) }
+            GlobalScope.launch { PushPushGoFacade.INSTANCE!!.getNetwork().registerToken(token) }
         }
 
     }

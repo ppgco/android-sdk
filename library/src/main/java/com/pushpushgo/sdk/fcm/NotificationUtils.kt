@@ -2,10 +2,12 @@ package com.pushpushgo.sdk.fcm
 
 import android.app.Notification
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import com.pushpushgo.sdk.R
+import com.pushpushgo.sdk.data.PushPushNotification
 
 
 object NotificationUtils {
@@ -43,25 +45,58 @@ object NotificationUtils {
         }
         return builder.build()
     }
+    internal fun createNotification(
+        context: Context,
+        notification:  PushPushNotification,
+        playSound: Boolean = true,
+        ongoing: Boolean
+    ): Notification{
 
+        return createNotification(
+            context,
+            notification.title ?: "",
+            notification.body ?: "",
+            playSound,
+            notification.sound ?: "default",
+            notification.vibrate,
+            ongoing,
+            notification.priority,
+            notification.badge
+            )
+    }
     fun createNotification(
         context: Context,
         title: String,
         content: String,
         playSound: Boolean,
-        ongoing: Boolean
+        sound:String,
+        vibrate:Boolean,
+        ongoing: Boolean,
+        priority: Int,
+        badge: Int
     ): Notification {
 
         val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_id))
             .setContentTitle(title)
             .setContentText(content)
             .setOngoing(ongoing)
-            .setPriority(Notification.PRIORITY_LOW)
+            .setPriority(priority)
             .setWhen(System.currentTimeMillis())
         setIcon(context, builder)
+        if(badge>0){
+            builder.setNumber(badge)
+        }
+        if(vibrate){
+            builder.setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))
+        }
         if (playSound) {
             builder.setAutoCancel(true)
-            builder.setDefaults(Notification.DEFAULT_ALL)
+            if(sound == "default") {
+                builder.setDefaults(Notification.DEFAULT_ALL)
+            }else{
+                val uri = Uri.parse(sound)
+                builder.setSound(uri)
+            }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             builder.setChannelId(context.getString(R.string.notification_channel_id)) // Channel ID
