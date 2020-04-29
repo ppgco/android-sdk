@@ -5,12 +5,11 @@ import com.google.gson.GsonBuilder
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Beacon
 import com.pushpushgo.sdk.data.Event
-import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.network.data.ApiResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
+import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
-import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -48,28 +47,16 @@ internal interface ApiService {
         @Body body: Event
     ): ApiResponse
 
-
     companion object {
         operator fun invoke(
-            chuckInterceptor: ChuckerInterceptor,
+            chuckerInterceptor: ChuckerInterceptor,
             connectivityInstance: ConnectivityInterceptor,
+            requestInterceptor: RequestInterceptor,
             responseInterceptor: ResponseInterceptor
         ): ApiService {
-
-            val requestInterceptor = Interceptor { chain ->
-
-                val request = chain.request()
-                    .newBuilder()
-                    .header("Content-Type", "application/json")
-                    .header("X-Token", PushPushGoFacade.INSTANCE!!.getApiKey())
-                    .build()
-
-
-                return@Interceptor chain.proceed(request)
-            }
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(requestInterceptor)
-                .addInterceptor(chuckInterceptor)
+                .addInterceptor(chuckerInterceptor)
                 .addInterceptor(connectivityInstance)
                 .addInterceptor(responseInterceptor)
                 .build()

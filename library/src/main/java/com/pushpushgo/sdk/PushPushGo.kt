@@ -8,6 +8,7 @@ import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
 import com.pushpushgo.sdk.network.ApiRepository
 import com.pushpushgo.sdk.network.ApiService
 import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
+import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import com.pushpushgo.sdk.utils.NotLoggingTree
 import org.kodein.di.Kodein
@@ -54,9 +55,11 @@ internal class PushPushGo(
         import(androidXModule(this@PushPushGo.application))
         bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(this@PushPushGo.application) }
         bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptor(instance()) }
+        bind<RequestInterceptor>() with singleton { RequestInterceptor(apiKey) }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptor(instance()) }
         bind() from singleton {
             ApiService(
+                instance(),
                 instance(),
                 instance(),
                 instance()
