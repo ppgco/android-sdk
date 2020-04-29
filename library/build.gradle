@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka'
 
@@ -41,6 +40,8 @@ android {
 dependencies {
     implementation 'com.google.firebase:firebase-core:17.3.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    implementation 'androidx.preference:preference-ktx:1.1.1'
 
     //todo change to debugImplementation for later usage and uncomment releaseImplementation
     //Chuck

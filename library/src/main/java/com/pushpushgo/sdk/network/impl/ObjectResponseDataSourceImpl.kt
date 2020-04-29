@@ -1,6 +1,6 @@
 package com.pushpushgo.sdk.network.impl
 
-import android.preference.PreferenceManager
+import androidx.preference.PreferenceManager.getDefaultSharedPreferences
 import com.pushpushgo.sdk.exception.NoConnectivityException
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.network.ApiService
@@ -21,9 +21,8 @@ internal class ObjectResponseDataSourceImpl(
                 token
             ).await()
             Timber.tag(PushPushGoFacade.TAG).d("unregisterSubscriberAsync invoked")
-            PreferenceManager
-                .getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
-                .edit().putString(PushPushGoFacade.SUBSCRIBER_ID,"")
+            getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
+                .edit().putString(PushPushGoFacade.SUBSCRIBER_ID, "")
                 .apply()
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGoFacade.TAG).e("Connection error %s", e.message)
@@ -47,14 +46,12 @@ internal class ObjectResponseDataSourceImpl(
                 PushPushGoFacade.INSTANCE!!.getProjectId(),
                 TokenRequest(token)
             ).await()
-            if(!data._id.isNullOrBlank()){
-                PreferenceManager
-                    .getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
-                    .edit().putString(PushPushGoFacade.SUBSCRIBER_ID,data._id)
+            if (!data._id.isNullOrBlank()) {
+                getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
+                    .edit().putString(PushPushGoFacade.SUBSCRIBER_ID, data._id)
                     .apply()
-                PreferenceManager
-                    .getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
-                    .edit().putString(PushPushGoFacade.LAST_TOKEN,token)
+                getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
+                    .edit().putString(PushPushGoFacade.LAST_TOKEN, token)
                     .apply()
             }
             Timber.tag(PushPushGoFacade.TAG).d("RegisterSubscriberAsync received: $data")

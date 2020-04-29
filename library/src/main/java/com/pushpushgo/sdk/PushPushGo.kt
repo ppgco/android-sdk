@@ -3,7 +3,6 @@ package com.pushpushgo.sdk
 import android.app.Application
 import android.content.Context
 import com.pushpushgo.sdk.exception.PushPushException
-import android.preference.PreferenceManager
 import androidx.core.app.NotificationManagerCompat
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
@@ -27,6 +26,7 @@ import timber.log.Timber
 import java.util.*
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.ActivityManager
+import androidx.preference.PreferenceManager.*
 
 internal class InternalTimerTask : Timer() {
 
@@ -42,7 +42,8 @@ internal class InternalTimerTask : Timer() {
         this.hasStarted = false
         super.cancel()
     }
-    fun cancelIfRunning(){
+
+    fun cancelIfRunning() {
         if (isRunning()) cancel()
     }
 
@@ -50,7 +51,11 @@ internal class InternalTimerTask : Timer() {
         return this.hasStarted
     }
 }
-internal class ForegroundTaskChecker(private val application: Application, private val notifTimer: InternalTimerTask) : TimerTask() {
+
+internal class ForegroundTaskChecker(
+    private val application: Application,
+    private val notifTimer: InternalTimerTask
+) : TimerTask() {
     private fun isAppOnForeground(context: Context): Boolean {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val appProcesses = activityManager.runningAppProcesses ?: return false
@@ -78,17 +83,17 @@ internal class NotificationTimerTask(private val application: Application) : Tim
     override fun run() {
         if (NotificationManagerCompat.from(application).areNotificationsEnabled()) {
             Timber.tag(PushPushGoFacade.TAG).d("Notifications enabled")
-            val subscriberId =
-                PreferenceManager.getDefaultSharedPreferences(application).getString(PushPushGoFacade.SUBSCRIBER_ID, "")
-            val token =
-                PreferenceManager.getDefaultSharedPreferences(application).getString(PushPushGoFacade.LAST_TOKEN, "")
+            val subscriberId = getDefaultSharedPreferences(application)
+                .getString(PushPushGoFacade.SUBSCRIBER_ID, "")
+            val token = getDefaultSharedPreferences(application)
+                .getString(PushPushGoFacade.LAST_TOKEN, "")
             if (subscriberId.isNullOrBlank() && !token.isNullOrBlank()) {
                 GlobalScope.launch { PushPushGoFacade.INSTANCE?.getNetwork()?.registerToken(token) }
             }
         } else {
             Timber.tag(PushPushGoFacade.TAG).d("Notifications disabled")
-            val subscriberId =
-                PreferenceManager.getDefaultSharedPreferences(application).getString(PushPushGoFacade.SUBSCRIBER_ID, "")
+            val subscriberId = getDefaultSharedPreferences(application)
+                .getString(PushPushGoFacade.SUBSCRIBER_ID, "")
             if (!subscriberId.isNullOrBlank() && PushPushGoFacade.INSTANCE != null) {
                 GlobalScope.launch { PushPushGoFacade.INSTANCE!!.getNetwork().unregisterSubscriber(subscriberId) }
                 this.cancel()
