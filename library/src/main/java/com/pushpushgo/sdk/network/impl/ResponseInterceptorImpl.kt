@@ -21,11 +21,9 @@ internal class ResponseInterceptorImpl(context: Context) : ResponseInterceptor {
             try {
                 val responseBodyCopy = response.peekBody(java.lang.Long.MAX_VALUE)
                 body = responseBodyCopy.string()
-            } catch (e: Exception) {}
-
-
+            } catch (e: Exception) {
+            }
         }
         return response
     }
-
 }

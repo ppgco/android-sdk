@@ -4,7 +4,7 @@ import android.os.Build
 import android.text.TextUtils
 
 internal class Helper {
-    companion object{
+    companion object {
         fun getDeviceName(): String? {
             val manufacturer = Build.MANUFACTURER
             val model = Build.MODEL

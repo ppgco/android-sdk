@@ -45,12 +45,13 @@ object NotificationUtils {
         }
         return builder.build()
     }
+
     internal fun createNotification(
         context: Context,
-        notification:  PushPushNotification,
+        notification: PushPushNotification,
         playSound: Boolean = true,
         ongoing: Boolean
-    ): Notification{
+    ): Notification {
 
         return createNotification(
             context,
@@ -62,15 +63,16 @@ object NotificationUtils {
             ongoing,
             notification.priority,
             notification.badge
-            )
+        )
     }
+
     fun createNotification(
         context: Context,
         title: String,
         content: String,
         playSound: Boolean,
-        sound:String,
-        vibrate:Boolean,
+        sound: String,
+        vibrate: Boolean,
         ongoing: Boolean,
         priority: Int,
         badge: Int
@@ -83,17 +85,17 @@ object NotificationUtils {
             .setPriority(priority)
             .setWhen(System.currentTimeMillis())
         setIcon(context, builder)
-        if(badge>0){
+        if (badge > 0) {
             builder.setNumber(badge)
         }
-        if(vibrate){
+        if (vibrate) {
             builder.setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))
         }
         if (playSound) {
             builder.setAutoCancel(true)
-            if(sound == "default") {
+            if (sound == "default") {
                 builder.setDefaults(Notification.DEFAULT_ALL)
-            }else{
+            } else {
                 val uri = Uri.parse(sound)
                 builder.setSound(uri)
             }
@@ -107,7 +109,7 @@ object NotificationUtils {
     private fun setIcon(context: Context, notification: NotificationCompat.Builder) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             notification.setSmallIcon(R.mipmap.ic_stat_notification)
-            notification.setColor(context.resources.getColor(R.color.colorPrimary))
+            notification.color = context.resources.getColor(R.color.colorPrimary)
         } else {
             notification.setSmallIcon(R.mipmap.ic_stat_notification)
         }

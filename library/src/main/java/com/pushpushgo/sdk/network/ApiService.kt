@@ -3,9 +3,9 @@ package com.pushpushgo.sdk.network
 import com.google.gson.GsonBuilder
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.pushpushgo.sdk.BuildConfig
-import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.data.Beacon
 import com.pushpushgo.sdk.data.Event
+import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.network.data.ObjectResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.readystatesoftware.chuck.ChuckInterceptor
@@ -15,7 +15,10 @@ import okhttp3.OkHttpClient
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.POST
+import retrofit2.http.Path
 
 internal interface ApiService {
 

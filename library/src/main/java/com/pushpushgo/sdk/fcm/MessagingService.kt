@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.fcm
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.NotificationManager.IMPORTANCE_HIGH
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -12,25 +13,30 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.pushpushgo.sdk.R
-import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.data.Message
 import com.pushpushgo.sdk.data.PushPushNotification
+import com.pushpushgo.sdk.exception.PushPushException
+import com.pushpushgo.sdk.facade.PushPushGoFacade
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.kodein.di.KodeinAware
 import org.kodein.di.android.kodein
 import timber.log.Timber
 
-
 internal class MessagingService : FirebaseMessagingService(), KodeinAware {
 
+    companion object {
+        private const val EXTRA_STARTED_FROM_NOTIFICATION = "extra:started_from_notification"
 
-    private val EXTRA_STARTED_FROM_NOTIFICATION = "extra:started_from_notification"
-    private val EXTRA_STOP_SERVICE = "extra:stop_service"
-    private val NOTIFICATION_ID = 1958643221
+        private const val EXTRA_STOP_SERVICE = "extra:stop_service"
+
+        private const val NOTIFICATION_ID = 1958643221
+    }
+
     override val kodein by kodein()
+
     private var channelNotCreated = true
+
     //    private val network: ObjectResponseDataSource by instance()
     private var notificationManager: NotificationManager? = null
 
@@ -38,7 +44,8 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         try {
             val listener = PushPushGoFacade.INSTANCE?.getListener()
-            val msg = Message(remoteMessage.from, remoteMessage.data, remoteMessage.notification?.body)
+            val msg =
+                Message(remoteMessage.from, remoteMessage.data, remoteMessage.notification?.body)
             listener?.onMessageReceived(msg)
             Timber.tag(PushPushGoFacade.TAG).d("Message sent to listener: $msg$")
         } catch (ex: PushPushException) {
@@ -52,7 +59,10 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
             if (remoteMessage.data.isNotEmpty()) {
                 Timber.tag(PushPushGoFacade.TAG).d("Message data payload: %s", remoteMessage.data)
                 val gson = Gson()
-                val notif = gson.fromJson(remoteMessage.data["notification"], PushPushNotification::class.java)
+                val notif = gson.fromJson(
+                    remoteMessage.data["notification"],
+                    PushPushNotification::class.java
+                )
                 NotificationManagerCompat
                     .from(this)
                     .notify(
@@ -89,9 +99,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.app_name)
             val channel = NotificationChannel(
-                getString(R.string.notification_channel_id),
-                name,
-                NotificationManager.IMPORTANCE_HIGH
+                getString(R.string.notification_channel_id), name, IMPORTANCE_HIGH
             ).apply {
                 setShowBadge(true)
             }
@@ -106,11 +114,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
         // Android O requires a Notification Channel.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.app_name)
-            val channel = NotificationChannel(
-                getString(R.string.notification_channel_id),
-                name,
-                NotificationManager.IMPORTANCE_HIGH
-            )
+            val channel = NotificationChannel(getString(R.string.notification_channel_id), name, IMPORTANCE_HIGH)
             channel.enableVibration(true)
             notificationManager!!.createNotificationChannel(channel)
         }
@@ -128,7 +132,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setOngoing(true)
-            .setPriority(Notification.PRIORITY_HIGH)
+            .setPriority(IMPORTANCE_HIGH)
             .setWhen(System.currentTimeMillis())
         setIcon(builder)
 
@@ -160,9 +164,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
         // manage this apps subscriptions on the server side, send the
         // Instance ID token to your app server.
         if (PushPushGoFacade.INSTANCE != null && !PushPushGoFacade.INSTANCE?.getApiKey().isNullOrBlank()) {
-
             GlobalScope.launch { PushPushGoFacade.INSTANCE!!.getNetwork().registerToken(token) }
         }
-
     }
 }

@@ -11,9 +11,8 @@ import timber.log.Timber
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
-internal class ObjectResponseDataSourceImpl(
-    private val apiService: ApiService
-) : ObjectResponseDataSource {
+internal class ObjectResponseDataSourceImpl(private val apiService: ApiService) : ObjectResponseDataSource {
+
     override suspend fun unregisterSubscriber(token: String) {
         try {
             apiService.unregisterSubscriberAsync(
@@ -40,7 +39,6 @@ internal class ObjectResponseDataSourceImpl(
 
     override suspend fun registerToken(token: String) {
         try {
-
             Timber.tag(PushPushGoFacade.TAG).d("RegisterSubscriberAsync invoked")
             val data = apiService.registerSubscriberAsync(
                 PushPushGoFacade.INSTANCE!!.getProjectId(),
@@ -68,5 +66,4 @@ internal class ObjectResponseDataSourceImpl(
             Timber.tag(PushPushGoFacade.TAG).e("Unknown exception %s", e.message)
         }
     }
-
 }
