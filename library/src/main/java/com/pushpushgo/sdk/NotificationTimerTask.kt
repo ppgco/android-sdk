@@ -3,7 +3,6 @@ package com.pushpushgo.sdk
 import android.app.Application
 import androidx.core.app.NotificationManagerCompat
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
-import com.pushpushgo.sdk.facade.PushPushGoFacade
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -15,19 +14,19 @@ internal class NotificationTimerTask(private val application: Application) : Tim
 
     override fun run() {
         if (NotificationManagerCompat.from(application).areNotificationsEnabled()) {
-            Timber.tag(PushPushGoFacade.TAG).d("Notifications enabled")
+            Timber.tag(PushPushGo.TAG).d("Notifications enabled")
 
-            val subscriberId = pref.getString(PushPushGoFacade.SUBSCRIBER_ID, "")
-            val token = pref.getString(PushPushGoFacade.LAST_TOKEN, "")
+            val subscriberId = pref.getString(PushPushGo.SUBSCRIBER_ID, "")
+            val token = pref.getString(PushPushGo.LAST_TOKEN, "")
             if (subscriberId.isNullOrBlank() && !token.isNullOrBlank()) {
-                GlobalScope.launch { PushPushGoFacade.INSTANCE?.getNetwork()?.registerToken(token) }
+                GlobalScope.launch { PushPushGo.INSTANCE?.getNetwork()?.registerToken(token) }
             }
         } else {
-            Timber.tag(PushPushGoFacade.TAG).d("Notifications disabled")
-            val subscriberId = pref.getString(PushPushGoFacade.SUBSCRIBER_ID, "")
-            if (!subscriberId.isNullOrBlank() && PushPushGoFacade.INSTANCE != null) {
+            Timber.tag(PushPushGo.TAG).d("Notifications disabled")
+            val subscriberId = pref.getString(PushPushGo.SUBSCRIBER_ID, "")
+            if (!subscriberId.isNullOrBlank() && PushPushGo.INSTANCE != null) {
                 GlobalScope.launch {
-                    PushPushGoFacade.INSTANCE!!.getNetwork().unregisterSubscriber(subscriberId)
+                    PushPushGo.INSTANCE!!.getNetwork().unregisterSubscriber(subscriberId)
                 }
                 cancel()
             }

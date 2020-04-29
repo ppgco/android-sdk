@@ -12,18 +12,16 @@ import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
+import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Message
 import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.facade.PushPushGoFacade
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.kodein.di.KodeinAware
-import org.kodein.di.android.kodein
 import timber.log.Timber
 
-internal class MessagingService : FirebaseMessagingService(), KodeinAware {
+internal class MessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val EXTRA_STARTED_FROM_NOTIFICATION = "extra:started_from_notification"
@@ -33,31 +31,26 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
         private const val NOTIFICATION_ID = 1958643221
     }
 
-    override val kodein by kodein()
-
     private var channelNotCreated = true
 
-    //    private val network: ObjectResponseDataSource by instance()
     private var notificationManager: NotificationManager? = null
-
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         try {
-            val listener = PushPushGoFacade.INSTANCE?.getListener()
-            val msg =
-                Message(remoteMessage.from, remoteMessage.data, remoteMessage.notification?.body)
+            val listener = PushPushGo.INSTANCE?.getListener()
+            val msg = Message(remoteMessage.from, remoteMessage.data, remoteMessage.notification?.body)
             listener?.onMessageReceived(msg)
-            Timber.tag(PushPushGoFacade.TAG).d("Message sent to listener: $msg$")
+            Timber.tag(PushPushGo.TAG).d("Message sent to listener: $msg$")
         } catch (ex: PushPushException) {
             // handle remote message inside library
             if (channelNotCreated) {
                 createNotificationWithBadges()
             }
-            Timber.tag(PushPushGoFacade.TAG).d("From: %s", remoteMessage.from!!)
+            Timber.tag(PushPushGo.TAG).d("From: %s", remoteMessage.from!!)
 
             // Check if message contains a data payload.
             if (remoteMessage.data.isNotEmpty()) {
-                Timber.tag(PushPushGoFacade.TAG).d("Message data payload: %s", remoteMessage.data)
+                Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
                 val gson = Gson()
                 val notif = gson.fromJson(
                     remoteMessage.data["notification"],
@@ -80,7 +73,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
 
             // Check if message contains a notification payload.
             if (remoteMessage.notification != null) {
-                Timber.tag(PushPushGoFacade.TAG).d("Message Notification Body: %s", remoteMessage.notification!!.body!!)
+                Timber.tag(PushPushGo.TAG).d("Message Notification Body: %s", remoteMessage.notification!!.body!!)
                 val notification = getNotification(remoteMessage.notification!!.body!!)
 
                 notificationManager?.notify(NOTIFICATION_ID, notification)
@@ -132,7 +125,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setOngoing(true)
-            .setPriority(IMPORTANCE_HIGH)
+            .setPriority(NotificationManagerCompat.IMPORTANCE_HIGH)
             .setWhen(System.currentTimeMillis())
         setIcon(builder)
 
@@ -159,12 +152,12 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
      */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Timber.tag(PushPushGoFacade.TAG).d("Refreshed token: $token")
+        Timber.tag(PushPushGo.TAG).d("Refreshed token: $token")
         // If you want to send messages to this application instance or
         // manage this apps subscriptions on the server side, send the
         // Instance ID token to your app server.
-        if (PushPushGoFacade.INSTANCE != null && !PushPushGoFacade.INSTANCE?.getApiKey().isNullOrBlank()) {
-            GlobalScope.launch { PushPushGoFacade.INSTANCE!!.getNetwork().registerToken(token) }
+        if (PushPushGo.INSTANCE != null && !PushPushGo.INSTANCE?.getApiKey().isNullOrBlank()) {
+            GlobalScope.launch { PushPushGo.INSTANCE!!.getNetwork().registerToken(token) }
         }
     }
 }

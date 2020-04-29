@@ -1,42 +1,79 @@
 package com.pushpushgo.sdk
 
 import android.app.Application
-import com.chuckerteam.chucker.api.ChuckerInterceptor
+import android.content.Context
+import android.content.pm.PackageManager
+import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
-import com.pushpushgo.sdk.network.ApiRepository
-import com.pushpushgo.sdk.network.ApiService
-import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
-import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
-import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import com.pushpushgo.sdk.utils.NotLoggingTree
-import org.kodein.di.Kodein
-import org.kodein.di.KodeinAware
-import org.kodein.di.android.x.androidXModule
-import org.kodein.di.generic.bind
-import org.kodein.di.generic.instance
-import org.kodein.di.generic.singleton
 import timber.log.Timber
 import java.util.*
 
-internal class PushPushGo(
-    val application: Application,
-    val apiKey: String,
-    val projectId: String
-) : KodeinAware {
+class PushPushGo(val application: Application, private val apiKey: String, private val projectId: String) {
 
-    private var listener: PushPushGoMessagingListener? = null
+    companion object {
+        internal const val TAG = "_PushPushGoSDKProvider_"
+        internal const val SUBSCRIBER_ID = "_PushPushGoSDK_sub_id_"
+        internal const val LAST_TOKEN = "_PushPushGoSDK_curr_token_"
 
-    val network by instance<ApiRepository>()
+        /**
+         * an instance of PushPushGo library
+         */
+        internal var INSTANCE: PushPushGo? = null
+
+        /**
+         * function to create an instance of PushPushGo object to handle push notifications
+         * @param context - context of an application to get apiKey from META DATA stored in Your Manifest.xml file
+         * @return PushPushGoFacade instance
+         */
+        @kotlin.jvm.JvmStatic
+        fun getInstance(context: Context): PushPushGo {
+            if (INSTANCE == null) {
+                val ai = context.packageManager.getApplicationInfo(
+                    context.packageName,
+                    PackageManager.GET_META_DATA
+                )
+                val bundle = ai.metaData
+                val apiKey = bundle.getString("com.pushpushgo.apikey")
+                    ?: throw PushPushException("You have to declare apiKey in Your Manifest file")
+                val projectId = bundle.getString("com.pushpushgo.projectId")
+                    ?: throw PushPushException("You have to declare projectId in Your Manifest file")
+                INSTANCE = PushPushGo(context.applicationContext as Application, apiKey, projectId)
+            }
+            return INSTANCE as PushPushGo
+        }
+
+        /**
+         * function to create an instance of PushPushGo object to handle push notifications
+         * @param context - context of an application to handle DI
+         * @param apiKey - key to communicate with RESTFul API
+         * @return PushPushGoFacade instance
+         */
+        @kotlin.jvm.JvmStatic
+        fun getInstance(context: Context, apiKey: String, projectId: String): PushPushGo {
+            if (INSTANCE == null) {
+                INSTANCE = PushPushGo(context.applicationContext as Application, apiKey, projectId)
+            }
+            return INSTANCE as PushPushGo
+        }
+    }
+
+    private val network = NetworkModule(application, apiKey)
+
+    internal fun getNetwork() = network.apiRepository
+
+    internal fun getApplication() = application
+
+    private var pushPushGoMessagingListener: PushPushGoMessagingListener? = null
 
     init {
         if (BuildConfig.DEBUG)
             Timber.plant(Timber.DebugTree())
         else
             Timber.plant(NotLoggingTree())
-        Timber.tag(PushPushGoFacade.TAG).d("Register API Key: $apiKey")
-        Timber.tag(PushPushGoFacade.TAG).d("Register ProjectId Key: $projectId")
+        Timber.tag(TAG).d("Register API Key: $apiKey")
+        Timber.tag(TAG).d("Register ProjectId Key: $projectId")
         checkNotifications()
     }
 
@@ -44,31 +81,32 @@ internal class PushPushGo(
         Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
     }
 
-    fun registerListener(pushPushGoMessagingListener: PushPushGoMessagingListener) {
-        listener = pushPushGoMessagingListener
-        Timber.tag(PushPushGoFacade.TAG).d("Registered PushPushGoMessagingListener")
+    /**
+     * function to register a listener and handle RemoteMessage from push notifications
+     * @param listener - implementation of PushPushGoMessagingListener
+     */
+    fun registerListener(listener: PushPushGoMessagingListener) {
+        pushPushGoMessagingListener = listener
+        Timber.tag(TAG).d("Registered PushPushGoMessagingListener")
     }
 
-    fun getListener() = listener ?: throw PushPushException("Listener not registered")
+    /**
+     * function to read Your API Key from an PushPushGo library instance
+     * @return API Key String
+     */
+    fun getApiKey() = apiKey
 
-    override val kodein = Kodein.lazy {
-        import(androidXModule(this@PushPushGo.application))
-        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(this@PushPushGo.application) }
-        bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptor(instance()) }
-        bind<RequestInterceptor>() with singleton { RequestInterceptor(apiKey) }
-        bind<ResponseInterceptor>() with singleton { ResponseInterceptor(instance()) }
-        bind() from singleton {
-            ApiService(
-                instance(),
-                instance(),
-                instance(),
-                instance()
-            )
-        }
-        bind<ApiRepository>() with singleton {
-            ApiRepository(
-                instance()
-            )
-        }
-    }
+    /**
+     * function to read Your API Key from an PushPushGo library instance
+     * @return API Key String
+     */
+    fun getProjectId() = projectId
+
+    /**
+     * function to get Your API MessageListener from an PushPushGo library instance
+     * @return PushPushGoMessagingListener listener implementation
+     * @throws PushPushException if listener is not set
+     */
+    @Throws(PushPushException::class)
+    fun getListener() = pushPushGoMessagingListener
 }
