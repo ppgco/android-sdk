@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.network
 
+import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.google.gson.GsonBuilder
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Beacon
@@ -7,7 +8,6 @@ import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.network.data.ObjectResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
-import com.readystatesoftware.chuck.ChuckInterceptor
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import retrofit2.Response
@@ -48,11 +48,10 @@ internal interface ApiService {
 
     companion object {
         operator fun invoke(
-            chuckInterceptor: ChuckInterceptor,
+            chuckInterceptor: ChuckerInterceptor,
             connectivityInstance: ConnectivityInterceptor,
             responseInterceptor: ResponseInterceptor
         ): ApiService {
-
 
             val requestInterceptor = Interceptor { chain ->
 

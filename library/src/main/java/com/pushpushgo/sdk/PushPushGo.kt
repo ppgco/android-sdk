@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk
 
 import android.app.Application
+import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
@@ -12,7 +13,6 @@ import com.pushpushgo.sdk.network.impl.ConnectivityInterceptorImpl
 import com.pushpushgo.sdk.network.impl.ObjectResponseDataSourceImpl
 import com.pushpushgo.sdk.network.impl.ResponseInterceptorImpl
 import com.pushpushgo.sdk.utils.NotLoggingTree
-import com.readystatesoftware.chuck.ChuckInterceptor
 import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
 import org.kodein.di.android.x.androidXModule
@@ -79,7 +79,7 @@ internal class PushPushGo(application: Application, apiKey: String, projectId: S
 
     override val kodein = Kodein.lazy {
         import(androidXModule(this@PushPushGo.application!!))
-        bind<ChuckInterceptor>() with singleton { ChuckInterceptor(this@PushPushGo.application!!) }
+        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(this@PushPushGo.application!!) }
         bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptorImpl(instance()) }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptorImpl(instance()) }
         bind() from singleton {
