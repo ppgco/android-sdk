@@ -5,13 +5,10 @@ import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
+import com.pushpushgo.sdk.network.ApiRepository
 import com.pushpushgo.sdk.network.ApiService
-import com.pushpushgo.sdk.network.ConnectivityInterceptor
-import com.pushpushgo.sdk.network.ObjectResponseDataSource
-import com.pushpushgo.sdk.network.ResponseInterceptor
-import com.pushpushgo.sdk.network.impl.ConnectivityInterceptorImpl
-import com.pushpushgo.sdk.network.impl.ObjectResponseDataSourceImpl
-import com.pushpushgo.sdk.network.impl.ResponseInterceptorImpl
+import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
+import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import com.pushpushgo.sdk.utils.NotLoggingTree
 import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
@@ -30,7 +27,7 @@ internal class PushPushGo(
 
     private var listener: PushPushGoMessagingListener? = null
 
-    val network by instance<ObjectResponseDataSource>()
+    val network by instance<ApiRepository>()
 
     init {
         if (BuildConfig.DEBUG)
@@ -56,8 +53,8 @@ internal class PushPushGo(
     override val kodein = Kodein.lazy {
         import(androidXModule(this@PushPushGo.application))
         bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(this@PushPushGo.application) }
-        bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptorImpl(instance()) }
-        bind<ResponseInterceptor>() with singleton { ResponseInterceptorImpl(instance()) }
+        bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptor(instance()) }
+        bind<ResponseInterceptor>() with singleton { ResponseInterceptor(instance()) }
         bind() from singleton {
             ApiService(
                 instance(),
@@ -65,6 +62,10 @@ internal class PushPushGo(
                 instance()
             )
         }
-        bind<ObjectResponseDataSource>() with singleton { ObjectResponseDataSourceImpl(instance()) }
+        bind<ApiRepository>() with singleton {
+            ApiRepository(
+                instance()
+            )
+        }
     }
 }

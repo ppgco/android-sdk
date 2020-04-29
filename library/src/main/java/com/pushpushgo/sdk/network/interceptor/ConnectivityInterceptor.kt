@@ -1,15 +1,14 @@
-package com.pushpushgo.sdk.network.impl
+package com.pushpushgo.sdk.network.interceptor
 
 import android.content.Context
 import android.net.ConnectivityManager
 import com.pushpushgo.sdk.exception.NoConnectivityException
 import com.pushpushgo.sdk.facade.PushPushGoFacade
-import com.pushpushgo.sdk.network.ConnectivityInterceptor
 import okhttp3.Interceptor
 import okhttp3.Response
 import timber.log.Timber
 
-internal class ConnectivityInterceptorImpl(context: Context) : ConnectivityInterceptor {
+internal class ConnectivityInterceptor(context: Context) : Interceptor {
 
     private val appContext = context.applicationContext
 

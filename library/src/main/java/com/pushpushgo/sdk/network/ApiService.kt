@@ -6,13 +6,16 @@ import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Beacon
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.facade.PushPushGoFacade
-import com.pushpushgo.sdk.network.data.ObjectResponse
+import com.pushpushgo.sdk.network.data.ApiResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
+import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
+import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.create
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.POST
@@ -24,7 +27,7 @@ internal interface ApiService {
     suspend fun registerSubscriberAsync(
         @Path("projectId") projectId: String, //projectId - id projektu z pushpushGO
         @Body body: TokenRequest //TokenRequest {"token":""}
-    ): ObjectResponse
+    ): ApiResponse
 
     @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}") //gdy chcemy sie wyrejestrowac z pushy
     suspend fun unregisterSubscriberAsync(
@@ -37,13 +40,13 @@ internal interface ApiService {
         @Path("projectId") projectId: String,
         @Path("subscriberId") version: String,
         @Body body: Beacon
-    ): ObjectResponse
+    ): ApiResponse
 
     @POST("/v1/android/{projectId}/event/")
     suspend fun sendEventAsync(
         @Path("projectId") projectId: String,
         @Body body: Event
-    ): ObjectResponse
+    ): ApiResponse
 
 
     companion object {
@@ -77,7 +80,7 @@ internal interface ApiService {
                 .client(okHttpClient)
                 .baseUrl(BuildConfig.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .build().create(ApiService::class.java)
+                .build().create()
         }
     }
 }

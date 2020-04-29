@@ -1,8 +1,7 @@
 $dokka.format:html
 $dokka.linkExtension:html
 
-com.pushpushgo.sdk
+com.pushpushgo.sdk.data
 com.pushpushgo.sdk.exception
 com.pushpushgo.sdk.facade
 com.pushpushgo.sdk.fcm
-com.pushpushgo.sdk.data

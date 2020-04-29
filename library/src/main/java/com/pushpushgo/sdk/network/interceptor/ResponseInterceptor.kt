@@ -1,12 +1,10 @@
-package com.pushpushgo.sdk.network.impl
+package com.pushpushgo.sdk.network.interceptor
 
 import android.content.Context
-import com.pushpushgo.sdk.network.ResponseInterceptor
 import okhttp3.Interceptor
 import okhttp3.Response
 
-
-internal class ResponseInterceptorImpl(context: Context) : ResponseInterceptor {
+internal class ResponseInterceptor(context: Context) : Interceptor {
 
     private val appContext = context.applicationContext
 
