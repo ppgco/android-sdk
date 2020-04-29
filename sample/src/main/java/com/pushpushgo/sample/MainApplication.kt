@@ -8,7 +8,6 @@ import com.pushpushgo.sdk.data.Message
 
 class MainApplication: Application(), PushPushGoMessagingListener {
 
-
     override fun onCreate() {
         super.onCreate()
         PushPushGo.getInstance(applicationContext).registerListener(this)

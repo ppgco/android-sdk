@@ -14,7 +14,7 @@ import org.kodein.di.generic.bind
 import org.kodein.di.generic.instance
 import org.kodein.di.generic.singleton
 
-class NetworkModule(context: Context, apiKey: String) : KodeinAware {
+internal class NetworkModule(context: Context, apiKey: String) : KodeinAware {
 
     override val kodein by Kodein.lazy {
         bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(context) }
