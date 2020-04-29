@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
-import com.pushpushgo.sdk.network.ObjectResponseDataSource
 
 class PushPushGoFacade(application: Application, apiKey: String, projectId: String) {
 
@@ -39,8 +38,7 @@ class PushPushGoFacade(application: Application, apiKey: String, projectId: Stri
                     ?: throw PushPushException("You have to declare apiKey in Your Manifest file")
                 val projectId = bundle.getString("com.pushpushgo.projectId")
                     ?: throw PushPushException("You have to declare projectId in Your Manifest file")
-                INSTANCE =
-                    PushPushGoFacade(context.applicationContext as Application, apiKey, projectId)
+                INSTANCE = PushPushGoFacade(context.applicationContext as Application, apiKey, projectId)
             }
             return INSTANCE as PushPushGoFacade
         }
@@ -63,13 +61,9 @@ class PushPushGoFacade(application: Application, apiKey: String, projectId: Stri
 
     }
 
-    internal fun getNetwork(): ObjectResponseDataSource {
-        return pushPushGo.getNetwork()
-    }
+    internal fun getNetwork() = pushPushGo.network
 
-    internal fun getApplication(): Application {
-        return pushPushGo.getApplication()
-    }
+    internal fun getApplication() = pushPushGo.application
 
     /**
      * function to register a listener and handle RemoteMessage from push notifications
@@ -83,17 +77,13 @@ class PushPushGoFacade(application: Application, apiKey: String, projectId: Stri
      * function to read Your API Key from an PushPushGo library instance
      * @return API Key String
      */
-    fun getApiKey(): String {
-        return pushPushGo.getApiKey()
-    }
+    fun getApiKey() = pushPushGo.apiKey
 
     /**
      * function to read Your API Key from an PushPushGo library instance
      * @return API Key String
      */
-    fun getProjectId(): String {
-        return pushPushGo.getProjectId()
-    }
+    fun getProjectId() = pushPushGo.projectId
 
     /**
      * function to get Your API MessageListener from an PushPushGo library instance
@@ -101,7 +91,5 @@ class PushPushGoFacade(application: Application, apiKey: String, projectId: Stri
      * @throws PushPushException if listener is not set
      */
     @Throws(PushPushException::class)
-    fun getListener(): PushPushGoMessagingListener {
-        return pushPushGo.getListener()
-    }
+    fun getListener() = pushPushGo.getListener()
 }

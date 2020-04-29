@@ -22,15 +22,15 @@ import org.kodein.di.generic.singleton
 import timber.log.Timber
 import java.util.*
 
-internal class PushPushGo(application: Application, apiKey: String, projectId: String) :
-    KodeinAware {
+internal class PushPushGo(
+    val application: Application,
+    val apiKey: String,
+    val projectId: String
+) : KodeinAware {
 
-    private val dataSource by instance<ObjectResponseDataSource>()
     private var listener: PushPushGoMessagingListener? = null
-    private var application: Application? = null
-    private var timer: InternalTimerTask? = null
-    private var apiKey: String = ""
-    private var projectId: String = ""
+
+    val network by instance<ObjectResponseDataSource>()
 
     init {
         if (BuildConfig.DEBUG)
@@ -39,47 +39,23 @@ internal class PushPushGo(application: Application, apiKey: String, projectId: S
             Timber.plant(NotLoggingTree())
         Timber.tag(PushPushGoFacade.TAG).d("Register API Key: $apiKey")
         Timber.tag(PushPushGoFacade.TAG).d("Register ProjectId Key: $projectId")
-        this.apiKey = apiKey
-        this.projectId = projectId
-        this.application = application
-        this.timer = InternalTimerTask()
         checkNotifications()
     }
 
     private fun checkNotifications() {
-        Timer().scheduleAtFixedRate(ForegroundTaskChecker(application!!, timer!!), Date(), 10000)
+        Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
     }
 
-    fun registerListener(listener: PushPushGoMessagingListener) {
-        this.listener = listener
+    fun registerListener(pushPushGoMessagingListener: PushPushGoMessagingListener) {
+        listener = pushPushGoMessagingListener
         Timber.tag(PushPushGoFacade.TAG).d("Registered PushPushGoMessagingListener")
     }
 
-    fun getListener(): PushPushGoMessagingListener {
-        if (this.listener == null)
-            throw PushPushException("Listener not registered")
-        return this.listener!!
-    }
-
-    fun getApiKey(): String {
-        return this.apiKey
-    }
-
-    fun getProjectId(): String {
-        return this.projectId
-    }
-
-    fun getApplication(): Application {
-        return application!!
-    }
-
-    fun getNetwork(): ObjectResponseDataSource {
-        return dataSource
-    }
+    fun getListener() = listener ?: throw PushPushException("Listener not registered")
 
     override val kodein = Kodein.lazy {
-        import(androidXModule(this@PushPushGo.application!!))
-        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(this@PushPushGo.application!!) }
+        import(androidXModule(this@PushPushGo.application))
+        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(this@PushPushGo.application) }
         bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptorImpl(instance()) }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptorImpl(instance()) }
         bind() from singleton {
