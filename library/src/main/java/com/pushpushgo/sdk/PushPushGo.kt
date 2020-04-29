@@ -100,7 +100,7 @@ internal class NotificationTimerTask(private val application: Application) : Tim
 
 internal class PushPushGo(application: Application, apiKey: String, projectId: String) : KodeinAware {
 
-    private val dataSource: ObjectResponseDataSource by instance()
+    private val dataSource by instance<ObjectResponseDataSource>()
     private var listener: PushPushGoMessagingListener? = null
     private var application: Application? = null
     private var timer: InternalTimerTask? = null

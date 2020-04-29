@@ -19,7 +19,7 @@ import com.pushpushgo.sdk.data.PushPushNotification
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.kodein.di.KodeinAware
-import org.kodein.di.android.closestKodein
+import org.kodein.di.android.kodein
 import timber.log.Timber
 
 
@@ -29,7 +29,7 @@ internal class MessagingService : FirebaseMessagingService(), KodeinAware {
     private val EXTRA_STARTED_FROM_NOTIFICATION = "extra:started_from_notification"
     private val EXTRA_STOP_SERVICE = "extra:stop_service"
     private val NOTIFICATION_ID = 1958643221
-    override val kodein by closestKodein()
+    override val kodein by kodein()
     private var channelNotCreated = true
     //    private val network: ObjectResponseDataSource by instance()
     private var notificationManager: NotificationManager? = null
