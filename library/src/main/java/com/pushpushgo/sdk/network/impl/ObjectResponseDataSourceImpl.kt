@@ -18,7 +18,7 @@ internal class ObjectResponseDataSourceImpl(private val apiService: ApiService) 
             apiService.unregisterSubscriberAsync(
                 PushPushGoFacade.INSTANCE!!.getProjectId(),
                 token
-            ).await()
+            )
             Timber.tag(PushPushGoFacade.TAG).d("unregisterSubscriberAsync invoked")
             getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
                 .edit().putString(PushPushGoFacade.SUBSCRIBER_ID, "")
@@ -43,7 +43,7 @@ internal class ObjectResponseDataSourceImpl(private val apiService: ApiService) 
             val data = apiService.registerSubscriberAsync(
                 PushPushGoFacade.INSTANCE!!.getProjectId(),
                 TokenRequest(token)
-            ).await()
+            )
             if (!data._id.isNullOrBlank()) {
                 getDefaultSharedPreferences(PushPushGoFacade.INSTANCE!!.getApplication())
                     .edit().putString(PushPushGoFacade.SUBSCRIBER_ID, data._id)

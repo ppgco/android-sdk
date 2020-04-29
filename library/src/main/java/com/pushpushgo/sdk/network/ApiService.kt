@@ -1,7 +1,6 @@
 package com.pushpushgo.sdk.network
 
 import com.google.gson.GsonBuilder
-import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Beacon
 import com.pushpushgo.sdk.data.Event
@@ -9,7 +8,6 @@ import com.pushpushgo.sdk.facade.PushPushGoFacade
 import com.pushpushgo.sdk.network.data.ObjectResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.readystatesoftware.chuck.ChuckInterceptor
-import kotlinx.coroutines.Deferred
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import retrofit2.Response
@@ -23,29 +21,29 @@ import retrofit2.http.Path
 internal interface ApiService {
 
     @POST("/v1/android/{projectId}/subscriber")
-    fun registerSubscriberAsync(
+    suspend fun registerSubscriberAsync(
         @Path("projectId") projectId: String, //projectId - id projektu z pushpushGO
         @Body body: TokenRequest //TokenRequest {"token":""}
-    ): Deferred<ObjectResponse>
+    ): ObjectResponse
 
     @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}") //gdy chcemy sie wyrejestrowac z pushy
-    fun unregisterSubscriberAsync(
+    suspend fun unregisterSubscriberAsync(
         @Path("projectId") projectId: String,
         @Path("subscriberId") subscriberId: String
-    ): Deferred<Response<Void>>
+    ): Response<Void>
 
     @POST("/v1/android/{projectId}/subscriber/{subscriberId}/beacon")
-    fun sendBeaconAsync(
+    suspend fun sendBeaconAsync(
         @Path("projectId") projectId: String,
         @Path("subscriberId") version: String,
         @Body body: Beacon
-    ): Deferred<ObjectResponse>
+    ): ObjectResponse
 
     @POST("/v1/android/{projectId}/event/")
-    fun sendEventAsync(
+    suspend fun sendEventAsync(
         @Path("projectId") projectId: String,
         @Body body: Event
-    ): Deferred<ObjectResponse>
+    ): ObjectResponse
 
 
     companion object {
@@ -79,7 +77,6 @@ internal interface ApiService {
             return Retrofit.Builder()
                 .client(okHttpClient)
                 .baseUrl(BuildConfig.BASE_URL)
-                .addCallAdapterFactory(CoroutineCallAdapterFactory())
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build().create(ApiService::class.java)
         }
