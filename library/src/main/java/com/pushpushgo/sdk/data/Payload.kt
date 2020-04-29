@@ -7,4 +7,4 @@ data class Payload(
     val campaign: String,
     val subscriber: String,
     val timestamp: Int
-):Serializable
+) : Serializable
