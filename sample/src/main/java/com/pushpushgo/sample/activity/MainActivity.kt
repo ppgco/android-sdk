@@ -1,8 +1,13 @@
 package com.pushpushgo.sample.activity
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Menu
 import android.view.MenuItem
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.pushpushgo.sample.R
 import com.pushpushgo.sdk.PushPushGo
@@ -33,8 +38,37 @@ class MainActivity : AppCompatActivity() {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_settings -> openNotificationsSettings()
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun openNotificationsSettings(): Boolean {
+        val intent = Intent()
+        when {
+            Build.VERSION.SDK_INT > Build.VERSION_CODES.O -> intent.setOpenSettingsForApiLarger25()
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> intent.setOpenSettingsForApiBetween21And25()
+            else -> intent.setOpenSettingsForApiLess21()
+        }
+        startActivity(intent)
+        return true
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun Intent.setOpenSettingsForApiLarger25() {
+        action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+        putExtra("android.provider.extra.APP_PACKAGE", packageName)
+    }
+
+    private fun Intent.setOpenSettingsForApiBetween21And25() {
+        action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+        putExtra("app_package", packageName)
+        putExtra("app_uid", applicationInfo?.uid)
+    }
+
+    private fun Intent.setOpenSettingsForApiLess21() {
+        action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+        addCategory(Intent.CATEGORY_DEFAULT)
+        data = Uri.parse("package:$packageName")
     }
 }

@@ -17,6 +17,7 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Message
 import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.exception.PushPushException
+import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -34,6 +35,8 @@ internal class MessagingService : FirebaseMessagingService() {
     private var channelNotCreated = true
 
     private var notificationManager: NotificationManager? = null
+
+    private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         try {
@@ -156,9 +159,11 @@ internal class MessagingService : FirebaseMessagingService() {
         // If you want to send messages to this application instance or
         // manage this apps subscriptions on the server side, send the
         // Instance ID token to your app server.
-        if (PushPushGo.INSTANCE != null && !PushPushGo.INSTANCE?.getApiKey().isNullOrBlank()) {
-            // TODO: save token in shared pref here, token registration should be invoked by user
-            GlobalScope.launch { PushPushGo.INSTANCE!!.getNetwork().registerToken(token) }
+        PushPushGo.INSTANCE?.let {
+            preferencesHelper.lastToken = token
+            if (preferencesHelper.isSubscribed) {
+                GlobalScope.launch { it.getNetwork().registerToken() }
+            }
         }
     }
 }

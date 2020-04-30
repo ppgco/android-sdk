@@ -13,20 +13,19 @@ internal class NotificationTimerTask(private val application: Application) : Tim
     private val pref = SharedPreferencesHelper(application)
 
     override fun run() {
-        if (NotificationManagerCompat.from(application).areNotificationsEnabled()) {
+        if (NotificationManagerCompat.from(application).areNotificationsEnabled() && pref.isSubscribed) {
             Timber.tag(PushPushGo.TAG).d("Notifications enabled")
 
             val subscriberId = pref.subscriberId
-            val token = pref.lastToken
-            if (subscriberId.isBlank() && !token.isBlank()) {
-                GlobalScope.launch { PushPushGo.INSTANCE?.getNetwork()?.registerToken(token) }
+            if (subscriberId.isBlank()) {
+                GlobalScope.launch { PushPushGo.INSTANCE?.getNetwork()?.registerToken() }
             }
         } else {
             Timber.tag(PushPushGo.TAG).d("Notifications disabled")
             val subscriberId = pref.subscriberId
             if (!subscriberId.isBlank()) {
                 GlobalScope.launch {
-                    PushPushGo.INSTANCE!!.getNetwork().unregisterSubscriber()
+                    PushPushGo.INSTANCE!!.getNetwork().unregisterSubscriber(pref.isSubscribed)
                 }
                 cancel()
             }

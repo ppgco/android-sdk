@@ -1,9 +1,11 @@
 package com.pushpushgo.sdk.network
 
+import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.exception.NoConnectivityException
 import com.pushpushgo.sdk.network.data.TokenRequest
+import com.pushpushgo.sdk.utils.deviceToken
 import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
 import org.kodein.di.generic.instance
@@ -20,11 +22,18 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
 
     private val projectId by instance<String>(PROJECT_ID)
 
-    suspend fun unregisterSubscriber() {
+    suspend fun registerToken() {
         try {
-            Timber.tag(PushPushGo.TAG).d("unregisterSubscriberAsync invoked")
-            apiService.unregisterSubscriberAsync(projectId, sharedPref.subscriberId)
-            sharedPref.subscriberId = ""
+            val token = sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: FirebaseInstanceId.getInstance().deviceToken
+
+            Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync invoked")
+            val data = apiService.registerSubscriberAsync(projectId, TokenRequest(token))
+            if (!data._id.isNullOrBlank()) {
+                sharedPref.subscriberId = data._id
+                sharedPref.lastToken = token
+                sharedPref.isSubscribed = true
+            }
+            Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync received: $data")
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {
@@ -38,15 +47,12 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         }
     }
 
-    suspend fun registerToken(token: String) {
+    suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
         try {
-            Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync invoked")
-            val data = apiService.registerSubscriberAsync(projectId, TokenRequest(token))
-            if (!data._id.isNullOrBlank()) {
-                sharedPref.subscriberId = data._id
-                sharedPref.lastToken = token
-            }
-            Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync received: $data")
+            Timber.tag(PushPushGo.TAG).d("unregisterSubscriberAsync invoked")
+            apiService.unregisterSubscriberAsync(projectId, sharedPref.subscriberId)
+            sharedPref.subscriberId = ""
+            sharedPref.isSubscribed = isSubscribed
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {

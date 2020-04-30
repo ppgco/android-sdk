@@ -3,12 +3,10 @@ package com.pushpushgo.sdk
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
-import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
 import com.pushpushgo.sdk.utils.NotLoggingTree
-import com.pushpushgo.sdk.utils.deviceToken
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -68,12 +66,6 @@ class PushPushGo private constructor(
         }
     }
 
-    private val network = NetworkModule(application, apiKey, projectId)
-
-    internal fun getNetwork() = network.apiRepository
-
-    private var pushPushGoMessagingListener: PushPushGoMessagingListener? = null
-
     init {
         if (BuildConfig.DEBUG)
             Timber.plant(Timber.DebugTree())
@@ -83,6 +75,10 @@ class PushPushGo private constructor(
         Timber.tag(TAG).d("Register ProjectId Key: $projectId")
         checkNotifications()
     }
+
+    internal fun getNetwork() = NetworkModule(application, apiKey, projectId).apiRepository
+
+    private var pushPushGoMessagingListener: PushPushGoMessagingListener? = null
 
     private fun checkNotifications() {
         Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
@@ -98,6 +94,14 @@ class PushPushGo private constructor(
     }
 
     /**
+     * function to get Your API MessageListener from an PushPushGo library instance
+     * @return PushPushGoMessagingListener listener implementation
+     * @throws PushPushException if listener is not set
+     */
+    @Throws(PushPushException::class)
+    fun getListener() = pushPushGoMessagingListener
+
+    /**
      * function to read Your API Key from an PushPushGo library instance
      * @return API Key String
      */
@@ -110,20 +114,11 @@ class PushPushGo private constructor(
     fun getProjectId() = projectId
 
     /**
-     * function to get Your API MessageListener from an PushPushGo library instance
-     * @return PushPushGoMessagingListener listener implementation
-     * @throws PushPushException if listener is not set
-     */
-    @Throws(PushPushException::class)
-    fun getListener() = pushPushGoMessagingListener
-
-    /**
      * function to register subscriber
      */
     fun registerSubscriber() {
         GlobalScope.launch {
-//            val token = getDefaultSharedPreferences(application).getString(LAST_TOKEN, "").orEmpty()
-            network.apiRepository.registerToken(FirebaseInstanceId.getInstance().deviceToken)
+            getNetwork().registerToken()
         }
     }
 
@@ -132,7 +127,7 @@ class PushPushGo private constructor(
      */
     fun unregisterSubscriber() {
         GlobalScope.launch {
-            network.apiRepository.unregisterSubscriber()
+            getNetwork().unregisterSubscriber()
         }
     }
 }
