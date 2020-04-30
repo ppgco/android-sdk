@@ -3,7 +3,6 @@ package com.pushpushgo.sdk.di
 import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.pushpushgo.sdk.network.ApiRepository
-import com.pushpushgo.sdk.network.ApiRepositoryImpl
 import com.pushpushgo.sdk.network.ApiService
 import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -32,7 +31,7 @@ internal class NetworkModule(context: Context, apiKey: String) : KodeinAware {
             )
         }
         bind() from singleton {
-            ApiRepositoryImpl(instance())
+            ApiRepository(instance())
         }
     }
 

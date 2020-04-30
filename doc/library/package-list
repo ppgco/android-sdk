@@ -3,8 +3,5 @@ $dokka.linkExtension:html
 
 com.pushpushgo.sdk
 com.pushpushgo.sdk.data
-com.pushpushgo.sdk.di
 com.pushpushgo.sdk.exception
 com.pushpushgo.sdk.fcm
-com.pushpushgo.sdk.network
-com.pushpushgo.sdk.network.interceptor

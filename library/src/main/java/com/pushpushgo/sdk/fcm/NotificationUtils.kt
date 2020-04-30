@@ -10,7 +10,7 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.PushPushNotification
 
 
-object NotificationUtils {
+internal object NotificationUtils {
 
     fun createNotification(
         context: Context,
