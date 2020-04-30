@@ -26,7 +26,7 @@ internal class NotificationTimerTask(private val application: Application) : Tim
             val subscriberId = pref.subscriberId
             if (!subscriberId.isBlank()) {
                 GlobalScope.launch {
-                    PushPushGo.INSTANCE!!.getNetwork().unregisterSubscriber(subscriberId)
+                    PushPushGo.INSTANCE!!.getNetwork().unregisterSubscriber()
                 }
                 cancel()
             }

@@ -23,8 +23,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Register"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/unregister"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/hello" />
+
+    <Button
+        android:id="@+id/unregister"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Unregister"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/register"
         app:layout_constraintTop_toBottomOf="@id/hello" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

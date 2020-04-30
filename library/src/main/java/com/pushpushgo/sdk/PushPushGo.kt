@@ -126,4 +126,13 @@ class PushPushGo private constructor(
             network.apiRepository.registerToken(FirebaseInstanceId.getInstance().deviceToken)
         }
     }
+
+    /**
+     * function to unregister subscriber
+     */
+    fun unregisterSubscriber() {
+        GlobalScope.launch {
+            network.apiRepository.unregisterSubscriber()
+        }
+    }
 }

@@ -17,6 +17,9 @@ class MainActivity : AppCompatActivity() {
         register.setOnClickListener {
             PushPushGo.getInstance().registerSubscriber()
         }
+        unregister.setOnClickListener {
+            PushPushGo.getInstance().unregisterSubscriber()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

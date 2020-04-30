@@ -20,10 +20,10 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
 
     private val projectId by instance<String>(PROJECT_ID)
 
-    suspend fun unregisterSubscriber(token: String) {
+    suspend fun unregisterSubscriber() {
         try {
             Timber.tag(PushPushGo.TAG).d("unregisterSubscriberAsync invoked")
-            apiService.unregisterSubscriberAsync(projectId, token)
+            apiService.unregisterSubscriberAsync(projectId, sharedPref.subscriberId)
             sharedPref.subscriberId = ""
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
