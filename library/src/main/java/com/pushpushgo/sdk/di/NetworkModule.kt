@@ -12,12 +12,14 @@ import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
 import org.kodein.di.generic.bind
 import org.kodein.di.generic.instance
+import org.kodein.di.generic.provider
 import org.kodein.di.generic.singleton
 
 internal class NetworkModule(context: Context, apiKey: String) : KodeinAware {
 
     override val kodein by Kodein.lazy {
-        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(context) }
+        bind<Context>() with provider { context }
+        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(instance()) }
         bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptor(instance()) }
         bind<RequestInterceptor>() with singleton { RequestInterceptor(apiKey) }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptor(instance()) }

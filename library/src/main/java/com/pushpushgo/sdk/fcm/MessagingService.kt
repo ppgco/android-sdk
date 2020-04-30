@@ -157,6 +157,7 @@ internal class MessagingService : FirebaseMessagingService() {
         // manage this apps subscriptions on the server side, send the
         // Instance ID token to your app server.
         if (PushPushGo.INSTANCE != null && !PushPushGo.INSTANCE?.getApiKey().isNullOrBlank()) {
+            // TODO: save token in shared pref here, token registration should be invoked by user
             GlobalScope.launch { PushPushGo.INSTANCE!!.getNetwork().registerToken(token) }
         }
     }

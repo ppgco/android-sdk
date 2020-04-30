@@ -3,14 +3,18 @@ package com.pushpushgo.sdk
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
+import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
 import com.pushpushgo.sdk.utils.NotLoggingTree
+import com.pushpushgo.sdk.utils.deviceToken
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 
-class PushPushGo(val application: Application, private val apiKey: String, private val projectId: String) {
+class PushPushGo(private val application: Application, private val apiKey: String, private val projectId: String) {
 
     companion object {
         internal const val TAG = "_PushPushGoSDKProvider_"
@@ -21,6 +25,9 @@ class PushPushGo(val application: Application, private val apiKey: String, priva
          * an instance of PushPushGo library
          */
         internal var INSTANCE: PushPushGo? = null
+
+        fun getInstance(): PushPushGo =
+            INSTANCE ?: throw PushPushException("You have to initialize PushPushGo with context first!")
 
         /**
          * function to create an instance of PushPushGo object to handle push notifications
@@ -109,4 +116,14 @@ class PushPushGo(val application: Application, private val apiKey: String, priva
      */
     @Throws(PushPushException::class)
     fun getListener() = pushPushGoMessagingListener
+
+    /**
+     * function to register subscriber
+     */
+    fun registerSubscriber() {
+        GlobalScope.launch {
+//            val token = getDefaultSharedPreferences(application).getString(LAST_TOKEN, "").orEmpty()
+            network.apiRepository.registerToken(FirebaseInstanceId.getInstance().deviceToken)
+        }
+    }
 }
