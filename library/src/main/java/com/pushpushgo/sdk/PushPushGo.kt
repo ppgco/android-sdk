@@ -14,12 +14,14 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 
-class PushPushGo(private val application: Application, private val apiKey: String, private val projectId: String) {
+class PushPushGo private constructor(
+    private val application: Application,
+    private val apiKey: String,
+    private val projectId: String
+) {
 
     companion object {
         internal const val TAG = "_PushPushGoSDKProvider_"
-        internal const val SUBSCRIBER_ID = "_PushPushGoSDK_sub_id_"
-        internal const val LAST_TOKEN = "_PushPushGoSDK_curr_token_"
 
         /**
          * an instance of PushPushGo library
@@ -66,11 +68,9 @@ class PushPushGo(private val application: Application, private val apiKey: Strin
         }
     }
 
-    private val network = NetworkModule(application, apiKey)
+    private val network = NetworkModule(application, apiKey, projectId)
 
     internal fun getNetwork() = network.apiRepository
-
-    internal fun getApplication() = application
 
     private var pushPushGoMessagingListener: PushPushGoMessagingListener? = null
 

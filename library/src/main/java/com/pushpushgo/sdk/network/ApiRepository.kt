@@ -1,26 +1,30 @@
 package com.pushpushgo.sdk.network
 
-import androidx.preference.PreferenceManager.getDefaultSharedPreferences
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.exception.NoConnectivityException
 import com.pushpushgo.sdk.network.data.TokenRequest
+import org.kodein.di.Kodein
+import org.kodein.di.KodeinAware
+import org.kodein.di.generic.instance
 import retrofit2.HttpException
 import timber.log.Timber
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
-internal class ApiRepository(private val apiService: ApiService) {
+internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
+
+    private val apiService by instance<ApiService>()
+
+    private val sharedPref by instance<SharedPreferencesHelper>()
+
+    private val projectId by instance<String>(PROJECT_ID)
 
     suspend fun unregisterSubscriber(token: String) {
         try {
-            apiService.unregisterSubscriberAsync(
-                PushPushGo.INSTANCE!!.getProjectId(),
-                token
-            )
             Timber.tag(PushPushGo.TAG).d("unregisterSubscriberAsync invoked")
-            getDefaultSharedPreferences(PushPushGo.INSTANCE!!.getApplication())
-                .edit().putString(PushPushGo.SUBSCRIBER_ID, "")
-                .apply()
+            apiService.unregisterSubscriberAsync(projectId, token)
+            sharedPref.subscriberId = ""
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {
@@ -37,17 +41,10 @@ internal class ApiRepository(private val apiService: ApiService) {
     suspend fun registerToken(token: String) {
         try {
             Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync invoked")
-            val data = apiService.registerSubscriberAsync(
-                PushPushGo.INSTANCE!!.getProjectId(),
-                TokenRequest(token)
-            )
+            val data = apiService.registerSubscriberAsync(projectId, TokenRequest(token))
             if (!data._id.isNullOrBlank()) {
-                getDefaultSharedPreferences(PushPushGo.INSTANCE!!.getApplication())
-                    .edit().putString(PushPushGo.SUBSCRIBER_ID, data._id)
-                    .apply()
-                getDefaultSharedPreferences(PushPushGo.INSTANCE!!.getApplication())
-                    .edit().putString(PushPushGo.LAST_TOKEN, token)
-                    .apply()
+                sharedPref.subscriberId = data._id
+                sharedPref.lastToken = token
             }
             Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync received: $data")
         } catch (e: NoConnectivityException) {
