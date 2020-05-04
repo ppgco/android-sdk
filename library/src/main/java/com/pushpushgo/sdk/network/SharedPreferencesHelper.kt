@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.network
 import android.content.Context
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
 
-class SharedPreferencesHelper(context: Context) {
+internal class SharedPreferencesHelper(context: Context) {
 
     companion object {
         internal const val SUBSCRIBER_ID = "_PushPushGoSDK_sub_id_"

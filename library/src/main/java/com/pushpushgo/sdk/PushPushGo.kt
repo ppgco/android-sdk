@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.fcm.PushPushGoMessagingListener
 import com.pushpushgo.sdk.utils.NotLoggingTree
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -78,28 +77,9 @@ class PushPushGo private constructor(
 
     internal fun getNetwork() = NetworkModule(application, apiKey, projectId).apiRepository
 
-    private var pushPushGoMessagingListener: PushPushGoMessagingListener? = null
-
     private fun checkNotifications() {
         Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
     }
-
-    /**
-     * function to register a listener and handle RemoteMessage from push notifications
-     * @param listener - implementation of PushPushGoMessagingListener
-     */
-    fun registerListener(listener: PushPushGoMessagingListener) {
-        pushPushGoMessagingListener = listener
-        Timber.tag(TAG).d("Registered PushPushGoMessagingListener")
-    }
-
-    /**
-     * function to get Your API MessageListener from an PushPushGo library instance
-     * @return PushPushGoMessagingListener listener implementation
-     * @throws PushPushException if listener is not set
-     */
-    @Throws(PushPushException::class)
-    fun getListener() = pushPushGoMessagingListener
 
     /**
      * function to read Your API Key from an PushPushGo library instance

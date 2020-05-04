@@ -14,9 +14,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.R
-import com.pushpushgo.sdk.data.Message
 import com.pushpushgo.sdk.data.PushPushNotification
-import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -39,52 +37,41 @@ internal class MessagingService : FirebaseMessagingService() {
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        try {
-            val listener = PushPushGo.INSTANCE?.getListener()
-            val msg = Message(remoteMessage.from, remoteMessage.data, remoteMessage.notification?.body)
-            listener?.onMessageReceived(msg)
-            Timber.tag(PushPushGo.TAG).d("Message sent to listener: $msg$")
-        } catch (ex: PushPushException) {
-            // handle remote message inside library
-            if (channelNotCreated) {
-                createNotificationWithBadges()
-            }
-            Timber.tag(PushPushGo.TAG).d("From: %s", remoteMessage.from!!)
+        if (channelNotCreated) {
+            createNotificationWithBadges()
+        }
+        Timber.tag(PushPushGo.TAG).d("From: %s", remoteMessage.from)
 
-            // Check if message contains a data payload.
-            if (remoteMessage.data.isNotEmpty()) {
-                Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
-                val gson = Gson()
-                val notif = gson.fromJson(
-                    remoteMessage.data["notification"],
-                    PushPushNotification::class.java
-                )
-                NotificationManagerCompat
-                    .from(this)
-                    .notify(
-                        1746,
-                        NotificationUtils.createNotification(
-                            this,
-                            notif,
-                            playSound = true,
-                            ongoing = false
-                        )
+        // Check if message contains a data payload.
+        if (remoteMessage.data.isNotEmpty()) {
+            Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
+            val gson = Gson()
+            val notif = gson.fromJson(
+                remoteMessage.data["notification"],
+                PushPushNotification::class.java
+            )
+            NotificationManagerCompat
+                .from(this)
+                .notify(
+                    1746,
+                    NotificationUtils.createNotification(
+                        this,
+                        notif,
+                        playSound = true,
+                        ongoing = false
                     )
+                )
 
 
-            }
+        }
 
-            // Check if message contains a notification payload.
-            if (remoteMessage.notification != null) {
-                Timber.tag(PushPushGo.TAG).d("Message Notification Body: %s", remoteMessage.notification!!.body!!)
-                val notification = getNotification(remoteMessage.notification!!.body!!)
+        // Check if message contains a notification payload.
+        if (remoteMessage.notification != null) {
+            Timber.tag(PushPushGo.TAG).d("Message Notification Body: %s", remoteMessage.notification!!.body!!)
+            val notification = getNotification(remoteMessage.notification!!.body!!)
 
-                notificationManager?.notify(NOTIFICATION_ID, notification)
-                startForeground(NOTIFICATION_ID, notification)
-            }
-
-            // Also if you intend on generating your own notifications as a result of a received FCM
-            // message, here is where that should be initiated. See sendNotification method below.
+            notificationManager?.notify(NOTIFICATION_ID, notification)
+            startForeground(NOTIFICATION_ID, notification)
         }
     }
 
