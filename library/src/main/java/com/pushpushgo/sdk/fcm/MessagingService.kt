@@ -6,6 +6,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import kotlinx.coroutines.GlobalScope
@@ -48,6 +49,7 @@ internal class MessagingService : FirebaseMessagingService() {
                         campaignId = remoteMessage.data["campaign"].orEmpty()
                     )
                 )
+                sendDeliveredEvent(remoteMessage.data["campaign"].orEmpty())
             }
             // Check if message contains a notification payload
             remoteMessage.notification != null -> {
@@ -61,6 +63,19 @@ internal class MessagingService : FirebaseMessagingService() {
 
                 notificationManager.notify(NOTIFICATION_ID, notification)
 //                startForeground(NOTIFICATION_ID, notification)
+            }
+        }
+    }
+
+    private fun sendDeliveredEvent(campaignId: String) {
+        PushPushGo.INSTANCE?.let {
+            if (preferencesHelper.isSubscribed) {
+                GlobalScope.launch {
+                    it.getNetwork().sendEvent(
+                        campaign = campaignId,
+                        type = EventType.DELIVERED
+                    )
+                }
             }
         }
     }

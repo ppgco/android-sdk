@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -23,7 +24,7 @@ class ClickActionReceiver : BroadcastReceiver() {
                 GlobalScope.launch {
                     it.getNetwork().sendEvent(
                         campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty(),
-                        type = "clicked"
+                        type = EventType.CLICKED
                     )
                 }
             }

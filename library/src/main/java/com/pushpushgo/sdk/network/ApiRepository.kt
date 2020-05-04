@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.network
 import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
+import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.exception.NoConnectivityException
@@ -68,11 +69,11 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         }
     }
 
-    suspend fun sendEvent(campaign: String, type: String) {
+    suspend fun sendEvent(campaign: String, type: EventType) {
         try {
             Timber.tag(PushPushGo.TAG).d("sendEventAsync invoked")
             apiService.sendEventAsync(projectId, Event(
-                type = type,
+                type = type.value,
                 payload = Payload(
                     button = 0,
                     campaign = campaign,
