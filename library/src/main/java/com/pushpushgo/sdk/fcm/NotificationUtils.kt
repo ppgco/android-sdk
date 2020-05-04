@@ -16,7 +16,7 @@ private var channelCreated = false
 fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !channelCreated) {
         val id = context.getString(R.string.notification_channel_id)
-        val name = context.getString(R.string.app_name)
+        val name = context.getString(R.string.notification_channel_name)
         val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
             setShowBadge(true)
             enableVibration(true)
