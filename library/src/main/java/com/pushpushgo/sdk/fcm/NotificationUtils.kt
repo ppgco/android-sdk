@@ -1,117 +1,95 @@
 package com.pushpushgo.sdk.fcm
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.PushPushNotification
 
+private var channelCreated = false
 
-internal object NotificationUtils {
+// Android O requires a Notification Channel.
+fun createNotificationChannel(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !channelCreated) {
+        val id = context.getString(R.string.notification_channel_id)
+        val name = context.getString(R.string.app_name)
+        val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
+            setShowBadge(true)
+            enableVibration(true)
+        }
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+    }
+    channelCreated = true
+}
 
-    fun createNotification(
-        context: Context,
-        title: String,
-        content: String,
-        playSound: Boolean,
-        ongoing: Boolean,
-        bundle: Bundle?
-    ): Notification {
-//        val intent = Intent(context, PushPushGo::class.java)
-//        if (bundle != null) {
-//            intent.putExtras(bundle)
-//        }
+internal fun createNotification(
+    context: Context,
+    notification: PushPushNotification,
+    playSound: Boolean,
+    ongoing: Boolean
+) = createNotification(
+    context = context,
+    playSound = playSound,
+    ongoing = ongoing,
+    title = notification.title.orEmpty(),
+    content = notification.body.orEmpty(),
+    sound = notification.sound ?: "default",
+    vibrate = notification.vibrate,
+    priority = notification.priority,
+    badge = notification.badge
+)
+
+internal fun createNotification(
+    context: Context,
+    title: String = context.getString(R.string.app_name),
+    content: String,
+    playSound: Boolean = false,
+    sound: String = "default",
+    vibrate: Boolean = false,
+    ongoing: Boolean = false,
+    priority: Int = 0,
+    badge: Int = 0
+): Notification {
+//    val intent = Intent(this, MessagingService::class.java)
+//    intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true)
 //        val activityPendingIntent = PendingIntent.getActivity(
-//            context, 0,
-//            intent, PendingIntent.FLAG_UPDATE_CURRENT
+//            this, 0,
+//            Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT
 //        )
-        val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_id))
-//            .setContentIntent(activityPendingIntent)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setOngoing(ongoing)
-            .setPriority(Notification.PRIORITY_LOW)
-            .setWhen(System.currentTimeMillis())
-        setIcon(context, builder)
-        if (playSound) {
-            builder.setAutoCancel(true)
-            builder.setDefaults(Notification.DEFAULT_ALL)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setChannelId(context.getString(R.string.notification_channel_id)) // Channel ID
-        }
-        return builder.build()
-    }
+    return NotificationCompat.Builder(context, context.getString(R.string.notification_channel_id))
+        .setContentTitle(title)
+        .setContentText(content)
+        .setOngoing(ongoing)
+        .setPriority(priority)
+        .setWhen(System.currentTimeMillis())
+        .setIcon(context)
+        .apply {
+            if (badge > 0) setNumber(badge)
 
-    internal fun createNotification(
-        context: Context,
-        notification: PushPushNotification,
-        playSound: Boolean = true,
-        ongoing: Boolean
-    ): Notification {
+            if (vibrate) setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))
 
-        return createNotification(
-            context,
-            notification.title ?: "",
-            notification.body ?: "",
-            playSound,
-            notification.sound ?: "default",
-            notification.vibrate,
-            ongoing,
-            notification.priority,
-            notification.badge
-        )
-    }
-
-    fun createNotification(
-        context: Context,
-        title: String,
-        content: String,
-        playSound: Boolean,
-        sound: String,
-        vibrate: Boolean,
-        ongoing: Boolean,
-        priority: Int,
-        badge: Int
-    ): Notification {
-
-        val builder = NotificationCompat.Builder(context, context.getString(R.string.notification_channel_id))
-            .setContentTitle(title)
-            .setContentText(content)
-            .setOngoing(ongoing)
-            .setPriority(priority)
-            .setWhen(System.currentTimeMillis())
-        setIcon(context, builder)
-        if (badge > 0) {
-            builder.setNumber(badge)
-        }
-        if (vibrate) {
-            builder.setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))
-        }
-        if (playSound) {
-            builder.setAutoCancel(true)
-            if (sound == "default") {
-                builder.setDefaults(Notification.DEFAULT_ALL)
-            } else {
-                val uri = Uri.parse(sound)
-                builder.setSound(uri)
+            if (playSound) {
+                setAutoCancel(true)
+                if (sound == "default") {
+                    setDefaults(Notification.DEFAULT_ALL)
+                } else {
+                    setSound(Uri.parse(sound))
+                }
             }
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setChannelId(context.getString(R.string.notification_channel_id)) // Channel ID
-        }
-        return builder.build()
+        }.build()
+}
+
+fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        setSmallIcon(R.mipmap.ic_stat_notification)
+        color = context.resources.getColor(R.color.colorPrimary)
+    } else {
+        setSmallIcon(R.mipmap.ic_stat_notification)
     }
 
-    private fun setIcon(context: Context, notification: NotificationCompat.Builder) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            notification.setSmallIcon(R.mipmap.ic_stat_notification)
-            notification.color = context.resources.getColor(R.color.colorPrimary)
-        } else {
-            notification.setSmallIcon(R.mipmap.ic_stat_notification)
-        }
-    }
+    return this
 }
