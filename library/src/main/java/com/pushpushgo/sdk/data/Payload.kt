@@ -6,5 +6,5 @@ data class Payload(
     val button: Int,
     val campaign: String,
     val subscriber: String,
-    val timestamp: Int
+    val timestamp: Long = System.currentTimeMillis()
 ) : Serializable

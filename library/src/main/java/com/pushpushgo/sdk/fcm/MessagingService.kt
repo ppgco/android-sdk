@@ -44,7 +44,8 @@ internal class MessagingService : FirebaseMessagingService() {
                         context = this,
                         notification = notificationData,
                         playSound = true,
-                        ongoing = false
+                        ongoing = false,
+                        campaignId = remoteMessage.data["campaign"].orEmpty()
                     )
                 )
             }

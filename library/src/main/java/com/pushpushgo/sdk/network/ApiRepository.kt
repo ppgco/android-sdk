@@ -2,6 +2,8 @@ package com.pushpushgo.sdk.network
 
 import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.data.Event
+import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.exception.NoConnectivityException
 import com.pushpushgo.sdk.network.data.TokenRequest
@@ -53,6 +55,30 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
             apiService.unregisterSubscriberAsync(projectId, sharedPref.subscriberId)
             sharedPref.subscriberId = ""
             sharedPref.isSubscribed = isSubscribed
+        } catch (e: NoConnectivityException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: ConnectException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: SocketTimeoutException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: HttpException) {
+            Timber.tag(PushPushGo.TAG).e("Connection forbidden %s", e.message)
+        } catch (e: Exception) {
+            Timber.tag(PushPushGo.TAG).e("Unknown exception %s", e.message)
+        }
+    }
+
+    suspend fun sendEvent(campaign: String, type: String) {
+        try {
+            Timber.tag(PushPushGo.TAG).d("sendEventAsync invoked")
+            apiService.sendEventAsync(projectId, Event(
+                type = type,
+                payload = Payload(
+                    button = 0,
+                    campaign = campaign,
+                    subscriber = sharedPref.subscriberId
+                )
+            ))
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {

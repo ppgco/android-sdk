@@ -3,7 +3,9 @@ package com.pushpushgo.sdk.fcm
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -30,7 +32,8 @@ internal fun createNotification(
     context: Context,
     notification: PushPushNotification,
     playSound: Boolean,
-    ongoing: Boolean
+    ongoing: Boolean,
+    campaignId: String
 ) = createNotification(
     context = context,
     playSound = playSound,
@@ -40,7 +43,9 @@ internal fun createNotification(
     sound = notification.sound ?: "default",
     vibrate = notification.vibrate,
     priority = notification.priority,
-    badge = notification.badge
+    badge = notification.badge,
+    campaignId = campaignId,
+    clickAction = notification.click_action.orEmpty()
 )
 
 internal fun createNotification(
@@ -52,14 +57,12 @@ internal fun createNotification(
     vibrate: Boolean = false,
     ongoing: Boolean = false,
     priority: Int = 0,
-    badge: Int = 0
+    badge: Int = 0,
+    campaignId: String = "",
+    clickAction: String = ""
 ): Notification {
-//    val intent = Intent(this, MessagingService::class.java)
+//    val intent = Intent(context, MessagingService::class.java)
 //    intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true)
-//        val activityPendingIntent = PendingIntent.getActivity(
-//            this, 0,
-//            Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT
-//        )
     return NotificationCompat.Builder(context, context.getString(R.string.notification_channel_id))
         .setContentTitle(title)
         .setContentText(content)
@@ -68,6 +71,15 @@ internal fun createNotification(
         .setWhen(System.currentTimeMillis())
         .setIcon(context)
         .apply {
+            if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
+                PendingIntent.getBroadcast(
+                    context, 0,
+                    Intent(context, ClickActionReceiver::class.java).apply {
+                        putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
+                    }, PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            )
+
             if (badge > 0) setNumber(badge)
 
             if (vibrate) setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))

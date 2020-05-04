@@ -46,7 +46,7 @@ internal interface ApiService {
     suspend fun sendEventAsync(
         @Path("projectId") projectId: String,
         @Body body: Event
-    ): ApiResponse
+    ): Response<Void>
 
     companion object {
         operator fun invoke(
