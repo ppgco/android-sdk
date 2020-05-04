@@ -85,10 +85,10 @@ internal fun createNotification(
 
 fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        setSmallIcon(R.mipmap.ic_stat_notification)
+        setSmallIcon(R.drawable.ic_stat_notification)
         color = context.resources.getColor(R.color.colorPrimary)
     } else {
-        setSmallIcon(R.mipmap.ic_stat_notification)
+        setSmallIcon(R.drawable.ic_stat_notification)
     }
 
     return this
