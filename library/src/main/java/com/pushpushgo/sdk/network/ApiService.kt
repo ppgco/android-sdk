@@ -11,15 +11,13 @@ import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.*
 
 internal interface ApiService {
 
@@ -47,6 +45,9 @@ internal interface ApiService {
         @Path("projectId") projectId: String,
         @Body body: Event
     ): Response<Void>
+
+    @GET
+    suspend fun getRawResponse(@Url url: String): ResponseBody
 
     companion object {
         operator fun invoke(

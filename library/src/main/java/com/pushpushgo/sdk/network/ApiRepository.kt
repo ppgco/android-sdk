@@ -1,5 +1,7 @@
 package com.pushpushgo.sdk.network
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
@@ -93,6 +95,30 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
             Timber.tag(PushPushGo.TAG).e("Connection forbidden %s", e.message)
         } catch (e: Exception) {
             Timber.tag(PushPushGo.TAG).e("Unknown exception %s", e.message)
+        }
+    }
+
+    suspend fun getDrawable(url: String?): Bitmap? {
+        Timber.tag(PushPushGo.TAG).d("getDrawable($url) invoked")
+
+        if (url.isNullOrBlank()) return null
+
+        var bitmap: Bitmap? = null
+        try {
+            val stream = apiService.getRawResponse(url).byteStream()
+            bitmap = BitmapFactory.decodeStream(stream)
+        } catch (e: NoConnectivityException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: ConnectException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: SocketTimeoutException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: HttpException) {
+            Timber.tag(PushPushGo.TAG).e("Connection forbidden %s", e.message)
+        } catch (e: Exception) {
+            Timber.tag(PushPushGo.TAG).e("Unknown exception %s", e.message)
+        } finally {
+            return bitmap
         }
     }
 }

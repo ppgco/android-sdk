@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -33,7 +34,9 @@ internal fun createNotification(
     context: Context,
     notify: PushPushNotification,
     playSound: Boolean,
-    ongoing: Boolean
+    ongoing: Boolean,
+    iconPicture: Bitmap?,
+    bigPicture: Bitmap?
 ) = createNotification(
     context = context,
     playSound = playSound,
@@ -47,7 +50,9 @@ internal fun createNotification(
     campaignId = notify.campaignId,
     actionLink = notify.redirectLink,
     clickAction = notify.notification.click_action.orEmpty(),
-    actions = notify.actions
+    actions = notify.actions,
+    iconPicture = iconPicture,
+    bigPicture = bigPicture
 )
 
 internal fun createNotification(
@@ -63,7 +68,9 @@ internal fun createNotification(
     campaignId: String = "",
     actionLink: String = "",
     clickAction: String = "",
-    actions: List<Action> = emptyList()
+    actions: List<Action> = emptyList(),
+    iconPicture: Bitmap? = null,
+    bigPicture: Bitmap? = null
 ): Notification {
 //    val intent = Intent(context, MessagingService::class.java)
 //    intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true)
@@ -73,6 +80,7 @@ internal fun createNotification(
         .setOngoing(ongoing)
         .setPriority(priority)
         .setWhen(System.currentTimeMillis())
+        .setLargeIcon(iconPicture)
         .setIcon(context)
         .apply {
             if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
@@ -90,6 +98,14 @@ internal fun createNotification(
                 } else {
                     setSound(Uri.parse(sound))
                 }
+            }
+
+            bigPicture?.let {
+                setStyle(
+                    NotificationCompat.BigPictureStyle()
+                        .bigPicture(bigPicture)
+                        .bigLargeIcon(null)
+                )
             }
 
             actions.forEachIndexed { i, action ->
