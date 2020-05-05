@@ -45,6 +45,7 @@ internal fun createNotification(
     priority = notify.notification.priority,
     badge = notify.notification.badge,
     campaignId = notify.campaignId,
+    actionLink = notify.redirectLink,
     clickAction = notify.notification.click_action.orEmpty(),
     actions = notify.actions
 )
@@ -60,6 +61,7 @@ internal fun createNotification(
     priority: Int = 0,
     badge: Int = 0,
     campaignId: String = "",
+    actionLink: String = "",
     clickAction: String = "",
     actions: List<Action> = emptyList()
 ): Notification {
@@ -74,7 +76,7 @@ internal fun createNotification(
         .setIcon(context)
         .apply {
             if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
-                getClickActionIntent(context, campaignId, 0)
+                getClickActionIntent(context, campaignId, 0, actionLink)
             )
 
             if (badge > 0) setNumber(badge)
@@ -91,16 +93,17 @@ internal fun createNotification(
             }
 
             actions.forEachIndexed { i, action ->
-                val intent = getClickActionIntent(context, campaignId, i + 1)
+                val intent = getClickActionIntent(context, campaignId, i + 1, action.link)
                 addAction(NotificationCompat.Action.Builder(0, action.title, intent).build())
             }
         }.build()
 }
 
-private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int) = PendingIntent.getBroadcast(
+private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int, link: String) = PendingIntent.getBroadcast(
     context, buttonId, Intent(context, ClickActionReceiver::class.java).apply {
         putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
         putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
+        putExtra(ClickActionReceiver.LINK, link)
     }, PendingIntent.FLAG_UPDATE_CURRENT
 )
 

@@ -25,6 +25,26 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".activity.ClickActivity"
+            android:launchMode="singleTop">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="com.fourf.ecommerce"
+                    android:scheme="app" />
+
+                <data
+                    android:host="4f.com.pl"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+
         <meta-data
             android:name="com.pushpushgo.apikey"
             android:value="f9a93f7c-5470-43ff-ace2-d2d1814edaf4" />
