@@ -3,8 +3,10 @@ package com.pushpushgo.sdk.fcm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.core.app.NotificationManagerCompat
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
+import com.pushpushgo.sdk.fcm.MessagingService.Companion.NOTIFICATION_ID
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -20,6 +22,8 @@ internal class ClickActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.tag(PushPushGo.TAG).d("ClickActionReceiver received click event")
+
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
 
         if (PushPushGo.isInitialized() && SharedPreferencesHelper(context).isSubscribed) {
             GlobalScope.launch {

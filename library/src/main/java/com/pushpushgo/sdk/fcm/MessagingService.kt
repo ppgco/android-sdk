@@ -5,7 +5,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_HIGH
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.gson.Gson
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
@@ -21,12 +20,10 @@ internal class MessagingService : FirebaseMessagingService() {
 
         private const val EXTRA_STOP_SERVICE = "extra:stop_service"
 
-        private const val NOTIFICATION_ID = 1958643221
+        const val NOTIFICATION_ID = 1958643221
     }
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
-
-    private val gson by lazy { Gson() }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Timber.tag(PushPushGo.TAG).d("From: %s", remoteMessage.from)
