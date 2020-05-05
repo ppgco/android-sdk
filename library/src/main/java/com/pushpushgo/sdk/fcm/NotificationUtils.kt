@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.pushpushgo.sdk.R
+import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.PushPushNotification
 
 private var channelCreated = false
@@ -30,22 +31,22 @@ fun createNotificationChannel(context: Context) {
 
 internal fun createNotification(
     context: Context,
-    notification: PushPushNotification,
+    notify: PushPushNotification,
     playSound: Boolean,
-    ongoing: Boolean,
-    campaignId: String
+    ongoing: Boolean
 ) = createNotification(
     context = context,
     playSound = playSound,
     ongoing = ongoing,
-    title = notification.title.orEmpty(),
-    content = notification.body.orEmpty(),
-    sound = notification.sound ?: "default",
-    vibrate = notification.vibrate,
-    priority = notification.priority,
-    badge = notification.badge,
-    campaignId = campaignId,
-    clickAction = notification.click_action.orEmpty()
+    title = notify.notification.title.orEmpty(),
+    content = notify.notification.body.orEmpty(),
+    sound = notify.notification.sound ?: "default",
+    vibrate = notify.notification.vibrate,
+    priority = notify.notification.priority,
+    badge = notify.notification.badge,
+    campaignId = notify.campaignId,
+    clickAction = notify.notification.click_action.orEmpty(),
+    actions = notify.actions
 )
 
 internal fun createNotification(
@@ -59,7 +60,8 @@ internal fun createNotification(
     priority: Int = 0,
     badge: Int = 0,
     campaignId: String = "",
-    clickAction: String = ""
+    clickAction: String = "",
+    actions: List<Action> = emptyList()
 ): Notification {
 //    val intent = Intent(context, MessagingService::class.java)
 //    intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true)
@@ -72,12 +74,7 @@ internal fun createNotification(
         .setIcon(context)
         .apply {
             if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
-                PendingIntent.getBroadcast(
-                    context, 0,
-                    Intent(context, ClickActionReceiver::class.java).apply {
-                        putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
-                    }, PendingIntent.FLAG_UPDATE_CURRENT
-                )
+                getClickActionIntent(context, campaignId, 0)
             )
 
             if (badge > 0) setNumber(badge)
@@ -92,8 +89,20 @@ internal fun createNotification(
                     setSound(Uri.parse(sound))
                 }
             }
+
+            actions.forEachIndexed { i, action ->
+                val intent = getClickActionIntent(context, campaignId, i + 1)
+                addAction(NotificationCompat.Action.Builder(0, action.title, intent).build())
+            }
         }.build()
 }
+
+private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int) = PendingIntent.getBroadcast(
+    context, buttonId, Intent(context, ClickActionReceiver::class.java).apply {
+        putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
+        putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
+    }, PendingIntent.FLAG_UPDATE_CURRENT
+)
 
 fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

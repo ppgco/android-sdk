@@ -5,13 +5,17 @@ import androidx.core.app.NotificationManagerCompat.IMPORTANCE_HIGH
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
+import com.pushpushgo.sdk.data.Notification
 import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
+
 
 internal class MessagingService : FirebaseMessagingService() {
 
@@ -25,6 +29,8 @@ internal class MessagingService : FirebaseMessagingService() {
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 
+    private val gson by lazy { Gson() }
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Timber.tag(PushPushGo.TAG).d("From: %s", remoteMessage.from)
 
@@ -36,17 +42,12 @@ internal class MessagingService : FirebaseMessagingService() {
             remoteMessage.data.isNotEmpty() -> {
                 Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
 
-                val notificationData = Gson().fromJson(
-                    remoteMessage.data["notification"],
-                    PushPushNotification::class.java
-                )
                 notificationManager.notify(
                     NOTIFICATION_ID, createNotification(
-                        context = this,
-                        notification = notificationData,
+                        context = baseContext,
+                        notify = deserializeNotificationData(remoteMessage.data),
                         playSound = true,
-                        ongoing = false,
-                        campaignId = remoteMessage.data["campaign"].orEmpty()
+                        ongoing = false
                     )
                 )
                 sendDeliveredEvent(remoteMessage.data["campaign"].orEmpty())
@@ -66,6 +67,15 @@ internal class MessagingService : FirebaseMessagingService() {
             }
         }
     }
+
+    private fun deserializeNotificationData(data: Map<String, String>) = PushPushNotification(
+        campaignId = data["campaign"].orEmpty(),
+        notification = gson.fromJson(data["notification"], Notification::class.java),
+        actions = gson.fromJson(data["actions"], object : TypeToken<List<Action>>() {}.type),
+        icon = data["icon"].orEmpty(),
+        image = data["image"].orEmpty(),
+        redirectLink = data["redirectLink"].orEmpty()
+    )
 
     private fun sendDeliveredEvent(campaignId: String) {
         if (PushPushGo.isInitialized() && preferencesHelper.isSubscribed) {
