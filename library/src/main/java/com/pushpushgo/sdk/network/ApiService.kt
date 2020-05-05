@@ -24,13 +24,13 @@ import retrofit2.http.Path
 internal interface ApiService {
 
     @POST("/v1/android/{projectId}/subscriber")
-    suspend fun registerSubscriberAsync(
-        @Path("projectId") projectId: String, //projectId - id projektu z pushpushGO
-        @Body body: TokenRequest //TokenRequest {"token":""}
+    suspend fun registerSubscriber(
+        @Path("projectId") projectId: String,
+        @Body body: TokenRequest
     ): ApiResponse
 
-    @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}") //gdy chcemy sie wyrejestrowac z pushy
-    suspend fun unregisterSubscriberAsync(
+    @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}")
+    suspend fun unregisterSubscriber(
         @Path("projectId") projectId: String,
         @Path("subscriberId") subscriberId: String
     ): Response<Void>
@@ -43,7 +43,7 @@ internal interface ApiService {
     ): ApiResponse
 
     @POST("/v1/android/{projectId}/event/")
-    suspend fun sendEventAsync(
+    suspend fun sendEvent(
         @Path("projectId") projectId: String,
         @Body body: Event
     ): Response<Void>

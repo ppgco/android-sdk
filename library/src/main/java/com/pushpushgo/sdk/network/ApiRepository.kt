@@ -26,17 +26,18 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
     private val projectId by instance<String>(PROJECT_ID)
 
     suspend fun registerToken() {
+        Timber.tag(PushPushGo.TAG).d("registerToken invoked")
+
         try {
             val token = sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: FirebaseInstanceId.getInstance().deviceToken
 
-            Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync invoked")
-            val data = apiService.registerSubscriberAsync(projectId, TokenRequest(token))
+            val data = apiService.registerSubscriber(projectId, TokenRequest(token))
             if (!data._id.isNullOrBlank()) {
                 sharedPref.subscriberId = data._id
                 sharedPref.lastToken = token
                 sharedPref.isSubscribed = true
             }
-            Timber.tag(PushPushGo.TAG).d("RegisterSubscriberAsync received: $data")
+            Timber.tag(PushPushGo.TAG).d("RegisterSubscriber received: $data")
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {
@@ -51,9 +52,10 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
     }
 
     suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
+        Timber.tag(PushPushGo.TAG).d("unregisterSubscriber($isSubscribed) invoked")
+
         try {
-            Timber.tag(PushPushGo.TAG).d("unregisterSubscriberAsync invoked")
-            apiService.unregisterSubscriberAsync(projectId, sharedPref.subscriberId)
+            apiService.unregisterSubscriber(projectId, sharedPref.subscriberId)
             sharedPref.subscriberId = ""
             sharedPref.isSubscribed = isSubscribed
         } catch (e: NoConnectivityException) {
@@ -70,9 +72,10 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
     }
 
     suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
+        Timber.tag(PushPushGo.TAG).d("sendEvent(${type.value}, $buttonId, $campaign) invoked")
+
         try {
-            Timber.tag(PushPushGo.TAG).d("sendEventAsync invoked")
-            apiService.sendEventAsync(projectId, Event(
+            apiService.sendEvent(projectId, Event(
                 type = type.value,
                 payload = Payload(
                     button = buttonId,
