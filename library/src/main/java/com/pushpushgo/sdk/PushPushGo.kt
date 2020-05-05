@@ -2,9 +2,12 @@ package com.pushpushgo.sdk
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.exception.PushPushException
+import com.pushpushgo.sdk.fcm.deserializeNotificationData
+import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.NotLoggingTree
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -85,6 +88,15 @@ class PushPushGo private constructor(
 
     private fun checkNotifications() {
         Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
+    }
+
+    /**
+     * helper function to handle click on notification from background
+     */
+    fun handleBackgroundNotificationClick(intent: Intent?) {
+        intent?.extras ?: return
+        val notify = deserializeNotificationData(intent.extras)
+        handleNotificationLinkClick(application, notify.redirectLink)
     }
 
     /**

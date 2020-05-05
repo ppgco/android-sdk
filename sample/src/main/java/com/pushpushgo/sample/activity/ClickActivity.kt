@@ -12,7 +12,7 @@ class ClickActivity : AppCompatActivity(R.layout.activity_click) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.d("PPGO_SAMPLE", "${intent.data}")
+        Log.d("PPGO_SAMPLE", "$intent")
 
         info.text = intent?.data.toString()
     }

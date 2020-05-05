@@ -18,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        PushPushGo.getInstance().handleBackgroundNotificationClick(intent)
 
         register.setOnClickListener {
             PushPushGo.getInstance().registerSubscriber()
@@ -28,6 +29,11 @@ class MainActivity : AppCompatActivity() {
         check.setOnClickListener {
             content.text = if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed"
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        PushPushGo.getInstance().handleBackgroundNotificationClick(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

@@ -9,15 +9,51 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.PushPushNotification
+import timber.log.Timber
+
+private val gson = Gson()
+
+internal fun deserializeNotificationData(data: Map<String, String>) = PushPushNotification(
+    campaignId = data["campaign"].orEmpty(),
+    notification = gson.fromJson(data["notification"], com.pushpushgo.sdk.data.Notification::class.java),
+    actions = gson.fromJson(data["actions"], object : TypeToken<List<Action>>() {}.type),
+    icon = data["icon"].orEmpty(),
+    image = data["image"].orEmpty(),
+    redirectLink = data["redirectLink"].orEmpty()
+)
+
+internal fun deserializeNotificationData(data: Bundle?) = PushPushNotification(
+    campaignId = data?.getString("campaign").orEmpty(),
+    notification = gson.fromJson(data?.getString("notification").orEmpty(), com.pushpushgo.sdk.data.Notification::class.java),
+    actions = gson.fromJson(data?.getString("actions").orEmpty(), object : TypeToken<List<Action>>() {}.type),
+    icon = data?.getString("icon").orEmpty(),
+    image = data?.getString("image").orEmpty(),
+    redirectLink = data?.getString("redirectLink").orEmpty()
+)
+
+internal fun handleNotificationLinkClick(context: Context, uri: String) {
+    Intent.parseUri(uri, 0).let {
+        if (it.resolveActivity(context.packageManager) != null) context.startActivity(it)
+        else {
+            Timber.tag(PushPushGo.TAG).e("Not found activity to open uri: %s", uri)
+            Toast.makeText(context, uri, Toast.LENGTH_SHORT).show()
+        }
+    }
+}
 
 private var channelCreated = false
 
 // Android O requires a Notification Channel.
-fun createNotificationChannel(context: Context) {
+internal fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !channelCreated) {
         val id = context.getString(R.string.notification_channel_id)
         val name = context.getString(R.string.notification_channel_name)
@@ -123,7 +159,7 @@ private fun getClickActionIntent(context: Context, campaignId: String, buttonId:
     }, PendingIntent.FLAG_UPDATE_CURRENT
 )
 
-fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
+private fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         setSmallIcon(R.drawable.ic_stat_notification)
         color = context.resources.getColor(R.color.colorPrimary)

@@ -6,12 +6,8 @@ import androidx.core.app.NotificationManagerCompat.IMPORTANCE_HIGH
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.pushpushgo.sdk.PushPushGo
-import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
-import com.pushpushgo.sdk.data.Notification
-import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -73,15 +69,6 @@ internal class MessagingService : FirebaseMessagingService() {
             }
         }
     }
-
-    private fun deserializeNotificationData(data: Map<String, String>) = PushPushNotification(
-        campaignId = data["campaign"].orEmpty(),
-        notification = gson.fromJson(data["notification"], Notification::class.java),
-        actions = gson.fromJson(data["actions"], object : TypeToken<List<Action>>() {}.type),
-        icon = data["icon"].orEmpty(),
-        image = data["image"].orEmpty(),
-        redirectLink = data["redirectLink"].orEmpty()
-    )
 
     private fun sendDeliveredEvent(campaignId: String) {
         if (PushPushGo.isInitialized() && preferencesHelper.isSubscribed) {

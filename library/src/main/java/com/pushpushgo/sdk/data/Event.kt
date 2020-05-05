@@ -7,7 +7,7 @@ data class Event(
     val type: String
 ) : Serializable
 
-enum class EventType(val value: String) {
+internal enum class EventType(val value: String) {
     CLICKED("clicked"),
     DELIVERED("delivered")
 }
