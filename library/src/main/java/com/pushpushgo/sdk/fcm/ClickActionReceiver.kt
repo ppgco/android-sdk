@@ -20,15 +20,13 @@ class ClickActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.tag(PushPushGo.TAG).d("ClickActionReceiver received click event")
 
-        PushPushGo.INSTANCE?.let {
-            if (SharedPreferencesHelper(context).isSubscribed) {
-                GlobalScope.launch {
-                    it.getNetwork().sendEvent(
-                        type = EventType.CLICKED,
-                        buttonId = intent?.getIntExtra(BUTTON_ID, 0) ?: 0,
-                        campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty()
-                    )
-                }
+        if (PushPushGo.isInitialized() && SharedPreferencesHelper(context).isSubscribed) {
+            GlobalScope.launch {
+                PushPushGo.getInstance().getNetwork().sendEvent(
+                    type = EventType.CLICKED,
+                    buttonId = intent?.getIntExtra(BUTTON_ID, 0) ?: 0,
+                    campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty()
+                )
             }
         }
     }

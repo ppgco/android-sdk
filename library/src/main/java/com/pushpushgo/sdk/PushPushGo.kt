@@ -23,7 +23,11 @@ class PushPushGo private constructor(
         /**
          * an instance of PushPushGo library
          */
-        internal var INSTANCE: PushPushGo? = null
+        private var INSTANCE: PushPushGo? = null
+
+        fun isInitialized(): Boolean {
+            return INSTANCE != null
+        }
 
         fun getInstance(): PushPushGo =
             INSTANCE ?: throw PushPushException("You have to initialize PushPushGo with context first!")

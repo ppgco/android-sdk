@@ -68,15 +68,13 @@ internal class MessagingService : FirebaseMessagingService() {
     }
 
     private fun sendDeliveredEvent(campaignId: String) {
-        PushPushGo.INSTANCE?.let {
-            if (preferencesHelper.isSubscribed) {
-                GlobalScope.launch {
-                    it.getNetwork().sendEvent(
-                        type = EventType.DELIVERED,
-                        buttonId = 0,
-                        campaign = campaignId
-                    )
-                }
+        if (PushPushGo.isInitialized() && preferencesHelper.isSubscribed) {
+            GlobalScope.launch {
+                PushPushGo.getInstance().getNetwork().sendEvent(
+                    type = EventType.DELIVERED,
+                    buttonId = 0,
+                    campaign = campaignId
+                )
             }
         }
     }
@@ -90,11 +88,9 @@ internal class MessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         Timber.tag(PushPushGo.TAG).d("Refreshed token: $token")
 
-        PushPushGo.INSTANCE?.let {
-            preferencesHelper.lastToken = token
-            if (preferencesHelper.isSubscribed) {
-                GlobalScope.launch { it.getNetwork().registerToken() }
-            }
+        preferencesHelper.lastToken = token
+        if (PushPushGo.isInitialized() && preferencesHelper.isSubscribed) {
+            GlobalScope.launch { PushPushGo.getInstance().getNetwork().registerToken() }
         }
     }
 }

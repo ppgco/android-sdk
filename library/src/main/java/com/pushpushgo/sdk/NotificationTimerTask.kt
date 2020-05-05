@@ -18,14 +18,14 @@ internal class NotificationTimerTask(private val application: Application) : Tim
 
             val subscriberId = pref.subscriberId
             if (subscriberId.isBlank()) {
-                GlobalScope.launch { PushPushGo.INSTANCE?.getNetwork()?.registerToken() }
+                GlobalScope.launch { PushPushGo.getInstance().getNetwork().registerToken() }
             }
         } else {
             Timber.tag(PushPushGo.TAG).d("Notifications disabled")
             val subscriberId = pref.subscriberId
             if (!subscriberId.isBlank()) {
                 GlobalScope.launch {
-                    PushPushGo.INSTANCE!!.getNetwork().unregisterSubscriber(pref.isSubscribed)
+                    PushPushGo.getInstance().getNetwork().unregisterSubscriber(pref.isSubscribed)
                 }
                 cancel()
             }
