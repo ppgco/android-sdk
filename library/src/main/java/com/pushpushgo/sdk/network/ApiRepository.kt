@@ -69,13 +69,13 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         }
     }
 
-    suspend fun sendEvent(campaign: String, type: EventType) {
+    suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
         try {
             Timber.tag(PushPushGo.TAG).d("sendEventAsync invoked")
             apiService.sendEventAsync(projectId, Event(
                 type = type.value,
                 payload = Payload(
-                    button = 0,
+                    button = buttonId,
                     campaign = campaign,
                     subscriber = sharedPref.subscriberId
                 )

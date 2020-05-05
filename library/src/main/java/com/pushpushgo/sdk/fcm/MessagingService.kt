@@ -72,8 +72,9 @@ internal class MessagingService : FirebaseMessagingService() {
             if (preferencesHelper.isSubscribed) {
                 GlobalScope.launch {
                     it.getNetwork().sendEvent(
-                        campaign = campaignId,
-                        type = EventType.DELIVERED
+                        type = EventType.DELIVERED,
+                        buttonId = 0,
+                        campaign = campaignId
                     )
                 }
             }

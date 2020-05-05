@@ -13,6 +13,7 @@ import timber.log.Timber
 class ClickActionReceiver : BroadcastReceiver() {
 
     companion object {
+        const val BUTTON_ID = "button_id"
         const val CAMPAIGN_ID = "campaign_id"
     }
 
@@ -23,8 +24,9 @@ class ClickActionReceiver : BroadcastReceiver() {
             if (SharedPreferencesHelper(context).isSubscribed) {
                 GlobalScope.launch {
                     it.getNetwork().sendEvent(
-                        campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty(),
-                        type = EventType.CLICKED
+                        type = EventType.CLICKED,
+                        buttonId = intent?.getIntExtra(BUTTON_ID, 0) ?: 0,
+                        campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty()
                     )
                 }
             }
