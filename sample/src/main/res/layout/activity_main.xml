@@ -9,7 +9,7 @@
     tools:showIn="@layout/activity_main">
 
     <TextView
-        android:id="@+id/hello"
+        android:id="@+id/content"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello World!"
@@ -25,15 +25,24 @@
         android:text="Register"
         app:layout_constraintEnd_toStartOf="@id/unregister"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hello" />
+        app:layout_constraintTop_toBottomOf="@id/content" />
 
     <Button
         android:id="@+id/unregister"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Unregister"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/check"
         app:layout_constraintStart_toEndOf="@id/register"
-        app:layout_constraintTop_toBottomOf="@id/hello" />
+        app:layout_constraintTop_toBottomOf="@id/content" />
+
+    <Button
+        android:id="@+id/check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="check"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/unregister"
+        app:layout_constraintTop_toBottomOf="@id/content" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

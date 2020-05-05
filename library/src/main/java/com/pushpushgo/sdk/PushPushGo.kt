@@ -79,7 +79,9 @@ class PushPushGo private constructor(
         checkNotifications()
     }
 
-    internal fun getNetwork() = NetworkModule(application, apiKey, projectId).apiRepository
+    private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
+
+    internal fun getNetwork() = networkModule.apiRepository
 
     private fun checkNotifications() {
         Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
@@ -96,6 +98,14 @@ class PushPushGo private constructor(
      * @return API Key String
      */
     fun getProjectId() = projectId
+
+    /**
+     * function to check if user subscribed to notifications
+     * @return boolean true if subscribed
+     */
+    fun isSubscribed(): Boolean {
+        return networkModule.sharedPref.isSubscribed
+    }
 
     /**
      * function to register subscriber

@@ -39,5 +39,7 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
         bind() from singleton { ApiRepository(kodein) }
     }
 
+    val sharedPref by instance<SharedPreferencesHelper>()
+
     val apiRepository by instance<ApiRepository>()
 }

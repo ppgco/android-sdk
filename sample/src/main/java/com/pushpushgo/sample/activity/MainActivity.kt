@@ -25,6 +25,9 @@ class MainActivity : AppCompatActivity() {
         unregister.setOnClickListener {
             PushPushGo.getInstance().unregisterSubscriber()
         }
+        check.setOnClickListener {
+            content.text = if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed"
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
