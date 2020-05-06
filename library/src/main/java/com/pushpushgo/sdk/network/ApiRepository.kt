@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.network
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.google.firebase.iid.FirebaseInstanceId
+import com.google.gson.JsonObject
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.data.EventType
@@ -60,6 +61,24 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
             apiService.unregisterSubscriber(projectId, sharedPref.subscriberId)
             sharedPref.subscriberId = ""
             sharedPref.isSubscribed = isSubscribed
+        } catch (e: NoConnectivityException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: ConnectException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: SocketTimeoutException) {
+            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
+        } catch (e: HttpException) {
+            Timber.tag(PushPushGo.TAG).e("Connection forbidden %s", e.message)
+        } catch (e: Exception) {
+            Timber.tag(PushPushGo.TAG).e("Unknown exception %s", e.message)
+        }
+    }
+
+    suspend fun sendBeacon(beacon: JsonObject) {
+        Timber.tag(PushPushGo.TAG).d("sendBeacon($beacon) invoked")
+
+        try {
+            apiService.sendBeacon(projectId, sharedPref.subscriberId, beacon)
         } catch (e: NoConnectivityException) {
             Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
         } catch (e: ConnectException) {

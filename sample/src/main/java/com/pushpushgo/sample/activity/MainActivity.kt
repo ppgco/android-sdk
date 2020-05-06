@@ -15,19 +15,31 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
+    private val ppg by lazy { PushPushGo.getInstance() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        PushPushGo.getInstance().handleBackgroundNotificationClick(intent)
+        ppg.handleBackgroundNotificationClick(intent)
 
         register.setOnClickListener {
-            PushPushGo.getInstance().registerSubscriber()
+            ppg.registerSubscriber()
         }
         unregister.setOnClickListener {
-            PushPushGo.getInstance().unregisterSubscriber()
+            ppg.unregisterSubscriber()
         }
         check.setOnClickListener {
             content.text = if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed"
+        }
+        beacon.setOnClickListener {
+            ppg.createBeacon()
+                .appendTag("jacek")
+                .appendTag("sabina", "dziewczyna")
+                .set("see_invoice", true)
+                .set("basket_price", 301)
+                .setCustomId("CRMCI")
+                .removeTag("marek", "janek")
+                .send()
         }
     }
 

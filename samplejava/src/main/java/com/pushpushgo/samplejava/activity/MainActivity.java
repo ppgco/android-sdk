@@ -7,13 +7,24 @@ import android.view.MenuItem;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.pushpushgo.samplejava.R;
+import com.pushpushgo.sdk.PushPushGo;
 
 public class MainActivity extends AppCompatActivity {
+
+    private final PushPushGo ppg = PushPushGo.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ppg.createBeacon()
+                .appendTag("jacek")
+                .appendTag("sabina", "dziewczyna")
+                .set("see_invoice", true)
+                .setCustomId("CRMID200")
+                .removeTag("marek", "janek")
+                .send();
     }
 
     @Override

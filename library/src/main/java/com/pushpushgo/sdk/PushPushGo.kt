@@ -32,6 +32,7 @@ class PushPushGo private constructor(
             return INSTANCE != null
         }
 
+        @JvmStatic
         fun getInstance(): PushPushGo =
             INSTANCE ?: throw PushPushException("You have to initialize PushPushGo with context first!")
 
@@ -40,7 +41,7 @@ class PushPushGo private constructor(
          * @param context - context of an application to get apiKey from META DATA stored in Your Manifest.xml file
          * @return PushPushGoFacade instance
          */
-        @kotlin.jvm.JvmStatic
+        @JvmStatic
         fun getInstance(context: Context): PushPushGo {
             if (INSTANCE == null) {
                 val ai = context.packageManager.getApplicationInfo(
@@ -63,7 +64,7 @@ class PushPushGo private constructor(
          * @param apiKey - key to communicate with RESTFul API
          * @return PushPushGoFacade instance
          */
-        @kotlin.jvm.JvmStatic
+        @JvmStatic
         fun getInstance(context: Context, apiKey: String, projectId: String): PushPushGo {
             if (INSTANCE == null) {
                 INSTANCE = PushPushGo(context.applicationContext as Application, apiKey, projectId)
@@ -134,6 +135,17 @@ class PushPushGo private constructor(
     fun unregisterSubscriber() {
         GlobalScope.launch {
             getNetwork().unregisterSubscriber()
+        }
+    }
+
+    /**
+     * function to start construct and send beacon
+     */
+    fun createBeacon(): BeaconBuilder {
+        return BeaconBuilder { beacon ->
+            GlobalScope.launch {
+                getInstance().getNetwork().sendBeacon(beacon)
+            }
         }
     }
 }

@@ -2,8 +2,8 @@ package com.pushpushgo.sdk.network
 
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import com.pushpushgo.sdk.BuildConfig
-import com.pushpushgo.sdk.data.Beacon
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.network.data.ApiResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
@@ -34,11 +34,11 @@ internal interface ApiService {
     ): Response<Void>
 
     @POST("/v1/android/{projectId}/subscriber/{subscriberId}/beacon")
-    suspend fun sendBeaconAsync(
+    suspend fun sendBeacon(
         @Path("projectId") projectId: String,
         @Path("subscriberId") version: String,
-        @Body body: Beacon
-    ): ApiResponse
+        @Body beacon: JsonObject
+    ): Response<Void>
 
     @POST("/v1/android/{projectId}/event/")
     suspend fun sendEvent(
