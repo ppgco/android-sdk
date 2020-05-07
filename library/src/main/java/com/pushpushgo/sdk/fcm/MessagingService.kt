@@ -70,13 +70,11 @@ internal class MessagingService : FirebaseMessagingService() {
 
     private fun sendDeliveredEvent(campaignId: String) {
         if (PushPushGo.isInitialized() && preferencesHelper.isSubscribed) {
-            GlobalScope.launch {
-                PushPushGo.getInstance().getNetwork().sendEvent(
-                    type = EventType.DELIVERED,
-                    buttonId = 0,
-                    campaign = campaignId
-                )
-            }
+            PushPushGo.getInstance().getUploadManager().sendEvent(
+                type = EventType.DELIVERED,
+                buttonId = 0,
+                campaign = campaignId
+            )
         }
     }
 

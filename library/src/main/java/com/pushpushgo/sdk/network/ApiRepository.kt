@@ -6,7 +6,6 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.google.gson.JsonObject
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
-import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.exception.NoConnectivityException
@@ -80,29 +79,19 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         apiService.sendBeacon(projectId, sharedPref.subscriberId, beacon)
     }
 
-    suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
-        Timber.tag(PushPushGo.TAG).d("sendEvent(${type.value}, $buttonId, $campaign) invoked")
+    suspend fun sendEvent(type: String, buttonId: Int, campaign: String) {
+        Timber.tag(PushPushGo.TAG).d("sendEvent($type, $buttonId, $campaign) invoked")
 
-        try {
-            apiService.sendEvent(projectId, Event(
-                type = type.value,
+        apiService.sendEvent(
+            projectId, Event(
+                type = type,
                 payload = Payload(
                     button = buttonId,
                     campaign = campaign,
                     subscriber = sharedPref.subscriberId
                 )
-            ))
-        } catch (e: NoConnectivityException) {
-            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
-        } catch (e: ConnectException) {
-            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
-        } catch (e: SocketTimeoutException) {
-            Timber.tag(PushPushGo.TAG).e("Connection error %s", e.message)
-        } catch (e: HttpException) {
-            Timber.tag(PushPushGo.TAG).e("Connection forbidden %s", e.message)
-        } catch (e: Exception) {
-            Timber.tag(PushPushGo.TAG).e("Unknown exception %s", e.message)
-        }
+            )
+        )
     }
 
     suspend fun getDrawable(url: String?): Bitmap? {

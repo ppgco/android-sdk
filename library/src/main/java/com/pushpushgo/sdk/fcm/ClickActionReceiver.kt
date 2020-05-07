@@ -8,8 +8,6 @@ import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.fcm.MessagingService.Companion.NOTIFICATION_ID
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 internal class ClickActionReceiver : BroadcastReceiver() {
@@ -26,13 +24,11 @@ internal class ClickActionReceiver : BroadcastReceiver() {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
 
         if (PushPushGo.isInitialized() && SharedPreferencesHelper(context).isSubscribed) {
-            GlobalScope.launch {
-                PushPushGo.getInstance().getNetwork().sendEvent(
-                    type = EventType.CLICKED,
-                    buttonId = intent?.getIntExtra(BUTTON_ID, 0) ?: 0,
-                    campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty()
-                )
-            }
+            PushPushGo.getInstance().getUploadManager().sendEvent(
+                type = EventType.CLICKED,
+                buttonId = intent?.getIntExtra(BUTTON_ID, 0) ?: 0,
+                campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty()
+            )
 
             intent?.getStringExtra(LINK)?.let { it ->
                 handleNotificationLinkClick(context, it)
