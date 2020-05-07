@@ -1,9 +1,10 @@
 package com.pushpushgo.samplejava;
 
-import android.app.Application;
+import androidx.multidex.MultiDexApplication;
+
 import com.pushpushgo.sdk.PushPushGo;
 
-public class MainApplication extends Application {
+public class MainApplication extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();

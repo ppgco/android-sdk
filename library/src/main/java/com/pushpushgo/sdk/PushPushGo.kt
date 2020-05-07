@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import com.pushpushgo.sdk.di.NetworkModule
+import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.fcm.deserializeNotificationData
 import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
@@ -85,7 +86,11 @@ class PushPushGo private constructor(
 
     private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
 
+    private val workModule by lazy { WorkModule(application) }
+
     internal fun getNetwork() = networkModule.apiRepository
+
+    internal fun getUploadManager() = workModule.uploadManager
 
     private fun checkNotifications() {
         Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
@@ -142,10 +147,6 @@ class PushPushGo private constructor(
      * function to start construct and send beacon
      */
     fun createBeacon(): BeaconBuilder {
-        return BeaconBuilder { beacon ->
-            GlobalScope.launch {
-                getInstance().getNetwork().sendBeacon(beacon)
-            }
-        }
+        return BeaconBuilder(getUploadManager())
     }
 }

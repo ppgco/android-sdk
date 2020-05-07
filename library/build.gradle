@@ -13,7 +13,7 @@ file("../secret.properties").withInputStream {
 }
 android {
     compileSdkVersion 29
-
+    buildToolsVersion = '29.0.3'
 
     defaultConfig {
         minSdkVersion 19
@@ -31,6 +31,14 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
     dexOptions {
         javaMaxHeapSize "12g"
@@ -57,11 +65,17 @@ dependencies {
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
     // Retrofit
+    def retrofit_version = '2.6.4'
     implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
     implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.11'
 
+    // work manager
+    def work_version = "2.3.4"
+    implementation "androidx.work:work-runtime-ktx:$work_version"
+    implementation "androidx.work:work-gcm:$work_version"
+
     // Kodein
     //noinspection GradleDependency
-    implementation "org.kodein.di:kodein-di-generic-jvm:$kodein_version"
+    implementation "org.kodein.di:kodein-di-generic-jvm:6.2.1"
 }
