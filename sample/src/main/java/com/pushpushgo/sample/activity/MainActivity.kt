@@ -1,5 +1,6 @@
 package com.pushpushgo.sample.activity
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -17,6 +18,7 @@ class MainActivity : AppCompatActivity() {
 
     private val ppg by lazy { PushPushGo.getInstance() }
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -29,16 +31,27 @@ class MainActivity : AppCompatActivity() {
             ppg.unregisterSubscriber()
         }
         check.setOnClickListener {
-            content.text = if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed"
+            content.text = "Status: " + (if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
         }
-        beacon.setOnClickListener {
+        beacon1.setOnClickListener {
             ppg.createBeacon()
                 .appendTag("jacek")
                 .appendTag("sabina", "dziewczyna")
                 .set("see_invoice", true)
-                .set("basket_price", 301)
                 .setCustomId("CRMCI")
                 .removeTag("marek", "janek")
+                .send()
+        }
+        beacon2.setOnClickListener {
+            ppg.createBeacon()
+                .set("basket_price", 299)
+                .setCustomId("CRMCI")
+                .send()
+        }
+        beacon3.setOnClickListener {
+            ppg.createBeacon()
+                .set("basket_price", 301)
+                .setCustomId("CRMCI")
                 .send()
         }
     }

@@ -5,24 +5,61 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context=".activity.MainActivity"
-    tools:showIn="@layout/activity_main">
+    tools:context=".activity.MainActivity">
+
+    <LinearLayout
+        android:id="@+id/logo"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/colorPrimary"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.33"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimary"
+            android:src="@mipmap/ic_launcher"
+            tools:ignore="ContentDescription" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/content"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="Status"
+        app:layout_constraintBottom_toTopOf="@id/check"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/logo" />
+
+    <Button
+        android:id="@+id/check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:drawableStart="@android:drawable/ic_dialog_info"
+        android:drawablePadding="10dp"
+        android:drawableTint="@android:color/black"
+        android:text="check status"
+        app:layout_constraintBottom_toTopOf="@id/register"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/content" />
 
     <Button
         android:id="@+id/register"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="@color/colorPrimary"
+        android:drawableStart="@android:drawable/ic_input_add"
+        android:drawableTint="@android:color/white"
         android:text="Register"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@id/beacon1"
         app:layout_constraintEnd_toStartOf="@id/unregister"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/content" />
@@ -31,27 +68,55 @@
         android:id="@+id/unregister"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="@android:color/holo_red_dark"
+        android:drawableStart="@android:drawable/ic_delete"
+        android:drawableTint="@android:color/white"
         android:text="Unregister"
-        app:layout_constraintEnd_toStartOf="@+id/check"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@id/beacon1"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/register"
         app:layout_constraintTop_toBottomOf="@id/content" />
 
-    <Button
-        android:id="@+id/check"
+    <TextView
+        android:id="@+id/beacon_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="check"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/unregister"
-        app:layout_constraintTop_toBottomOf="@id/content" />
-
-    <Button
-        android:id="@+id/beacon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="send beacon"
+        android:layout_marginTop="20dp"
+        android:text="Beacons"
+        app:layout_constraintBottom_toTopOf="@id/beacon2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/check" />
+        app:layout_constraintTop_toBottomOf="@id/unregister" />
+
+    <Button
+        android:id="@+id/beacon1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Beacon 1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/beacon2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/beacon_header" />
+
+    <Button
+        android:id="@+id/beacon2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="basket_price=299"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/beacon3"
+        app:layout_constraintStart_toEndOf="@id/beacon1"
+        app:layout_constraintTop_toBottomOf="@id/beacon_header" />
+
+    <Button
+        android:id="@+id/beacon3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="basket_price=301"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/beacon2"
+        app:layout_constraintTop_toBottomOf="@id/beacon_header" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
