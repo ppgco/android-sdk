@@ -57,7 +57,8 @@ internal class MessagingService : FirebaseMessagingService() {
 
                 val notification = createNotification(
                     context = baseContext,
-                    content = remoteMessage.notification!!.body!!,
+                    title = remoteMessage.notification?.title!!,
+                    content = remoteMessage.notification?.body!!,
                     priority = IMPORTANCE_HIGH
                 )
 
