@@ -35,8 +35,8 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
             val token = sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: FirebaseInstanceId.getInstance().deviceToken
 
             val data = apiService.registerSubscriber(projectId, TokenRequest(token))
-            if (!data._id.isNullOrBlank()) {
-                sharedPref.subscriberId = data._id
+            if (data.id.isNotBlank()) {
+                sharedPref.subscriberId = data.id
                 sharedPref.lastToken = token
                 sharedPref.isSubscribed = true
             }

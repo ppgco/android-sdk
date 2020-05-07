@@ -26,7 +26,7 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
         bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(instance()) }
         bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptor(instance()) }
         bind<RequestInterceptor>() with singleton { RequestInterceptor(instance(API_KEY)) }
-        bind<ResponseInterceptor>() with singleton { ResponseInterceptor(instance()) }
+        bind<ResponseInterceptor>() with singleton { ResponseInterceptor() }
         bind<SharedPreferencesHelper>() with singleton { SharedPreferencesHelper(instance()) }
         bind() from singleton {
             ApiService(

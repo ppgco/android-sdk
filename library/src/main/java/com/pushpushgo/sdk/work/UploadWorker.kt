@@ -8,6 +8,7 @@ import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.PushPushGo.Companion.getInstance
 import kotlinx.coroutines.coroutineScope
 import timber.log.Timber
+import java.io.IOException
 
 internal class UploadWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
 
@@ -21,8 +22,8 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         try {
             val beacon = JsonParser.parseString(inputData.getString(BEACON)).asJsonObject
             getInstance().getNetwork().sendBeacon(beacon)
-        } catch (e: Throwable) {
-            Timber.tag(PushPushGo.TAG).e("UploadWorker: Unknown exception %s", e.message)
+        } catch (e: IOException) {
+            Timber.tag(PushPushGo.TAG).e("UploadWorker: error %s", e.message)
             return@coroutineScope Result.retry()
         }
 

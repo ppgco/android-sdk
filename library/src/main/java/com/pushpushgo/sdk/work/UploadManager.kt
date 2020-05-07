@@ -20,6 +20,7 @@ internal class UploadManager(private val workManager: WorkManager) {
             ExistingWorkPolicy.APPEND,
             OneTimeWorkRequestBuilder<UploadWorker>()
                 .setInputData(data)
+                .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
                 .setInitialDelay(if (isJobAlreadyEnqueued(name) || isMustRunImmediately) 0 else 10, TimeUnit.SECONDS)
                 .setConstraints(
                     Constraints.Builder()
@@ -31,7 +32,7 @@ internal class UploadManager(private val workManager: WorkManager) {
 
     private fun isJobAlreadyEnqueued(name: String): Boolean {
         return workManager.getWorkInfosForUniqueWork(name).get().any {
-            it.state != WorkInfo.State.SUCCEEDED
+            it.state == WorkInfo.State.ENQUEUED
         }
     }
 }

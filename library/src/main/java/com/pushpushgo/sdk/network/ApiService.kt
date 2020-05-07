@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Event
-import com.pushpushgo.sdk.network.data.ApiResponse
+import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -25,7 +25,7 @@ internal interface ApiService {
     suspend fun registerSubscriber(
         @Path("projectId") projectId: String,
         @Body body: TokenRequest
-    ): ApiResponse
+    ): TokenResponse
 
     @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}")
     suspend fun unregisterSubscriber(

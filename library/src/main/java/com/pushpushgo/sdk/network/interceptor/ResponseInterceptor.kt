@@ -1,25 +1,18 @@
 package com.pushpushgo.sdk.network.interceptor
 
-import android.content.Context
+import com.google.gson.JsonParser
+import com.pushpushgo.sdk.exception.PushPushException
 import okhttp3.Interceptor
 import okhttp3.Response
 
-internal class ResponseInterceptor(context: Context) : Interceptor {
-
-    private val appContext = context.applicationContext
+internal class ResponseInterceptor : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-
         val response = chain.proceed(chain.request())
         if (!response.isSuccessful) {
-            if (response.code() == 401 || response.code() == 403) {
-//                todo add handle auth
-            }
-            var body: String? = null
-            try {
-                val responseBodyCopy = response.peekBody(java.lang.Long.MAX_VALUE)
-                body = responseBodyCopy.string()
-            } catch (e: Exception) {
+            val responseBodyCopy = response.peekBody(java.lang.Long.MAX_VALUE).string()
+            JsonParser.parseString(responseBodyCopy).asJsonObject.get("message")?.asString?.let {
+                throw PushPushException(it)
             }
         }
         return response
