@@ -40,6 +40,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
                     val beacon = JsonParser.parseString(data).asJsonObject
                     getInstance().getNetwork().sendBeacon(beacon)
                 }
+                else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
             }
         } catch (e: IOException) {
             Timber.tag(PushPushGo.TAG).e("UploadWorker: error %s", e.message)
