@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 internal class UploadManager(private val workManager: WorkManager) {
 
     fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
-        Timber.tag(PushPushGo.TAG).d("Event send enqueued: $type")
+        Timber.tag(PushPushGo.TAG).d("Event enqueued: ($type, $buttonId, $campaign)")
 
         enqueueJob(
             EVENT, workDataOf(
@@ -30,7 +30,7 @@ internal class UploadManager(private val workManager: WorkManager) {
     }
 
     fun sendBeacon(beacon: JsonObject) {
-        Timber.tag(PushPushGo.TAG).d("Beacon send enqueued: $beacon")
+        Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
 
         enqueueJob(BEACON, workDataOf(TYPE to BEACON, BEACON_DATA to beacon.toString()))
     }

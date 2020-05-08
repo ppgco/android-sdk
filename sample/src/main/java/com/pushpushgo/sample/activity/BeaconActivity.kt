@@ -1,6 +1,7 @@
 package com.pushpushgo.sample.activity
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -38,25 +39,40 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
 
         beacon1.setOnClickListener {
             ppg.createBeacon()
-                .appendTag("jacek")
-                .appendTag("sabina", "dziewczyna")
                 .set("see_invoice", true)
-                .setCustomId("CRMCI")
-                .removeTag("marek", "janek")
                 .send()
         }
 
         beacon2.setOnClickListener {
             ppg.createBeacon()
                 .set("basket_price", 299)
-                .setCustomId("CRMCI")
+                .setCustomId("BP299")
                 .send()
         }
 
         beacon3.setOnClickListener {
             ppg.createBeacon()
                 .set("basket_price", 301)
-                .setCustomId("CRMCI")
+                .setCustomId("BP301")
+                .send()
+        }
+
+        beacon4.setOnClickListener {
+            ppg.createBeacon()
+                .appendTag("demo")
+                .appendTag("${Build.MANUFACTURER} ${Build.MODEL}", "phone_model")
+                .send()
+        }
+
+        beacon5.setOnClickListener {
+            ppg.createBeacon()
+                .removeTag("desktop", "test")
+                .send()
+        }
+
+        beacon6.setOnClickListener {
+            ppg.createBeacon()
+                .setCustomId("TEST1")
                 .send()
         }
     }
