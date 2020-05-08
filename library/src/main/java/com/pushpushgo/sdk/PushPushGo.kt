@@ -10,7 +10,6 @@ import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.fcm.deserializeNotificationData
 import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
-import com.pushpushgo.sdk.utils.NotLoggingTree
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -22,7 +21,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        internal const val TAG = "_PushPushGoSDKProvider_"
+        internal const val TAG = "PPGo"
 
         /**
          * an instance of PushPushGo library
@@ -75,12 +74,7 @@ class PushPushGo private constructor(
     }
 
     init {
-        if (BuildConfig.DEBUG)
-            Timber.plant(Timber.DebugTree())
-        else
-            Timber.plant(NotLoggingTree())
-        Timber.tag(TAG).d("Register API Key: $apiKey")
-        Timber.tag(TAG).d("Register ProjectId Key: $projectId")
+        Timber.tag(TAG).d("PushPushGo initialized (project id: $projectId)")
 
         NotificationStatusChecker.start(application)
     }
