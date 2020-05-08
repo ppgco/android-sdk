@@ -40,6 +40,7 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
         beacon1.setOnClickListener {
             ppg.createBeacon()
                 .set("see_invoice", true)
+                .setCustomId("SEEI")
                 .send()
         }
 
@@ -61,12 +62,14 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
             ppg.createBeacon()
                 .appendTag("demo")
                 .appendTag("${Build.MANUFACTURER} ${Build.MODEL}", "phone_model")
+                .setCustomId("ATAGS")
                 .send()
         }
 
         beacon5.setOnClickListener {
             ppg.createBeacon()
                 .removeTag("desktop", "test")
+                .setCustomId("RTAGS")
                 .send()
         }
 
