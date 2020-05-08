@@ -6,13 +6,13 @@ import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
-import com.pushpushgo.sdk.fcm.MessagingService.Companion.NOTIFICATION_ID
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import timber.log.Timber
 
 internal class ClickActionReceiver : BroadcastReceiver() {
 
     companion object {
+        const val NOTIFICATION_ID = "notification_id"
         const val BUTTON_ID = "button_id"
         const val CAMPAIGN_ID = "campaign_id"
         const val LINK = "link"
@@ -21,7 +21,9 @@ internal class ClickActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.tag(PushPushGo.TAG).d("ClickActionReceiver received click event")
 
-        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        intent?.getIntExtra(NOTIFICATION_ID, 0)?.let {
+            NotificationManagerCompat.from(context).cancel(it)
+        }
 
         if (PushPushGo.isInitialized() && SharedPreferencesHelper(context).isSubscribed) {
             PushPushGo.getInstance().getUploadManager().sendEvent(

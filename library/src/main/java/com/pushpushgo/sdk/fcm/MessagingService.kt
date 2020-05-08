@@ -15,14 +15,6 @@ import timber.log.Timber
 
 internal class MessagingService : FirebaseMessagingService() {
 
-    companion object {
-        private const val EXTRA_STARTED_FROM_NOTIFICATION = "extra:started_from_notification"
-
-        private const val EXTRA_STOP_SERVICE = "extra:stop_service"
-
-        const val NOTIFICATION_ID = 1958643221
-    }
-
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -38,8 +30,10 @@ internal class MessagingService : FirebaseMessagingService() {
 
                 val notify = deserializeNotificationData(remoteMessage.data)
                 GlobalScope.launch {
+                    val notificationId = getUniqueNotificationId()
                     notificationManager.notify(
-                        NOTIFICATION_ID, createNotification(
+                        notificationId, createNotification(
+                            id = notificationId,
                             context = baseContext,
                             notify = notify,
                             playSound = true,
@@ -62,7 +56,7 @@ internal class MessagingService : FirebaseMessagingService() {
                     priority = IMPORTANCE_HIGH
                 )
 
-                notificationManager.notify(NOTIFICATION_ID, notification)
+                notificationManager.notify(getUniqueNotificationId(), notification)
 //                startForeground(NOTIFICATION_ID, notification)
             }
         }

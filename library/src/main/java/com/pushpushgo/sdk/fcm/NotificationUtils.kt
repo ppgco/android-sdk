@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.google.gson.Gson
@@ -50,6 +51,8 @@ internal fun handleNotificationLinkClick(context: Context, uri: String) {
     }
 }
 
+internal fun getUniqueNotificationId() = (System.currentTimeMillis() / SystemClock.uptimeMillis()).toInt()
+
 private var channelCreated = false
 
 // Android O requires a Notification Channel.
@@ -67,6 +70,7 @@ internal fun createNotificationChannel(context: Context) {
 }
 
 internal fun createNotification(
+    id: Int,
     context: Context,
     notify: PushPushNotification,
     playSound: Boolean,
@@ -74,6 +78,7 @@ internal fun createNotification(
     iconPicture: Bitmap?,
     bigPicture: Bitmap?
 ) = createNotification(
+    id = id,
     context = context,
     playSound = playSound,
     ongoing = ongoing,
@@ -92,6 +97,7 @@ internal fun createNotification(
 )
 
 internal fun createNotification(
+    id: Int = getUniqueNotificationId(),
     context: Context,
     title: String = context.getString(R.string.app_name),
     content: String,
@@ -120,7 +126,7 @@ internal fun createNotification(
         .setIcon(context)
         .apply {
             if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
-                getClickActionIntent(context, campaignId, 0, actionLink)
+                getClickActionIntent(context, campaignId, 0, actionLink, id)
             )
 
             if (badge > 0) setNumber(badge)
@@ -145,19 +151,21 @@ internal fun createNotification(
             }
 
             actions.forEachIndexed { i, action ->
-                val intent = getClickActionIntent(context, campaignId, i + 1, action.link)
+                val intent = getClickActionIntent(context, campaignId, i + 1, action.link, id)
                 addAction(NotificationCompat.Action.Builder(0, action.title, intent).build())
             }
         }.build()
 }
 
-private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int, link: String) = PendingIntent.getBroadcast(
-    context, buttonId, Intent(context, ClickActionReceiver::class.java).apply {
-        putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
-        putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
-        putExtra(ClickActionReceiver.LINK, link)
-    }, PendingIntent.FLAG_UPDATE_CURRENT
-)
+private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int, link: String, id: Int) =
+    PendingIntent.getBroadcast(
+        context, buttonId, Intent(context, ClickActionReceiver::class.java).apply {
+            putExtra(ClickActionReceiver.NOTIFICATION_ID, id)
+            putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
+            putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
+            putExtra(ClickActionReceiver.LINK, link)
+        }, PendingIntent.FLAG_UPDATE_CURRENT
+    )
 
 private fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
