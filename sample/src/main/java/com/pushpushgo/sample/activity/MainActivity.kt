@@ -33,26 +33,8 @@ class MainActivity : AppCompatActivity() {
         check.setOnClickListener {
             content.text = "Status: " + (if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
         }
-        beacon1.setOnClickListener {
-            ppg.createBeacon()
-                .appendTag("jacek")
-                .appendTag("sabina", "dziewczyna")
-                .set("see_invoice", true)
-                .setCustomId("CRMCI")
-                .removeTag("marek", "janek")
-                .send()
-        }
-        beacon2.setOnClickListener {
-            ppg.createBeacon()
-                .set("basket_price", 299)
-                .setCustomId("CRMCI")
-                .send()
-        }
-        beacon3.setOnClickListener {
-            ppg.createBeacon()
-                .set("basket_price", 301)
-                .setCustomId("CRMCI")
-                .send()
+        beacons.setOnClickListener {
+            startActivity(Intent(baseContext, BeaconActivity::class.java))
         }
     }
 

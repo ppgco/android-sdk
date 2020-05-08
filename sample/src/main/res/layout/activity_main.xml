@@ -59,10 +59,10 @@
         android:drawableTint="@android:color/white"
         android:text="Register"
         android:textColor="@android:color/white"
-        app:layout_constraintBottom_toTopOf="@id/beacon1"
+        app:layout_constraintBottom_toTopOf="@id/beacons"
         app:layout_constraintEnd_toStartOf="@id/unregister"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/content" />
+        app:layout_constraintTop_toBottomOf="@id/check" />
 
     <Button
         android:id="@+id/unregister"
@@ -73,50 +73,19 @@
         android:drawableTint="@android:color/white"
         android:text="Unregister"
         android:textColor="@android:color/white"
-        app:layout_constraintBottom_toTopOf="@id/beacon1"
+        app:layout_constraintBottom_toTopOf="@id/beacons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/register"
-        app:layout_constraintTop_toBottomOf="@id/content" />
+        app:layout_constraintTop_toBottomOf="@id/check" />
 
-    <TextView
-        android:id="@+id/beacon_header"
+    <Button
+        android:id="@+id/beacons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
         android:text="Beacons"
-        app:layout_constraintBottom_toTopOf="@id/beacon2"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/unregister" />
-
-    <Button
-        android:id="@+id/beacon1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Beacon 1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/beacon2"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/beacon_header" />
-
-    <Button
-        android:id="@+id/beacon2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="basket_price=299"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/beacon3"
-        app:layout_constraintStart_toEndOf="@id/beacon1"
-        app:layout_constraintTop_toBottomOf="@id/beacon_header" />
-
-    <Button
-        android:id="@+id/beacon3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="basket_price=301"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/beacon2"
-        app:layout_constraintTop_toBottomOf="@id/beacon_header" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

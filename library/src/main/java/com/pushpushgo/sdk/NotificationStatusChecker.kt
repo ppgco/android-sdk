@@ -41,7 +41,7 @@ internal class NotificationStatusChecker private constructor(private val applica
 
     private fun checkNotificationsStatus() {
         if (areNotificationsEnabled() && pref.isSubscribed) {
-            Timber.tag(PushPushGo.TAG).d("Notifications enabled")
+            Timber.tag(PushPushGo.TAG).v("Notifications enabled")
 
             if (pref.subscriberId.isBlank()) {
                 GlobalScope.launch {
@@ -50,7 +50,7 @@ internal class NotificationStatusChecker private constructor(private val applica
                 }
             }
         } else {
-            Timber.tag(PushPushGo.TAG).d("Notifications disabled")
+            Timber.tag(PushPushGo.TAG).v("Notifications disabled")
 
             if (pref.subscriberId.isNotBlank()) {
                 GlobalScope.launch {

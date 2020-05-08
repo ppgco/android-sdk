@@ -50,6 +50,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".activity.BeaconActivity" />
+
         <meta-data
             android:name="com.pushpushgo.apikey"
             android:value="f9a93f7c-5470-43ff-ace2-d2d1814edaf4" />
