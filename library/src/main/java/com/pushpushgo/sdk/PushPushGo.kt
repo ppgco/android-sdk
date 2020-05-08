@@ -8,14 +8,12 @@ import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.fcm.ClickActionReceiver
 import com.pushpushgo.sdk.fcm.deserializeNotificationData
 import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.NotLoggingTree
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.*
 
 class PushPushGo private constructor(
     private val application: Application,
@@ -83,7 +81,8 @@ class PushPushGo private constructor(
             Timber.plant(NotLoggingTree())
         Timber.tag(TAG).d("Register API Key: $apiKey")
         Timber.tag(TAG).d("Register ProjectId Key: $projectId")
-        checkNotifications()
+
+        NotificationStatusChecker.start(application)
     }
 
     private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
@@ -93,10 +92,6 @@ class PushPushGo private constructor(
     internal fun getNetwork() = networkModule.apiRepository
 
     internal fun getUploadManager() = workModule.uploadManager
-
-    private fun checkNotifications() {
-        Timer().scheduleAtFixedRate(ForegroundTaskChecker(application, InternalTimerTask()), Date(), 10000)
-    }
 
     /**
      * helper function to handle click on notification from background
