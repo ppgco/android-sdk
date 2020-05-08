@@ -100,7 +100,8 @@ class PushPushGo private constructor(
      * helper function to handle click on notification from background
      */
     fun handleBackgroundNotificationClick(intent: Intent?) {
-        intent?.extras ?: return
+        if (intent?.action != "APP_PUSH_CLICK") return
+
         val notify = deserializeNotificationData(intent.extras)
         handleNotificationLinkClick(application, notify.redirectLink)
     }
