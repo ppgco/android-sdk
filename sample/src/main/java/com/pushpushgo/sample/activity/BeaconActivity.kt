@@ -16,24 +16,16 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
 
     private val ppg by lazy { PushPushGo.getInstance() }
 
-    private var lastLogs = mutableListOf<String>()
-
-    @SuppressLint("SimpleDateFormat")
-    @Synchronized
-    private fun log(message: String) {
-        lastLogs.add(0, "${SimpleDateFormat("HH:mm:ss").format(Date())}: $message")
-
-        with(logs) {
-            post { text = lastLogs.joinToString("\n") }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         Timber.plant(object : Timber.Tree() {
+            @SuppressLint("SetTextI18n", "SimpleDateFormat")
             override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-                if (priority > Log.VERBOSE) log(message)
+                if (priority > Log.VERBOSE) with(logs) {
+                    post { text = "${SimpleDateFormat("HH:mm:ss").format(Date())}: $message\n$text" }
+                }
             }
         })
 

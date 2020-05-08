@@ -142,6 +142,8 @@ internal fun createNotification(
                 }
             }
 
+            setStyle(NotificationCompat.BigTextStyle().bigText(content))
+
             bigPicture?.let {
                 setStyle(
                     NotificationCompat.BigPictureStyle()
