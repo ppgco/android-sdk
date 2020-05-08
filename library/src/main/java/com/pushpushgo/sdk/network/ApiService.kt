@@ -5,8 +5,8 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Event
-import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
+import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
@@ -61,7 +61,12 @@ internal interface ApiService {
                 .addInterceptor(chuckerInterceptor)
                 .addInterceptor(connectivityInstance)
                 .addInterceptor(responseInterceptor)
-                .addNetworkInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+                .addNetworkInterceptor(
+                    HttpLoggingInterceptor().setLevel(
+                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
+                        else HttpLoggingInterceptor.Level.NONE
+                    )
+                )
                 .build()
             val gson = GsonBuilder()
                 .create()
