@@ -13,6 +13,7 @@
         android:layout_height="0dp"
         android:background="@color/colorPrimary"
         android:gravity="center"
+        android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHeight_percent="0.33"
         app:layout_constraintStart_toStartOf="parent"
@@ -25,6 +26,14 @@
             android:background="@color/colorPrimary"
             android:src="@mipmap/ic_launcher"
             tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@android:color/white"
+            tools:text="v0.1.0" />
     </LinearLayout>
 
     <TextView
