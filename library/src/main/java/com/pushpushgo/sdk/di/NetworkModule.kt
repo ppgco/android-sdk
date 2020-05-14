@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk.di
 
 import android.content.Context
+import com.chuckerteam.chucker.api.ChuckerCollector
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.pushpushgo.sdk.network.ApiRepository
 import com.pushpushgo.sdk.network.ApiService
@@ -23,7 +24,8 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
         constant(tag = API_KEY) with apiKey
         constant(tag = PROJECT_ID) with projectId
         bind<Context>() with provider { context }
-        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(instance()) }
+        bind<ChuckerCollector>() with singleton { ChuckerCollector(context = instance()) }
+        bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(context = instance(), collector = instance()) }
         bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptor(instance()) }
         bind<RequestInterceptor>() with singleton { RequestInterceptor(instance(API_KEY)) }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptor() }
@@ -38,6 +40,8 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
         }
         bind() from singleton { ApiRepository(kodein) }
     }
+
+    val chuckerCollector by instance<ChuckerCollector>()
 
     val sharedPref by instance<SharedPreferencesHelper>()
 

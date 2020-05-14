@@ -43,7 +43,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
                 else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
             }
         } catch (e: IOException) {
-            Timber.tag(PushPushGo.TAG).e("UploadWorker: error %s", e.message)
+            Timber.tag(PushPushGo.TAG).e(e,"UploadWorker: error %s", e.message)
             return@coroutineScope Result.retry()
         }
 

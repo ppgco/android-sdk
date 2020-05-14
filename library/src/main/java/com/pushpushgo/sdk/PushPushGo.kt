@@ -10,6 +10,7 @@ import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.fcm.deserializeNotificationData
 import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
+import com.pushpushgo.sdk.utils.TimberChuckerErrorTree
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -73,13 +74,15 @@ class PushPushGo private constructor(
         }
     }
 
+    private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
+
     init {
         Timber.tag(TAG).d("PushPushGo initialized (project id: $projectId)")
 
+        if (BuildConfig.DEBUG) Timber.plant(TimberChuckerErrorTree(networkModule.chuckerCollector))
+
         NotificationStatusChecker.start(application)
     }
-
-    private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
 
     private val workModule by lazy { WorkModule(application) }
 
