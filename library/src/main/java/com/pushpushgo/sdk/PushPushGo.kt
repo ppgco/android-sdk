@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk
 
-import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,7 +15,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class PushPushGo private constructor(
-    private val application: Application,
+    private val context: Context,
     private val apiKey: String,
     private val projectId: String
 ) {
@@ -56,7 +55,7 @@ class PushPushGo private constructor(
                     ?: throw PushPushException("You have to declare apiKey in Your Manifest file")
                 val projectId = bundle.getString("com.pushpushgo.projectId")
                     ?: throw PushPushException("You have to declare projectId in Your Manifest file")
-                INSTANCE = PushPushGo(context.applicationContext as Application, apiKey, projectId)
+                INSTANCE = PushPushGo(context, apiKey, projectId)
             }
             return INSTANCE as PushPushGo
         }
@@ -70,23 +69,23 @@ class PushPushGo private constructor(
         @JvmStatic
         fun getInstance(context: Context, apiKey: String, projectId: String): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(context.applicationContext as Application, apiKey, projectId)
+                INSTANCE = PushPushGo(context, apiKey, projectId)
             }
             return INSTANCE as PushPushGo
         }
     }
 
-    private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
+    private val networkModule by lazy { NetworkModule(context, apiKey, projectId) }
 
     init {
         Timber.tag(TAG).d("PushPushGo initialized (project id: $projectId)")
 
         if (BuildConfig.DEBUG) Timber.plant(TimberChuckerErrorTree(networkModule.chuckerCollector))
 
-        NotificationStatusChecker.start(application)
+        NotificationStatusChecker.start(context)
     }
 
-    private val workModule by lazy { WorkModule(application) }
+    private val workModule by lazy { WorkModule(context) }
 
     internal fun getNetwork() = networkModule.apiRepository
 
@@ -99,7 +98,7 @@ class PushPushGo private constructor(
         if (intent?.action != "APP_PUSH_CLICK") return
 
         val notify = deserializeNotificationData(intent.extras)
-        handleNotificationLinkClick(application, notify.redirectLink)
+        handleNotificationLinkClick(context, notify.redirectLink)
         getUploadManager().sendEvent(
             type = EventType.CLICKED,
             buttonId = 0,

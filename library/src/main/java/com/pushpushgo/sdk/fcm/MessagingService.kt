@@ -96,7 +96,7 @@ internal class MessagingService : FirebaseMessagingService() {
 
         preferencesHelper.lastToken = token
         if (PushPushGo.isInitialized() && preferencesHelper.isSubscribed) {
-            GlobalScope.launch { PushPushGo.getInstance().getNetwork().registerToken() }
+            PushPushGo.getInstance().registerSubscriber()
         }
     }
 }

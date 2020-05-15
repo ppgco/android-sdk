@@ -2,7 +2,7 @@ package com.pushpushgo.sdk
 
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-import android.app.Application
+import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
@@ -13,19 +13,19 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 
-internal class NotificationStatusChecker private constructor(private val application: Application) : TimerTask() {
+internal class NotificationStatusChecker private constructor(private val context: Context) : TimerTask() {
 
-    private val pref = SharedPreferencesHelper(application)
+    private val pref = SharedPreferencesHelper(context)
 
-    private val notificationManager = NotificationManagerCompat.from(application)
+    private val notificationManager = NotificationManagerCompat.from(context)
 
-    private val activityManager = application.getSystemService<ActivityManager>()
+    private val activityManager = context.getSystemService<ActivityManager>()
 
     companion object {
         private const val CHECK_PERIOD = 10_000L
 
-        fun start(application: Application) {
-            Timer().scheduleAtFixedRate(NotificationStatusChecker(application), 0, CHECK_PERIOD)
+        fun start(context: Context) {
+            Timer().scheduleAtFixedRate(NotificationStatusChecker(context), 0, CHECK_PERIOD)
         }
     }
 
@@ -35,7 +35,7 @@ internal class NotificationStatusChecker private constructor(private val applica
 
     private fun isAppOnForeground(): Boolean {
         return activityManager?.runningAppProcesses.orEmpty().any {
-            it.importance == IMPORTANCE_FOREGROUND && it.processName == application.packageName
+            it.importance == IMPORTANCE_FOREGROUND && it.processName == context.packageName
         }
     }
 
@@ -64,7 +64,7 @@ internal class NotificationStatusChecker private constructor(private val applica
     private fun areNotificationsEnabled(): Boolean {
         if (notificationManager.areNotificationsEnabled()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                return notificationManager.getNotificationChannel(application.getString(R.string.notification_channel_id)).let {
+                return notificationManager.getNotificationChannel(context.getString(R.string.notification_channel_id)).let {
                     it?.importance != IMPORTANCE_NONE
                 }
             }
