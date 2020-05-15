@@ -11,8 +11,6 @@ import com.pushpushgo.sdk.fcm.createNotificationChannel
 import com.pushpushgo.sdk.fcm.deserializeNotificationData
 import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.TimberChuckerErrorTree
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -132,18 +130,14 @@ class PushPushGo private constructor(
      * function to register subscriber
      */
     fun registerSubscriber() {
-        GlobalScope.launch {
-            getNetwork().registerToken()
-        }
+        getUploadManager().sendRegister()
     }
 
     /**
      * function to unregister subscriber
      */
     fun unregisterSubscriber() {
-        GlobalScope.launch {
-            getNetwork().unregisterSubscriber()
-        }
+        getUploadManager().sendUnregister()
     }
 
     /**

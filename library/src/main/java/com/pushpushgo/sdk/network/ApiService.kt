@@ -7,7 +7,6 @@ import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
-import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import okhttp3.OkHttpClient
@@ -52,14 +51,12 @@ internal interface ApiService {
     companion object {
         operator fun invoke(
             chuckerInterceptor: ChuckerInterceptor,
-            connectivityInstance: ConnectivityInterceptor,
             requestInterceptor: RequestInterceptor,
             responseInterceptor: ResponseInterceptor
         ): ApiService {
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(requestInterceptor)
                 .addInterceptor(chuckerInterceptor)
-                .addInterceptor(connectivityInstance)
                 .addInterceptor(responseInterceptor)
                 .addNetworkInterceptor(
                     HttpLoggingInterceptor().setLevel(
@@ -68,13 +65,11 @@ internal interface ApiService {
                     )
                 )
                 .build()
-            val gson = GsonBuilder()
-                .create()
 
             return Retrofit.Builder()
                 .client(okHttpClient)
                 .baseUrl(BuildConfig.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addConverterFactory(GsonConverterFactory.create())
                 .build().create()
         }
     }

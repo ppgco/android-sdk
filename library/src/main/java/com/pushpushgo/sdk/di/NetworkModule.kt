@@ -6,7 +6,6 @@ import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.pushpushgo.sdk.network.ApiRepository
 import com.pushpushgo.sdk.network.ApiService
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
-import com.pushpushgo.sdk.network.interceptor.ConnectivityInterceptor
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import org.kodein.di.Kodein
@@ -26,13 +25,11 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
         bind<Context>() with provider { context }
         bind<ChuckerCollector>() with singleton { ChuckerCollector(context = instance()) }
         bind<ChuckerInterceptor>() with singleton { ChuckerInterceptor(context = instance(), collector = instance()) }
-        bind<ConnectivityInterceptor>() with singleton { ConnectivityInterceptor(instance()) }
         bind<RequestInterceptor>() with singleton { RequestInterceptor(instance(API_KEY)) }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptor() }
         bind<SharedPreferencesHelper>() with singleton { SharedPreferencesHelper(instance()) }
         bind() from singleton {
             ApiService(
-                instance(),
                 instance(),
                 instance(),
                 instance()
