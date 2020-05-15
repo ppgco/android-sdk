@@ -22,13 +22,13 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     fun sendRegister() {
         Timber.tag(PushPushGo.TAG).d("Register enqueued")
 
-        enqueueJob(REGISTER, workDataOf(TYPE to REGISTER), true)
+        enqueueJob(REGISTER, isMustRunImmediately = true)
     }
 
     fun sendUnregister() {
         Timber.tag(PushPushGo.TAG).d("Unregister enqueued")
 
-        enqueueJob(UNREGISTER, workDataOf(TYPE to UNREGISTER), true)
+        enqueueJob(UNREGISTER, isMustRunImmediately = true)
     }
 
     fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
@@ -38,7 +38,6 @@ internal class UploadManager(private val workManager: WorkManager, private val s
             name = EVENT,
             isMustRunImmediately = true,
             data = workDataOf(
-                TYPE to EVENT,
                 DATA to Gson().toJson(
                     Event(
                         type = type.value,
@@ -59,12 +58,12 @@ internal class UploadManager(private val workManager: WorkManager, private val s
         enqueueJob(BEACON, workDataOf(TYPE to BEACON, DATA to beacon.toString()))
     }
 
-    private fun enqueueJob(name: String, data: Data, isMustRunImmediately: Boolean = false) {
+    private fun enqueueJob(name: String, data: Data = workDataOf(), isMustRunImmediately: Boolean = false) {
         workManager.enqueueUniqueWork(
             name,
             ExistingWorkPolicy.APPEND,
             OneTimeWorkRequestBuilder<UploadWorker>()
-                .setInputData(data)
+                .setInputData(Data.Builder().putString(TYPE, name).putAll(data).build())
                 .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
                 .setInitialDelay(if (isJobAlreadyEnqueued(name) || isMustRunImmediately) 0 else 10, TimeUnit.SECONDS)
                 .setConstraints(
