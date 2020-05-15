@@ -2,7 +2,6 @@ package com.pushpushgo.sdk.fcm
 
 import android.graphics.Bitmap
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.NotificationManagerCompat.IMPORTANCE_HIGH
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.pushpushgo.sdk.PushPushGo
@@ -52,7 +51,7 @@ internal class MessagingService : FirebaseMessagingService() {
                     context = baseContext,
                     title = remoteMessage.notification?.title!!,
                     content = remoteMessage.notification?.body!!,
-                    priority = IMPORTANCE_HIGH
+                    priority = translateFirebasePriority(remoteMessage.notification?.notificationPriority)
                 )
 
                 notificationManager.notify(getUniqueNotificationId(), notification)

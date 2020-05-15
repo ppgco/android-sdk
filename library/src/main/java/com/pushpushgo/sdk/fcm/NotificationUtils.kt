@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pushpushgo.sdk.PushPushGo
@@ -35,6 +36,12 @@ internal fun deserializeNotificationData(data: Bundle?) = PushPushNotification(
     image = data?.getString("image").orEmpty(),
     redirectLink = data?.getString("redirectLink").orEmpty()
 )
+
+internal fun translateFirebasePriority(priority: Int?) = when(priority) {
+    RemoteMessage.PRIORITY_HIGH -> NotificationCompat.PRIORITY_HIGH
+    RemoteMessage.PRIORITY_NORMAL, RemoteMessage.PRIORITY_UNKNOWN -> NotificationCompat.PRIORITY_DEFAULT
+    else -> NotificationCompat.PRIORITY_DEFAULT
+}
 
 internal fun handleNotificationLinkClick(context: Context, uri: String) {
     Intent.parseUri(uri, 0).let {
