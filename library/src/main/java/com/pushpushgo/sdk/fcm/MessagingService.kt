@@ -1,13 +1,16 @@
 package com.pushpushgo.sdk.fcm
 
+import android.app.Notification
 import android.graphics.Bitmap
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
+import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.utils.mapToBundle
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
@@ -17,46 +20,38 @@ internal class MessagingService : FirebaseMessagingService() {
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 
+    private val errorHandler = CoroutineExceptionHandler { _, throwable -> Timber.tag(PushPushGo.TAG).e(throwable) }
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Timber.tag(PushPushGo.TAG).d("From: %s", remoteMessage.from)
 
-        val notificationManager = NotificationManagerCompat.from(baseContext)
-        when {
-            // Check if message contains a data payload
-            remoteMessage.data.isNotEmpty() -> {
-                Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
+        GlobalScope.launch(errorHandler) {
+            val notificationId = getUniqueNotificationId()
 
-                val notify = deserializeNotificationData(remoteMessage.data.mapToBundle())
-                GlobalScope.launch {
-                    val notificationId = getUniqueNotificationId()
-                    notificationManager.notify(
-                        notificationId, createNotification(
-                            id = notificationId,
-                            context = baseContext,
-                            notify = notify,
-                            playSound = true,
-                            ongoing = false,
-                            bigPicture = getBitmapFromUrl(notify.image),
-                            iconPicture = getBitmapFromUrl(notify.icon)
-                        )
+            val notification = when {
+                // Check if message contains a data payload
+                remoteMessage.data.isNotEmpty() -> {
+                    Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
+
+                    val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
+                    sendDeliveredEvent(pushPushNotification.campaignId)
+                    createDataNotification(notificationId, pushPushNotification)
+                }
+                // Check if message contains a notification payload
+                remoteMessage.notification != null -> {
+                    Timber.tag(PushPushGo.TAG).d("Message notification title: %s", remoteMessage.notification?.title)
+
+                    createNotification(
+                        context = baseContext,
+                        title = remoteMessage.notification?.title!!,
+                        content = remoteMessage.notification?.body!!,
+                        priority = translateFirebasePriority(remoteMessage.notification?.notificationPriority)
                     )
                 }
-                sendDeliveredEvent(remoteMessage.data["campaign"].orEmpty())
+                else -> throw IllegalStateException("Unknown notification type")
             }
-            // Check if message contains a notification payload
-            remoteMessage.notification != null -> {
-                Timber.tag(PushPushGo.TAG).d("Message Notification Body: %s", remoteMessage.notification?.body)
 
-                val notification = createNotification(
-                    context = baseContext,
-                    title = remoteMessage.notification?.title!!,
-                    content = remoteMessage.notification?.body!!,
-                    priority = translateFirebasePriority(remoteMessage.notification?.notificationPriority)
-                )
-
-                notificationManager.notify(getUniqueNotificationId(), notification)
-//                startForeground(NOTIFICATION_ID, notification)
-            }
+            NotificationManagerCompat.from(baseContext).notify(notificationId, notification)
         }
     }
 
@@ -68,6 +63,18 @@ internal class MessagingService : FirebaseMessagingService() {
                 campaign = campaignId
             )
         }
+    }
+
+    private suspend fun createDataNotification(notificationId: Int, notification: PushPushNotification): Notification {
+        return createNotification(
+            id = notificationId,
+            context = baseContext,
+            notify = notification,
+            playSound = true,
+            ongoing = false,
+            bigPicture = getBitmapFromUrl(notification.image),
+            iconPicture = getBitmapFromUrl(notification.icon)
+        )
     }
 
     private suspend fun getBitmapFromUrl(url: String?): Bitmap? {
