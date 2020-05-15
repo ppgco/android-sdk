@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -47,20 +48,16 @@ internal fun handleNotificationLinkClick(context: Context, uri: String) {
 
 internal fun getUniqueNotificationId() = (currentTimeMillis() / SystemClock.uptimeMillis()).toInt()
 
-private var channelCreated = false
-
-// Android O requires a Notification Channel.
 internal fun createNotificationChannel(context: Context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !channelCreated) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val id = context.getString(R.string.notification_channel_id)
         val name = context.getString(R.string.notification_channel_name)
         val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
             setShowBadge(true)
             enableVibration(true)
         }
-        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+        NotificationManagerCompat.from(context).createNotificationChannel(channel)
     }
-    channelCreated = true
 }
 
 internal fun createNotification(

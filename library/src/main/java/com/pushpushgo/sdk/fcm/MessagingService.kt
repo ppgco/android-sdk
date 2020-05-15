@@ -21,8 +21,6 @@ internal class MessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Timber.tag(PushPushGo.TAG).d("From: %s", remoteMessage.from)
 
-        createNotificationChannel(applicationContext)
-
         val notificationManager = NotificationManagerCompat.from(baseContext)
         when {
             // Check if message contains a data payload
