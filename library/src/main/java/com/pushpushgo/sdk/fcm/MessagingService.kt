@@ -13,7 +13,7 @@ import com.pushpushgo.sdk.utils.mapToBundle
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 internal class MessagingService : FirebaseMessagingService() {
@@ -78,14 +78,13 @@ internal class MessagingService : FirebaseMessagingService() {
     }
 
     private suspend fun getBitmapFromUrl(url: String?): Bitmap? {
-        if (PushPushGo.isInitialized())
-            try {
-                return withTimeout(9000) {
-                    PushPushGo.getInstance().getNetwork().getDrawable(url)
-                }
-            } catch (e: Throwable) {
-                Timber.tag(PushPushGo.TAG).e(e, "Failed to download bitmap picture")
+        try {
+            return withTimeoutOrNull(5000) {
+                PushPushGo.getInstance().getNetwork().getBitmapFromUrl(url)
             }
+        } catch (e: Throwable) {
+            Timber.tag(PushPushGo.TAG).e(e, "Failed to download bitmap picture")
+        }
 
         return null
     }

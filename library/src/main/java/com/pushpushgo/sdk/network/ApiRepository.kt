@@ -67,7 +67,7 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         } catch (e: SocketTimeoutException) {
             Timber.tag(PushPushGo.TAG).e(e, "Connection error %s", e.message)
         } catch (e: HttpException) {
-            Timber.tag(PushPushGo.TAG).e(e,"Connection forbidden %s", e.message)
+            Timber.tag(PushPushGo.TAG).e(e, "Connection forbidden %s", e.message)
         } catch (e: Exception) {
             Timber.tag(PushPushGo.TAG).e(e, "Unknown exception %s", e.message)
         }
@@ -94,27 +94,13 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         )
     }
 
-    suspend fun getDrawable(url: String?): Bitmap? {
+    suspend fun getBitmapFromUrl(url: String?): Bitmap? {
         Timber.tag(PushPushGo.TAG).d("getDrawable($url) invoked")
 
         if (url.isNullOrBlank()) return null
 
-        var bitmap: Bitmap? = null
-        try {
-            val stream = apiService.getRawResponse(url).byteStream()
-            bitmap = BitmapFactory.decodeStream(stream)
-        } catch (e: NoConnectivityException) {
-            Timber.tag(PushPushGo.TAG).e(e, "Connection error %s", e.message)
-        } catch (e: ConnectException) {
-            Timber.tag(PushPushGo.TAG).e(e, "Connection error %s", e.message)
-        } catch (e: SocketTimeoutException) {
-            Timber.tag(PushPushGo.TAG).e(e, "Connection error %s", e.message)
-        } catch (e: HttpException) {
-            Timber.tag(PushPushGo.TAG).e(e, "Connection forbidden %s", e.message)
-        } catch (e: Exception) {
-            Timber.tag(PushPushGo.TAG).e(e, "Unknown exception %s", e.message)
-        } finally {
-            return bitmap
-        }
+        return BitmapFactory.decodeStream(
+            apiService.getRawResponse(url).byteStream()
+        )
     }
 }
