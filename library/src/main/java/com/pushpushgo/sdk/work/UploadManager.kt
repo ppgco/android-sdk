@@ -42,15 +42,13 @@ internal class UploadManager(private val workManager: WorkManager, private val s
         enqueueJob(
             name = EVENT,
             isMustRunImmediately = true,
-            data = workDataOf(
-                DATA to Gson().toJson(
-                    Event(
-                        type = type.value,
-                        payload = Payload(
-                            button = buttonId,
-                            campaign = campaign,
-                            subscriber = sharedPref.subscriberId
-                        )
+            data = Gson().toJson(
+                Event(
+                    type = type.value,
+                    payload = Payload(
+                        button = buttonId,
+                        campaign = campaign,
+                        subscriber = sharedPref.subscriberId
                     )
                 )
             )
@@ -60,15 +58,15 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     fun sendBeacon(beacon: JsonObject) {
         Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
 
-        enqueueJob(BEACON, workDataOf(DATA to beacon.toString()))
+        enqueueJob(BEACON, beacon.toString())
     }
 
-    private fun enqueueJob(name: String, data: Data = workDataOf(), isMustRunImmediately: Boolean = false) {
+    private fun enqueueJob(name: String, data: String? = null, isMustRunImmediately: Boolean = false) {
         workManager.enqueueUniqueWork(
             name,
             ExistingWorkPolicy.APPEND,
             OneTimeWorkRequestBuilder<UploadWorker>()
-                .setInputData(Data.Builder().putString(TYPE, name).putAll(data).build())
+                .setInputData(workDataOf(TYPE to name, DATA to data))
                 .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
                 .setInitialDelay(if (isJobAlreadyEnqueued(name) || isMustRunImmediately) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
                 .setConstraints(
