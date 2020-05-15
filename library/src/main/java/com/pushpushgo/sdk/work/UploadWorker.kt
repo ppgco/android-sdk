@@ -13,35 +13,25 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
 
     companion object {
         const val TYPE = "type"
+        const val DATA = "data"
 
         const val REGISTER = "register"
-
         const val UNREGISTER = "unregister"
-
         const val BEACON = "beacon"
-        const val BEACON_DATA = "data"
-
         const val EVENT = "event"
-        const val EVENT_DATA = "event_data"
     }
 
     override suspend fun doWork(): Result = coroutineScope {
         Timber.tag(PushPushGo.TAG).d("UploadWorker: started")
 
         try {
+            val data = inputData.getString(DATA).orEmpty()
+
             when (inputData.getString(TYPE)) {
                 REGISTER -> getInstance().getNetwork().registerToken()
                 UNREGISTER -> getInstance().getNetwork().unregisterSubscriber()
-                EVENT -> {
-                    getInstance().getNetwork().sendEvent(
-                        event = inputData.getString(EVENT_DATA).orEmpty()
-                    )
-                }
-                BEACON -> {
-                    getInstance().getNetwork().sendBeacon(
-                        beacon = inputData.getString(BEACON_DATA).orEmpty()
-                    )
-                }
+                EVENT -> getInstance().getNetwork().sendEvent(data)
+                BEACON -> getInstance().getNetwork().sendBeacon(data)
                 else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
             }
         } catch (e: IOException) {

@@ -9,9 +9,8 @@ import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.work.UploadWorker.Companion.BEACON
-import com.pushpushgo.sdk.work.UploadWorker.Companion.BEACON_DATA
+import com.pushpushgo.sdk.work.UploadWorker.Companion.DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT
-import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT_DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.REGISTER
 import com.pushpushgo.sdk.work.UploadWorker.Companion.TYPE
 import com.pushpushgo.sdk.work.UploadWorker.Companion.UNREGISTER
@@ -40,7 +39,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
             isMustRunImmediately = true,
             data = workDataOf(
                 TYPE to EVENT,
-                EVENT_DATA to Gson().toJson(
+                DATA to Gson().toJson(
                     Event(
                         type = type.value,
                         payload = Payload(
@@ -57,7 +56,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     fun sendBeacon(beacon: JsonObject) {
         Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
 
-        enqueueJob(BEACON, workDataOf(TYPE to BEACON, BEACON_DATA to beacon.toString()))
+        enqueueJob(BEACON, workDataOf(TYPE to BEACON, DATA to beacon.toString()))
     }
 
     private fun enqueueJob(name: String, data: Data, isMustRunImmediately: Boolean = false) {
