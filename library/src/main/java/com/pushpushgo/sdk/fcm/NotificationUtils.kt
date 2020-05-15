@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pushpushgo.sdk.PushPushGo
@@ -20,21 +21,13 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.PushPushNotification
 import timber.log.Timber
+import com.pushpushgo.sdk.data.Notification as PPNotification
 
 private val gson = Gson()
 
-internal fun deserializeNotificationData(data: Map<String, String>) = PushPushNotification(
-    campaignId = data["campaign"].orEmpty(),
-    notification = gson.fromJson(data["notification"], com.pushpushgo.sdk.data.Notification::class.java),
-    actions = gson.fromJson(data["actions"], object : TypeToken<List<Action>>() {}.type),
-    icon = data["icon"].orEmpty(),
-    image = data["image"].orEmpty(),
-    redirectLink = data["redirectLink"].orEmpty()
-)
-
 internal fun deserializeNotificationData(data: Bundle?) = PushPushNotification(
     campaignId = data?.getString("campaign").orEmpty(),
-    notification = gson.fromJson(data?.getString("notification").orEmpty(), com.pushpushgo.sdk.data.Notification::class.java),
+    notification = gson.fromJson(data?.getString("notification").orEmpty(), PPNotification::class.java),
     actions = gson.fromJson(data?.getString("actions").orEmpty(), object : TypeToken<List<Action>>() {}.type),
     icon = data?.getString("icon").orEmpty(),
     image = data?.getString("image").orEmpty(),
@@ -172,7 +165,7 @@ private fun getClickActionIntent(context: Context, campaignId: String, buttonId:
 private fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         setSmallIcon(R.drawable.ic_stat_notification)
-        color = context.resources.getColor(R.color.colorPrimary)
+        color = ContextCompat.getColor(context, R.color.colorPrimary)
     } else {
         setSmallIcon(R.drawable.ic_stat_notification)
     }

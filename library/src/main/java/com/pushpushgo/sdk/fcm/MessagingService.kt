@@ -8,6 +8,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.utils.mapToBundle
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
@@ -28,7 +29,7 @@ internal class MessagingService : FirebaseMessagingService() {
             remoteMessage.data.isNotEmpty() -> {
                 Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
 
-                val notify = deserializeNotificationData(remoteMessage.data)
+                val notify = deserializeNotificationData(remoteMessage.data.mapToBundle())
                 GlobalScope.launch {
                     val notificationId = getUniqueNotificationId()
                     notificationManager.notify(
