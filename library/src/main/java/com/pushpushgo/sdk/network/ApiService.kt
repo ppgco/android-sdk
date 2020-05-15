@@ -1,8 +1,6 @@
 package com.pushpushgo.sdk.network
 
 import com.chuckerteam.chucker.api.ChuckerInterceptor
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.network.data.TokenRequest
@@ -10,6 +8,7 @@ import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
@@ -35,8 +34,8 @@ internal interface ApiService {
     @POST("/v1/android/{projectId}/subscriber/{subscriberId}/beacon")
     suspend fun sendBeacon(
         @Path("projectId") projectId: String,
-        @Path("subscriberId") version: String,
-        @Body beacon: JsonObject
+        @Path("subscriberId") subscriberId: String,
+        @Body beacon: RequestBody
     ): Response<Void>
 
     @POST("/v1/android/{projectId}/event/")

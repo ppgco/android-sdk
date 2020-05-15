@@ -3,7 +3,6 @@ package com.pushpushgo.sdk.work
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.google.gson.JsonParser
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.PushPushGo.Companion.getInstance
 import kotlinx.coroutines.coroutineScope
@@ -44,7 +43,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
                 }
                 BEACON -> {
                     getInstance().getNetwork().sendBeacon(
-                        beacon = JsonParser.parseString(inputData.getString(BEACON_DATA)).asJsonObject
+                        beacon = inputData.getString(BEACON_DATA).orEmpty()
                     )
                 }
                 else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")

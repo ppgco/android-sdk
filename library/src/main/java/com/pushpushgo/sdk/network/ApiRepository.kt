@@ -3,13 +3,14 @@ package com.pushpushgo.sdk.network
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.google.firebase.iid.FirebaseInstanceId
-import com.google.gson.JsonObject
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.deviceToken
+import okhttp3.MediaType
+import okhttp3.RequestBody
 import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
 import org.kodein.di.generic.instance
@@ -45,10 +46,14 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         sharedPref.isSubscribed = isSubscribed
     }
 
-    suspend fun sendBeacon(beacon: JsonObject) {
+    suspend fun sendBeacon(beacon: String) {
         Timber.tag(PushPushGo.TAG).d("sendBeacon($beacon) invoked")
 
-        apiService.sendBeacon(projectId, sharedPref.subscriberId, beacon)
+        apiService.sendBeacon(
+            projectId = projectId,
+            subscriberId = sharedPref.subscriberId,
+            beacon = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), beacon)
+        )
     }
 
     suspend fun sendEvent(type: String, buttonId: Int, campaign: String) {
