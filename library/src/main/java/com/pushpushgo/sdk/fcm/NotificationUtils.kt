@@ -21,6 +21,7 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.PushPushNotification
 import timber.log.Timber
+import java.lang.System.currentTimeMillis
 import com.pushpushgo.sdk.data.Notification as PPNotification
 
 private val gson = Gson()
@@ -44,7 +45,7 @@ internal fun handleNotificationLinkClick(context: Context, uri: String) {
     }
 }
 
-internal fun getUniqueNotificationId() = (System.currentTimeMillis() / SystemClock.uptimeMillis()).toInt()
+internal fun getUniqueNotificationId() = (currentTimeMillis() / SystemClock.uptimeMillis()).toInt()
 
 private var channelCreated = false
 
@@ -107,16 +108,15 @@ internal fun createNotification(
     iconPicture: Bitmap? = null,
     bigPicture: Bitmap? = null
 ): Notification {
-//    val intent = Intent(context, MessagingService::class.java)
-//    intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true)
     return NotificationCompat.Builder(context, context.getString(R.string.notification_channel_id))
         .setContentTitle(title)
         .setContentText(content)
         .setOngoing(ongoing)
         .setPriority(priority)
-        .setWhen(System.currentTimeMillis())
+        .setWhen(currentTimeMillis())
         .setLargeIcon(iconPicture)
-        .setIcon(context)
+        .setSmallIcon(R.drawable.ic_stat_notification)
+        .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
         .apply {
             if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
                 getClickActionIntent(context, campaignId, 0, actionLink, id)
@@ -161,14 +161,3 @@ private fun getClickActionIntent(context: Context, campaignId: String, buttonId:
             putExtra(ClickActionReceiver.LINK, link)
         }, PendingIntent.FLAG_UPDATE_CURRENT
     )
-
-private fun NotificationCompat.Builder.setIcon(context: Context): NotificationCompat.Builder {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        setSmallIcon(R.drawable.ic_stat_notification)
-        color = ContextCompat.getColor(context, R.color.colorPrimary)
-    } else {
-        setSmallIcon(R.drawable.ic_stat_notification)
-    }
-
-    return this
-}
