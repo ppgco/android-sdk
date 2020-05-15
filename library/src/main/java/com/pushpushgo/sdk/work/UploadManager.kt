@@ -1,22 +1,24 @@
 package com.pushpushgo.sdk.work
 
 import androidx.work.*
+import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.data.EventType
+import com.pushpushgo.sdk.data.Payload
+import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.work.UploadWorker.Companion.BEACON
 import com.pushpushgo.sdk.work.UploadWorker.Companion.BEACON_DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT
-import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT_BUTTON_ID
-import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT_CAMPAIGN
-import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT_TYPE
+import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT_DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.REGISTER
 import com.pushpushgo.sdk.work.UploadWorker.Companion.TYPE
 import com.pushpushgo.sdk.work.UploadWorker.Companion.UNREGISTER
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
-internal class UploadManager(private val workManager: WorkManager) {
+internal class UploadManager(private val workManager: WorkManager, private val sharedPref: SharedPreferencesHelper) {
 
     fun sendRegister() {
         Timber.tag(PushPushGo.TAG).d("Register enqueued")
@@ -38,9 +40,16 @@ internal class UploadManager(private val workManager: WorkManager) {
             isMustRunImmediately = true,
             data = workDataOf(
                 TYPE to EVENT,
-                EVENT_TYPE to type.value,
-                EVENT_BUTTON_ID to buttonId,
-                EVENT_CAMPAIGN to campaign
+                EVENT_DATA to Gson().toJson(
+                    Event(
+                        type = type.value,
+                        payload = Payload(
+                            button = buttonId,
+                            campaign = campaign,
+                            subscriber = sharedPref.subscriberId
+                        )
+                    )
+                )
             )
         )
     }

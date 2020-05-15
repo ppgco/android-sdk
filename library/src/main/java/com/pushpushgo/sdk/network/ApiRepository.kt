@@ -4,8 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.PushPushGo
-import com.pushpushgo.sdk.data.Event
-import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.deviceToken
@@ -56,18 +54,12 @@ internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
         )
     }
 
-    suspend fun sendEvent(type: String, buttonId: Int, campaign: String) {
-        Timber.tag(PushPushGo.TAG).d("sendEvent($type, $buttonId, $campaign) invoked")
+    suspend fun sendEvent(event: String) {
+        Timber.tag(PushPushGo.TAG).d("sendEvent($event) invoked")
 
         apiService.sendEvent(
-            projectId, Event(
-                type = type,
-                payload = Payload(
-                    button = buttonId,
-                    campaign = campaign,
-                    subscriber = sharedPref.subscriberId
-                )
-            )
+            projectId = projectId,
+            event = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), event)
         )
     }
 

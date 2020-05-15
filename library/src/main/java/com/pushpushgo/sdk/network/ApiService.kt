@@ -2,7 +2,6 @@ package com.pushpushgo.sdk.network
 
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.pushpushgo.sdk.BuildConfig
-import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -41,7 +40,7 @@ internal interface ApiService {
     @POST("/v1/android/{projectId}/event/")
     suspend fun sendEvent(
         @Path("projectId") projectId: String,
-        @Body body: Event
+        @Body event: RequestBody
     ): Response<Void>
 
     @GET

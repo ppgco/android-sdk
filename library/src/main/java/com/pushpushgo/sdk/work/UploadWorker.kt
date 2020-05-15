@@ -22,9 +22,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         const val BEACON_DATA = "data"
 
         const val EVENT = "event"
-        const val EVENT_TYPE = "event_type"
-        const val EVENT_BUTTON_ID = "event_button_id"
-        const val EVENT_CAMPAIGN = "event_campaign"
+        const val EVENT_DATA = "event_data"
     }
 
     override suspend fun doWork(): Result = coroutineScope {
@@ -36,9 +34,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
                 UNREGISTER -> getInstance().getNetwork().unregisterSubscriber()
                 EVENT -> {
                     getInstance().getNetwork().sendEvent(
-                        type = inputData.getString(EVENT_TYPE)!!,
-                        buttonId = inputData.getInt(EVENT_BUTTON_ID, 0),
-                        campaign = inputData.getString(EVENT_CAMPAIGN)!!
+                        event = inputData.getString(EVENT_DATA).orEmpty()
                     )
                 }
                 BEACON -> {
