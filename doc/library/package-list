@@ -2,5 +2,4 @@ $dokka.format:html
 $dokka.linkExtension:html
 
 com.pushpushgo.sdk
-com.pushpushgo.sdk.data
 com.pushpushgo.sdk.exception
