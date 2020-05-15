@@ -19,6 +19,11 @@ import java.util.concurrent.TimeUnit
 
 internal class UploadManager(private val workManager: WorkManager, private val sharedPref: SharedPreferencesHelper) {
 
+    companion object {
+        const val UPLOAD_DELAY = 10L
+        const val UPLOAD_RETRY_DELAY = 30L
+    }
+
     fun sendRegister() {
         Timber.tag(PushPushGo.TAG).d("Register enqueued")
 
@@ -55,7 +60,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     fun sendBeacon(beacon: JsonObject) {
         Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
 
-        enqueueJob(BEACON, workDataOf(TYPE to BEACON, DATA to beacon.toString()))
+        enqueueJob(BEACON, workDataOf(DATA to beacon.toString()))
     }
 
     private fun enqueueJob(name: String, data: Data = workDataOf(), isMustRunImmediately: Boolean = false) {
@@ -64,8 +69,8 @@ internal class UploadManager(private val workManager: WorkManager, private val s
             ExistingWorkPolicy.APPEND,
             OneTimeWorkRequestBuilder<UploadWorker>()
                 .setInputData(Data.Builder().putString(TYPE, name).putAll(data).build())
-                .setBackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS)
-                .setInitialDelay(if (isJobAlreadyEnqueued(name) || isMustRunImmediately) 0 else 10, TimeUnit.SECONDS)
+                .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+                .setInitialDelay(if (isJobAlreadyEnqueued(name) || isMustRunImmediately) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
