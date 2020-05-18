@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka'
+apply plugin: 'com.github.dcendents.android-maven'
 
 dokka {
     outputFormat = 'html'
@@ -11,6 +12,10 @@ def props = new Properties()
 file("../secret.properties").withInputStream {
     stream -> props.load(stream)
 }
+
+def artifactId = 'sdk'
+def groupId = 'com.pushpushgo'
+
 android {
     compileSdkVersion 29
     buildToolsVersion = '29.0.3'
@@ -19,7 +24,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 29
         versionCode 1
-        versionName "1.0.0"
+        versionName "0.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -68,6 +73,7 @@ dependencies {
     def retrofit_version = '2.6.4'
     implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
     implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+    implementation 'com.google.code.gson:gson:2.8.6'
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.11'
 
@@ -79,4 +85,12 @@ dependencies {
     // Kodein
     //noinspection GradleDependency
     implementation "org.kodein.di:kodein-di-generic-jvm:6.2.1"
+}
+
+install {
+    repositories.mavenInstaller {
+        pom.groupId = groupId
+        pom.version = android.defaultConfig.versionName
+        pom.artifactId = artifactId
+    }
 }
