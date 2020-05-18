@@ -38,3 +38,11 @@ PushPushGo.getInstance().createBeacon()
     .appendTag("mobile", "platform")
     .send();
 ```
+
+## Publishing
+
+To maven local repository:
+
+```sh
+$ ./gradlew :library:install
+```
