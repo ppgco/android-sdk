@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk.network
 
-import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
@@ -15,6 +14,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
 import retrofit2.http.*
+import timber.log.Timber
 
 internal interface ApiService {
 
@@ -48,18 +48,18 @@ internal interface ApiService {
 
     companion object {
         operator fun invoke(
-            chuckerInterceptor: ChuckerInterceptor,
             requestInterceptor: RequestInterceptor,
             responseInterceptor: ResponseInterceptor
         ): ApiService {
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(requestInterceptor)
-                .addInterceptor(chuckerInterceptor)
                 .addInterceptor(responseInterceptor)
                 .addNetworkInterceptor(
-                    HttpLoggingInterceptor().setLevel(
-                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
-                        else HttpLoggingInterceptor.Level.NONE
+                    HttpLoggingInterceptor(HttpLoggingInterceptor.Logger {
+                        Timber.d(it)
+                    }).setLevel(
+                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                        else HttpLoggingInterceptor.Level.BODY
                     )
                 )
                 .build()
