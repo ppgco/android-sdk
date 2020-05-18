@@ -64,7 +64,7 @@ internal class NotificationStatusChecker private constructor(private val context
     private fun areNotificationsEnabled(): Boolean {
         if (notificationManager.areNotificationsEnabled()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                return notificationManager.getNotificationChannel(context.getString(R.string.notification_channel_id)).let {
+                return notificationManager.getNotificationChannel(context.getString(R.string.pushpushgo_notification_default_channel_id)).let {
                     it?.importance != IMPORTANCE_NONE
                 }
             }

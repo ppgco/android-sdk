@@ -4,4 +4,5 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="pushpushgo_notification_color_default">#D81B60</color>
 </resources>

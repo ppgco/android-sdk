@@ -57,8 +57,8 @@ internal fun getUniqueNotificationId() = (currentTimeMillis() / SystemClock.upti
 
 internal fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val id = context.getString(R.string.notification_channel_id)
-        val name = context.getString(R.string.notification_channel_name)
+        val id = context.getString(R.string.pushpushgo_notification_default_channel_id)
+        val name = context.getString(R.string.pushpushgo_notification_default_channel_name)
         val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
             setShowBadge(true)
             enableVibration(true)
@@ -112,15 +112,15 @@ internal fun createNotification(
     iconPicture: Bitmap? = null,
     bigPicture: Bitmap? = null
 ): Notification {
-    return NotificationCompat.Builder(context, context.getString(R.string.notification_channel_id))
+    return NotificationCompat.Builder(context, context.getString(R.string.pushpushgo_notification_default_channel_id))
         .setContentTitle(title)
         .setContentText(content)
         .setOngoing(ongoing)
         .setPriority(priority)
         .setWhen(currentTimeMillis())
         .setLargeIcon(iconPicture)
-        .setSmallIcon(R.drawable.ic_stat_notification)
-        .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
+        .setSmallIcon(R.drawable.ic_stat_pushpushgo_default)
+        .setColor(ContextCompat.getColor(context, R.color.pushpushgo_notification_color_default))
         .apply {
             if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
                 getClickActionIntent(context, campaignId, 0, actionLink, id)

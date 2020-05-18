@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#17A085</color>
+    <color name="pushpushgo_notification_color_default">#17A085</color>
 </resources>

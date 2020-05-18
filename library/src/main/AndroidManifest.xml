@@ -18,13 +18,13 @@
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_stat_notification" />
+            android:resource="@drawable/ic_stat_pushpushgo_default" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
-            android:resource="@color/colorPrimary" />
+            android:resource="@color/pushpushgo_notification_color_default" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="@string/notification_channel_id" />
+            android:value="@string/pushpushgo_notification_default_channel_id" />
 
         <receiver android:name=".fcm.ClickActionReceiver" />
     </application>
