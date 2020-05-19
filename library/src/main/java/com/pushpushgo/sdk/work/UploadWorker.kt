@@ -5,6 +5,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.PushPushGo.Companion.getInstance
+import com.pushpushgo.sdk.work.UploadManager.Companion.UPLOAD_RETRY_ATTEMPT
 import kotlinx.coroutines.coroutineScope
 import timber.log.Timber
 import java.io.IOException
@@ -36,7 +37,9 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
             }
         } catch (e: IOException) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
-            return@coroutineScope Result.retry()
+            return@coroutineScope if (runAttemptCount > UPLOAD_RETRY_ATTEMPT) {
+                Result.failure()
+            } else Result.retry()
         }
 
         Timber.tag(PushPushGo.TAG).d("UploadWorker: success")

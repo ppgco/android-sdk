@@ -22,6 +22,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     companion object {
         const val UPLOAD_DELAY = 10L
         const val UPLOAD_RETRY_DELAY = 30L
+        const val UPLOAD_RETRY_ATTEMPT = 1
     }
 
     fun sendRegister() {
