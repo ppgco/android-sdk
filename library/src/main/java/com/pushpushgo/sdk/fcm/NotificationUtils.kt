@@ -28,14 +28,18 @@ import com.pushpushgo.sdk.data.Notification as PPNotification
 
 private val gson = Gson()
 
-internal fun deserializeNotificationData(data: Bundle?) = PushPushNotification(
-    campaignId = data?.getString("campaign").orEmpty(),
-    notification = gson.fromJson(data?.getString("notification").orEmpty(), PPNotification::class.java),
-    actions = gson.fromJson(data?.getString("actions").orEmpty(), object : TypeToken<List<Action>>() {}.type),
-    icon = data?.getString("icon").orEmpty(),
-    image = data?.getString("image").orEmpty(),
-    redirectLink = data?.getString("redirectLink").orEmpty()
-)
+internal fun deserializeNotificationData(data: Bundle?): PushPushNotification? {
+    val ppNotification = data?.getString("notification") ?: return null
+
+    return PushPushNotification(
+        campaignId = data.getString("campaign").orEmpty(),
+        notification = gson.fromJson(ppNotification, PPNotification::class.java),
+        actions = gson.fromJson(data.getString("actions").orEmpty(), object : TypeToken<List<Action>>() {}.type),
+        icon = data.getString("icon").orEmpty(),
+        image = data.getString("image").orEmpty(),
+        redirectLink = data.getString("redirectLink").orEmpty()
+    )
+}
 
 internal fun translateFirebasePriority(priority: Int?) = when(priority) {
     RemoteMessage.PRIORITY_HIGH -> NotificationCompat.PRIORITY_HIGH

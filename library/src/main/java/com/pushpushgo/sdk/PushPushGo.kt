@@ -96,7 +96,7 @@ class PushPushGo private constructor(
     fun handleBackgroundNotificationClick(intent: Intent?) {
         if (intent?.action != "APP_PUSH_CLICK") return
 
-        val notify = deserializeNotificationData(intent.extras)
+        val notify = deserializeNotificationData(intent.extras) ?: return
         handleNotificationLinkClick(context, notify.redirectLink)
         getUploadManager().sendEvent(
             type = EventType.CLICKED,

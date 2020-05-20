@@ -29,30 +29,34 @@ internal class MessagingService : FirebaseMessagingService() {
             val notificationId = getUniqueNotificationId()
 
             val notification = when {
-                // Check if message contains a data payload
-                remoteMessage.data.isNotEmpty() -> {
-                    Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
-
-                    val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
-                    sendDeliveredEvent(pushPushNotification.campaignId)
-                    createDataNotification(notificationId, pushPushNotification)
-                }
-                // Check if message contains a notification payload
-                remoteMessage.notification != null -> {
-                    Timber.tag(PushPushGo.TAG).d("Message notification title: %s", remoteMessage.notification?.title)
-
-                    createNotification(
-                        context = baseContext,
-                        title = remoteMessage.notification?.title!!,
-                        content = remoteMessage.notification?.body!!,
-                        priority = translateFirebasePriority(remoteMessage.notification?.notificationPriority)
-                    )
-                }
+                remoteMessage.data.isNotEmpty() -> sendDataNotification(remoteMessage, notificationId)
+                remoteMessage.notification != null -> sendSimpleNotification(remoteMessage)
                 else -> throw IllegalStateException("Unknown notification type")
             }
 
             NotificationManagerCompat.from(baseContext).notify(notificationId, notification)
         }
+    }
+
+    private suspend fun sendDataNotification(remoteMessage: RemoteMessage, notificationId: Int): Notification {
+        Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
+
+        val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
+            ?: return sendSimpleNotification(remoteMessage)
+
+        sendDeliveredEvent(pushPushNotification.campaignId)
+        return createDataNotification(notificationId, pushPushNotification)
+    }
+
+    private fun sendSimpleNotification(remoteMessage: RemoteMessage): Notification {
+        Timber.tag(PushPushGo.TAG).d("Message notification title: %s", remoteMessage.notification?.title)
+
+        return createNotification(
+            context = baseContext,
+            title = remoteMessage.notification?.title!!,
+            content = remoteMessage.notification?.body!!,
+            priority = translateFirebasePriority(remoteMessage.notification?.notificationPriority)
+        )
     }
 
     private fun sendDeliveredEvent(campaignId: String) {
