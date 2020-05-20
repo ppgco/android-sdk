@@ -57,6 +57,11 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     }
 
     fun sendBeacon(beacon: JsonObject) {
+        if (!sharedPref.isSubscribed) {
+            Timber.tag(PushPushGo.TAG).d("Beacon not enqueued. Reason: not subscribed")
+            return
+        }
+
         Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
 
         enqueueJob(BEACON, beacon.toString())
