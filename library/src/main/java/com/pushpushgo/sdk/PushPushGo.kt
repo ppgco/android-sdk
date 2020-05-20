@@ -21,7 +21,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "0.1.0-20200515~1"
+        const val VERSION = "0.1.1-20200520~1"
 
         internal const val TAG = "PPGo"
 
@@ -78,7 +78,7 @@ class PushPushGo private constructor(
     private val networkModule by lazy { NetworkModule(context, apiKey, projectId) }
 
     init {
-        Timber.tag(TAG).d("PushPushGo initialized (project id: $projectId)")
+        Timber.tag(TAG).d("PushPushGo $VERSION initialized (project id: $projectId)")
 
         createNotificationChannel(context)
         NotificationStatusChecker.start(context)
