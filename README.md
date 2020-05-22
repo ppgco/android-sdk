@@ -13,7 +13,7 @@ allprojects {
 
 // /app/build.gradle
 dependencies {
-    implementation 'com.pushpushgo:sdk:0.1.0'
+    implementation 'com.pushpushgo:sdk:0.1.2'
 }
 ```
 2. Add to Your AndroidManifest.xml:
@@ -66,5 +66,7 @@ PushPushGo.getInstance().createBeacon()
 To maven local repository:
 
 ```sh
-$ ./gradlew :library:install
+$ ./gradlew :library:publishDebugPublicationToMavenLocal      // debug
+$ ./gradlew :library:publishReleasePublicationToMavenLocal    // release
+$ ./gradlew :library:publishToMavenLocal                      // both
 ```
