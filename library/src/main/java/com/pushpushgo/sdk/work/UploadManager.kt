@@ -35,6 +35,9 @@ internal class UploadManager(private val workManager: WorkManager, private val s
         Timber.tag(PushPushGo.TAG).d("Unregister enqueued")
 
         enqueueJob(UNREGISTER, isMustRunImmediately = true)
+        listOf(REGISTER, EVENT, BEACON).forEach {
+            workManager.cancelAllWorkByTag(it)
+        }
     }
 
     fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
