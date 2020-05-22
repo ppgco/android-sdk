@@ -30,10 +30,14 @@ dependencies {
 PushPushGo.getInstance(applicationContext);
 ```
 4. Configuration
-- Change default notification icon: override `@drawable/ic_stat_pushpushgo_default`
 - Change default notification color: override `@color/pushpushgo_notification_color_default`
 - Change default notification channel id: override `@string/pushpushgo_notification_default_channel_id`
 - Change default notification channel name: override `@string/pushpushgo_notification_default_channel_name`
+- Change default notification icon: override
+  - `res/drawable-hdpi/ic_stat_pushpushgo_default`
+  - `res/drawable-mdpi/ic_stat_pushpushgo_default`
+  - `res/drawable-xhdpi/ic_stat_pushpushgo_default`
+  - `res/drawable-xxhdpi/ic_stat_pushpushgo_default`
 
 ## Usage
 
