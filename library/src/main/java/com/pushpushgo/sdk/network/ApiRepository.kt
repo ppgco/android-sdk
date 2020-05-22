@@ -4,17 +4,23 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.di.NetworkModule.Companion.PROJECT_ID
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.deviceToken
 import okhttp3.MediaType
 import okhttp3.RequestBody
+import org.kodein.di.Kodein
+import org.kodein.di.KodeinAware
+import org.kodein.di.generic.instance
 import timber.log.Timber
 
-internal class ApiRepository(
-    private val apiService: ApiService,
-    private val sharedPref: SharedPreferencesHelper,
-    private val projectId: String
-) {
+internal class ApiRepository(override val kodein: Kodein) : KodeinAware {
+
+    private val apiService by instance<ApiService>()
+
+    private val sharedPref by instance<SharedPreferencesHelper>()
+
+    private val projectId by instance<String>(PROJECT_ID)
 
     suspend fun registerToken() {
         Timber.tag(PushPushGo.TAG).d("registerToken invoked")
