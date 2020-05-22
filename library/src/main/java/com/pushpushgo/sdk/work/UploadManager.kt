@@ -74,7 +74,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     private fun enqueueJob(name: String, data: String? = null, isMustRunImmediately: Boolean = false) {
         workManager.enqueueUniqueWork(
             name,
-            ExistingWorkPolicy.APPEND,
+            if (name == REGISTER || name == UNREGISTER) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.APPEND,
             OneTimeWorkRequestBuilder<UploadWorker>()
                 .setInputData(workDataOf(TYPE to name, DATA to data))
                 .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
