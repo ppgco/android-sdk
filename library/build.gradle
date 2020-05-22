@@ -8,14 +8,6 @@ dokka {
     outputDirectory = "$buildDir/../../doc"
 }
 
-def props = new Properties()
-file("../secret.properties").withInputStream {
-    stream -> props.load(stream)
-}
-
-def configArtifactId = 'sdk'
-def configGroupId = 'com.pushpushgo'
-
 android {
     compileSdkVersion 29
     buildToolsVersion = '29.0.3'
@@ -27,14 +19,16 @@ android {
         versionName "0.1.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField "String", "BASE_URL", '"' + props.BASE_URL + '"'
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            buildConfigField "String", "BASE_URL", '"https://api.pushpushgo.com/"'
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            buildConfigField "String", "BASE_URL", '"https://api.stppg.co/"'
         }
     }
     compileOptions {
@@ -87,12 +81,14 @@ task androidSourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
 }
 
+def configArtifactId = 'sdk'
+def configGroupId = 'com.pushpushgo'
+
 afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
                 from components.release
-                artifact androidSourcesJar
 
                 groupId = configGroupId
                 artifactId = configArtifactId
