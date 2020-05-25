@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk.network
 
-import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.google.gson.GsonBuilder
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.network.data.TokenRequest
@@ -49,13 +48,11 @@ internal interface ApiService {
 
     companion object {
         operator fun invoke(
-            chuckerInterceptor: ChuckerInterceptor,
             requestInterceptor: RequestInterceptor,
             responseInterceptor: ResponseInterceptor
         ): ApiService {
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(requestInterceptor)
-                .addInterceptor(chuckerInterceptor)
                 .addInterceptor(responseInterceptor)
                 .addNetworkInterceptor(
                     HttpLoggingInterceptor().setLevel(

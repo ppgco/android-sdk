@@ -12,7 +12,6 @@ import com.pushpushgo.sdk.fcm.deserializeNotificationData
 import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.withApiKeyValidation
 import com.pushpushgo.sdk.utils.withProjectIdValidation
-import com.pushpushgo.sdk.utils.TimberChuckerErrorTree
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -80,8 +79,6 @@ class PushPushGo private constructor(
 
     init {
         Timber.tag(TAG).d("PushPushGo $VERSION initialized (project id: $projectId)")
-
-        if (BuildConfig.DEBUG) Timber.plant(TimberChuckerErrorTree(networkModule.chuckerCollector))
 
         createNotificationChannel(context)
         NotificationStatusChecker.start(context)
