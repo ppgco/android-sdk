@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk.network
 
 import com.chuckerteam.chucker.api.ChuckerInterceptor
+import com.google.gson.GsonBuilder
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
@@ -67,7 +68,7 @@ internal interface ApiService {
             return Retrofit.Builder()
                 .client(okHttpClient)
                 .baseUrl(BuildConfig.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
                 .build().create()
         }
     }
