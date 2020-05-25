@@ -29,18 +29,23 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         try {
             val data = inputData.getString(DATA).orEmpty()
 
-            when (inputData.getString(TYPE)) {
-                REGISTER -> getInstance().getNetwork().registerToken()
-                UNREGISTER -> getInstance().getNetwork().unregisterSubscriber()
-                EVENT -> getInstance().getNetwork().sendEvent(data)
-                BEACON -> getInstance().getNetwork().sendBeacon(data)
-                else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
+            with(getInstance().getNetwork()) {
+                when (inputData.getString(TYPE)) {
+                    REGISTER -> registerToken()
+                    UNREGISTER -> unregisterSubscriber()
+                    EVENT -> sendEvent(data)
+                    BEACON -> sendBeacon(data)
+                    else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
+                }
             }
         } catch (e: IOException) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
             return@coroutineScope if (inputData.getBoolean(RETRY_LIMIT, false) && runAttemptCount > UPLOAD_RETRY_ATTEMPT) {
                 Result.failure()
             } else Result.retry()
+        } catch (e: Throwable) {
+            Timber.tag(PushPushGo.TAG).e(e)
+            return@coroutineScope Result.failure()
         }
 
         Timber.tag(PushPushGo.TAG).d("UploadWorker: success")
