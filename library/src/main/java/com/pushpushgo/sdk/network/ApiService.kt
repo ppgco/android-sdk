@@ -56,9 +56,8 @@ internal interface ApiService {
                 .addInterceptor(responseInterceptor)
                 .addNetworkInterceptor(
                     HttpLoggingInterceptor().setLevel(
-                        HttpLoggingInterceptor.Level.BODY
-//                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
-//                        else HttpLoggingInterceptor.Level.NONE
+                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
+                        else HttpLoggingInterceptor.Level.NONE
                     )
                 )
                 .build()
