@@ -15,6 +15,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
     companion object {
         const val TYPE = "type"
         const val DATA = "data"
+        const val RETRY_LIMIT = "retry_limit"
 
         const val REGISTER = "register"
         const val UNREGISTER = "unregister"
@@ -37,7 +38,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
             }
         } catch (e: IOException) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
-            return@coroutineScope if (runAttemptCount > UPLOAD_RETRY_ATTEMPT) {
+            return@coroutineScope if (inputData.getBoolean(RETRY_LIMIT, false) && runAttemptCount > UPLOAD_RETRY_ATTEMPT) {
                 Result.failure()
             } else Result.retry()
         }

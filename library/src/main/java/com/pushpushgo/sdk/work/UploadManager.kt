@@ -12,6 +12,7 @@ import com.pushpushgo.sdk.work.UploadWorker.Companion.BEACON
 import com.pushpushgo.sdk.work.UploadWorker.Companion.DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT
 import com.pushpushgo.sdk.work.UploadWorker.Companion.REGISTER
+import com.pushpushgo.sdk.work.UploadWorker.Companion.RETRY_LIMIT
 import com.pushpushgo.sdk.work.UploadWorker.Companion.TYPE
 import com.pushpushgo.sdk.work.UploadWorker.Companion.UNREGISTER
 import timber.log.Timber
@@ -76,7 +77,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
             name,
             if (name == REGISTER || name == UNREGISTER) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.APPEND,
             OneTimeWorkRequestBuilder<UploadWorker>()
-                .setInputData(workDataOf(TYPE to name, DATA to data))
+                .setInputData(workDataOf(TYPE to name, DATA to data, RETRY_LIMIT to !(name == REGISTER || name == UNREGISTER)))
                 .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
                 .setInitialDelay(if (isJobAlreadyEnqueued(name) || isMustRunImmediately) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
                 .setConstraints(
