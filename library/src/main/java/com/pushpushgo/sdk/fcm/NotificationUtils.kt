@@ -16,32 +16,35 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.RemoteMessage
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
+import com.pushpushgo.sdk.data.NotificationJsonAdapter
 import com.pushpushgo.sdk.data.PushPushNotification
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import timber.log.Timber
 import java.lang.System.currentTimeMillis
-import com.pushpushgo.sdk.data.Notification as PPNotification
 
-private val gson = Gson()
+private val moshi = Moshi.Builder().build()
 
 internal fun deserializeNotificationData(data: Bundle?): PushPushNotification? {
     val ppNotification = data?.getString("notification") ?: return null
 
+    val notification = NotificationJsonAdapter(moshi)
+    val actions = moshi.adapter<List<Action>>(Types.newParameterizedType(List::class.java, Action::class.java))
+
     return PushPushNotification(
         campaignId = data.getString("campaign").orEmpty(),
-        notification = gson.fromJson(ppNotification, PPNotification::class.java),
-        actions = gson.fromJson(data.getString("actions").orEmpty(), object : TypeToken<List<Action>>() {}.type),
+        notification = notification.fromJson(ppNotification)!!,
+        actions = actions.fromJson(data.getString("actions")!!).orEmpty(),
         icon = data.getString("icon").orEmpty(),
         image = data.getString("image").orEmpty(),
         redirectLink = data.getString("redirectLink").orEmpty()
     )
 }
 
-internal fun translateFirebasePriority(priority: Int?) = when(priority) {
+internal fun translateFirebasePriority(priority: Int?) = when (priority) {
     RemoteMessage.PRIORITY_HIGH -> NotificationCompat.PRIORITY_HIGH
     RemoteMessage.PRIORITY_NORMAL, RemoteMessage.PRIORITY_UNKNOWN -> NotificationCompat.PRIORITY_DEFAULT
     else -> NotificationCompat.PRIORITY_DEFAULT
@@ -87,7 +90,7 @@ internal fun createNotification(
     title = notify.notification.title.orEmpty(),
     content = notify.notification.body.orEmpty(),
     sound = notify.notification.sound ?: "default",
-    vibrate = notify.notification.vibrate,
+    vibrate = notify.notification.vibrate.toBoolean(),
     priority = notify.notification.priority,
     badge = notify.notification.badge,
     campaignId = notify.campaignId,

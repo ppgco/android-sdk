@@ -1,60 +1,64 @@
 package com.pushpushgo.sdk.data
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
+@JsonClass(generateAdapter = true)
 internal data class PushPushNotification(
 
-    @SerializedName("campaignId")
+    @Json(name = "campaignId")
     val campaignId: String,
 
-    @SerializedName("notification")
+    @Json(name = "notification")
     val notification: Notification,
 
-    @SerializedName("actions")
+    @Json(name = "actions")
     val actions: List<Action>,
 
-    @SerializedName("icon")
+    @Json(name = "icon")
     val icon: String,
 
-    @SerializedName("image")
+    @Json(name = "image")
     val image: String,
 
-    @SerializedName("redirectLink")
+    @Json(name = "redirectLink")
     val redirectLink: String
 )
 
+@JsonClass(generateAdapter = true)
 internal data class Notification(
 
-    @SerializedName("badge")
+    @Json(name = "badge")
     val badge: Int = 0,
 
-    @SerializedName("sound")
+    @Json(name = "sound")
     val sound: String?,
 
-    @SerializedName("vibrate")
-    val vibrate: Boolean = true,
+    @Json(name = "vibrate")
+    val vibrate: String = "true",
 
-    @SerializedName("title")
+    @Json(name = "title")
     val title: String?,
 
-    @SerializedName("body")
+    @Json(name = "body")
     val body: String?,
 
-    @SerializedName("priority")
+    @Json(name = "priority")
     val priority: Int = 0,
 
-    @SerializedName("click_action")
+    @Json(name = "click_action")
     val click_action: String?
 )
 
+@JsonClass(generateAdapter = true)
 internal data class Action(
 
-    @SerializedName("link")
+    @Json(name = "link")
     val link: String,
 
-    @SerializedName("action")
+    @Json(name = "action")
     val action: String,
 
-    @SerializedName("title")
+    @Json(name = "title")
     val title: String
 )

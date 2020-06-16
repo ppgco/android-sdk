@@ -1,9 +1,9 @@
 package com.pushpushgo.sdk
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.work.UploadManager
+import org.json.JSONArray
+import org.json.JSONObject
 
 class BeaconBuilder internal constructor(private val uploadManager: UploadManager) {
 
@@ -82,41 +82,41 @@ class BeaconBuilder internal constructor(private val uploadManager: UploadManage
      * @throws PushPushException on unsupported selector value type
      */
     fun send() {
-        uploadManager.sendBeacon(JsonObject().apply {
+        uploadManager.sendBeacon(JSONObject().apply {
             addSelectors()
             addTags()
             addTagsToDelete()
-            addProperty("customId", customId)
+            put("customId", customId)
         })
     }
 
-    private fun JsonObject.addSelectors() {
+    private fun JSONObject.addSelectors() {
         selectors.forEach { (key, value) ->
             when (value) {
-                is Boolean -> addProperty(key, value)
-                is String -> addProperty(key, value)
-                is Char -> addProperty(key, value)
-                is Number -> addProperty(key, value)
+                is Boolean -> put(key, value)
+                is String -> put(key, value)
+                is Char -> put(key, value)
+                is Number -> put(key, value)
                 else -> throw PushPushException("Invalid type of beacon selector value. Supported types: boolean, string, char, number")
             }
         }
     }
 
-    private fun JsonObject.addTags() {
-        add("tags", JsonArray().apply {
+    private fun JSONObject.addTags() {
+        put("tags", JSONArray().apply {
             tags.forEach { (tag, label) ->
-                add(JsonObject().apply {
-                    addProperty("tag", tag)
-                    addProperty("label", label)
+                put(JSONObject().apply {
+                    put("tag", tag)
+                    put("label", label)
                 })
             }
         })
     }
 
-    private fun JsonObject.addTagsToDelete() {
-        add("tagsToDelete", JsonArray().apply {
+    private fun JSONObject.addTagsToDelete() {
+        put("tagsToDelete", JSONArray().apply {
             tagsToDelete.forEach {
-                add(it)
+                put(it)
             }
         })
     }

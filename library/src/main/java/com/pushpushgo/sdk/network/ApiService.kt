@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk.network
 
-import com.google.gson.GsonBuilder
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
@@ -12,7 +11,7 @@ import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.create
 import retrofit2.http.*
 
@@ -65,7 +64,7 @@ internal interface ApiService {
             return Retrofit.Builder()
                 .client(okHttpClient)
                 .baseUrl(BuildConfig.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
+                .addConverterFactory(MoshiConverterFactory.create())
                 .build().create()
         }
     }

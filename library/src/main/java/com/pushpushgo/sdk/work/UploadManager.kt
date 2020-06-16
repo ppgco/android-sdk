@@ -1,10 +1,9 @@
 package com.pushpushgo.sdk.work
 
 import androidx.work.*
-import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
+import com.pushpushgo.sdk.data.EventJsonAdapter
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
@@ -15,10 +14,14 @@ import com.pushpushgo.sdk.work.UploadWorker.Companion.REGISTER
 import com.pushpushgo.sdk.work.UploadWorker.Companion.RETRY_LIMIT
 import com.pushpushgo.sdk.work.UploadWorker.Companion.TYPE
 import com.pushpushgo.sdk.work.UploadWorker.Companion.UNREGISTER
+import com.squareup.moshi.Moshi
+import org.json.JSONObject
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 internal class UploadManager(private val workManager: WorkManager, private val sharedPref: SharedPreferencesHelper) {
+
+    private val eventAdapter by lazy { EventJsonAdapter(Moshi.Builder().build()) }
 
     companion object {
         const val UPLOAD_DELAY = 10L
@@ -48,7 +51,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
         enqueueJob(
             name = EVENT,
             isMustRunImmediately = true,
-            data = Gson().toJson(
+            data = eventAdapter.toJson(
                 Event(
                     type = type.value,
                     payload = Payload(
@@ -61,7 +64,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
         )
     }
 
-    fun sendBeacon(beacon: JsonObject) {
+    fun sendBeacon(beacon: JSONObject) {
         if (!sharedPref.isSubscribed) {
             Timber.tag(PushPushGo.TAG).d("Beacon not enqueued. Reason: not subscribed")
             return

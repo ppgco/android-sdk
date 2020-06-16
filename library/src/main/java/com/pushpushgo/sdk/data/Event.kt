@@ -1,14 +1,16 @@
 package com.pushpushgo.sdk.data
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import java.io.Serializable
 
+@JsonClass(generateAdapter = true)
 internal data class Event(
 
-    @SerializedName("payload")
+    @Json(name = "payload")
     val payload: Payload,
 
-    @SerializedName("type")
+    @Json(name = "type")
     val type: String
 ) : Serializable
 

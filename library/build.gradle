@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'org.jetbrains.dokka'
 apply plugin: 'maven-publish'
 
@@ -62,10 +63,13 @@ dependencies {
     // Retrofit
     def retrofit_version = '2.6.4'
     implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
-    implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-moshi:$retrofit_version"
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.11'
-    implementation 'com.google.code.gson:gson:2.8.6'
+
+    implementation "com.squareup.moshi:moshi:1.9.2"
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.9.2"
+    implementation 'com.squareup.moshi:moshi-adapters:1.9.2'
 
     // work manager
     def work_version = "2.3.4"
