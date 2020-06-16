@@ -10,8 +10,8 @@ import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.fcm.createNotificationChannel
 import com.pushpushgo.sdk.fcm.deserializeNotificationData
 import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
-import com.pushpushgo.sdk.utils.withApiKeyValidation
-import com.pushpushgo.sdk.utils.withProjectIdValidation
+import com.pushpushgo.sdk.utils.validateApiKey
+import com.pushpushgo.sdk.utils.validateProjectId
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -55,7 +55,11 @@ class PushPushGo private constructor(
                     ?: throw PushPushException("You have to declare apiKey in Your Manifest file")
                 val projectId = bundle.getString("com.pushpushgo.projectId")
                     ?: throw PushPushException("You have to declare projectId in Your Manifest file")
-                INSTANCE = PushPushGo(context, apiKey.withApiKeyValidation(), projectId.withProjectIdValidation())
+
+                validateApiKey(apiKey)
+                validateProjectId(projectId)
+
+                INSTANCE = PushPushGo(context, apiKey, projectId)
             }
             return INSTANCE as PushPushGo
         }
