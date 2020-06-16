@@ -28,6 +28,7 @@ class PushPushGo private constructor(
         /**
          * an instance of PushPushGo library
          */
+        @Volatile
         private var INSTANCE: PushPushGo? = null
 
         fun isInitialized(): Boolean {
@@ -44,24 +45,8 @@ class PushPushGo private constructor(
          * @return PushPushGoFacade instance
          */
         @JvmStatic
-        fun getInstance(context: Context): PushPushGo {
-            if (INSTANCE == null) {
-                val ai = context.packageManager.getApplicationInfo(
-                    context.packageName,
-                    PackageManager.GET_META_DATA
-                )
-                val bundle = ai.metaData
-                val apiKey = bundle.getString("com.pushpushgo.apikey")
-                    ?: throw PushPushException("You have to declare apiKey in Your Manifest file")
-                val projectId = bundle.getString("com.pushpushgo.projectId")
-                    ?: throw PushPushException("You have to declare projectId in Your Manifest file")
-
-                validateApiKey(apiKey)
-                validateProjectId(projectId)
-
-                INSTANCE = PushPushGo(context, apiKey, projectId)
-            }
-            return INSTANCE as PushPushGo
+        fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
+            INSTANCE ?: buildPushPushGo(context)
         }
 
         /**
@@ -76,6 +61,23 @@ class PushPushGo private constructor(
                 INSTANCE = PushPushGo(context, apiKey, projectId)
             }
             return INSTANCE as PushPushGo
+        }
+
+        private fun buildPushPushGo(context: Context): PushPushGo {
+            val ai = context.packageManager.getApplicationInfo(
+                context.packageName,
+                PackageManager.GET_META_DATA
+            )
+            val bundle = ai.metaData
+            val apiKey = bundle.getString("com.pushpushgo.apikey")
+                ?: throw PushPushException("You have to declare apiKey in Your Manifest file")
+            val projectId = bundle.getString("com.pushpushgo.projectId")
+                ?: throw PushPushException("You have to declare projectId in Your Manifest file")
+
+            validateApiKey(apiKey)
+            validateProjectId(projectId)
+
+            return PushPushGo(context, apiKey, projectId)
         }
     }
 
