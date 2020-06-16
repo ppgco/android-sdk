@@ -21,7 +21,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "0.1.4-20200525~2"
+        const val VERSION = "0.1.4-20200616~1"
 
         internal const val TAG = "PPGo"
 
@@ -46,7 +46,7 @@ class PushPushGo private constructor(
          */
         @JvmStatic
         fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: buildPushPushGo(context)
+            INSTANCE ?: buildPushPushGo(context).also { INSTANCE = it }
         }
 
         /**
