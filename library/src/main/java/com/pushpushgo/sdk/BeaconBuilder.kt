@@ -103,6 +103,8 @@ class BeaconBuilder internal constructor(private val uploadManager: UploadManage
     }
 
     private fun JSONObject.addTags() {
+        tags.ifEmpty { return }
+
         put("tags", JSONArray().apply {
             tags.forEach { (tag, label) ->
                 put(JSONObject().apply {
@@ -114,6 +116,8 @@ class BeaconBuilder internal constructor(private val uploadManager: UploadManage
     }
 
     private fun JSONObject.addTagsToDelete() {
+        tagsToDelete.ifEmpty { return }
+
         put("tagsToDelete", JSONArray().apply {
             tagsToDelete.forEach {
                 put(it)
