@@ -86,7 +86,7 @@ class BeaconBuilder internal constructor(private val uploadManager: UploadManage
             addSelectors()
             addTags()
             addTagsToDelete()
-            put("customId", customId)
+            if (customId.isNotEmpty()) put("customId", customId)
         })
     }
 
