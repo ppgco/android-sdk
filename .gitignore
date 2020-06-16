@@ -13,3 +13,4 @@
 .externalNativeBuild
 sample/debug
 sample/release
+.idea/jarRepositories.xml
