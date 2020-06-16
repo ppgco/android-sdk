@@ -37,6 +37,11 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     }
 
     fun sendUnregister() {
+        if (!sharedPref.isSubscribed) {
+            Timber.tag(PushPushGo.TAG).d("Can't unregister, because device not registered. Skipping")
+            return
+        }
+
         Timber.tag(PushPushGo.TAG).d("Unregister enqueued")
 
         enqueueJob(UNREGISTER, isMustRunImmediately = true)
