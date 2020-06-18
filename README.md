@@ -70,3 +70,20 @@ $ ./gradlew :library:publishDebugPublicationToMavenLocal      // debug
 $ ./gradlew :library:publishReleasePublicationToMavenLocal    // release
 $ ./gradlew :library:publishToMavenLocal                      // both
 ```
+
+
+## Tests
+
+Run tests in `library` module:
+
+```sh
+$ ./gradlew :library:testDebug
+```
+
+Generate coverage report:
+
+```sh
+$ ./gradlew :library:jacocoTestReport
+```
+
+HTML coverage report path: `library/build/reports/jacocoTestReport/html/`

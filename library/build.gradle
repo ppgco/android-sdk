@@ -3,6 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'org.jetbrains.dokka'
 apply plugin: 'maven-publish'
+apply from: 'jacoco.gradle'
 
 dokka {
     outputFormat = 'html'
