@@ -79,6 +79,11 @@ dependencies {
     // firebase
     implementation 'com.google.firebase:firebase-core:17.4.3'
     implementation 'com.google.firebase:firebase-messaging:20.2.0'
+
+    // testing
+    testImplementation 'junit:junit:4.13'
+    testImplementation "io.mockk:mockk:1.10.0"
+    testImplementation 'org.json:json:20180813'
 }
 
 task androidSourcesJar(type: Jar) {
