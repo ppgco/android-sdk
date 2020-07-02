@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -52,6 +53,7 @@ internal fun translateFirebasePriority(priority: Int?) = when (priority) {
 
 internal fun handleNotificationLinkClick(context: Context, uri: String) {
     Intent.parseUri(uri, 0).let {
+        it.addFlags(FLAG_ACTIVITY_NEW_TASK)
         if (it.resolveActivity(context.packageManager) != null) context.startActivity(it)
         else {
             Timber.tag(PushPushGo.TAG).e("Not found activity to open uri: %s", uri)
