@@ -17,8 +17,8 @@ android {
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 29
-        versionCode 6
-        versionName "0.1.5"
+        versionCode 7
+        versionName "0.1.6"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -26,8 +26,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-//            buildConfigField "String", "BASE_URL", '"https://api.pushpushgo.com/"'
-            buildConfigField "String", "BASE_URL", '"https://api.stppg.co/"'
+            buildConfigField "String", "BASE_URL", '"https://api.pushpushgo.com/"'
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
@@ -63,10 +62,12 @@ dependencies {
 
     // Retrofit
     def retrofit_version = '2.6.4'
+    //noinspection GradleDependency
     implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
+    //noinspection GradleDependency
     implementation "com.squareup.retrofit2:converter-moshi:$retrofit_version"
     //noinspection GradleDependency
-    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.11'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.12'
 
     implementation "com.squareup.moshi:moshi:1.9.2"
     kapt "com.squareup.moshi:moshi-kotlin-codegen:1.9.2"
@@ -79,7 +80,7 @@ dependencies {
 
     // firebase
     implementation 'com.google.firebase:firebase-core:17.4.3'
-    implementation 'com.google.firebase:firebase-messaging:20.2.0'
+    implementation 'com.google.firebase:firebase-messaging:20.2.1'
 
     // testing
     testImplementation 'junit:junit:4.13'

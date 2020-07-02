@@ -10,8 +10,8 @@ android {
         applicationId "com.pushpushgo.sample"
         minSdkVersion 19
         targetSdkVersion 29
-        versionCode 6
-        versionName "0.1.5-20200616~1"
+        versionCode 7
+        versionName "0.1.6-20200702~1"
 
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

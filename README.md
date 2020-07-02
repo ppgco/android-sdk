@@ -1,5 +1,10 @@
 # PushPushGo Android SDK
 
+## Requirements
+
+- minSdkVersion: 19
+- configured google mobile services in project
+
 ## Instalation
 
 1. Add SDK dependency to Your project
@@ -13,9 +18,10 @@ allprojects {
 
 // /app/build.gradle
 dependencies {
-    implementation 'com.pushpushgo:sdk:0.1.2'
+    implementation 'com.pushpushgo:sdk:0.1.6'
 }
 ```
+
 2. Add to Your AndroidManifest.xml:
 ```xml
 <meta-data
