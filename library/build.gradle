@@ -18,7 +18,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 29
         versionCode 8
-        versionName "0.1.7"
+        versionName "0.1.8-SNAPSHOT"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -30,7 +30,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            buildConfigField "String", "BASE_URL", '"https://api.stppg.co/"'
+            buildConfigField "String", "BASE_URL", '"https://api-ddd.dev1.qappg.co"'
         }
     }
     compileOptions {
