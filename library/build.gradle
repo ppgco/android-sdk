@@ -11,12 +11,12 @@ dokka {
 }
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     buildToolsVersion = '29.0.3'
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 9
         versionName "0.1.8"
 
@@ -69,9 +69,9 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.12'
 
-    implementation "com.squareup.moshi:moshi:1.9.3"
-    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.9.3"
-    implementation 'com.squareup.moshi:moshi-adapters:1.9.3'
+    implementation "com.squareup.moshi:moshi:1.11.0"
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.11.0"
+    implementation 'com.squareup.moshi:moshi-adapters:1.11.0'
 
     // work manager
     def work_version = "2.4.0"
@@ -79,12 +79,12 @@ dependencies {
     implementation "androidx.work:work-gcm:$work_version"
 
     // firebase
-    implementation 'com.google.firebase:firebase-core:17.5.0'
-    implementation 'com.google.firebase:firebase-messaging:20.2.4'
+    implementation 'com.google.firebase:firebase-core:17.5.1'
+    implementation 'com.google.firebase:firebase-messaging:20.3.0'
 
     // testing
-    testImplementation 'junit:junit:4.13'
-    testImplementation "io.mockk:mockk:1.10.0"
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation "io.mockk:mockk:1.10.2"
     testImplementation 'org.json:json:20180813'
 }
 
