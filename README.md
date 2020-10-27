@@ -18,7 +18,7 @@ allprojects {
 
 // /app/build.gradle
 dependencies {
-    implementation 'com.pushpushgo:sdk:0.1.7'
+    implementation 'com.pushpushgo:sdk:0.1.10'
 }
 ```
 

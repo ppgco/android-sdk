@@ -72,14 +72,14 @@ class BeaconBuilder internal constructor(private val uploadManager: UploadManage
      *
      * @return instance of builder
      */
-    fun setCustomId(id: String): BeaconBuilder {
-        customId = id
+    fun setCustomId(id: String?): BeaconBuilder {
+        customId = id.orEmpty()
 
         return this
     }
 
-    fun setCustomId(id: Int): BeaconBuilder {
-        customId = id.toString()
+    fun setCustomId(id: Int?): BeaconBuilder {
+        customId = (id ?: 0).toString().takeIf { it != "0" }.orEmpty()
 
         return this
     }
