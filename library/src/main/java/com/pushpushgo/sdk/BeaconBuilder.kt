@@ -78,6 +78,12 @@ class BeaconBuilder internal constructor(private val uploadManager: UploadManage
         return this
     }
 
+    fun setCustomId(id: Int): BeaconBuilder {
+        customId = id.toString()
+
+        return this
+    }
+
     /**
      * @throws PushPushException on unsupported selector value type
      */
