@@ -41,9 +41,6 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-    dexOptions {
-        javaMaxHeapSize "12g"
-    }
 }
 
 dependencies {
@@ -57,8 +54,8 @@ dependencies {
     implementation "org.kodein.di:kodein-di-generic-jvm:6.2.1"
 
     // Kotlin Android Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
 
     // Retrofit
     def retrofit_version = '2.6.4'
@@ -67,24 +64,25 @@ dependencies {
     //noinspection GradleDependency
     implementation "com.squareup.retrofit2:converter-moshi:$retrofit_version"
     //noinspection GradleDependency
-    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.12'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.13'
 
     implementation "com.squareup.moshi:moshi:1.11.0"
     kapt "com.squareup.moshi:moshi-kotlin-codegen:1.11.0"
     implementation 'com.squareup.moshi:moshi-adapters:1.11.0'
 
     // work manager
-    def work_version = "2.4.0"
+    def work_version = "2.5.0"
     implementation "androidx.work:work-runtime-ktx:$work_version"
     implementation "androidx.work:work-gcm:$work_version"
 
     // firebase
-    implementation 'com.google.firebase:firebase-core:18.0.0'
-    implementation 'com.google.firebase:firebase-messaging:21.0.0'
+    implementation platform('com.google.firebase:firebase-bom:26.2.0')
+    implementation 'com.google.firebase:firebase-core'
+    implementation 'com.google.firebase:firebase-messaging'
 
     // testing
     testImplementation 'junit:junit:4.13.1'
-    testImplementation "io.mockk:mockk:1.10.2"
+    testImplementation "io.mockk:mockk:1.10.5"
     testImplementation 'org.json:json:20180813'
 }
 
