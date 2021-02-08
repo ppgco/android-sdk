@@ -6,8 +6,8 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.deviceToken
-import okhttp3.MediaType
-import okhttp3.RequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
 
 internal class ApiRepository(
@@ -44,7 +44,7 @@ internal class ApiRepository(
         apiService.sendBeacon(
             projectId = projectId,
             subscriberId = sharedPref.subscriberId,
-            beacon = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), beacon)
+            beacon = beacon.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
         )
     }
 
@@ -53,7 +53,7 @@ internal class ApiRepository(
 
         apiService.sendEvent(
             projectId = projectId,
-            event = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), event)
+            event = event.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
         )
     }
 

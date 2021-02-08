@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- minSdkVersion: 19
+- minSdkVersion: 21
 - configured google mobile services in project
 
 ## Instalation

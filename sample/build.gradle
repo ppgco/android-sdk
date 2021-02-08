@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.pushpushgo.sample"
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode 9
         versionName "0.1.10-20201027~2"
