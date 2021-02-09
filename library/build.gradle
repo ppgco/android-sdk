@@ -18,7 +18,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 9
-        versionName "0.1.10"
+        versionName "0.1.10-SNAPSHOT"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -73,9 +73,9 @@ dependencies {
     implementation "androidx.work:work-gcm:$work_version"
 
     // firebase
-    implementation platform('com.google.firebase:firebase-bom:26.2.0')
-    implementation 'com.google.firebase:firebase-core'
-    implementation 'com.google.firebase:firebase-messaging'
+    compileOnly platform('com.google.firebase:firebase-bom:26.2.0')
+    compileOnly 'com.google.firebase:firebase-core'
+    compileOnly 'com.google.firebase:firebase-messaging'
 
     // HMS
     compileOnly 'com.huawei.hms:push:5.0.4.302'
