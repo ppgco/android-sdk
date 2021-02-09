@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -29,6 +30,7 @@ class PushPushGo private constructor(
          * an instance of PushPushGo library
          */
         @Volatile
+        @SuppressLint("StaticFieldLeak")
         private var INSTANCE: PushPushGo? = null
 
         fun isInitialized(): Boolean {

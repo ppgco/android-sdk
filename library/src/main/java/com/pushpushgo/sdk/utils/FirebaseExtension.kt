@@ -1,21 +1,21 @@
 package com.pushpushgo.sdk.utils
 
-import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.messaging.FirebaseMessaging
 import timber.log.Timber
 import java.util.concurrent.CountDownLatch
 
-internal val FirebaseInstanceId.deviceToken: String
+internal val FirebaseMessaging.deviceToken: String
     get() {
         val lock = CountDownLatch(1)
-        var token = ""
-        instanceId.addOnCompleteListener {
+        var deviceToken = ""
+        token.addOnCompleteListener {
             if (it.isSuccessful) {
-                token = it.result!!.token
+                deviceToken = it.result!!
             } else {
-                Timber.w("Failed to get firebase token! ${it.exception}")
+                Timber.w(it.exception, "Fetching FCM registration token failed!")
             }
             lock.countDown()
         }
         lock.await()
-        return token
+        return deviceToken
     }

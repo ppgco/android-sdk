@@ -2,7 +2,7 @@ package com.pushpushgo.sdk.network
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.messaging.FirebaseMessaging
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.deviceToken
@@ -19,7 +19,7 @@ internal class ApiRepository(
     suspend fun registerToken() {
         Timber.tag(PushPushGo.TAG).d("registerToken invoked")
 
-        val token = sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: FirebaseInstanceId.getInstance().deviceToken
+        val token = sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: FirebaseMessaging.getInstance().deviceToken
 
         val data = apiService.registerSubscriber(projectId, TokenRequest(token))
         if (data.id.isNotBlank()) {
