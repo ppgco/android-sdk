@@ -9,8 +9,9 @@ internal fun getPlatformType() = when {
     else -> throw IllegalStateException("Can't find Firebase nor PushKit libraries!")
 }
 
-internal enum class PlatformType {
-    FCM, HCM
+internal enum class PlatformType(val apiName: String) {
+    FCM("android"),
+    HCM("huawei")
 }
 
 private fun hasHMSPushKitLibrary() = try {

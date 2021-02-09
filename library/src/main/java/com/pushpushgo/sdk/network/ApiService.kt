@@ -5,6 +5,7 @@ import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
+import com.pushpushgo.sdk.utils.PlatformType
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -17,26 +18,26 @@ import retrofit2.http.*
 
 internal interface ApiService {
 
-    @POST("/v1/android/{projectId}/subscriber")
+    @POST("{projectId}/subscriber")
     suspend fun registerSubscriber(
         @Path("projectId") projectId: String,
         @Body body: TokenRequest
     ): TokenResponse
 
-    @DELETE("/v1/android/{projectId}/subscriber/{subscriberId}")
+    @DELETE("{projectId}/subscriber/{subscriberId}")
     suspend fun unregisterSubscriber(
         @Path("projectId") projectId: String,
         @Path("subscriberId") subscriberId: String
     ): Response<Void>
 
-    @POST("/v1/android/{projectId}/subscriber/{subscriberId}/beacon")
+    @POST("{projectId}/subscriber/{subscriberId}/beacon")
     suspend fun sendBeacon(
         @Path("projectId") projectId: String,
         @Path("subscriberId") subscriberId: String,
         @Body beacon: RequestBody
     ): Response<Void>
 
-    @POST("/v1/android/{projectId}/event/")
+    @POST("{projectId}/event/")
     suspend fun sendEvent(
         @Path("projectId") projectId: String,
         @Body event: RequestBody
@@ -48,7 +49,8 @@ internal interface ApiService {
     companion object {
         operator fun invoke(
             requestInterceptor: RequestInterceptor,
-            responseInterceptor: ResponseInterceptor
+            responseInterceptor: ResponseInterceptor,
+            platformType: PlatformType
         ): ApiService {
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(requestInterceptor)
@@ -63,7 +65,7 @@ internal interface ApiService {
 
             return Retrofit.Builder()
                 .client(okHttpClient)
-                .baseUrl(BuildConfig.BASE_URL)
+                .baseUrl("${BuildConfig.BASE_URL}/v1/${platformType.apiName}/")
                 .addConverterFactory(MoshiConverterFactory.create())
                 .build().create()
         }
