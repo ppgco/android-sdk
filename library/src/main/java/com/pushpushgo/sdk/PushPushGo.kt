@@ -7,9 +7,9 @@ import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.fcm.createNotificationChannel
-import com.pushpushgo.sdk.fcm.deserializeNotificationData
-import com.pushpushgo.sdk.fcm.handleNotificationLinkClick
+import com.pushpushgo.sdk.push.createNotificationChannel
+import com.pushpushgo.sdk.push.deserializeNotificationData
+import com.pushpushgo.sdk.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.validateApiKey
 import com.pushpushgo.sdk.utils.validateProjectId
 import timber.log.Timber

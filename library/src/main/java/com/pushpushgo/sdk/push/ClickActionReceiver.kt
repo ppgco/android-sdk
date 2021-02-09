@@ -1,4 +1,4 @@
-package com.pushpushgo.sdk.fcm
+package com.pushpushgo.sdk.push
 
 import android.content.BroadcastReceiver
 import android.content.Context

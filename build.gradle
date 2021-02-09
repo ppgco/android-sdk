@@ -4,12 +4,13 @@ buildscript {
     repositories {
         google()
         jcenter()
-
+        maven { url 'http://developer.huawei.com/repo/' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.1.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.3.5'
+        classpath 'com.huawei.agconnect:agcp:1.5.0.200'
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
     }
 }
@@ -19,6 +20,7 @@ allprojects {
         jcenter()
         mavenCentral()
         maven { url "https://jitpack.io" }
+        maven { url 'http://developer.huawei.com/repo/' }
     }
 }
 

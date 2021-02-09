@@ -9,10 +9,19 @@
     <application
         android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="n">
-        <service android:name=".fcm.MessagingService">
+        <service
+            android:name=".push.service.FcmMessagingService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".push.service.HmsMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.huawei.push.action.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
@@ -26,6 +35,6 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/pushpushgo_notification_default_channel_id" />
 
-        <receiver android:name=".fcm.ClickActionReceiver" />
+        <receiver android:name=".push.ClickActionReceiver" />
     </application>
 </manifest>
