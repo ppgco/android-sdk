@@ -30,7 +30,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            buildConfigField "String", "BASE_URL", '"https://api-ddd.dev1.qappg.co"'
+            buildConfigField "String", "BASE_URL", '"https://api-ddd.qa.qappg.co/"'
         }
     }
     compileOptions {
