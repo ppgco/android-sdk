@@ -15,6 +15,8 @@ import com.pushpushgo.sdk.utils.getPlatformPushToken
 import com.pushpushgo.sdk.utils.getPlatformType
 import com.pushpushgo.sdk.utils.validateApiKey
 import com.pushpushgo.sdk.utils.validateProjectId
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -89,7 +91,9 @@ class PushPushGo private constructor(
 
     init {
         val platformType = getPlatformType()
-        Timber.tag(TAG).d("PushPushGo $VERSION initialized (project id: $projectId, platform: $platformType)")
+        val startupMessage = "PushPushGo $VERSION initialized (project id: $projectId, platform: $platformType)"
+        println(startupMessage)
+        Timber.tag(TAG).d(startupMessage)
 
         createNotificationChannel(context)
         NotificationStatusChecker.start(context)
@@ -140,8 +144,10 @@ class PushPushGo private constructor(
      * function to register subscriber
      */
     fun registerSubscriber() {
-        val token = networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
-        getUploadManager().sendRegister(token)
+        GlobalScope.launch {
+            val token = networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+            getUploadManager().sendRegister(token)
+        }
     }
 
     /**

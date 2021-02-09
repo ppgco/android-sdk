@@ -4,8 +4,8 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.huawei.hms.aaid.HmsInstanceId
 
 internal fun getPlatformType() = when {
-    hasFCMLibrary() -> PlatformType.FCM
     hasHMSPushKitLibrary() -> PlatformType.HCM
+    hasFCMLibrary() -> PlatformType.FCM
     else -> throw IllegalStateException("Can't find Firebase nor PushKit libraries!")
 }
 

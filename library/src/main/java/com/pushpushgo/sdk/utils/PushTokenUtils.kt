@@ -4,10 +4,12 @@ import android.content.Context
 import com.google.firebase.messaging.FirebaseMessaging
 import com.huawei.agconnect.config.AGConnectServicesConfig
 import com.huawei.hms.aaid.HmsInstanceId
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.CountDownLatch
 
-internal fun getPlatformPushToken(context: Context) = when (getPlatformType()) {
+internal suspend fun getPlatformPushToken(context: Context) = when (getPlatformType()) {
     PlatformType.FCM -> getFcmPushToken()
     PlatformType.HCM -> getHcmPushToken(context)
 }
@@ -27,8 +29,10 @@ private fun getFcmPushToken(): String {
     return deviceToken
 }
 
-private fun getHcmPushToken(context: Context): String {
-    val appId = AGConnectServicesConfig.fromContext(context).getString("client/app_id")
+private suspend fun getHcmPushToken(context: Context): String {
+    return withContext(Dispatchers.IO) {
+        val appId = AGConnectServicesConfig.fromContext(context).getString("client/app_id")
 
-    return HmsInstanceId.getInstance(context).getToken(appId, "HCM")
+        HmsInstanceId.getInstance(context).getToken(appId, "HCM")
+    }
 }

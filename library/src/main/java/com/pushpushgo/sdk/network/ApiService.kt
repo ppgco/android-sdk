@@ -65,7 +65,7 @@ internal interface ApiService {
 
             return Retrofit.Builder()
                 .client(okHttpClient)
-                .baseUrl("${BuildConfig.BASE_URL}/v1/${platformType.apiName}/")
+                .baseUrl("${BuildConfig.BASE_URL.removeSuffix("/")}/v1/${platformType.apiName}/")
                 .addConverterFactory(MoshiConverterFactory.create())
                 .build().create()
         }
