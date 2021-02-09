@@ -31,7 +31,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
 
             with(getInstance().getNetwork()) {
                 when (inputData.getString(TYPE)) {
-                    REGISTER -> registerToken()
+                    REGISTER -> registerToken(data)
                     UNREGISTER -> unregisterSubscriber()
                     EVENT -> sendEvent(data)
                     BEACON -> sendBeacon(data)

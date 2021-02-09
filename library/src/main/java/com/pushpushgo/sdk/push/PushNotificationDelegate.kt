@@ -59,7 +59,7 @@ internal class PushNotificationDelegate : CoroutineScope {
         Timber.tag(PushPushGo.TAG).d("Refreshed token: $token")
 
         if (PushPushGo.isInitialized() && isSubscribed) {
-            PushPushGo.getInstance().registerSubscriber()
+            PushPushGo.getInstance().getUploadManager().sendRegister(token)
         }
     }
 

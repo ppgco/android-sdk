@@ -23,7 +23,7 @@ class HmsMessagingService : HmsMessageService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        preferencesHelper.lastToken = token
+        preferencesHelper.lastHCMToken = token
         helper.onNewToken(token, preferencesHelper.isSubscribed)
     }
 

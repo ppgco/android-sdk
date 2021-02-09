@@ -8,6 +8,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
 import androidx.core.content.getSystemService
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.utils.getPlatformPushToken
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -46,7 +47,8 @@ internal class NotificationStatusChecker private constructor(private val context
             if (pref.subscriberId.isBlank()) {
                 GlobalScope.launch {
                     Timber.tag(PushPushGo.TAG).d("Notifications enabled, but not subscribed. Registering token...")
-                    PushPushGo.getInstance().getNetwork().registerToken()
+                    val token = pref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+                    PushPushGo.getInstance().getNetwork().registerToken(token)
                 }
             }
         } else {

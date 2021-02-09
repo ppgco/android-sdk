@@ -11,6 +11,8 @@ import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.handleNotificationLinkClick
+import com.pushpushgo.sdk.utils.getPlatformPushToken
+import com.pushpushgo.sdk.utils.getPlatformType
 import com.pushpushgo.sdk.utils.validateApiKey
 import com.pushpushgo.sdk.utils.validateProjectId
 import timber.log.Timber
@@ -86,7 +88,8 @@ class PushPushGo private constructor(
     private val networkModule by lazy { NetworkModule(context, apiKey, projectId) }
 
     init {
-        Timber.tag(TAG).d("PushPushGo $VERSION initialized (project id: $projectId)")
+        val platformType = getPlatformType()
+        Timber.tag(TAG).d("PushPushGo $VERSION initialized (project id: $projectId, platform: $platformType)")
 
         createNotificationChannel(context)
         NotificationStatusChecker.start(context)
@@ -137,7 +140,8 @@ class PushPushGo private constructor(
      * function to register subscriber
      */
     fun registerSubscriber() {
-        getUploadManager().sendRegister()
+        val token = networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+        getUploadManager().sendRegister(token)
     }
 
     /**
@@ -148,7 +152,7 @@ class PushPushGo private constructor(
     }
 
     /**
-     * function to start construct and send beacon
+     * function to construct and send beacon
      */
     fun createBeacon(): BeaconBuilder {
         return BeaconBuilder(getUploadManager())

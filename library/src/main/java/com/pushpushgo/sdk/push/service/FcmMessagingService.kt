@@ -23,7 +23,7 @@ internal class FcmMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        preferencesHelper.lastToken = token
+        preferencesHelper.lastFCMToken = token
         helper.onNewToken(token, preferencesHelper.isSubscribed)
     }
 
