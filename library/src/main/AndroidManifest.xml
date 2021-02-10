@@ -25,6 +25,9 @@
             </intent-filter>
         </service>
 
+        <receiver android:name=".push.ClickActionReceiver" />
+
+        <!-- FCM -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_pushpushgo_default" />
@@ -35,6 +38,9 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/pushpushgo_notification_default_channel_id" />
 
-        <receiver android:name=".push.ClickActionReceiver" />
+        <!-- GCM -->
+        <meta-data
+            android:name="com.huawei.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_pushpushgo_default" />
     </application>
 </manifest>
