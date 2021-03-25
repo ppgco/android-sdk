@@ -54,8 +54,8 @@ dependencies {
     implementation "org.kodein.di:kodein-di-generic-jvm:6.2.1"
 
     // Kotlin Android Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.3'
 
     // Retrofit
     def retrofit_version = '2.9.0'
@@ -78,11 +78,11 @@ dependencies {
     compileOnly 'com.google.firebase:firebase-messaging'
 
     // HMS
-    compileOnly 'com.huawei.hms:push:5.0.4.302'
+    compileOnly 'com.huawei.hms:push:5.1.1.301'
 
     // testing
-    testImplementation 'junit:junit:4.13.1'
-    testImplementation "io.mockk:mockk:1.10.5"
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation "io.mockk:mockk:1.11.0"
     testImplementation 'org.json:json:20180813'
 }
 
