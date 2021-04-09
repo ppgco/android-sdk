@@ -7,7 +7,7 @@ import com.pushpushgo.sdk.push.PushNotification
 import com.pushpushgo.sdk.push.PushNotificationDelegate
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 
-class HmsMessagingService : HmsMessageService() {
+internal class HmsMessagingService : HmsMessageService() {
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 
