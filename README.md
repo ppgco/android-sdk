@@ -3,7 +3,7 @@
 ## Requirements
 
 - minSdkVersion: 21
-- configured google mobile services in project
+- configured GMS or HMS in project
 
 ## Instalation
 
