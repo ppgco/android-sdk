@@ -26,8 +26,9 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         Timber.tag(PushPushGo.TAG).d("UploadWorker: started")
 
         try {
-            if (PushPushGo.getInstance().isSubscribed()) {
-                doNetworkWork()
+            val type = inputData.getString(TYPE)
+            if (PushPushGo.getInstance().isSubscribed() || type == REGISTER) {
+                doNetworkWork(type)
             } else Timber.d("UploadWorker: skipped. Reason: not subscribed")
         } catch (e: IOException) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
@@ -44,11 +45,11 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         Result.success()
     }
 
-    private suspend fun doNetworkWork() {
+    private suspend fun doNetworkWork(type: String?) {
         val data = inputData.getString(DATA).orEmpty()
 
         with(PushPushGo.getInstance().getNetwork()) {
-            when (inputData.getString(TYPE)) {
+            when (type) {
                 REGISTER -> registerToken(data)
                 UNREGISTER -> unregisterSubscriber()
                 EVENT -> sendEvent(data)
