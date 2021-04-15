@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.pushpushgo.sdk.PushPushGo
-import com.pushpushgo.sdk.PushPushGo.Companion.getInstance
 import com.pushpushgo.sdk.work.UploadManager.Companion.UPLOAD_RETRY_ATTEMPT
 import kotlinx.coroutines.coroutineScope
 import timber.log.Timber
@@ -27,17 +26,9 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         Timber.tag(PushPushGo.TAG).d("UploadWorker: started")
 
         try {
-            val data = inputData.getString(DATA).orEmpty()
-
-            with(getInstance().getNetwork()) {
-                when (inputData.getString(TYPE)) {
-                    REGISTER -> registerToken(data)
-                    UNREGISTER -> unregisterSubscriber()
-                    EVENT -> sendEvent(data)
-                    BEACON -> sendBeacon(data)
-                    else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
-                }
-            }
+            if (PushPushGo.getInstance().isSubscribed()) {
+                doNetworkWork()
+            } else Timber.d("UploadWorker: skipped. Reason: not subscribed")
         } catch (e: IOException) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
             return@coroutineScope if (inputData.getBoolean(RETRY_LIMIT, false) && runAttemptCount > UPLOAD_RETRY_ATTEMPT) {
@@ -51,5 +42,19 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         Timber.tag(PushPushGo.TAG).d("UploadWorker: success")
 
         Result.success()
+    }
+
+    private suspend fun doNetworkWork() {
+        val data = inputData.getString(DATA).orEmpty()
+
+        with(PushPushGo.getInstance().getNetwork()) {
+            when (inputData.getString(TYPE)) {
+                REGISTER -> registerToken(data)
+                UNREGISTER -> unregisterSubscriber()
+                EVENT -> sendEvent(data)
+                BEACON -> sendBeacon(data)
+                else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
+            }
+        }
     }
 }

@@ -30,7 +30,7 @@ internal class ApiRepository(
 
         apiService.unregisterSubscriber(projectId, sharedPref.subscriberId)
         sharedPref.subscriberId = ""
-        sharedPref.isSubscribed = isSubscribed
+        sharedPref.isSubscribed = false
     }
 
     suspend fun sendBeacon(beacon: String) {
