@@ -22,14 +22,14 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         const val EVENT = "event"
     }
 
+    val delegate by lazy { UploadDelegate() }
+
     override suspend fun doWork(): Result = coroutineScope {
         Timber.tag(PushPushGo.TAG).d("UploadWorker: started")
 
         try {
             val type = inputData.getString(TYPE)
-            if (PushPushGo.getInstance().isSubscribed() || type == REGISTER) {
-                doNetworkWork(type)
-            } else Timber.d("UploadWorker: skipped. Reason: not subscribed")
+            delegate.doNetworkWork(type, inputData.getString(DATA).orEmpty())
         } catch (e: IOException) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
             return@coroutineScope if (inputData.getBoolean(RETRY_LIMIT, false) && runAttemptCount > UPLOAD_RETRY_ATTEMPT) {
@@ -43,19 +43,5 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         Timber.tag(PushPushGo.TAG).d("UploadWorker: success")
 
         Result.success()
-    }
-
-    private suspend fun doNetworkWork(type: String?) {
-        val data = inputData.getString(DATA).orEmpty()
-
-        with(PushPushGo.getInstance().getNetwork()) {
-            when (type) {
-                REGISTER -> registerToken(data)
-                UNREGISTER -> unregisterSubscriber()
-                EVENT -> sendEvent(data)
-                BEACON -> sendBeacon(data)
-                else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
-            }
-        }
     }
 }
