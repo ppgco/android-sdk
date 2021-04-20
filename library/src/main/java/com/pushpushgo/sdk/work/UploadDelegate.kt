@@ -5,7 +5,7 @@ import timber.log.Timber
 
 class UploadDelegate {
 
-    suspend fun doNetworkWork(type: String?, data: String) {
+    suspend fun doNetworkWork(type: String?, data: String?) {
         if (!PushPushGo.getInstance().isSubscribed() && type != UploadWorker.REGISTER) {
             return Timber.d("UploadWorker: skipped. Reason: not subscribed")
         }
@@ -14,8 +14,8 @@ class UploadDelegate {
             when (type) {
                 UploadWorker.REGISTER -> registerToken(data)
                 UploadWorker.UNREGISTER -> unregisterSubscriber()
-                UploadWorker.EVENT -> sendEvent(data)
-                UploadWorker.BEACON -> sendBeacon(data)
+                UploadWorker.EVENT -> sendEvent(data.orEmpty())
+                UploadWorker.BEACON -> sendBeacon(data.orEmpty())
                 else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
             }
         }

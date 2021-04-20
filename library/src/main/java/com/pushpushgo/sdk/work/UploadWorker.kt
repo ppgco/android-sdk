@@ -27,7 +27,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         val type = inputData.getString(TYPE)
 
         try {
-            delegate.doNetworkWork(type, inputData.getString(DATA).orEmpty())
+            delegate.doNetworkWork(type, inputData.getString(DATA))
         } catch (e: Throwable) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
             return@coroutineScope when (type) {

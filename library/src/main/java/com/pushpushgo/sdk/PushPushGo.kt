@@ -26,7 +26,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "0.1.11-20210419~1"
+        const val VERSION = "0.1.11-20210420~1"
 
         internal const val TAG = "PPGo"
 
@@ -158,10 +158,7 @@ class PushPushGo private constructor(
      * function to register subscriber
      */
     fun registerSubscriber() {
-        GlobalScope.launch {
-            val token = networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
-            getUploadManager().sendRegister(token)
-        }
+        getUploadManager().sendRegister(null)
     }
 
     /**

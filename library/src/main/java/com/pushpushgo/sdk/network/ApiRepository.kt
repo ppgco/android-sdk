@@ -1,23 +1,27 @@
 package com.pushpushgo.sdk.network
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.data.TokenRequest
+import com.pushpushgo.sdk.utils.getPlatformPushToken
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
 
 internal class ApiRepository(
     private val apiService: ApiService,
+    private val context: Context,
     private val sharedPref: SharedPreferencesHelper,
-    private val projectId: String
+    private val projectId: String,
 ) {
 
-    suspend fun registerToken(token: String) {
+    suspend fun registerToken(token: String?) {
         Timber.tag(PushPushGo.TAG).d("registerToken invoked: $token")
+        val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
 
-        val data = apiService.registerSubscriber(projectId, TokenRequest(token))
+        val data = apiService.registerSubscriber(projectId, TokenRequest(tokenToRegister))
         if (data.id.isNotBlank()) {
             sharedPref.subscriberId = data.id
             sharedPref.isSubscribed = true

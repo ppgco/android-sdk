@@ -33,7 +33,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
         const val UPLOAD_RETRY_DELAY = 30L
     }
 
-    fun sendRegister(token: String) {
+    fun sendRegister(token: String?) {
         Timber.tag(PushPushGo.TAG).d("Register enqueued")
 
         enqueueJob(REGISTER, isMustRunImmediately = true, data = token)

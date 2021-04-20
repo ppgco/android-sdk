@@ -38,6 +38,7 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
             ApiRepository(
                 instance(),
                 instance(),
+                instance(),
                 instance(PROJECT_ID)
             )
         }
