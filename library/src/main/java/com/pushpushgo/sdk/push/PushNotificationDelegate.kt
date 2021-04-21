@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -19,6 +18,7 @@ import com.pushpushgo.sdk.utils.mapToBundle
 import kotlinx.coroutines.*
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
+import kotlin.random.Random
 
 internal class PushNotificationDelegate : CoroutineScope {
 
@@ -30,12 +30,11 @@ internal class PushNotificationDelegate : CoroutineScope {
         get() = Dispatchers.Main + job
 
     fun onMessageReceived(pushMessage: PushMessage, context: Context, isSubscribed: Boolean) {
-        job = Job()
         Timber.tag(PushPushGo.TAG).d("From: %s", pushMessage.from)
 
         launch(errorHandler) {
             val notificationId = getUniqueNotificationId()
-            Timber.d("Notification unique id: $notificationId")
+            Timber.tag(PushPushGo.TAG).d("Notification unique id: $notificationId")
 
             val notification = when {
                 pushMessage.data.isNotEmpty() -> getDataNotification(
@@ -53,6 +52,7 @@ internal class PushNotificationDelegate : CoroutineScope {
             }
 
             NotificationManagerCompat.from(context).notify(notificationId, notification)
+            Timber.tag(PushPushGo.TAG).d("Notification sent: $notificationId => $notification")
         }
     }
 
@@ -68,7 +68,7 @@ internal class PushNotificationDelegate : CoroutineScope {
         job.cancel()
     }
 
-    private fun getUniqueNotificationId() = (System.currentTimeMillis() / SystemClock.uptimeMillis()).toInt()
+    private fun getUniqueNotificationId() = Random.nextInt(0, Int.MAX_VALUE)
 
     private suspend fun getDataNotification(
         context: Context,
@@ -230,7 +230,7 @@ internal class PushNotificationDelegate : CoroutineScope {
 
     private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int, link: String, id: Int) =
         PendingIntent.getBroadcast(
-            context, buttonId, Intent(context, ClickActionReceiver::class.java).apply {
+            context, id, Intent(context, ClickActionReceiver::class.java).apply {
                 putExtra(ClickActionReceiver.NOTIFICATION_ID, id)
                 putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
                 putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
