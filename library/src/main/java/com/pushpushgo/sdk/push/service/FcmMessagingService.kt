@@ -2,10 +2,12 @@ package com.pushpushgo.sdk.push.service
 
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.push.PushMessage
 import com.pushpushgo.sdk.push.PushNotification
 import com.pushpushgo.sdk.push.PushNotificationDelegate
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
+import timber.log.Timber
 
 internal class FcmMessagingService : FirebaseMessagingService() {
 
@@ -14,6 +16,7 @@ internal class FcmMessagingService : FirebaseMessagingService() {
     private val helper by lazy { PushNotificationDelegate() }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        Timber.tag(PushPushGo.TAG).d("onMessageReceived(%s)", remoteMessage.toString())
         helper.onMessageReceived(
             pushMessage = remoteMessage.toPushMessage(),
             context = applicationContext,
@@ -36,7 +39,7 @@ internal class FcmMessagingService : FirebaseMessagingService() {
                 body = it.body,
                 priority = it.notificationPriority
             )
-        }
+        }.takeIf { !it?.title.isNullOrEmpty() || !it?.body.isNullOrEmpty() }
     )
 
     override fun onDestroy() {

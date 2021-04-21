@@ -35,6 +35,7 @@ internal class PushNotificationDelegate : CoroutineScope {
 
         launch(errorHandler) {
             val notificationId = getUniqueNotificationId()
+            Timber.d("Notification unique id: $notificationId")
 
             val notification = when {
                 pushMessage.data.isNotEmpty() -> getDataNotification(
@@ -129,7 +130,9 @@ internal class PushNotificationDelegate : CoroutineScope {
     private suspend fun getBitmapFromUrl(url: String?): Bitmap? {
         try {
             return withTimeoutOrNull(5000) {
-                PushPushGo.getInstance().getNetwork().getBitmapFromUrl(url)
+                withContext(Dispatchers.IO) {
+                    PushPushGo.getInstance().getNetwork().getBitmapFromUrl(url)
+                }
             }
         } catch (e: Throwable) {
             Timber.tag(PushPushGo.TAG).e(e, "Failed to download bitmap picture")

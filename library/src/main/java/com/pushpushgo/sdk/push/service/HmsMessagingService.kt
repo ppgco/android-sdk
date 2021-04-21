@@ -2,10 +2,12 @@ package com.pushpushgo.sdk.push.service
 
 import com.huawei.hms.push.HmsMessageService
 import com.huawei.hms.push.RemoteMessage
+import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.PushMessage
 import com.pushpushgo.sdk.push.PushNotification
 import com.pushpushgo.sdk.push.PushNotificationDelegate
-import com.pushpushgo.sdk.network.SharedPreferencesHelper
+import timber.log.Timber
 
 internal class HmsMessagingService : HmsMessageService() {
 
@@ -14,6 +16,7 @@ internal class HmsMessagingService : HmsMessageService() {
     private val helper by lazy { PushNotificationDelegate() }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        Timber.tag(PushPushGo.TAG).d("onMessageReceived(%s)", remoteMessage.toString())
         helper.onMessageReceived(
             pushMessage = remoteMessage.toPushMessage(),
             context = applicationContext,
@@ -36,11 +39,12 @@ internal class HmsMessagingService : HmsMessageService() {
                 body = it.body,
                 priority = -1
             )
-        }
+        }.takeIf { !it?.title.isNullOrEmpty() || !it?.body.isNullOrEmpty() }
     )
 
     override fun onDestroy() {
         super.onDestroy()
-        helper.onDestroy()
+        Timber.tag(PushPushGo.TAG).d("onDestroy(%s)", this::class.java)
+//        helper.onDestroy() // on non-EMUI android killed immediately after receive message
     }
 }
