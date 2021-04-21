@@ -7,8 +7,6 @@ import com.pushpushgo.sdk.data.EventJsonAdapter
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
-import com.pushpushgo.sdk.utils.PlatformType
-import com.pushpushgo.sdk.utils.getPlatformType
 import com.pushpushgo.sdk.work.UploadWorker.Companion.BEACON
 import com.pushpushgo.sdk.work.UploadWorker.Companion.DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT
@@ -31,6 +29,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
     companion object {
         const val UPLOAD_DELAY = 10L
         const val UPLOAD_RETRY_DELAY = 30L
+        const val UPLOAD_DEFERRED_ENABLE = false
     }
 
     fun sendRegister(token: String?) {
@@ -67,18 +66,16 @@ internal class UploadManager(private val workManager: WorkManager, private val s
                 )
             )
         )
-        when (getPlatformType()) {
-            PlatformType.FCM -> enqueueJob(
-                name = EVENT,
-                isMustRunImmediately = true,
-                data = eventContent
-            )
-            PlatformType.HCM -> GlobalScope.launch {
-                try {
-                    uploadDelegate.doNetworkWork(EVENT, eventContent)
-                } catch (e: Throwable) {
-                    Timber.e(e, "Error on sending beacon")
-                }
+
+        if (UPLOAD_DEFERRED_ENABLE) enqueueJob(
+            name = EVENT,
+            isMustRunImmediately = true,
+            data = eventContent
+        ) else GlobalScope.launch {
+            try {
+                uploadDelegate.doNetworkWork(EVENT, eventContent)
+            } catch (e: Throwable) {
+                Timber.e(e, "Error on sending beacon")
             }
         }
     }
@@ -91,14 +88,14 @@ internal class UploadManager(private val workManager: WorkManager, private val s
 
         Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
 
-        when (getPlatformType()) {
-            PlatformType.FCM -> enqueueJob(BEACON, beacon.toString())
-            PlatformType.HCM -> GlobalScope.launch {
-                try {
-                    uploadDelegate.doNetworkWork(BEACON, beacon.toString())
-                } catch (e: Throwable) {
-                    Timber.e(e, "Error on sending beacon")
-                }
+        if (UPLOAD_DEFERRED_ENABLE) enqueueJob(
+            name = BEACON,
+            data = beacon.toString()
+        ) else GlobalScope.launch {
+            try {
+                uploadDelegate.doNetworkWork(BEACON, beacon.toString())
+            } catch (e: Throwable) {
+                Timber.e(e, "Error on sending beacon")
             }
         }
     }

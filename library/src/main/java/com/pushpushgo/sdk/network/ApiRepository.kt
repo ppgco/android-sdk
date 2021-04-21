@@ -20,6 +20,7 @@ internal class ApiRepository(
     suspend fun registerToken(token: String?) {
         Timber.tag(PushPushGo.TAG).d("registerToken invoked: $token")
         val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+        Timber.d("Token to register: $tokenToRegister")
 
         val data = apiService.registerSubscriber(projectId, TokenRequest(tokenToRegister))
         if (data.id.isNotBlank()) {
