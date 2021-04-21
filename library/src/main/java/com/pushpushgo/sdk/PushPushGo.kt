@@ -15,8 +15,6 @@ import com.pushpushgo.sdk.utils.getPlatformPushToken
 import com.pushpushgo.sdk.utils.getPlatformType
 import com.pushpushgo.sdk.utils.validateApiKey
 import com.pushpushgo.sdk.utils.validateProjectId
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -143,16 +141,7 @@ class PushPushGo private constructor(
     /**
      * function to retrieve last push token used to subscribe
      */
-    suspend fun getPushToken() = networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
-
-    /**
-     * function to retrieve last push token used to subscribe
-     *
-     * @param callback
-     */
-    fun getPushToken(callback: (String) -> Unit) {
-        GlobalScope.launch { callback(getPushToken()) }
-    }
+    fun getPushToken() = networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
 
     /**
      * function to register subscriber

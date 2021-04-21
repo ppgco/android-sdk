@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.getPlatformPushToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
@@ -19,7 +21,9 @@ internal class ApiRepository(
 
     suspend fun registerToken(token: String?) {
         Timber.tag(PushPushGo.TAG).d("registerToken invoked: $token")
-        val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+        val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: withContext(Dispatchers.IO) {
+            getPlatformPushToken(context)
+        }
         Timber.d("Token to register: $tokenToRegister")
 
         val data = apiService.registerSubscriber(projectId, TokenRequest(tokenToRegister))
