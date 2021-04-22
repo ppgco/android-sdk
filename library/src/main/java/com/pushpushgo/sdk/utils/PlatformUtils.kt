@@ -1,9 +1,5 @@
 package com.pushpushgo.sdk.utils
 
-import com.google.firebase.messaging.FirebaseMessaging
-import com.huawei.agconnect.config.AGConnectServicesConfig
-import com.huawei.hms.aaid.HmsInstanceId
-
 internal fun getPlatformType() = when {
     hasFCMLibrary() -> PlatformType.FCM
     hasHMSPushKitLibrary() -> PlatformType.HCM
@@ -16,15 +12,15 @@ internal enum class PlatformType(val apiName: String) {
 }
 
 private fun hasHMSPushKitLibrary() = try {
-    checkNotNull(HmsInstanceId::class.java)
-    checkNotNull(AGConnectServicesConfig::class.java)
+    checkNotNull(com.huawei.hms.aaid.HmsInstanceId::class.java.name)
+    checkNotNull(com.huawei.agconnect.config.AGConnectServicesConfig::class.java.name)
     true
 } catch (e: NoClassDefFoundError) {
     false
 }
 
 private fun hasFCMLibrary() = try {
-    checkNotNull(FirebaseMessaging::class.java)
+    checkNotNull(com.google.firebase.messaging.FirebaseMessaging::class.java)
     true
 } catch (e: Throwable) {
     false
