@@ -230,7 +230,7 @@ internal class PushNotificationDelegate : CoroutineScope {
 
     private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int, link: String, id: Int) =
         PendingIntent.getBroadcast(
-            context, id, Intent(context, ClickActionReceiver::class.java).apply {
+            context, getUniqueNotificationId(), Intent(context, ClickActionReceiver::class.java).apply {
                 putExtra(ClickActionReceiver.NOTIFICATION_ID, id)
                 putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
                 putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
