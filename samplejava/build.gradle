@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
+
 android {
     compileSdkVersion 30
 
@@ -15,6 +16,21 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            storeFile file('../keystore.jks')
+            storePassword 'demo123'
+            keyPassword 'demo123'
+            keyAlias 'key0'
+        }
+        debug {
+            storeFile file('../keystore.jks')
+            storePassword 'demo123'
+            keyPassword 'demo123'
+            keyAlias 'key0'
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -22,17 +38,27 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            debuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
         }
     }
 }
 
 dependencies {
-    implementation project(':library')
+    implementation project(path: ':library')
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
+
     implementation 'androidx.appcompat:appcompat:1.3.0-rc01'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+
+    implementation platform('com.google.firebase:firebase-bom:27.1.0')
+    implementation 'com.google.firebase:firebase-messaging-ktx'
 }

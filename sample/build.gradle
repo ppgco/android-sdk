@@ -9,8 +9,8 @@ android {
         applicationId "com.pushpushgo.sample"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 9
-        versionName "0.1.20-20210429~1"
+        versionCode 10
+        versionName "1.0"
 
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -18,6 +18,12 @@ android {
 
     signingConfigs {
         release {
+            storeFile file('../keystore.jks')
+            storePassword 'demo123'
+            keyPassword 'demo123'
+            keyAlias 'key0'
+        }
+        debug {
             storeFile file('../keystore.jks')
             storePassword 'demo123'
             keyPassword 'demo123'
