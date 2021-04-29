@@ -8,11 +8,12 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Button
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.pushpushgo.sample.R
 import com.pushpushgo.sdk.PushPushGo
-import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,18 +25,18 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         ppg.handleBackgroundNotificationClick(intent)
 
-        version.text = PushPushGo.VERSION
+        findViewById<TextView>(R.id.version).text = PushPushGo.VERSION
 
-        register.setOnClickListener {
+        findViewById<Button>(R.id.register).setOnClickListener {
             ppg.registerSubscriber()
         }
-        unregister.setOnClickListener {
+        findViewById<Button>(R.id.unregister).setOnClickListener {
             ppg.unregisterSubscriber()
         }
-        check.setOnClickListener {
-            content.text = "Status: " + (if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
+        findViewById<Button>(R.id.check).setOnClickListener {
+            findViewById<TextView>(R.id.content).text = "Status: " + (if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
         }
-        beacons.setOnClickListener {
+        findViewById<Button>(R.id.beacons).setOnClickListener {
             startActivity(Intent(baseContext, BeaconActivity::class.java))
         }
     }

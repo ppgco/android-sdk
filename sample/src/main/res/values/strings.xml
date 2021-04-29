@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PushPushGo sample app</string>
+    <string name="app_name">PushPushGo sample app (kotlin)</string>
     <string name="pushpushgo_notification_default_channel_name">Push notifications</string>
     <string name="action_settings">Settings</string>
 </resources>
