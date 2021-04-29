@@ -115,6 +115,7 @@ afterEvaluate {
         }
         repositories {
             maven {
+                name "PPGo"
                 url "https://gitlab.goodylabs.com/api/v4/projects/297/packages/maven"
                 credentials(HttpHeaderCredentials) {
                     name = "Private-Token"

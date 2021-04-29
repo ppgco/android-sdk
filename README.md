@@ -77,6 +77,14 @@ $ ./gradlew :library:publishReleasePublicationToMavenLocal    // release
 $ ./gradlew :library:publishToMavenLocal                      // both
 ```
 
+To maven remote repository:
+
+```sh
+$ export GITLAB_PRIVATE_TOKEN=<token>
+$ ./gradlew :library:publishDebugPublicationToPPGoRepository    // debug
+$ ./gradlew :library:publishReleasePublicationToPPGoRepository  // release
+$ ./gradlew :library:publishAllPublicationsToPPGoRepository     // both
+```
 
 ## Tests
 
