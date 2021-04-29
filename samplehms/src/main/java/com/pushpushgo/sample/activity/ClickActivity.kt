@@ -2,26 +2,26 @@ package com.pushpushgo.sample.activity
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.pushpushgo.sample.R
-import kotlinx.android.synthetic.main.activity_click.*
+import timber.log.Timber
 
 class ClickActivity : AppCompatActivity(R.layout.activity_click) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.d("PPGO_SAMPLE", "$intent")
+        Timber.tag("PPGO_SAMPLE").d("$intent")
 
-        info.text = intent?.data.toString()
+        findViewById<TextView>(R.id.info).text = intent?.data.toString()
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
 
-        Log.d("PPGO_SAMPLE", "$intent")
+        Timber.tag("PPGO_SAMPLE").d("$intent")
 
-        info.text = intent?.data.toString()
+        findViewById<TextView>(R.id.info).text = intent?.data.toString()
     }
 }
