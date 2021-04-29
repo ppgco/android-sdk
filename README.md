@@ -12,8 +12,24 @@
 // /build.gradle
 allprojects {
     repositories {
+        // local repo
         mavenLocal()
-        ...
+
+        // or
+
+        // remote repo
+        maven {
+            url 'https://gitlab.goodylabs.com/api/v4/projects/297/packages/maven'
+            name "PPGo"
+            credentials(HttpHeaderCredentials) {
+                name = 'Deploy-Token'
+                value = GITLAB_PPGO_REPO_TOKEN
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
 }
 
 // /app/build.gradle
