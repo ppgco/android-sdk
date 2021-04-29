@@ -4,6 +4,7 @@ plugins {
     id 'kotlin-kapt'
     id 'org.jetbrains.dokka'
     id 'maven-publish'
+    id 'org.jetbrains.kotlinx.binary-compatibility-validator' version '0.5.0'
 }
 
 apply from: 'jacoco.gradle'

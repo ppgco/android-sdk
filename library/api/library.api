@@ -1,0 +1,47 @@
+public final class com/pushpushgo/sdk/BeaconBuilder {
+	public final fun appendTag (Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
+	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
+	public final fun getTags ()Ljava/util/List;
+	public final fun getTagsToDelete ()Ljava/util/List;
+	public final fun removeTag ([Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
+	public final fun send ()V
+	public final fun set (Ljava/lang/String;Ljava/lang/Object;)Lcom/pushpushgo/sdk/BeaconBuilder;
+	public final fun setCustomId (Ljava/lang/Integer;)Lcom/pushpushgo/sdk/BeaconBuilder;
+	public final fun setCustomId (Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
+}
+
+public final class com/pushpushgo/sdk/BuildConfig {
+	public static final field BASE_URL Ljava/lang/String;
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class com/pushpushgo/sdk/PushPushGo {
+	public static final field Companion Lcom/pushpushgo/sdk/PushPushGo$Companion;
+	public static final field VERSION Ljava/lang/String;
+	public synthetic fun <init> (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun createBeacon ()Lcom/pushpushgo/sdk/BeaconBuilder;
+	public final fun getApiKey ()Ljava/lang/String;
+	public static final fun getInstance ()Lcom/pushpushgo/sdk/PushPushGo;
+	public static final fun getInstance (Landroid/content/Context;)Lcom/pushpushgo/sdk/PushPushGo;
+	public static final fun getInstance (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
+	public final fun getProjectId ()Ljava/lang/String;
+	public final fun getPushToken ()Ljava/lang/String;
+	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;)V
+	public final fun isSubscribed ()Z
+	public final fun registerSubscriber ()V
+	public final fun unregisterSubscriber ()V
+}
+
+public final class com/pushpushgo/sdk/PushPushGo$Companion {
+	public final fun getInstance ()Lcom/pushpushgo/sdk/PushPushGo;
+	public final fun getInstance (Landroid/content/Context;)Lcom/pushpushgo/sdk/PushPushGo;
+	public final fun getInstance (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
+	public final fun isInitialized ()Z
+}
+
+public final class com/pushpushgo/sdk/exception/PushPushException : java/io/IOException {
+}
+
