@@ -41,7 +41,7 @@ internal class NotificationStatusChecker private constructor(private val context
 
     private fun checkNotificationsStatus() {
         if (areNotificationsEnabled() && pref.isSubscribed) {
-            Timber.tag(PushPushGo.TAG).v("Notifications enabled")
+            if (BuildConfig.DEBUG) Timber.tag(PushPushGo.TAG).v("Notifications enabled")
 
             if (pref.subscriberId.isBlank()) {
                 GlobalScope.launch {
@@ -50,7 +50,7 @@ internal class NotificationStatusChecker private constructor(private val context
                 }
             }
         } else {
-            Timber.tag(PushPushGo.TAG).v("Notifications disabled")
+            if (BuildConfig.DEBUG) Timber.tag(PushPushGo.TAG).v("Notifications disabled")
 
             if (pref.subscriberId.isNotBlank()) {
                 GlobalScope.launch {
@@ -64,9 +64,10 @@ internal class NotificationStatusChecker private constructor(private val context
     private fun areNotificationsEnabled(): Boolean {
         if (notificationManager.areNotificationsEnabled()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                return notificationManager.getNotificationChannel(context.getString(R.string.pushpushgo_notification_default_channel_id)).let {
-                    it?.importance != IMPORTANCE_NONE
-                }
+                return notificationManager.getNotificationChannel(context.getString(R.string.pushpushgo_notification_default_channel_id))
+                    .let {
+                        it?.importance != IMPORTANCE_NONE
+                    }
             }
             return true
         }
