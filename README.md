@@ -34,7 +34,15 @@ allprojects {
 
 // /app/build.gradle
 dependencies {
-    implementation 'com.pushpushgo:sdk:0.2.0'
+    implementation 'com.pushpushgo:sdk:1.0.0'
+
+    // GMS
+    implementation platform('com.google.firebase:firebase-bom:27.1.0')
+    implementation 'com.google.firebase:firebase-messaging'
+
+    // HMS
+    implementation 'com.huawei.agconnect:agconnect-core:1.5.1.200'
+    implementation 'com.huawei.hms:push:5.1.1.301'
 }
 ```
 
