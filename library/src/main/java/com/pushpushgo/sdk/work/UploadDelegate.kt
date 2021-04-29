@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.work
 import com.pushpushgo.sdk.PushPushGo
 import timber.log.Timber
 
-class UploadDelegate {
+internal class UploadDelegate {
 
     suspend fun doNetworkWork(type: String?, data: String?) {
         if (!PushPushGo.getInstance().isSubscribed() && type != UploadWorker.REGISTER) {
