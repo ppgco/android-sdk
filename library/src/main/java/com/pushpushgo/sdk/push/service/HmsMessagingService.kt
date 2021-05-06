@@ -9,7 +9,7 @@ import com.pushpushgo.sdk.push.PushNotification
 import com.pushpushgo.sdk.push.PushNotificationDelegate
 import timber.log.Timber
 
-internal class HmsMessagingService : HmsMessageService() {
+class HmsMessagingService : HmsMessageService() {
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 

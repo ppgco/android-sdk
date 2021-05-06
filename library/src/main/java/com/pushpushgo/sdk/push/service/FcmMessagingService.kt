@@ -9,7 +9,7 @@ import com.pushpushgo.sdk.push.PushNotificationDelegate
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import timber.log.Timber
 
-internal class FcmMessagingService : FirebaseMessagingService() {
+class FcmMessagingService : FirebaseMessagingService() {
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
 

@@ -3,3 +3,4 @@ $dokka.linkExtension:html
 
 com.pushpushgo.sdk
 com.pushpushgo.sdk.exception
+com.pushpushgo.sdk.push.service

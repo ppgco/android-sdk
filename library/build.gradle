@@ -22,7 +22,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 11
-        versionName "1.0.0"
+        versionName "1.1.0-SNAPSHOT"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -67,9 +67,10 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-moshi:$retrofit_version"
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
 
-    implementation "com.squareup.moshi:moshi:1.11.0"
-    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.11.0"
-    implementation 'com.squareup.moshi:moshi-adapters:1.11.0'
+    def moshi_version = "1.12.0"
+    implementation "com.squareup.moshi:moshi:$moshi_version"
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:$moshi_version"
+    implementation "com.squareup.moshi:moshi-adapters:$moshi_version"
 
     // work manager
     def work_version = "2.5.0"

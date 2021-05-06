@@ -45,3 +45,17 @@ public final class com/pushpushgo/sdk/PushPushGo$Companion {
 public final class com/pushpushgo/sdk/exception/PushPushException : java/io/IOException {
 }
 
+public final class com/pushpushgo/sdk/push/service/FcmMessagingService : com/google/firebase/messaging/FirebaseMessagingService {
+	public fun <init> ()V
+	public fun onDestroy ()V
+	public fun onMessageReceived (Lcom/google/firebase/messaging/RemoteMessage;)V
+	public fun onNewToken (Ljava/lang/String;)V
+}
+
+public final class com/pushpushgo/sdk/push/service/HmsMessagingService : com/huawei/hms/push/HmsMessageService {
+	public fun <init> ()V
+	public fun onDestroy ()V
+	public fun onMessageReceived (Lcom/huawei/hms/push/RemoteMessage;)V
+	public fun onNewToken (Ljava/lang/String;)V
+}
+
