@@ -5,16 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import com.pushpushgo.sdk.data.EventType
+import com.pushpushgo.sdk.data.mapToDto
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.handleNotificationLinkClick
-import com.pushpushgo.sdk.utils.getPlatformPushToken
-import com.pushpushgo.sdk.utils.getPlatformType
-import com.pushpushgo.sdk.utils.validateApiKey
-import com.pushpushgo.sdk.utils.validateProjectId
+import com.pushpushgo.sdk.utils.*
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -24,7 +22,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.0.0-20210429~1"
+        const val VERSION = "1.1.0-SNAPSHOT-20210506~1"
 
         internal const val TAG = "PPGo"
 
@@ -102,6 +100,44 @@ class PushPushGo private constructor(
     internal fun getNetwork() = networkModule.apiRepository
 
     internal fun getUploadManager() = workModule.uploadManager
+
+    /**
+     * function to check whether the given notification data belongs to the PPGo sender
+     *
+     * @param notificationIntent - pending intent of clicked notification
+     *
+     * @return boolean
+     */
+    fun isPPGoPush(notificationIntent: Intent?) = notificationIntent?.getStringExtra("project") == projectId
+
+    /**
+     * function to check whether the given notification data belongs to the PPGo sender
+     *
+     * @param notificationData - data field of received notification
+     *
+     * @return boolean
+     */
+    fun isPPGoPush(notificationData: Map<String, String>) = notificationData["project"] == projectId
+
+    /**
+     * function to retrieve PPGo notification details
+     *
+     * @param notificationIntent - pending intent of clicked notification
+     *
+     * @return Notification
+     */
+    fun getNotificationDetails(notificationIntent: Intent?) =
+        deserializeNotificationData(notificationIntent?.extras)?.mapToDto()
+
+    /**
+     * function to retrieve PPGo notification details
+     *
+     * @param notificationData - data field of received notification
+     *
+     * @return Notification
+     */
+    fun getNotificationDetails(notificationData: Map<String, String>) =
+        deserializeNotificationData(notificationData.mapToBundle())?.mapToDto()
 
     /**
      * helper function to handle click on notification from background
