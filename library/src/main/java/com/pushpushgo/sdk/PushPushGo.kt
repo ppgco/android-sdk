@@ -23,7 +23,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.0.1-SNAPSHOT-20210528~1"
+        const val VERSION = "1.0.1-20210528~1"
 
         internal const val TAG = "PPGo"
 

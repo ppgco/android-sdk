@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.firebase.messaging.FirebaseMessaging
 import com.huawei.agconnect.config.AGConnectServicesConfig
 import com.huawei.hms.aaid.HmsInstanceId
+import com.pushpushgo.sdk.PushPushGo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -22,7 +23,7 @@ private suspend fun getFcmPushToken() = suspendCoroutine<String> { cont ->
             cont.resumeWithException(exception)
         } else {
             val token = it.result.orEmpty()
-            Timber.d("FCM token length: ${token.length}")
+            Timber.tag(PushPushGo.TAG).d("FCM token length: ${token.length}")
             cont.resumeWith(Result.success(token))
         }
     }
