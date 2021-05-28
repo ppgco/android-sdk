@@ -6,6 +6,7 @@ import com.huawei.agconnect.config.AGConnectServicesConfig
 import com.huawei.hms.aaid.HmsInstanceId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
@@ -20,7 +21,9 @@ private suspend fun getFcmPushToken() = suspendCoroutine<String> { cont ->
             val exception = it.exception ?: IllegalArgumentException("Fetching FCM registration token failed")
             cont.resumeWithException(exception)
         } else {
-            cont.resumeWith(Result.success(it.result.orEmpty()))
+            val token = it.result.orEmpty()
+            Timber.d("FCM token length: ${token.length}")
+            cont.resumeWith(Result.success(token))
         }
     }
 }
