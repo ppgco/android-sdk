@@ -13,6 +13,7 @@ import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.*
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -22,7 +23,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.1.0-SNAPSHOT-20210506~1"
+        const val VERSION = "1.0.1-SNAPSHOT-20210528~1"
 
         internal const val TAG = "PPGo"
 
@@ -177,7 +178,9 @@ class PushPushGo private constructor(
     /**
      * function to retrieve last push token used to subscribe
      */
-    fun getPushToken() = networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+    fun getPushToken() = runBlocking {
+        networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+    }
 
     /**
      * function to register subscriber
