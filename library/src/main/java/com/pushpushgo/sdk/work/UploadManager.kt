@@ -107,7 +107,7 @@ internal class UploadManager(private val workManager: WorkManager, private val s
             OneTimeWorkRequestBuilder<UploadWorker>()
                 .setInputData(workDataOf(TYPE to name, DATA to data))
                 .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
-                .setInitialDelay(if (isJobAlreadyEnqueued(name) || isMustRunImmediately) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
+                .setInitialDelay(if (isMustRunImmediately || isJobAlreadyEnqueued(name)) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -116,9 +116,11 @@ internal class UploadManager(private val workManager: WorkManager, private val s
         )
     }
 
-    private fun isJobAlreadyEnqueued(name: String): Boolean {
-        return workManager.getWorkInfosForUniqueWork(name).get().any {
+    private fun isJobAlreadyEnqueued(name: String) = try {
+        workManager.getWorkInfosForUniqueWork(name).get().any {
             it.state == WorkInfo.State.ENQUEUED
         }
+    } catch (e: InterruptedException) {
+        false
     }
 }
