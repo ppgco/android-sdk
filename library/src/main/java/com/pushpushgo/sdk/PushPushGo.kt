@@ -99,6 +99,7 @@ class PushPushGo private constructor(
 
     private val workModule by lazy { WorkModule(context) }
 
+
     internal fun getNetwork() = networkModule.apiRepository
 
     internal fun getUploadManager() = workModule.uploadManager
@@ -110,7 +111,7 @@ class PushPushGo private constructor(
         if (intent?.getStringExtra("project") != projectId) return
 
         val notify = deserializeNotificationData(intent.extras) ?: return
-        handleNotificationLinkClick(context, notify.redirectLink)
+        notificationHandler(context, notify.redirectLink)
         getUploadManager().sendEvent(
             type = EventType.CLICKED,
             buttonId = 0,
@@ -163,4 +164,9 @@ class PushPushGo private constructor(
     fun createBeacon(): BeaconBuilder {
         return BeaconBuilder(getUploadManager())
     }
+
+    var notificationHandler: NotificationHandler = { context, url -> handleNotificationLinkClick(context, url) }
+
 }
+
+typealias NotificationHandler = (context: Context, url: String) -> Unit
