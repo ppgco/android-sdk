@@ -165,6 +165,12 @@ class PushPushGo private constructor(
         return BeaconBuilder(getUploadManager())
     }
 
+    /**
+     * Settings used for migration to support switch user before start first time app after upgrade/switch
+     * defaultIsSubscribed  default is false
+     */
+    var defaultIsSubscribed: Boolean = false
+
     var notificationHandler: NotificationHandler = { context, url -> handleNotificationLinkClick(context, url) }
 
 }
