@@ -8,6 +8,7 @@ import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.mapToDto
 import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.di.WorkModule
+import com.pushpushgo.sdk.dto.PPGoNotification
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
@@ -23,7 +24,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.0.1-20210528~1"
+        const val VERSION = "1.1.0-20210730~1"
 
         internal const val TAG = "PPGo"
 
@@ -45,18 +46,18 @@ class PushPushGo private constructor(
         /**
          * function to create an instance of PushPushGo object to handle push notifications
          * @param context - context of an application to get apiKey from META DATA stored in Your Manifest.xml file
-         * @return PushPushGoFacade instance
+         * @return PushPushGo instance
          */
         @JvmStatic
         fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: buildPushPushGo(context).also { INSTANCE = it }
+            INSTANCE ?: buildPushPushGoFromContext(context).also { INSTANCE = it }
         }
 
         /**
          * function to create an instance of PushPushGo object to handle push notifications
          * @param context - context of an application to handle DI
          * @param apiKey - key to communicate with RESTFul API
-         * @return PushPushGoFacade instance
+         * @return PushPushGo instance
          */
         @JvmStatic
         fun getInstance(context: Context, apiKey: String, projectId: String): PushPushGo {
@@ -66,10 +67,22 @@ class PushPushGo private constructor(
             return INSTANCE as PushPushGo
         }
 
-        private fun buildPushPushGo(context: Context): PushPushGo {
+        @JvmStatic
+        internal fun reinitialize(context: Context, apiKey: String, projectId: String): PushPushGo {
+            INSTANCE = PushPushGo(context, apiKey, projectId)
+
+            return INSTANCE as PushPushGo
+        }
+
+        private fun buildPushPushGoFromContext(context: Context): PushPushGo {
+            val (projectId, apiKey) = extractCredentialsFromContext(context)
+            validateCredentials(projectId, apiKey)
+            return PushPushGo(context, apiKey, projectId)
+        }
+
+        private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
             val ai = context.packageManager.getApplicationInfo(
-                context.packageName,
-                PackageManager.GET_META_DATA
+                context.packageName, PackageManager.GET_META_DATA
             )
             val bundle = ai.metaData
             val apiKey = bundle.getString("com.pushpushgo.apikey")
@@ -77,10 +90,12 @@ class PushPushGo private constructor(
             val projectId = bundle.getString("com.pushpushgo.projectId")
                 ?: throw PushPushException("You have to declare projectId in Your Manifest file")
 
+            return projectId to apiKey
+        }
+
+        private fun validateCredentials(projectId: String, apiKey: String) {
             validateApiKey(apiKey)
             validateProjectId(projectId)
-
-            return PushPushGo(context, apiKey, projectId)
         }
     }
 
@@ -102,6 +117,12 @@ class PushPushGo private constructor(
 
     internal fun getUploadManager() = workModule.uploadManager
 
+    fun reinitialize(projectId: String, token: String): PushPushGo = reinitialize(
+        context = context,
+        projectId = projectId,
+        apiKey = token
+    )
+
     /**
      * function to check whether the given notification data belongs to the PPGo sender
      *
@@ -109,7 +130,7 @@ class PushPushGo private constructor(
      *
      * @return boolean
      */
-    fun isPPGoPush(notificationIntent: Intent?) = notificationIntent?.getStringExtra("project") == projectId
+    fun isPPGoPush(notificationIntent: Intent?): Boolean = notificationIntent?.getStringExtra("project") == projectId
 
     /**
      * function to check whether the given notification data belongs to the PPGo sender
@@ -118,7 +139,7 @@ class PushPushGo private constructor(
      *
      * @return boolean
      */
-    fun isPPGoPush(notificationData: Map<String, String>) = notificationData["project"] == projectId
+    fun isPPGoPush(notificationData: Map<String, String>): Boolean = notificationData["project"] == projectId
 
     /**
      * function to retrieve PPGo notification details
@@ -127,7 +148,7 @@ class PushPushGo private constructor(
      *
      * @return Notification
      */
-    fun getNotificationDetails(notificationIntent: Intent?) =
+    fun getNotificationDetails(notificationIntent: Intent?): PPGoNotification? =
         deserializeNotificationData(notificationIntent?.extras)?.mapToDto()
 
     /**
@@ -137,7 +158,7 @@ class PushPushGo private constructor(
      *
      * @return Notification
      */
-    fun getNotificationDetails(notificationData: Map<String, String>) =
+    fun getNotificationDetails(notificationData: Map<String, String>): PPGoNotification? =
         deserializeNotificationData(notificationData.mapToBundle())?.mapToDto()
 
     /**
@@ -159,13 +180,13 @@ class PushPushGo private constructor(
      * function to read Your API Key from an PushPushGo library instance
      * @return API Key String
      */
-    fun getApiKey() = apiKey
+    fun getApiKey(): String = apiKey
 
     /**
      * function to read Your API Key from an PushPushGo library instance
      * @return API Key String
      */
-    fun getProjectId() = projectId
+    fun getProjectId(): String = projectId
 
     /**
      * function to check if user subscribed to notifications
@@ -178,7 +199,7 @@ class PushPushGo private constructor(
     /**
      * function to retrieve last push token used to subscribe
      */
-    fun getPushToken() = runBlocking {
+    fun getPushToken(): String = runBlocking {
         networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
     }
 
