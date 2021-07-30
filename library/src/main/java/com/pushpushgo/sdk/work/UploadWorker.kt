@@ -29,9 +29,11 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         try {
             delegate.doNetworkWork(type, inputData.getString(DATA))
         } catch (e: Throwable) {
-            Timber.tag(PushPushGo.TAG).e(e, "UploadWorker: error %s", e.message)
-            return@coroutineScope when (type) {
-                REGISTER, UNREGISTER -> Result.retry()
+            Timber.tag(PushPushGo.TAG).e(e, "UploadWorker error: %s", e.message)
+
+            return@coroutineScope when {
+                "Please configure FCM keys and senderIds on your " in e.message.orEmpty() -> Result.failure()
+                type == REGISTER || type == UNREGISTER -> Result.retry()
                 else -> Result.failure()
             }
         }
