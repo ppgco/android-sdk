@@ -24,7 +24,7 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
         constant(tag = PROJECT_ID) with projectId
         bind<PlatformType>() with singleton { getPlatformType() }
         bind<Context>() with provider { context }
-        bind<RequestInterceptor>() with singleton { RequestInterceptor(instance(API_KEY)) }
+        bind<RequestInterceptor>() with singleton { RequestInterceptor() }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptor() }
         bind<SharedPreferencesHelper>() with singleton { SharedPreferencesHelper(instance()) }
         bind<ApiService>() with singleton {
