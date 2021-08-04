@@ -10,7 +10,7 @@ internal class RequestInterceptor(private val apiKey: String) : Interceptor {
             chain.request()
                 .newBuilder()
                 .header("Content-Type", "application/json")
-                .header("X-Token", apiKey)
+//                .header("X-Token", apiKey)
                 .build()
         )
     }

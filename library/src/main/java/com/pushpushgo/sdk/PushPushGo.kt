@@ -24,7 +24,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.1.0-20210730~1"
+        const val VERSION = "1.1.0-20210804~1"
 
         internal const val TAG = "PPGo"
 
@@ -116,12 +116,6 @@ class PushPushGo private constructor(
     internal fun getNetwork() = networkModule.apiRepository
 
     internal fun getUploadManager() = workModule.uploadManager
-
-    fun reinitialize(projectId: String, token: String): PushPushGo = reinitialize(
-        context = context,
-        projectId = projectId,
-        apiKey = token
-    )
 
     /**
      * function to check whether the given notification data belongs to the PPGo sender
@@ -215,6 +209,29 @@ class PushPushGo private constructor(
      */
     fun unregisterSubscriber() {
         getUploadManager().sendUnregister()
+    }
+
+    /**
+     * function to re-subscribe to new project (previously unregistering from previous project)
+     */
+    fun resubscribe(newProjectId: String, token: String): PushPushGo {
+        val oldProjectId = projectId
+        val oldToken = apiKey
+        val oldSubscriberId = networkModule.sharedPref.subscriberId
+
+        val newInstance = reinitialize(
+            context = context,
+            projectId = newProjectId,
+            apiKey = token
+        )
+
+        newInstance.getUploadManager().sendMigration(
+            oldProjectId = oldProjectId,
+            oldToken = oldToken,
+            oldSubscriberId = oldSubscriberId,
+        )
+
+        return newInstance
     }
 
     /**

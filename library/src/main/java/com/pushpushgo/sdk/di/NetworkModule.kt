@@ -39,7 +39,8 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
                 instance(),
                 instance(),
                 instance(),
-                instance(PROJECT_ID)
+                instance(PROJECT_ID),
+                instance(API_KEY),
             )
         }
     }

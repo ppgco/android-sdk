@@ -20,18 +20,21 @@ internal interface ApiService {
 
     @POST("{projectId}/subscriber")
     suspend fun registerSubscriber(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
         @Body body: TokenRequest
     ): TokenResponse
 
     @DELETE("{projectId}/subscriber/{subscriberId}")
     suspend fun unregisterSubscriber(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
-        @Path("subscriberId") subscriberId: String
+        @Path("subscriberId") subscriberId: String,
     ): Response<Void>
 
     @POST("{projectId}/subscriber/{subscriberId}/beacon")
     suspend fun sendBeacon(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
         @Path("subscriberId") subscriberId: String,
         @Body beacon: RequestBody
@@ -39,6 +42,7 @@ internal interface ApiService {
 
     @POST("{projectId}/event/")
     suspend fun sendEvent(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
         @Body event: RequestBody
     ): Response<Void>
@@ -57,8 +61,8 @@ internal interface ApiService {
                 .addInterceptor(responseInterceptor)
                 .addNetworkInterceptor(
                     HttpLoggingInterceptor().setLevel(
-                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
-                        else HttpLoggingInterceptor.Level.NONE
+                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                        else HttpLoggingInterceptor.Level.BODY
                     )
                 )
                 .build()

@@ -13,8 +13,14 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         const val TYPE = "type"
         const val DATA = "data"
 
+        // migration
+        const val OLD_PROJECT_ID = "old_project_id"
+        const val OLD_TOKEN = "old_token"
+        const val OLD_SUBSCRIBER_ID = "old_subscriber_id"
+
         const val REGISTER = "register"
         const val UNREGISTER = "unregister"
+        const val MIGRATION = "migration"
         const val BEACON = "beacon"
         const val EVENT = "event"
     }
@@ -25,15 +31,19 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         Timber.tag(PushPushGo.TAG).d("UploadWorker: started")
 
         val type = inputData.getString(TYPE)
+        val data = inputData.getString(DATA)
+        val oldProjectId = inputData.getString(OLD_PROJECT_ID)
+        val oldToken = inputData.getString(OLD_TOKEN)
+        val oldSubscriberId = inputData.getString(OLD_SUBSCRIBER_ID)
 
         try {
-            delegate.doNetworkWork(type, inputData.getString(DATA))
+            delegate.doNetworkWork(type, data, oldProjectId, oldToken, oldSubscriberId)
         } catch (e: Throwable) {
             Timber.tag(PushPushGo.TAG).e(e, "UploadWorker error: %s", e.message)
 
             return@coroutineScope when {
                 "Please configure FCM keys and senderIds on your " in e.message.orEmpty() -> Result.failure()
-                type == REGISTER || type == UNREGISTER -> Result.retry()
+                type == REGISTER || type == UNREGISTER || type == MIGRATION -> Result.retry()
                 else -> Result.failure()
             }
         }
