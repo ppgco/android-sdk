@@ -24,7 +24,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.1.0-20210804~1"
+        const val VERSION = "1.1.0-20210804~2"
 
         internal const val TAG = "PPGo"
 
@@ -212,9 +212,13 @@ class PushPushGo private constructor(
     }
 
     /**
-     * function to re-subscribe to new project (previously unregistering from previous project)
+     * function to re-subscribe to different project (previously unsubscribe from current project)
+     * WARNING: after resubscribe use object returned by this function instead of previous one
+     *
+     * @param newProjectId - project id to which we are switching
+     * @param newProjectToken - project token
      */
-    fun resubscribe(newProjectId: String, token: String): PushPushGo {
+    fun resubscribe(newProjectId: String, newProjectToken: String): PushPushGo {
         val oldProjectId = projectId
         val oldToken = apiKey
         val oldSubscriberId = networkModule.sharedPref.subscriberId
@@ -222,7 +226,7 @@ class PushPushGo private constructor(
         val newInstance = reinitialize(
             context = context,
             projectId = newProjectId,
-            apiKey = token
+            apiKey = newProjectToken
         )
 
         newInstance.getUploadManager().sendMigration(

@@ -43,7 +43,9 @@ internal class UploadManager(
         Timber.tag(PushPushGo.TAG).d("Register enqueued")
 
         enqueueJob(REGISTER, isMustRunImmediately = true, data = token)
-        workManager.cancelAllWorkByTag(UNREGISTER)
+        listOf(UNREGISTER, MIGRATION).forEach {
+            workManager.cancelAllWorkByTag(it)
+        }
     }
 
     fun sendUnregister() {
@@ -55,7 +57,7 @@ internal class UploadManager(
         Timber.tag(PushPushGo.TAG).d("Unregister enqueued")
 
         enqueueJob(UNREGISTER, isMustRunImmediately = true)
-        listOf(REGISTER, EVENT, BEACON).forEach {
+        listOf(REGISTER, MIGRATION, EVENT, BEACON).forEach {
             workManager.cancelAllWorkByTag(it)
         }
     }
@@ -63,9 +65,14 @@ internal class UploadManager(
     fun sendMigration(oldProjectId: String, oldToken: String, oldSubscriberId: String) {
         Timber.tag(PushPushGo.TAG).d("Migration enqueued")
 
-        enqueueJob(MIGRATION, oldProjectId = oldProjectId, oldToken = oldToken, oldSubscriberId = oldSubscriberId)
+        enqueueJob(
+            name = MIGRATION,
+            oldProjectId = oldProjectId,
+            oldToken = oldToken,
+            oldSubscriberId = oldSubscriberId,
+            isMustRunImmediately = true,
+        )
 
-        // todo: check this list
         listOf(UNREGISTER, REGISTER, EVENT, BEACON).forEach {
             workManager.cancelAllWorkByTag(it)
         }
