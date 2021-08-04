@@ -36,6 +36,8 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun isPPGoPush (Ljava/util/Map;)Z
 	public final fun isSubscribed ()Z
 	public final fun registerSubscriber ()V
+	public static final fun reinitialize$library_release (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
+	public final fun resubscribe (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun unregisterSubscriber ()V
 }
 
