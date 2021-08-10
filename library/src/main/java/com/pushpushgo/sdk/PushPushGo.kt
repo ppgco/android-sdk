@@ -24,7 +24,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.1.0-20210804~2"
+        const val VERSION = "1.1.0-20210810~1"
 
         internal const val TAG = "PPGo"
 
@@ -219,9 +219,9 @@ class PushPushGo private constructor(
      * @param newProjectToken - project token
      */
     fun resubscribe(newProjectId: String, newProjectToken: String): PushPushGo {
-        val oldProjectId = projectId
-        val oldToken = apiKey
-        val oldSubscriberId = networkModule.sharedPref.subscriberId
+        val oldProjectId = getInstance().projectId
+        val oldToken = getInstance().apiKey
+        val oldSubscriberId = getInstance().networkModule.sharedPref.subscriberId
 
         val newInstance = reinitialize(
             context = context,

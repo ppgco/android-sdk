@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk.network
 
 import com.pushpushgo.sdk.BuildConfig
+import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -15,6 +16,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.create
 import retrofit2.http.*
+import timber.log.Timber
 
 internal interface ApiService {
 
@@ -60,9 +62,11 @@ internal interface ApiService {
                 .addInterceptor(requestInterceptor)
                 .addInterceptor(responseInterceptor)
                 .addNetworkInterceptor(
-                    HttpLoggingInterceptor().setLevel(
+                    HttpLoggingInterceptor {
+                        Timber.tag(PushPushGo.TAG).d(it)
+                    }.setLevel(
                         if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
-                        else HttpLoggingInterceptor.Level.BODY
+                        else HttpLoggingInterceptor.Level.BASIC
                     )
                 )
                 .build()
