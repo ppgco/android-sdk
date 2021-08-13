@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.push.service
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
-open class FcmMessagingService : FirebaseMessagingService() {
+internal class FcmMessagingService : FirebaseMessagingService() {
 
     private val delegate by lazy { FcmMessagingServiceDelegate(applicationContext) }
 

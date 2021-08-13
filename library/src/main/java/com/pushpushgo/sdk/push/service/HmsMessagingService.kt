@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.push.service
 import com.huawei.hms.push.HmsMessageService
 import com.huawei.hms.push.RemoteMessage
 
-open class HmsMessagingService : HmsMessageService() {
+internal class HmsMessagingService : HmsMessageService() {
 
     private val delegate by lazy { HmsMessagingServiceDelegate(applicationContext) }
 
