@@ -113,9 +113,18 @@ class PushPushGo private constructor(
 
     private val workModule by lazy { WorkModule(context) }
 
+
     internal fun getNetwork() = networkModule.apiRepository
 
     internal fun getUploadManager() = workModule.uploadManager
+
+    /**
+     * Settings used for migration to support switch user before start first time app after upgrade/switch
+     * defaultIsSubscribed  default is false
+     */
+    var defaultIsSubscribed: Boolean = false
+
+    var notificationHandler: NotificationHandler = { context, url -> handleNotificationLinkClick(context, url) }
 
     /**
      * function to check whether the given notification data belongs to the PPGo sender
@@ -162,7 +171,7 @@ class PushPushGo private constructor(
         if (intent?.getStringExtra("project") != projectId) return
 
         val notify = deserializeNotificationData(intent.extras) ?: return
-        handleNotificationLinkClick(context, notify.redirectLink)
+        notificationHandler(context, notify.redirectLink)
         getUploadManager().sendEvent(
             type = EventType.CLICKED,
             buttonId = 0,
@@ -244,4 +253,7 @@ class PushPushGo private constructor(
     fun createBeacon(): BeaconBuilder {
         return BeaconBuilder(getUploadManager())
     }
+
 }
+
+typealias NotificationHandler = (context: Context, url: String) -> Unit

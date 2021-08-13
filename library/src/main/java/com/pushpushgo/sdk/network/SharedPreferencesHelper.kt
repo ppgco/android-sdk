@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.network
 
 import android.content.Context
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
+import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.utils.PlatformType
 import com.pushpushgo.sdk.utils.getPlatformType
 
@@ -17,7 +18,10 @@ internal class SharedPreferencesHelper(context: Context) {
     private val sharedPreferences = getDefaultSharedPreferences(context)
 
     var isSubscribed
-        get() = sharedPreferences.getBoolean(IS_SUBSCRIBED, false)
+        get() = sharedPreferences.getBoolean(
+            IS_SUBSCRIBED,
+            PushPushGo.isInitialized().takeIf { it }?.let { PushPushGo.getInstance().defaultIsSubscribed } ?: false
+        )
         set(value) {
             sharedPreferences.edit().putBoolean(IS_SUBSCRIBED, value).apply()
         }

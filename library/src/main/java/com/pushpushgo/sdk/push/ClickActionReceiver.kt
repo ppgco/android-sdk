@@ -33,7 +33,7 @@ internal class ClickActionReceiver : BroadcastReceiver() {
             )
 
             intent?.getStringExtra(LINK)?.let { it ->
-                handleNotificationLinkClick(context, it)
+                PushPushGo.getInstance().notificationHandler(context, it)
             }
         }
     }
