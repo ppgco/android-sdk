@@ -2,7 +2,7 @@ package com.pushpushgo.sdk.utils
 
 import android.content.Context
 import com.google.firebase.messaging.FirebaseMessaging
-import com.huawei.agconnect.config.AGConnectServicesConfig
+import com.huawei.agconnect.AGConnectOptionsBuilder
 import com.huawei.hms.aaid.HmsInstanceId
 import com.pushpushgo.sdk.PushPushGo
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +30,7 @@ private suspend fun getFcmPushToken() = suspendCoroutine<String> { cont ->
 }
 
 private suspend fun getHcmPushToken(context: Context) = withContext(Dispatchers.IO) {
-    val appId = AGConnectServicesConfig.fromContext(context).getString("client/app_id")
+    val appId = AGConnectOptionsBuilder().build(context).getString("client/app_id")
 
     HmsInstanceId.getInstance(context).getToken(appId, "HCM")
 }

@@ -13,7 +13,7 @@ internal enum class PlatformType(val apiName: String) {
 
 private fun hasHMSPushKitLibrary() = try {
     checkNotNull(com.huawei.hms.aaid.HmsInstanceId::class.java.name)
-    checkNotNull(com.huawei.agconnect.config.AGConnectServicesConfig::class.java.name)
+    checkNotNull(com.huawei.agconnect.AGConnectOptionsBuilder::class.java.name)
     true
 } catch (e: NoClassDefFoundError) {
     false
