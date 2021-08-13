@@ -1,0 +1,59 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:com.pushpushgo.sdk.dto////PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/index.html
+$dokka.location:com.pushpushgo.sdk.dto/PPGoNotification///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/index.html
+$dokka.location:com.pushpushgo.sdk.dto/PPGoNotification/PPGoNotification/#kotlin.String?#kotlin.String?#kotlin.Int#kotlin.String#kotlin.String?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/-p-p-go-notification.html
+$dokka.location:com.pushpushgo.sdk.dto/PPGoNotification/body/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/body.html
+$dokka.location:com.pushpushgo.sdk.dto/PPGoNotification/campaignId/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/campaign-id.html
+$dokka.location:com.pushpushgo.sdk.dto/PPGoNotification/priority/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/priority.html
+$dokka.location:com.pushpushgo.sdk.dto/PPGoNotification/redirectLink/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/redirect-link.html
+$dokka.location:com.pushpushgo.sdk.dto/PPGoNotification/title/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/title.html
+$dokka.location:com.pushpushgo.sdk.exception////PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.exception/index.html
+$dokka.location:com.pushpushgo.sdk.exception/PushPushException///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.exception/-push-push-exception/index.html
+$dokka.location:com.pushpushgo.sdk.push.service////PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/index.html
+$dokka.location:com.pushpushgo.sdk.push.service/FcmMessagingServiceDelegate///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-fcm-messaging-service-delegate/index.html
+$dokka.location:com.pushpushgo.sdk.push.service/FcmMessagingServiceDelegate/FcmMessagingServiceDelegate/#android.content.Context/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-fcm-messaging-service-delegate/-fcm-messaging-service-delegate.html
+$dokka.location:com.pushpushgo.sdk.push.service/FcmMessagingServiceDelegate/onDestroy/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-fcm-messaging-service-delegate/on-destroy.html
+$dokka.location:com.pushpushgo.sdk.push.service/FcmMessagingServiceDelegate/onMessageReceived/#com.google.firebase.messaging.RemoteMessage/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-fcm-messaging-service-delegate/on-message-received.html
+$dokka.location:com.pushpushgo.sdk.push.service/FcmMessagingServiceDelegate/onNewToken/#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-fcm-messaging-service-delegate/on-new-token.html
+$dokka.location:com.pushpushgo.sdk.push.service/HmsMessagingServiceDelegate///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-hms-messaging-service-delegate/index.html
+$dokka.location:com.pushpushgo.sdk.push.service/HmsMessagingServiceDelegate/HmsMessagingServiceDelegate/#android.content.Context/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-hms-messaging-service-delegate/-hms-messaging-service-delegate.html
+$dokka.location:com.pushpushgo.sdk.push.service/HmsMessagingServiceDelegate/onDestroy/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-hms-messaging-service-delegate/on-destroy.html
+$dokka.location:com.pushpushgo.sdk.push.service/HmsMessagingServiceDelegate/onMessageReceived/#com.huawei.hms.push.RemoteMessage/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-hms-messaging-service-delegate/on-message-received.html
+$dokka.location:com.pushpushgo.sdk.push.service/HmsMessagingServiceDelegate/onNewToken/#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-hms-messaging-service-delegate/on-new-token.html
+$dokka.location:com.pushpushgo.sdk////PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/index.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/index.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/appendTag/#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/append-tag.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/appendTag/#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/append-tag.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/getTags/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/get-tags.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/getTagsToDelete/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/get-tags-to-delete.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/removeTag/#kotlin.Array[kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/remove-tag.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/send/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/send.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/set/#kotlin.String#kotlin.Any/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/setCustomId/#kotlin.Int?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set-custom-id.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/setCustomId/#kotlin.String?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set-custom-id.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/index.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/VERSION/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/-v-e-r-s-i-o-n.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.content.Context#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.content.Context/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/isInitialized/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/is-initialized.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/index.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/createBeacon/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/create-beacon.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/getApiKey/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-api-key.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/getNotificationDetails/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-notification-details.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/getNotificationDetails/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-notification-details.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/getProjectId/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-project-id.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/getPushToken/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-push-token.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/handleBackgroundNotificationClick/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/handle-background-notification-click.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/isPPGoPush/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-p-p-go-push.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/isPPGoPush/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-p-p-go-push.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/isSubscribed/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-subscribed.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/registerSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/register-subscriber.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/resubscribe/#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/resubscribe.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
+com.pushpushgo.sdk
+com.pushpushgo.sdk.dto
+com.pushpushgo.sdk.exception
+com.pushpushgo.sdk.push.service
+
