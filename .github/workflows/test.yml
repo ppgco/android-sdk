@@ -28,7 +28,7 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
       - name: Unit tests
         run: |
-          ./gradlew test --stacktrace
+          ./gradlew :library:testDebug --stacktrace
       - name: API changes check
         run: |
           ./gradlew apiCheck --stacktrace
