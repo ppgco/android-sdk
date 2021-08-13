@@ -24,11 +24,13 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public synthetic fun <init> (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun createBeacon ()Lcom/pushpushgo/sdk/BeaconBuilder;
 	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getDefaultIsSubscribed ()Z
 	public static final fun getInstance ()Lcom/pushpushgo/sdk/PushPushGo;
 	public static final fun getInstance (Landroid/content/Context;)Lcom/pushpushgo/sdk/PushPushGo;
 	public static final fun getInstance (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
 	public final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
+	public final fun getNotificationHandler ()Lkotlin/jvm/functions/Function2;
 	public final fun getProjectId ()Ljava/lang/String;
 	public final fun getPushToken ()Ljava/lang/String;
 	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;)V
@@ -38,6 +40,8 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun registerSubscriber ()V
 	public static final fun reinitialize$library_release (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun resubscribe (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
+	public final fun setDefaultIsSubscribed (Z)V
+	public final fun setNotificationHandler (Lkotlin/jvm/functions/Function2;)V
 	public final fun unregisterSubscriber ()V
 }
 
