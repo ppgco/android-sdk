@@ -40,6 +40,7 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.con
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/isInitialized/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/is-initialized.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/index.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/createBeacon/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/create-beacon.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/defaultIsSubscribed/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/default-is-subscribed.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getApiKey/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-api-key.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getNotificationDetails/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-notification-details.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getNotificationDetails/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-notification-details.html
@@ -49,6 +50,7 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo/handleBackgroundNotificationClick/
 $dokka.location:com.pushpushgo.sdk/PushPushGo/isPPGoPush/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-p-p-go-push.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/isPPGoPush/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-p-p-go-push.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/isSubscribed/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-subscribed.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/notificationHandler/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/notification-handler.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/registerSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/register-subscriber.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/resubscribe/#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/resubscribe.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
