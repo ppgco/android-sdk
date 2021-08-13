@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk.network
 
 import com.pushpushgo.sdk.BuildConfig
+import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -15,23 +16,27 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.create
 import retrofit2.http.*
+import timber.log.Timber
 
 internal interface ApiService {
 
     @POST("{projectId}/subscriber")
     suspend fun registerSubscriber(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
         @Body body: TokenRequest
     ): TokenResponse
 
     @DELETE("{projectId}/subscriber/{subscriberId}")
     suspend fun unregisterSubscriber(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
-        @Path("subscriberId") subscriberId: String
+        @Path("subscriberId") subscriberId: String,
     ): Response<Void>
 
     @POST("{projectId}/subscriber/{subscriberId}/beacon")
     suspend fun sendBeacon(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
         @Path("subscriberId") subscriberId: String,
         @Body beacon: RequestBody
@@ -39,6 +44,7 @@ internal interface ApiService {
 
     @POST("{projectId}/event/")
     suspend fun sendEvent(
+        @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
         @Body event: RequestBody
     ): Response<Void>
@@ -56,9 +62,11 @@ internal interface ApiService {
                 .addInterceptor(requestInterceptor)
                 .addInterceptor(responseInterceptor)
                 .addNetworkInterceptor(
-                    HttpLoggingInterceptor().setLevel(
-                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
-                        else HttpLoggingInterceptor.Level.NONE
+                    HttpLoggingInterceptor {
+                        Timber.tag(PushPushGo.TAG).d(it)
+                    }.setLevel(
+                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                        else HttpLoggingInterceptor.Level.BASIC
                     )
                 )
                 .build()

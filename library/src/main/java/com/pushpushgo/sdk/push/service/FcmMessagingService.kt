@@ -2,48 +2,22 @@ package com.pushpushgo.sdk.push.service
 
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.pushpushgo.sdk.PushPushGo
-import com.pushpushgo.sdk.push.PushMessage
-import com.pushpushgo.sdk.push.PushNotification
-import com.pushpushgo.sdk.push.PushNotificationDelegate
-import com.pushpushgo.sdk.network.SharedPreferencesHelper
-import timber.log.Timber
 
 open class FcmMessagingService : FirebaseMessagingService() {
 
-    private val preferencesHelper by lazy { SharedPreferencesHelper(applicationContext) }
-
-    private val helper by lazy { PushNotificationDelegate() }
+    private val delegate by lazy { FcmMessagingServiceDelegate(applicationContext) }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Timber.tag(PushPushGo.TAG).d("onMessageReceived(%s)", remoteMessage.toString())
-        helper.onMessageReceived(
-            pushMessage = remoteMessage.toPushMessage(),
-            context = applicationContext,
-            isSubscribed = preferencesHelper.isSubscribed
-        )
+        delegate.onMessageReceived(remoteMessage)
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        preferencesHelper.lastFCMToken = token
-        helper.onNewToken(token, preferencesHelper.isSubscribed)
+        delegate.onNewToken(token)
     }
-
-    private fun RemoteMessage.toPushMessage() = PushMessage(
-        from = from,
-        data = data,
-        notification = notification?.let {
-            PushNotification(
-                title = it.title,
-                body = it.body,
-                priority = it.notificationPriority
-            )
-        }.takeIf { !it?.title.isNullOrEmpty() || !it?.body.isNullOrEmpty() }
-    )
 
     override fun onDestroy() {
         super.onDestroy()
-        helper.onDestroy()
+        delegate.onDestroy()
     }
 }

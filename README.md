@@ -34,7 +34,7 @@ allprojects {
 
 // /app/build.gradle
 dependencies {
-    implementation 'com.pushpushgo:sdk:1.0.0'
+    implementation 'com.pushpushgo:sdk:1.0.1'
 
     // GMS
     implementation platform('com.google.firebase:firebase-bom:27.1.0')

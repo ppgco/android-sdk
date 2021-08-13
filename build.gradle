@@ -1,26 +1,22 @@
 buildscript {
-    ext.kotlin_version = '1.4.32'
-    ext.dokka_version = '0.10.1'
     repositories {
         google()
-        jcenter()
-        maven { url 'http://developer.huawei.com/repo/' }
+        gradlePluginPortal()
+        maven { url 'https://developer.huawei.com/repo/' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.3'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.3.5'
-        classpath 'com.huawei.agconnect:agcp:1.5.1.200'
-        classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
+        classpath 'com.android.tools.build:gradle:7.0.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.21"
+        classpath 'com.google.gms:google-services:4.3.10'
+        classpath 'com.huawei.agconnect:agcp:1.6.0.300'
     }
 }
 allprojects {
     repositories {
         google()
-        jcenter()
         mavenCentral()
         maven { url "https://jitpack.io" }
-        maven { url 'http://developer.huawei.com/repo/' }
+        maven { url 'https://developer.huawei.com/repo/' }
     }
 }
 
