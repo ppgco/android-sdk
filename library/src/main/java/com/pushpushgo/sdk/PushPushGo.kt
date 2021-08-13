@@ -119,6 +119,14 @@ class PushPushGo private constructor(
     internal fun getUploadManager() = workModule.uploadManager
 
     /**
+     * Settings used for migration to support switch user before start first time app after upgrade/switch
+     * defaultIsSubscribed  default is false
+     */
+    var defaultIsSubscribed: Boolean = false
+
+    var notificationHandler: NotificationHandler = { context, url -> handleNotificationLinkClick(context, url) }
+
+    /**
      * function to check whether the given notification data belongs to the PPGo sender
      *
      * @param notificationIntent - pending intent of clicked notification
@@ -245,14 +253,6 @@ class PushPushGo private constructor(
     fun createBeacon(): BeaconBuilder {
         return BeaconBuilder(getUploadManager())
     }
-
-    /**
-     * Settings used for migration to support switch user before start first time app after upgrade/switch
-     * defaultIsSubscribed  default is false
-     */
-    var defaultIsSubscribed: Boolean = false
-
-    var notificationHandler: NotificationHandler = { context, url -> handleNotificationLinkClick(context, url) }
 
 }
 
