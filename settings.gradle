@@ -1,1 +1,2 @@
-include ':library', ':sample', ':samplehms', ':samplejava'
+include ':library'
+if (!System.env.JITPACK) include ':sample', ':samplehms', ':samplejava'
