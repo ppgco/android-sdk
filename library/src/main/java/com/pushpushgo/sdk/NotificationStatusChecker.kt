@@ -8,12 +8,17 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
 import androidx.core.content.getSystemService
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import timber.log.Timber
 import java.util.*
 
-internal class NotificationStatusChecker private constructor(private val context: Context) : TimerTask() {
+internal class NotificationStatusChecker private constructor(
+    private val context: Context,
+) : TimerTask() {
+
+    private val checkerScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private val errorHandler = CoroutineExceptionHandler { _, e -> Timber.e(e) }
 
     private val pref = SharedPreferencesHelper(context)
 
@@ -44,7 +49,7 @@ internal class NotificationStatusChecker private constructor(private val context
             if (BuildConfig.DEBUG) Timber.tag(PushPushGo.TAG).v("Notifications enabled")
 
             if (pref.subscriberId.isBlank()) {
-                GlobalScope.launch {
+                checkerScope.launch(errorHandler) {
                     Timber.tag(PushPushGo.TAG).d("Notifications enabled, but not subscribed. Registering token...")
                     PushPushGo.getInstance().getNetwork().registerToken(null)
                 }
@@ -53,7 +58,7 @@ internal class NotificationStatusChecker private constructor(private val context
             if (BuildConfig.DEBUG) Timber.tag(PushPushGo.TAG).v("Notifications disabled")
 
             if (pref.subscriberId.isNotBlank()) {
-                GlobalScope.launch {
+                checkerScope.launch(errorHandler) {
                     Timber.tag(PushPushGo.TAG).d("Notifications disabled, but subscribed. Unregistering subscriber...")
                     PushPushGo.getInstance().getNetwork().unregisterSubscriber(pref.isSubscribed)
                 }
@@ -62,16 +67,12 @@ internal class NotificationStatusChecker private constructor(private val context
     }
 
     private fun areNotificationsEnabled(): Boolean {
-        if (notificationManager.areNotificationsEnabled()) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                return notificationManager.getNotificationChannel(context.getString(R.string.pushpushgo_notification_default_channel_id))
-                    .let {
-                        it?.importance != IMPORTANCE_NONE
-                    }
-            }
-            return true
-        }
+        if (!notificationManager.areNotificationsEnabled()) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
 
-        return false
+        val channelName = context.getString(R.string.pushpushgo_notification_default_channel_id)
+        val channel = notificationManager.getNotificationChannel(channelName)
+
+        return channel?.importance != IMPORTANCE_NONE
     }
 }

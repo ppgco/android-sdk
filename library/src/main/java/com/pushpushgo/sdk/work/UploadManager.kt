@@ -18,8 +18,7 @@ import com.pushpushgo.sdk.work.UploadWorker.Companion.REGISTER
 import com.pushpushgo.sdk.work.UploadWorker.Companion.TYPE
 import com.pushpushgo.sdk.work.UploadWorker.Companion.UNREGISTER
 import com.squareup.moshi.Moshi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.json.JSONObject
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -28,6 +27,10 @@ internal class UploadManager(
     private val workManager: WorkManager,
     private val sharedPref: SharedPreferencesHelper,
 ) {
+
+    private val uploadScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private val errorHandler = CoroutineExceptionHandler { _, e -> Timber.e(e) }
 
     private val eventAdapter by lazy { EventJsonAdapter(Moshi.Builder().build()) }
 
@@ -96,12 +99,8 @@ internal class UploadManager(
             name = EVENT,
             isMustRunImmediately = true,
             data = eventContent
-        ) else GlobalScope.launch {
-            try {
-                uploadDelegate.doNetworkWork(EVENT, eventContent)
-            } catch (e: Throwable) {
-                Timber.e(e, "Error on sending beacon")
-            }
+        ) else uploadScope.launch(errorHandler) {
+            uploadDelegate.doNetworkWork(EVENT, eventContent)
         }
     }
 
@@ -116,12 +115,8 @@ internal class UploadManager(
         if (UPLOAD_DEFERRED_ENABLE) enqueueJob(
             name = BEACON,
             data = beacon.toString()
-        ) else GlobalScope.launch {
-            try {
-                uploadDelegate.doNetworkWork(BEACON, beacon.toString())
-            } catch (e: Throwable) {
-                Timber.e(e, "Error on sending beacon")
-            }
+        ) else uploadScope.launch(errorHandler) {
+            uploadDelegate.doNetworkWork(BEACON, beacon.toString())
         }
     }
 
