@@ -55,8 +55,8 @@ dependencies {
     implementation "org.kodein.di:kodein-di-generic-jvm:6.2.1"
 
     // Kotlin Android Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
 
     // Retrofit
     def retrofit_version = '2.9.0'
@@ -70,7 +70,7 @@ dependencies {
     implementation "com.squareup.moshi:moshi-adapters:$moshi_version"
 
     // work manager
-    def work_version = "2.5.0"
+    def work_version = "2.6.0"
     implementation "androidx.work:work-runtime-ktx:$work_version"
     implementation "androidx.work:work-gcm:$work_version"
 
