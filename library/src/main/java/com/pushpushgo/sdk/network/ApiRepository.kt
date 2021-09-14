@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
+import java.io.IOException
 
 internal class ApiRepository(
     private val apiService: ApiService,
@@ -28,22 +29,35 @@ internal class ApiRepository(
         }
         Timber.d("Token to register: $tokenToRegister")
 
-        val data = apiService.registerSubscriber(apiKey, projectId, TokenRequest(tokenToRegister))
-        if (data.id.isNotBlank()) {
-            sharedPref.subscriberId = data.id
-            sharedPref.isSubscribed = true
+        try {
+            val data = apiService.registerSubscriber(apiKey, projectId, TokenRequest(tokenToRegister))
+            if (data.id.isNotBlank()) {
+                sharedPref.subscriberId = data.id
+                sharedPref.isSubscribed = true
+            }
+            Timber.tag(PushPushGo.TAG).d("RegisterSubscriber received: $data")
         }
-        Timber.tag(PushPushGo.TAG).d("RegisterSubscriber received: $data")
+        catch (ex: IOException)
+        {
+            Timber.tag(PushPushGo.TAG).w(ex, "RegisterSubscriber exception")
+        }
     }
 
     suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
         Timber.tag(PushPushGo.TAG).d("unregisterSubscriber($isSubscribed) invoked")
+        try {
+            apiService.unregisterSubscriber(
+                token = apiKey,
+                projectId = projectId,
+                subscriberId = sharedPref.subscriberId,
+            )
 
-        apiService.unregisterSubscriber(
-            token = apiKey,
-            projectId = projectId,
-            subscriberId = sharedPref.subscriberId,
-        )
+        }
+        catch (ex: IOException)
+        {
+            Timber.tag(PushPushGo.TAG).w(ex, "UnregisterSubscriber exception")
+        }
+
         sharedPref.subscriberId = ""
         sharedPref.isSubscribed = false
     }
