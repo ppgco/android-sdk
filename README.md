@@ -34,7 +34,7 @@ dependencies {
     // or
 
     // jitpack
-    implementation "com.github.ppgco.android-sdk:sdk:master-SNAPSHOT"
+    implementation "com.github.ppgco.android-sdk:sdk:1.2.0"
 
     // GMS
     implementation platform('com.google.firebase:firebase-bom:28.3.1')
