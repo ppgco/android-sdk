@@ -21,14 +21,18 @@ internal class ApiRepository(
     private val apiKey: String,
 ) {
 
-    suspend fun registerToken(token: String?) {
+    suspend fun registerToken(token: String?, apiKey: String = this.apiKey, projectId: String = this.projectId) {
         Timber.tag(PushPushGo.TAG).d("registerToken invoked: $token")
         val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: withContext(Dispatchers.IO) {
             getPlatformPushToken(context)
         }
         Timber.d("Token to register: $tokenToRegister")
 
-        val data = apiService.registerSubscriber(apiKey, projectId, TokenRequest(tokenToRegister))
+        val data = apiService.registerSubscriber(
+            token = apiKey,
+            projectId = projectId,
+            body = TokenRequest(tokenToRegister)
+        )
         if (data.id.isNotBlank()) {
             sharedPref.subscriberId = data.id
             sharedPref.isSubscribed = true
@@ -48,19 +52,19 @@ internal class ApiRepository(
         sharedPref.isSubscribed = false
     }
 
-    suspend fun migrateSubscriber(oldProjectId: String?, oldToken: String?, oldSubscriberId: String?) {
-        Timber.tag(PushPushGo.TAG).d("migrateSubscriber($oldProjectId, $oldToken, $oldSubscriberId) invoked")
+    suspend fun migrateSubscriber(newProjectId: String, newToken: String) {
+        Timber.tag(PushPushGo.TAG).d("migrateSubscriber($newProjectId, $newToken) invoked")
 
-        if (oldProjectId.isNullOrBlank() || oldToken.isNullOrBlank() || oldSubscriberId.isNullOrBlank()) {
-            return Timber.tag(PushPushGo.TAG).i("Empty old project info!")
+        if (newProjectId.isBlank() || newToken.isBlank()) {
+            return Timber.tag(PushPushGo.TAG).i("Empty new project info!")
         }
 
-        // unregister previous
+        // unregister current
         try {
             apiService.unregisterSubscriber(
-                token = oldToken,
-                projectId = oldProjectId,
-                subscriberId = oldSubscriberId,
+                token = apiKey,
+                projectId = projectId,
+                subscriberId = sharedPref.subscriberId,
             )
         } catch (e: PushPushException) {
             if (!e.message.orEmpty().contains("Subscriber not found")) {
@@ -69,7 +73,11 @@ internal class ApiRepository(
         }
 
         // register new
-        registerToken(null)
+        registerToken(
+            token = null,
+            apiKey = newToken,
+            projectId = newProjectId,
+        )
     }
 
     suspend fun sendBeacon(beacon: String) {

@@ -10,10 +10,6 @@ import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.work.UploadWorker.Companion.BEACON
 import com.pushpushgo.sdk.work.UploadWorker.Companion.DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.EVENT
-import com.pushpushgo.sdk.work.UploadWorker.Companion.MIGRATION
-import com.pushpushgo.sdk.work.UploadWorker.Companion.OLD_PROJECT_ID
-import com.pushpushgo.sdk.work.UploadWorker.Companion.OLD_SUBSCRIBER_ID
-import com.pushpushgo.sdk.work.UploadWorker.Companion.OLD_TOKEN
 import com.pushpushgo.sdk.work.UploadWorker.Companion.REGISTER
 import com.pushpushgo.sdk.work.UploadWorker.Companion.TYPE
 import com.pushpushgo.sdk.work.UploadWorker.Companion.UNREGISTER
@@ -46,7 +42,7 @@ internal class UploadManager(
         Timber.tag(PushPushGo.TAG).d("Register enqueued")
 
         enqueueJob(REGISTER, isMustRunImmediately = true, data = token)
-        listOf(UNREGISTER, MIGRATION).forEach {
+        listOf(UNREGISTER).forEach {
             workManager.cancelAllWorkByTag(it)
         }
     }
@@ -60,23 +56,7 @@ internal class UploadManager(
         Timber.tag(PushPushGo.TAG).d("Unregister enqueued")
 
         enqueueJob(UNREGISTER, isMustRunImmediately = true)
-        listOf(REGISTER, MIGRATION, EVENT, BEACON).forEach {
-            workManager.cancelAllWorkByTag(it)
-        }
-    }
-
-    fun sendMigration(oldProjectId: String, oldToken: String, oldSubscriberId: String) {
-        Timber.tag(PushPushGo.TAG).d("Migration enqueued")
-
-        enqueueJob(
-            name = MIGRATION,
-            oldProjectId = oldProjectId,
-            oldToken = oldToken,
-            oldSubscriberId = oldSubscriberId,
-            isMustRunImmediately = true,
-        )
-
-        listOf(UNREGISTER, REGISTER, EVENT, BEACON).forEach {
+        listOf(REGISTER, EVENT, BEACON).forEach {
             workManager.cancelAllWorkByTag(it)
         }
     }
@@ -120,19 +100,13 @@ internal class UploadManager(
         }
     }
 
-    private fun enqueueJob(
-        name: String, data: String? = null, isMustRunImmediately: Boolean = false,
-        oldProjectId: String? = null, oldToken: String? = null, oldSubscriberId: String? = null,
-    ) {
+    private fun enqueueJob(name: String, data: String? = null, isMustRunImmediately: Boolean = false) {
         workManager.enqueueUniqueWork(
             name,
             if (name == REGISTER || name == UNREGISTER) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.APPEND,
             OneTimeWorkRequestBuilder<UploadWorker>()
                 .setInputData(
-                    workDataOf(
-                        TYPE to name, DATA to data,
-                        OLD_PROJECT_ID to oldProjectId, OLD_TOKEN to oldToken, OLD_SUBSCRIBER_ID to oldSubscriberId,
-                    )
+                    workDataOf(TYPE to name, DATA to data)
                 )
                 .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
                 .setInitialDelay(if (isMustRunImmediately || isJobAlreadyEnqueued(name)) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
