@@ -16,6 +16,7 @@ import com.pushpushgo.sdk.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.runBlocking
@@ -196,15 +197,23 @@ class PushPushGo private constructor(
      * function to check if user subscribed to notifications
      * @return boolean true if subscribed
      */
-    fun isSubscribed(): Boolean {
-        return networkModule.sharedPref.isSubscribed
-    }
+    fun isSubscribed(): Boolean = networkModule.sharedPref.isSubscribed
 
     /**
      * function to retrieve last push token used to subscribe
      */
-    fun getPushToken(): String = runBlocking {
-        networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+    @Deprecated("use getPushTokenAsync() instead")
+    fun getPushToken(): String = runBlocking { getPushTokenSuspend() }
+
+    /**
+     * async function to retrieve last push token used to subscribe that
+     */
+    fun getPushTokenAsync(): ListenableFuture<String> = CoroutineScope(Job() + Dispatchers.IO).future {
+        getPushTokenSuspend()
+    }
+
+    private suspend fun getPushTokenSuspend(): String {
+        return networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
     }
 
     /**
@@ -229,7 +238,7 @@ class PushPushGo private constructor(
      * @param newProjectToken - project token
      */
     fun migrateToNewProject(newProjectId: String, newProjectToken: String): ListenableFuture<PushPushGo> {
-        return CoroutineScope(Job()).future {
+        return CoroutineScope(Job() + Dispatchers.IO).future {
             getInstance().getNetwork().migrateSubscriber(
                 newProjectId = newProjectId,
                 newToken = newProjectToken,
@@ -261,9 +270,7 @@ class PushPushGo private constructor(
     /**
      * function to construct and send beacon
      */
-    fun createBeacon(): BeaconBuilder {
-        return BeaconBuilder(getUploadManager())
-    }
+    fun createBeacon(): BeaconBuilder = BeaconBuilder(getUploadManager())
 }
 
 typealias NotificationHandler = (context: Context, url: String) -> Unit

@@ -33,10 +33,12 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun getNotificationHandler ()Lkotlin/jvm/functions/Function2;
 	public final fun getProjectId ()Ljava/lang/String;
 	public final fun getPushToken ()Ljava/lang/String;
+	public final fun getPushTokenAsync ()Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;)V
 	public final fun isPPGoPush (Landroid/content/Intent;)Z
 	public final fun isPPGoPush (Ljava/util/Map;)Z
 	public final fun isSubscribed ()Z
+	public final fun migrateToNewProject (Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun registerSubscriber ()V
 	public static final fun reinitialize$library_release (Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun resubscribe (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
