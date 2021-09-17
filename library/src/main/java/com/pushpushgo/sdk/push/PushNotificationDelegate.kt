@@ -34,6 +34,7 @@ internal class PushNotificationDelegate : CoroutineScope {
 
         launch(errorHandler) {
             val notificationId = getUniqueNotificationId()
+            val projectId = PushPushGo.getInstance().getProjectId()
             Timber.tag(PushPushGo.TAG).d("Notification unique id: $notificationId")
 
             val notification = when {
@@ -41,12 +42,14 @@ internal class PushNotificationDelegate : CoroutineScope {
                     context = context,
                     remoteMessage = pushMessage,
                     notificationId = notificationId,
-                    isSubscribed = isSubscribed
+                    isSubscribed = isSubscribed,
+                    projectId = projectId,
                 )
                 pushMessage.notification != null -> sendSimpleNotification(
                     context = context,
                     remoteMessage = pushMessage,
-                    notificationId = notificationId
+                    notificationId = notificationId,
+                    projectId = projectId,
                 )
                 else -> throw IllegalStateException("Unknown notification type")
             }
@@ -74,23 +77,30 @@ internal class PushNotificationDelegate : CoroutineScope {
         context: Context,
         remoteMessage: PushMessage,
         notificationId: Int,
-        isSubscribed: Boolean
+        isSubscribed: Boolean,
+        projectId: String,
     ): Notification {
         Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
 
         val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
-            ?: return sendSimpleNotification(context, remoteMessage, notificationId)
+            ?: return sendSimpleNotification(context, remoteMessage, notificationId, projectId)
 
         sendDeliveredEvent(pushPushNotification.campaignId, isSubscribed)
-        return createDataNotification(context, notificationId, pushPushNotification)
+        return createDataNotification(context, notificationId, pushPushNotification, projectId)
     }
 
-    private fun sendSimpleNotification(context: Context, remoteMessage: PushMessage, notificationId: Int): Notification {
+    private fun sendSimpleNotification(
+        context: Context,
+        remoteMessage: PushMessage,
+        notificationId: Int,
+        projectId: String,
+    ): Notification {
         Timber.tag(PushPushGo.TAG).d("Message notification title: %s", remoteMessage.notification?.title)
 
         return createNotification(
             id = notificationId,
             context = context,
+            projectId = projectId,
             title = remoteMessage.notification?.title!!,
             content = remoteMessage.notification.body!!,
             priority = translateFirebasePriority(remoteMessage.notification.priority)
@@ -116,13 +126,15 @@ internal class PushNotificationDelegate : CoroutineScope {
     private suspend fun createDataNotification(
         context: Context,
         notificationId: Int,
-        notification: PushPushNotification
+        notification: PushPushNotification,
+        projectId: String,
     ) = createNotification(
         id = notificationId,
         context = context,
         notify = notification,
         playSound = true,
         ongoing = false,
+        projectId = projectId,
         bigPicture = getBitmapFromUrl(notification.image),
         iconPicture = getBitmapFromUrl(notification.icon)
     )
@@ -147,13 +159,15 @@ internal class PushNotificationDelegate : CoroutineScope {
         notify: PushPushNotification,
         playSound: Boolean,
         ongoing: Boolean,
+        projectId: String,
         iconPicture: Bitmap?,
-        bigPicture: Bitmap?
+        bigPicture: Bitmap?,
     ) = createNotification(
         id = id,
         context = context,
         playSound = playSound,
         ongoing = ongoing,
+        projectId = projectId,
         title = notify.notification.title.orEmpty(),
         content = notify.notification.body.orEmpty(),
         sound = notify.notification.sound ?: "default",
@@ -172,6 +186,7 @@ internal class PushNotificationDelegate : CoroutineScope {
         id: Int,
         context: Context,
         title: String = context.getString(R.string.app_name),
+        projectId: String,
         content: String,
         playSound: Boolean = false,
         sound: String = "default",
@@ -184,7 +199,7 @@ internal class PushNotificationDelegate : CoroutineScope {
         clickAction: String = "",
         actions: List<Action> = emptyList(),
         iconPicture: Bitmap? = null,
-        bigPicture: Bitmap? = null
+        bigPicture: Bitmap? = null,
     ) = NotificationCompat.Builder(context, context.getString(R.string.pushpushgo_notification_default_channel_id))
         .setContentTitle(title)
         .setContentText(content)
@@ -196,7 +211,7 @@ internal class PushNotificationDelegate : CoroutineScope {
         .setColor(ContextCompat.getColor(context, R.color.pushpushgo_notification_color_default))
         .apply {
             if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
-                getClickActionIntent(context, campaignId, 0, actionLink, id)
+                getClickActionIntent(context, campaignId, 0, actionLink, id, projectId)
             )
 
             if (badge > 0) setNumber(badge)
@@ -223,17 +238,25 @@ internal class PushNotificationDelegate : CoroutineScope {
             }
 
             actions.forEachIndexed { i, action ->
-                val intent = getClickActionIntent(context, campaignId, i + 1, action.link, id)
+                val intent = getClickActionIntent(context, campaignId, i + 1, action.link, id, projectId)
                 addAction(NotificationCompat.Action.Builder(0, action.title, intent).build())
             }
         }.build()
 
-    private fun getClickActionIntent(context: Context, campaignId: String, buttonId: Int, link: String, id: Int) =
+    private fun getClickActionIntent(
+        context: Context,
+        campaignId: String,
+        buttonId: Int,
+        link: String,
+        id: Int,
+        projectId: String,
+    ) =
         PendingIntent.getBroadcast(
             context, getUniqueNotificationId(), Intent(context, ClickActionReceiver::class.java).apply {
                 putExtra(ClickActionReceiver.NOTIFICATION_ID, id)
                 putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
                 putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
+                putExtra(ClickActionReceiver.PROJECT_ID, projectId)
                 putExtra(ClickActionReceiver.LINK, link)
             }, PendingIntent.FLAG_UPDATE_CURRENT
         )

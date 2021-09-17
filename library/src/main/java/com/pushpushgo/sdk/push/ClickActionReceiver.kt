@@ -15,24 +15,29 @@ internal class ClickActionReceiver : BroadcastReceiver() {
         const val NOTIFICATION_ID = "notification_id"
         const val BUTTON_ID = "button_id"
         const val CAMPAIGN_ID = "campaign_id"
+        const val PROJECT_ID = "project_id"
         const val LINK = "link"
     }
 
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.tag(PushPushGo.TAG).d("ClickActionReceiver received click event")
+        if (intent?.getStringExtra(PROJECT_ID) != PushPushGo.getInstance().getProjectId()) {
+            Timber.tag(PushPushGo.TAG).d("Notification is not from current project. Skipping")
+            return
+        }
 
-        intent?.getIntExtra(NOTIFICATION_ID, 0)?.let {
+        intent.getIntExtra(NOTIFICATION_ID, 0).let {
             NotificationManagerCompat.from(context).cancel(it)
         }
 
         if (PushPushGo.isInitialized() && SharedPreferencesHelper(context).isSubscribed) {
             PushPushGo.getInstance().getUploadManager().sendEvent(
                 type = EventType.CLICKED,
-                buttonId = intent?.getIntExtra(BUTTON_ID, 0) ?: 0,
-                campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty()
+                buttonId = intent.getIntExtra(BUTTON_ID, 0),
+                campaign = intent.getStringExtra(CAMPAIGN_ID).orEmpty()
             )
 
-            intent?.getStringExtra(LINK)?.let { it ->
+            intent.getStringExtra(LINK)?.let { it ->
                 PushPushGo.getInstance().notificationHandler(context, it)
             }
         }
