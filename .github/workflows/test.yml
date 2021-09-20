@@ -31,4 +31,5 @@ jobs:
           ./gradlew :library:testDebug --stacktrace
       - name: API changes check
         run: |
-          ./gradlew apiCheck --stacktrace
+          ./gradlew :library:apiCheck --stacktrace
+          ./gradlew :library-no-op:apiCheck --stacktrace

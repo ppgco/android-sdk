@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -22,7 +23,7 @@ import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.runBlocking
 
 class PushPushGo private constructor(
-    private val context: Context,
+    private val application: Application,
     private val apiKey: String,
     private val projectId: String,
 ) {
@@ -49,39 +50,39 @@ class PushPushGo private constructor(
 
         /**
          * function to create an instance of PushPushGo object to handle push notifications
-         * @param context - context of an application to get apiKey from META DATA stored in Your Manifest.xml file
+         * @param application - an application to get apiKey from META DATA stored in Your Manifest.xml file
          * @return PushPushGo instance
          */
         @JvmStatic
-        fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: buildPushPushGoFromContext(context).also { INSTANCE = it }
+        fun getInstance(application: Application) = INSTANCE ?: synchronized(this) {
+            INSTANCE ?: buildPushPushGoFromContext(application).also { INSTANCE = it }
         }
 
         /**
          * function to create an instance of PushPushGo object to handle push notifications
-         * @param context - context of an application to handle DI
+         * @param application - an application to handle DI
          * @param apiKey - key to communicate with RESTFul API
          * @return PushPushGo instance
          */
         @JvmStatic
-        fun getInstance(context: Context, apiKey: String, projectId: String): PushPushGo {
+        fun getInstance(application: Application, apiKey: String, projectId: String): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(context, apiKey, projectId)
+                INSTANCE = PushPushGo(application, apiKey, projectId)
             }
             return INSTANCE as PushPushGo
         }
 
         @JvmStatic
-        internal fun reinitialize(context: Context, apiKey: String, projectId: String): PushPushGo {
-            INSTANCE = PushPushGo(context, apiKey, projectId)
+        private fun reinitialize(application: Application, apiKey: String, projectId: String): PushPushGo {
+            INSTANCE = PushPushGo(application, apiKey, projectId)
 
             return INSTANCE as PushPushGo
         }
 
-        private fun buildPushPushGoFromContext(context: Context): PushPushGo {
-            val (projectId, apiKey) = extractCredentialsFromContext(context)
+        private fun buildPushPushGoFromContext(application: Application): PushPushGo {
+            val (projectId, apiKey) = extractCredentialsFromContext(application)
             validateCredentials(projectId, apiKey)
-            return PushPushGo(context, apiKey, projectId)
+            return PushPushGo(application, apiKey, projectId)
         }
 
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
@@ -108,13 +109,13 @@ class PushPushGo private constructor(
         val startupMessage = "PushPushGo $VERSION initialized (project id: $projectId, platform: $platformType)"
         println(startupMessage)
 
-        createNotificationChannel(context)
-        NotificationStatusChecker.start(context)
+        createNotificationChannel(application)
+        NotificationStatusChecker.start(application)
     }
 
-    private val networkModule by lazy { NetworkModule(context, apiKey, projectId) }
+    private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
 
-    private val workModule by lazy { WorkModule(context) }
+    private val workModule by lazy { WorkModule(application) }
 
     internal fun getNetwork() = networkModule.apiRepository
 
@@ -173,7 +174,7 @@ class PushPushGo private constructor(
         if (intent?.getStringExtra("project") != projectId) return
 
         val notify = deserializeNotificationData(intent.extras) ?: return
-        notificationHandler(context, notify.redirectLink)
+        notificationHandler(application, notify.redirectLink)
         getUploadManager().sendEvent(
             type = EventType.CLICKED,
             buttonId = 0,
@@ -213,7 +214,7 @@ class PushPushGo private constructor(
     }
 
     private suspend fun getPushTokenSuspend(): String {
-        return networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+        return networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(application)
     }
 
     /**
@@ -244,7 +245,7 @@ class PushPushGo private constructor(
                 newToken = newProjectToken,
             )
             reinitialize(
-                context = context,
+                application = application,
                 projectId = newProjectId,
                 apiKey = newProjectToken
             )
@@ -261,7 +262,7 @@ class PushPushGo private constructor(
         }
 
         return reinitialize(
-            context = context,
+            application = application,
             projectId = newProjectId,
             apiKey = newProjectToken
         )
