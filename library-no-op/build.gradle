@@ -42,6 +42,12 @@ dependencies {
 
     api "com.google.guava:guava:30.1.1-android"
 }
+
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+}
+
 def configArtifactId = 'sdk-no-op'
 def configGroupId = 'com.pushpushgo'
 
@@ -49,6 +55,8 @@ afterEvaluate {
     publishing {
         publications {
             noop(MavenPublication) {
+                from components.release
+                artifact androidSourcesJar
                 groupId = configGroupId
                 artifactId = configArtifactId
                 version = android.defaultConfig.versionName
