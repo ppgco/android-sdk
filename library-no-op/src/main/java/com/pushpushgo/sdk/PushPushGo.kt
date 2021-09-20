@@ -3,8 +3,8 @@ package com.pushpushgo.sdk
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.SettableFuture
 import com.pushpushgo.sdk.dto.PPGoNotification
 import com.pushpushgo.sdk.exception.PushPushException
 
@@ -57,7 +57,7 @@ class PushPushGo private constructor(
 
     fun getPushToken(): String = ""
 
-    fun getPushTokenAsync(): ListenableFuture<String> = SettableFuture.create()
+    fun getPushTokenAsync(): ListenableFuture<String> = Futures.immediateFuture("null")
 
     fun handleBackgroundNotificationClick(intent: Intent?) = Unit
 
@@ -68,7 +68,7 @@ class PushPushGo private constructor(
     fun isSubscribed(): Boolean = false
 
     fun migrateToNewProject(newProjectId: String, newProjectToken: String): ListenableFuture<PushPushGo> =
-        SettableFuture.create()
+        Futures.immediateFuture(this)
 
     fun registerSubscriber() = Unit
 
