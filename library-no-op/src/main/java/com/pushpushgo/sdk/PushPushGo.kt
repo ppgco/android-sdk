@@ -27,14 +27,14 @@ class PushPushGo private constructor(
             INSTANCE ?: throw PushPushException("You have to initialize PushPushGo with context first!")
 
         @JvmStatic
-        fun getInstance(context: Application) = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: PushPushGo(context, "", "").also { INSTANCE = it }
+        fun getInstance(application: Application) = INSTANCE ?: synchronized(this) {
+            INSTANCE ?: PushPushGo(application, "", "").also { INSTANCE = it }
         }
 
         @JvmStatic
-        fun getInstance(context: Application, apiKey: String, projectId: String): PushPushGo {
+        fun getInstance(application: Application, apiKey: String, projectId: String): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(context, apiKey, projectId)
+                INSTANCE = PushPushGo(application, apiKey, projectId)
             }
             return INSTANCE as PushPushGo
         }
