@@ -46,7 +46,7 @@ internal class NotificationStatusChecker private constructor(private val context
             if (pref.subscriberId.isBlank()) {
                 GlobalScope.launch {
                     Timber.tag(PushPushGo.TAG).d("Notifications enabled, but not subscribed. Registering token...")
-                    PushPushGo.getInstance().getNetwork().registerToken(null)
+                    PushPushGo.getInstance().registerSubscriber()
                 }
             }
         } else {
