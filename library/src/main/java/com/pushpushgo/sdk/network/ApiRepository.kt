@@ -12,7 +12,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
-import java.io.IOException
 
 internal class ApiRepository(
     private val apiService: ApiService,
@@ -22,59 +21,50 @@ internal class ApiRepository(
     private val apiKey: String,
 ) {
 
-    suspend fun registerToken(token: String?) {
+    suspend fun registerToken(token: String?, apiKey: String = this.apiKey, projectId: String = this.projectId) {
         Timber.tag(PushPushGo.TAG).d("registerToken invoked: $token")
         val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: withContext(Dispatchers.IO) {
             getPlatformPushToken(context)
         }
         Timber.d("Token to register: $tokenToRegister")
 
-        try {
-            val data = apiService.registerSubscriber(apiKey, projectId, TokenRequest(tokenToRegister))
-            if (data.id.isNotBlank()) {
-                sharedPref.subscriberId = data.id
-                sharedPref.isSubscribed = true
-            }
-            Timber.tag(PushPushGo.TAG).d("RegisterSubscriber received: $data")
+        val data = apiService.registerSubscriber(
+            token = apiKey,
+            projectId = projectId,
+            body = TokenRequest(tokenToRegister)
+        )
+        if (data.id.isNotBlank()) {
+            sharedPref.subscriberId = data.id
+            sharedPref.isSubscribed = true
         }
-        catch (ex: IOException)
-        {
-            Timber.tag(PushPushGo.TAG).w(ex, "RegisterSubscriber exception")
-        }
+        Timber.tag(PushPushGo.TAG).d("RegisterSubscriber received: $data")
     }
 
     suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
         Timber.tag(PushPushGo.TAG).d("unregisterSubscriber($isSubscribed) invoked")
+
+        apiService.unregisterSubscriber(
+            token = apiKey,
+            projectId = projectId,
+            subscriberId = sharedPref.subscriberId,
+        )
+        sharedPref.subscriberId = ""
+        sharedPref.isSubscribed = false
+    }
+
+    suspend fun migrateSubscriber(newProjectId: String, newToken: String) {
+        Timber.tag(PushPushGo.TAG).d("migrateSubscriber($newProjectId, $newToken) invoked")
+
+        if (newProjectId.isBlank() || newToken.isBlank()) {
+            return Timber.tag(PushPushGo.TAG).i("Empty new project info!")
+        }
+
+        // unregister current
         try {
             apiService.unregisterSubscriber(
                 token = apiKey,
                 projectId = projectId,
                 subscriberId = sharedPref.subscriberId,
-            )
-
-        }
-        catch (ex: IOException)
-        {
-            Timber.tag(PushPushGo.TAG).w(ex, "UnregisterSubscriber exception")
-        }
-
-        sharedPref.subscriberId = ""
-        sharedPref.isSubscribed = false
-    }
-
-    suspend fun migrateSubscriber(oldProjectId: String?, oldToken: String?, oldSubscriberId: String?) {
-        Timber.tag(PushPushGo.TAG).d("migrateSubscriber($oldProjectId, $oldToken, $oldSubscriberId) invoked")
-
-        if (oldProjectId.isNullOrBlank() || oldToken.isNullOrBlank() || oldSubscriberId.isNullOrBlank()) {
-            return Timber.tag(PushPushGo.TAG).i("Empty old project info!")
-        }
-
-        // unregister previous
-        try {
-            apiService.unregisterSubscriber(
-                token = oldToken,
-                projectId = oldProjectId,
-                subscriberId = oldSubscriberId,
             )
         } catch (e: PushPushException) {
             if (!e.message.orEmpty().contains("Subscriber not found")) {
@@ -83,7 +73,11 @@ internal class ApiRepository(
         }
 
         // register new
-        registerToken(null)
+        registerToken(
+            token = null,
+            apiKey = newToken,
+            projectId = newProjectId,
+        )
     }
 
     suspend fun sendBeacon(beacon: String) {

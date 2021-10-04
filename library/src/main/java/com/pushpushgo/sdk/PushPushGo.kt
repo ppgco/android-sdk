@@ -1,9 +1,11 @@
 package com.pushpushgo.sdk
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import com.google.common.util.concurrent.ListenableFuture
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.mapToDto
 import com.pushpushgo.sdk.di.NetworkModule
@@ -14,17 +16,20 @@ import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.runBlocking
-import timber.log.Timber
 
 class PushPushGo private constructor(
-    private val context: Context,
+    private val application: Application,
     private val apiKey: String,
-    private val projectId: String
+    private val projectId: String,
 ) {
 
     companion object {
-        const val VERSION = "1.1.0-20210813~1"
+        const val VERSION = "1.2.0-20210917~1"
 
         internal const val TAG = "PPGo"
 
@@ -45,39 +50,39 @@ class PushPushGo private constructor(
 
         /**
          * function to create an instance of PushPushGo object to handle push notifications
-         * @param context - context of an application to get apiKey from META DATA stored in Your Manifest.xml file
+         * @param application - an application to get apiKey from META DATA stored in Your Manifest.xml file
          * @return PushPushGo instance
          */
         @JvmStatic
-        fun getInstance(context: Context) = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: buildPushPushGoFromContext(context).also { INSTANCE = it }
+        fun getInstance(application: Application) = INSTANCE ?: synchronized(this) {
+            INSTANCE ?: buildPushPushGoFromContext(application).also { INSTANCE = it }
         }
 
         /**
          * function to create an instance of PushPushGo object to handle push notifications
-         * @param context - context of an application to handle DI
+         * @param application - an application to handle DI
          * @param apiKey - key to communicate with RESTFul API
          * @return PushPushGo instance
          */
         @JvmStatic
-        fun getInstance(context: Context, apiKey: String, projectId: String): PushPushGo {
+        fun getInstance(application: Application, apiKey: String, projectId: String): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(context, apiKey, projectId)
+                INSTANCE = PushPushGo(application, apiKey, projectId)
             }
             return INSTANCE as PushPushGo
         }
 
         @JvmStatic
-        internal fun reinitialize(context: Context, apiKey: String, projectId: String): PushPushGo {
-            INSTANCE = PushPushGo(context, apiKey, projectId)
+        private fun reinitialize(application: Application, apiKey: String, projectId: String): PushPushGo {
+            INSTANCE = PushPushGo(application, apiKey, projectId)
 
             return INSTANCE as PushPushGo
         }
 
-        private fun buildPushPushGoFromContext(context: Context): PushPushGo {
-            val (projectId, apiKey) = extractCredentialsFromContext(context)
+        private fun buildPushPushGoFromContext(application: Application): PushPushGo {
+            val (projectId, apiKey) = extractCredentialsFromContext(application)
             validateCredentials(projectId, apiKey)
-            return PushPushGo(context, apiKey, projectId)
+            return PushPushGo(application, apiKey, projectId)
         }
 
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
@@ -99,20 +104,18 @@ class PushPushGo private constructor(
         }
     }
 
-    private val networkModule by lazy { NetworkModule(context, apiKey, projectId) }
-
     init {
         val platformType = getPlatformType()
         val startupMessage = "PushPushGo $VERSION initialized (project id: $projectId, platform: $platformType)"
         println(startupMessage)
-        Timber.tag(TAG).d(startupMessage)
 
-        createNotificationChannel(context)
-        NotificationStatusChecker.start(context)
+        createNotificationChannel(application)
+        NotificationStatusChecker.start(application)
     }
 
-    private val workModule by lazy { WorkModule(context) }
+    private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
 
+    private val workModule by lazy { WorkModule(application) }
 
     internal fun getNetwork() = networkModule.apiRepository
 
@@ -171,7 +174,7 @@ class PushPushGo private constructor(
         if (intent?.getStringExtra("project") != projectId) return
 
         val notify = deserializeNotificationData(intent.extras) ?: return
-        notificationHandler(context, notify.redirectLink)
+        notificationHandler(application, notify.redirectLink)
         getUploadManager().sendEvent(
             type = EventType.CLICKED,
             buttonId = 0,
@@ -195,15 +198,23 @@ class PushPushGo private constructor(
      * function to check if user subscribed to notifications
      * @return boolean true if subscribed
      */
-    fun isSubscribed(): Boolean {
-        return networkModule.sharedPref.isSubscribed
-    }
+    fun isSubscribed(): Boolean = networkModule.sharedPref.isSubscribed
 
     /**
      * function to retrieve last push token used to subscribe
      */
-    fun getPushToken(): String = runBlocking {
-        networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(context)
+    @Deprecated("use getPushTokenAsync() instead")
+    fun getPushToken(): String = runBlocking { getPushTokenSuspend() }
+
+    /**
+     * async function to retrieve last push token used to subscribe that
+     */
+    fun getPushTokenAsync(): ListenableFuture<String> = CoroutineScope(Job() + Dispatchers.IO).future {
+        getPushTokenSuspend()
+    }
+
+    private suspend fun getPushTokenSuspend(): String {
+        return networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(application)
     }
 
     /**
@@ -227,33 +238,40 @@ class PushPushGo private constructor(
      * @param newProjectId - project id to which we are switching
      * @param newProjectToken - project token
      */
-    fun resubscribe(newProjectId: String, newProjectToken: String): PushPushGo {
-        val oldProjectId = getInstance().projectId
-        val oldToken = getInstance().apiKey
-        val oldSubscriberId = getInstance().networkModule.sharedPref.subscriberId
+    fun migrateToNewProject(newProjectId: String, newProjectToken: String): ListenableFuture<PushPushGo> {
+        return CoroutineScope(Job() + Dispatchers.IO).future {
+            getInstance().getNetwork().migrateSubscriber(
+                newProjectId = newProjectId,
+                newToken = newProjectToken,
+            )
+            reinitialize(
+                application = application,
+                projectId = newProjectId,
+                apiKey = newProjectToken
+            )
+        }
+    }
 
-        val newInstance = reinitialize(
-            context = context,
+    @Deprecated("use migrateToNewProject instead")
+    fun resubscribe(newProjectId: String, newProjectToken: String): PushPushGo {
+        runBlocking {
+            getInstance().getNetwork().migrateSubscriber(
+                newProjectId = newProjectId,
+                newToken = newProjectToken,
+            )
+        }
+
+        return reinitialize(
+            application = application,
             projectId = newProjectId,
             apiKey = newProjectToken
         )
-
-        newInstance.getUploadManager().sendMigration(
-            oldProjectId = oldProjectId,
-            oldToken = oldToken,
-            oldSubscriberId = oldSubscriberId,
-        )
-
-        return newInstance
     }
 
     /**
      * function to construct and send beacon
      */
-    fun createBeacon(): BeaconBuilder {
-        return BeaconBuilder(getUploadManager())
-    }
-
+    fun createBeacon(): BeaconBuilder = BeaconBuilder(getUploadManager())
 }
 
 typealias NotificationHandler = (context: Context, url: String) -> Unit

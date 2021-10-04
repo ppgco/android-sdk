@@ -1,5 +1,9 @@
 # PushPushGo Android SDK
 
+[![JitPack](https://img.shields.io/jitpack/v/github/ppgco/android-sdk?style=flat-square)](https://jitpack.io/#ppgco/android-sdk)
+![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/ppgco/android-sdk/Tests/master?style=flat-square)
+![GitHub tag (latest)](https://img.shields.io/github/v/tag/ppgco/android-sdk?style=flat-square)
+
 ## Requirements
 
 - minSdkVersion: 21
@@ -17,32 +21,28 @@ allprojects {
 
         // or
 
-        // remote repo
-        maven {
-            url 'https://gitlab.goodylabs.com/api/v4/projects/297/packages/maven'
-            name "PPGo"
-            credentials(HttpHeaderCredentials) {
-                name = 'Deploy-Token'
-                value = GITLAB_PPGO_REPO_TOKEN
-            }
-            authentication {
-                header(HttpHeaderAuthentication)
-            }
-        }
+        // jitpack
+        maven { url 'https://jitpack.io' }
     }
 }
 
 // /app/build.gradle
 dependencies {
-    implementation 'com.pushpushgo:sdk:1.0.1'
+    // local repo
+    implementation 'com.pushpushgo:sdk:1.2.0-SNAPSHOT'
+
+    // or
+
+    // jitpack
+    implementation "com.github.ppgco.android-sdk:sdk:1.2.0"
 
     // GMS
-    implementation platform('com.google.firebase:firebase-bom:27.1.0')
+    implementation platform('com.google.firebase:firebase-bom:28.3.1')
     implementation 'com.google.firebase:firebase-messaging'
 
     // HMS
-    implementation 'com.huawei.agconnect:agconnect-core:1.5.1.200'
-    implementation 'com.huawei.hms:push:5.1.1.301'
+    implementation 'com.huawei.agconnect:agconnect-core:1.5.3.200'
+    implementation 'com.huawei.hms:push:5.3.0.304'
 }
 ```
 
@@ -99,15 +99,6 @@ To maven local repository:
 $ ./gradlew :library:publishDebugPublicationToMavenLocal      // debug
 $ ./gradlew :library:publishReleasePublicationToMavenLocal    // release
 $ ./gradlew :library:publishToMavenLocal                      // both
-```
-
-To maven remote repository:
-
-```sh
-$ export GITLAB_PRIVATE_TOKEN=<token>
-$ ./gradlew :library:publishDebugPublicationToPPGoRepository    // debug
-$ ./gradlew :library:publishReleasePublicationToPPGoRepository  // release
-$ ./gradlew :library:publishAllPublicationsToPPGoRepository     // both
 ```
 
 ## Tests
