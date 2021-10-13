@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.data.Event
+import com.pushpushgo.sdk.data.EventType
+import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.getPlatformPushToken
@@ -82,6 +85,10 @@ internal class ApiRepository(
 
     suspend fun sendBeacon(beacon: String) {
         Timber.tag(PushPushGo.TAG).d("sendBeacon($beacon) invoked")
+        if (!sharedPref.isSubscribed) {
+            Timber.tag(PushPushGo.TAG).d("Beacon not sent. Reason: not subscribed")
+            return
+        }
 
         apiService.sendBeacon(
             token = apiKey,
@@ -91,13 +98,20 @@ internal class ApiRepository(
         )
     }
 
-    suspend fun sendEvent(event: String) {
-        Timber.tag(PushPushGo.TAG).d("sendEvent($event) invoked")
+    suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
+        Timber.tag(PushPushGo.TAG).d("sendEvent($type) invoked")
 
         apiService.sendEvent(
             token = apiKey,
             projectId = projectId,
-            event = event.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+            event = Event(
+                type = type.value,
+                payload = Payload(
+                    button = buttonId,
+                    campaign = campaign,
+                    subscriber = sharedPref.subscriberId
+                )
+            ),
         )
     }
 

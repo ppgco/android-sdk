@@ -1,7 +1,7 @@
 package com.pushpushgo.sdk
 
 import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.work.UploadManager
+import com.pushpushgo.sdk.work.UploadDelegate
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import org.json.JSONArray
@@ -13,7 +13,7 @@ import org.junit.Test
 internal class BeaconBuilderTest {
 
     @MockK
-    lateinit var uploadManager: UploadManager
+    lateinit var uploadDelegate: UploadDelegate
 
     private lateinit var beaconBuilder: BeaconBuilder
 
@@ -24,15 +24,15 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `set string selector`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
-        beaconBuilder = BeaconBuilder(uploadManager)
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.set("Selector", "Value")
 
         beaconBuilder.send()
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 it["Selector"] == "Value"
             })
         }
@@ -40,15 +40,15 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `set boolean selector`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
-        beaconBuilder = BeaconBuilder(uploadManager)
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.set("Selector", true)
 
         beaconBuilder.send()
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 it["Selector"] == true
             })
         }
@@ -56,15 +56,15 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `set char selector`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
-        beaconBuilder = BeaconBuilder(uploadManager)
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.set("Selector", 'A')
 
         beaconBuilder.send()
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 it["Selector"] == 'A'
             })
         }
@@ -72,15 +72,15 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `set number selector`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
-        beaconBuilder = BeaconBuilder(uploadManager)
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.set("Selector", 421)
 
         beaconBuilder.send()
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 it["Selector"] == 421
             })
         }
@@ -88,8 +88,8 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `set unsupported selector`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
-        beaconBuilder = BeaconBuilder(uploadManager)
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.set("Selector", JSONObject())
 
@@ -97,12 +97,12 @@ internal class BeaconBuilderTest {
         assertEquals(PushPushException::class.java, exception::class.java)
         assertEquals("Invalid type of beacon selector value. Supported types: boolean, string, char, number", exception.message)
 
-        verify { uploadManager wasNot Called }
+        verify { uploadDelegate wasNot Called }
     }
 
     @Test
     fun `append tag with label`() {
-        beaconBuilder = BeaconBuilder(uploadManager)
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.appendTag("tag1", "label1")
 
@@ -115,7 +115,7 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `append tag without label`() {
-        beaconBuilder = BeaconBuilder(uploadManager)
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.appendTag("tag1")
 
@@ -128,8 +128,8 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `append many tags with label`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
-        beaconBuilder = BeaconBuilder(uploadManager)
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.appendTag("tag1", "label1")
             .appendTag("tag2", "label2")
@@ -145,7 +145,7 @@ internal class BeaconBuilderTest {
         assertEquals(tags[2].second, "label3")
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 (it["tags"] as JSONArray).get(0).toString() == """{"tag":"tag1","label":"label1"}"""
             })
         }
@@ -153,8 +153,8 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `remove tag`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
-        beaconBuilder = BeaconBuilder(uploadManager)
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.removeTag("tag1", "tag2")
         beaconBuilder.send()
@@ -166,7 +166,7 @@ internal class BeaconBuilderTest {
         assertEquals(tags[1], "tag2")
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 it["tagsToDelete"].toString() == """["tag1","tag2"]"""
             })
         }
@@ -174,16 +174,16 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `set custom id`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
+        every { uploadDelegate.sendBeacon(any()) } just Runs
 
-        beaconBuilder = BeaconBuilder(uploadManager)
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.setCustomId("id1")
 
         beaconBuilder.send()
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 it["customId"] == "id1"
             })
         }
@@ -191,14 +191,14 @@ internal class BeaconBuilderTest {
 
     @Test
     fun `send empty beacon`() {
-        every { uploadManager.sendBeacon(any()) } just Runs
+        every { uploadDelegate.sendBeacon(any()) } just Runs
 
-        beaconBuilder = BeaconBuilder(uploadManager)
+        beaconBuilder = BeaconBuilder(uploadDelegate)
 
         beaconBuilder.send()
 
         verify {
-            uploadManager.sendBeacon(match {
+            uploadDelegate.sendBeacon(match {
                 it.toString() == "{}"
             })
         }

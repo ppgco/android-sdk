@@ -7,6 +7,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.work.UploadDelegate
 import timber.log.Timber
 
 internal class ClickActionReceiver : BroadcastReceiver() {
@@ -18,6 +19,8 @@ internal class ClickActionReceiver : BroadcastReceiver() {
         const val PROJECT_ID = "project_id"
         const val LINK = "link"
     }
+
+    private val uploadDelegate by lazy { UploadDelegate() }
 
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.tag(PushPushGo.TAG).d("ClickActionReceiver received click event")
@@ -31,7 +34,7 @@ internal class ClickActionReceiver : BroadcastReceiver() {
         }
 
         if (PushPushGo.isInitialized() && SharedPreferencesHelper(context).isSubscribed) {
-            PushPushGo.getInstance().getUploadManager().sendEvent(
+            uploadDelegate.sendEvent(
                 type = EventType.CLICKED,
                 buttonId = intent.getIntExtra(BUTTON_ID, 0),
                 campaign = intent.getStringExtra(CAMPAIGN_ID).orEmpty()

@@ -17,6 +17,7 @@ import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.*
+import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -120,6 +121,8 @@ class PushPushGo private constructor(
 
     private val workModule by lazy { WorkModule(application) }
 
+    private val uploadDelegate by lazy { UploadDelegate() }
+
     internal fun getNetwork() = networkModule.apiRepository
 
     internal fun getUploadManager() = workModule.uploadManager
@@ -178,7 +181,7 @@ class PushPushGo private constructor(
 
         val notify = deserializeNotificationData(intent.extras) ?: return
         notificationHandler(application, notify.redirectLink)
-        getUploadManager().sendEvent(
+        uploadDelegate.sendEvent(
             type = EventType.CLICKED,
             buttonId = 0,
             campaign = notify.campaignId
@@ -274,7 +277,7 @@ class PushPushGo private constructor(
     /**
      * function to construct and send beacon
      */
-    fun createBeacon(): BeaconBuilder = BeaconBuilder(getUploadManager())
+    fun createBeacon(): BeaconBuilder = BeaconBuilder(uploadDelegate)
 }
 
 typealias NotificationHandler = (context: Context, url: String) -> Unit

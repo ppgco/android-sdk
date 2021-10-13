@@ -1,11 +1,11 @@
 package com.pushpushgo.sdk
 
 import com.pushpushgo.sdk.exception.PushPushException
-import com.pushpushgo.sdk.work.UploadManager
+import com.pushpushgo.sdk.work.UploadDelegate
 import org.json.JSONArray
 import org.json.JSONObject
 
-class BeaconBuilder internal constructor(private val uploadManager: UploadManager) {
+class BeaconBuilder internal constructor(private val uploadDelegate: UploadDelegate) {
 
     private val selectors = mutableMapOf<String, Any>()
 
@@ -88,7 +88,7 @@ class BeaconBuilder internal constructor(private val uploadManager: UploadManage
      * @throws PushPushException on unsupported selector value type
      */
     fun send() {
-        uploadManager.sendBeacon(JSONObject().apply {
+        uploadDelegate.sendBeacon(JSONObject().apply {
             addSelectors()
             addTags()
             addTagsToDelete()

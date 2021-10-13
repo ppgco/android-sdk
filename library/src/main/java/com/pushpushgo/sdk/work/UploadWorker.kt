@@ -15,8 +15,6 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
 
         const val REGISTER = "register"
         const val UNREGISTER = "unregister"
-        const val BEACON = "beacon"
-        const val EVENT = "event"
     }
 
     private val delegate by lazy { UploadDelegate() }

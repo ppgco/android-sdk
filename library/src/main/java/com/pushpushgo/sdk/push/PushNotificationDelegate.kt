@@ -15,12 +15,15 @@ import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.utils.mapToBundle
+import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.*
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 
 internal class PushNotificationDelegate : CoroutineScope {
+
+    private val uploadDelegate by lazy { UploadDelegate() }
 
     private val errorHandler = CoroutineExceptionHandler { _, throwable -> Timber.tag(PushPushGo.TAG).e(throwable) }
 
@@ -115,7 +118,7 @@ internal class PushNotificationDelegate : CoroutineScope {
 
     private fun sendDeliveredEvent(campaignId: String, isSubscribed: Boolean) {
         if (PushPushGo.isInitialized() && isSubscribed) {
-            PushPushGo.getInstance().getUploadManager().sendEvent(
+            uploadDelegate.sendEvent(
                 type = EventType.DELIVERED,
                 buttonId = 0,
                 campaign = campaignId
@@ -250,14 +253,13 @@ internal class PushNotificationDelegate : CoroutineScope {
         link: String,
         id: Int,
         projectId: String,
-    ) =
-        PendingIntent.getBroadcast(
-            context, getUniqueNotificationId(), Intent(context, ClickActionReceiver::class.java).apply {
-                putExtra(ClickActionReceiver.NOTIFICATION_ID, id)
-                putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
-                putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
-                putExtra(ClickActionReceiver.PROJECT_ID, projectId)
-                putExtra(ClickActionReceiver.LINK, link)
-            }, PendingIntent.FLAG_UPDATE_CURRENT
-        )
+    ) = PendingIntent.getBroadcast(
+        context, getUniqueNotificationId(), Intent(context, ClickActionReceiver::class.java).apply {
+            putExtra(ClickActionReceiver.NOTIFICATION_ID, id)
+            putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
+            putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
+            putExtra(ClickActionReceiver.PROJECT_ID, projectId)
+            putExtra(ClickActionReceiver.LINK, link)
+        }, PendingIntent.FLAG_UPDATE_CURRENT
+    )
 }

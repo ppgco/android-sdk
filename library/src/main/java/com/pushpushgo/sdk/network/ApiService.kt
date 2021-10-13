@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.network
 
 import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -46,7 +47,7 @@ internal interface ApiService {
     suspend fun sendEvent(
         @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
-        @Body event: RequestBody
+        @Body event: Event
     ): Response<Void>
 
     @GET
