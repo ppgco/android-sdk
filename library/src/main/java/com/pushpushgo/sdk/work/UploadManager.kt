@@ -62,7 +62,7 @@ internal class UploadManager(
     }
 
     fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
-        Timber.tag(PushPushGo.TAG).d("Event enqueued: ($type, $buttonId, $campaign)")
+        if (UPLOAD_DEFERRED_ENABLE) Timber.tag(PushPushGo.TAG).d("Event enqueued: ($type, $buttonId, $campaign)")
 
         val eventContent = eventAdapter.toJson(
             Event(
@@ -90,7 +90,7 @@ internal class UploadManager(
             return
         }
 
-        Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
+        if (UPLOAD_DEFERRED_ENABLE) Timber.tag(PushPushGo.TAG).d("Beacon enqueued: $beacon")
 
         if (UPLOAD_DEFERRED_ENABLE) enqueueJob(
             name = BEACON,

@@ -12,7 +12,7 @@ import org.kodein.di.Kodein
 import org.kodein.di.KodeinAware
 import org.kodein.di.generic.*
 
-internal class NetworkModule(context: Context, apiKey: String, projectId: String) : KodeinAware {
+internal class NetworkModule(context: Context, apiKey: String, projectId: String, isDebug: Boolean) : KodeinAware {
 
     companion object {
         const val API_KEY = "api_key"
@@ -31,7 +31,8 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
             ApiService(
                 instance(),
                 instance(),
-                instance()
+                instance(),
+                isNetworkDebug = isDebug,
             )
         }
         bind<ApiRepository>() with singleton {

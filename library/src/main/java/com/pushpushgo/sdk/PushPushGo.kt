@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import com.google.common.util.concurrent.ListenableFuture
+import com.pushpushgo.sdk.BuildConfig.DEBUG
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.mapToDto
 import com.pushpushgo.sdk.di.NetworkModule
@@ -26,10 +27,11 @@ class PushPushGo private constructor(
     private val application: Application,
     private val apiKey: String,
     private val projectId: String,
+    private val isNetworkDebug: Boolean,
 ) {
 
     companion object {
-        const val VERSION = "1.2.0-20210917~1"
+        const val VERSION = "1.2.0-20211013~1"
 
         internal const val TAG = "PPGo"
 
@@ -65,16 +67,17 @@ class PushPushGo private constructor(
          * @return PushPushGo instance
          */
         @JvmStatic
-        fun getInstance(application: Application, apiKey: String, projectId: String): PushPushGo {
+        @JvmOverloads
+        fun getInstance(application: Application, apiKey: String, projectId: String, isDebug: Boolean = DEBUG): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(application, apiKey, projectId)
+                INSTANCE = PushPushGo(application, apiKey, projectId, isDebug)
             }
             return INSTANCE as PushPushGo
         }
 
         @JvmStatic
         private fun reinitialize(application: Application, apiKey: String, projectId: String): PushPushGo {
-            INSTANCE = PushPushGo(application, apiKey, projectId)
+            INSTANCE = PushPushGo(application, apiKey, projectId, DEBUG)
 
             return INSTANCE as PushPushGo
         }
@@ -82,7 +85,7 @@ class PushPushGo private constructor(
         private fun buildPushPushGoFromContext(application: Application): PushPushGo {
             val (projectId, apiKey) = extractCredentialsFromContext(application)
             validateCredentials(projectId, apiKey)
-            return PushPushGo(application, apiKey, projectId)
+            return PushPushGo(application, apiKey, projectId, DEBUG)
         }
 
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
@@ -113,7 +116,7 @@ class PushPushGo private constructor(
         NotificationStatusChecker.start(application)
     }
 
-    private val networkModule by lazy { NetworkModule(application, apiKey, projectId) }
+    private val networkModule by lazy { NetworkModule(application, apiKey, projectId, isNetworkDebug) }
 
     private val workModule by lazy { WorkModule(application) }
 

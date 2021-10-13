@@ -32,7 +32,8 @@ class PushPushGo private constructor(
         }
 
         @JvmStatic
-        fun getInstance(application: Application, apiKey: String, projectId: String): PushPushGo {
+        @JvmOverloads
+        fun getInstance(application: Application, apiKey: String, projectId: String, isDebug: Boolean = false): PushPushGo {
             if (INSTANCE == null) {
                 INSTANCE = PushPushGo(application, apiKey, projectId)
             }
@@ -45,7 +46,6 @@ class PushPushGo private constructor(
     var notificationHandler: NotificationHandler = { _, _ -> }
 
     fun createBeacon(): BeaconBuilder = BeaconBuilder()
-
 
     fun getApiKey(): String = apiKey
 

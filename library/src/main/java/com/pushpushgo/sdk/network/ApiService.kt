@@ -56,7 +56,8 @@ internal interface ApiService {
         operator fun invoke(
             requestInterceptor: RequestInterceptor,
             responseInterceptor: ResponseInterceptor,
-            platformType: PlatformType
+            platformType: PlatformType,
+            isNetworkDebug: Boolean,
         ): ApiService {
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(requestInterceptor)
@@ -65,7 +66,7 @@ internal interface ApiService {
                     HttpLoggingInterceptor {
                         Timber.tag(PushPushGo.TAG).d(it)
                     }.setLevel(
-                        if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                        if (isNetworkDebug) HttpLoggingInterceptor.Level.BODY
                         else HttpLoggingInterceptor.Level.BASIC
                     )
                 )
