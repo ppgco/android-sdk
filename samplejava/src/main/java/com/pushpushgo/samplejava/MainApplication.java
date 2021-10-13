@@ -10,7 +10,7 @@ public class MainApplication extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();
-        PushPushGo.getInstance(getApplicationContext());
+        PushPushGo.getInstance(this);
         Timber.plant(new Timber.DebugTree());
     }
 }

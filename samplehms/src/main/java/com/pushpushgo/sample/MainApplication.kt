@@ -9,6 +9,6 @@ class MainApplication : MultiDexApplication() {
     override fun onCreate() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
-        PushPushGo.getInstance(applicationContext)
+        PushPushGo.getInstance(this)
     }
 }
