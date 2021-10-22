@@ -20,7 +20,6 @@ class HmsMessagingServiceDelegate(private val context: Context) {
         delegate.onMessageReceived(
             pushMessage = remoteMessage.toPushMessage(),
             context = context,
-            isSubscribed = preferencesHelper.isSubscribed
         )
     }
 

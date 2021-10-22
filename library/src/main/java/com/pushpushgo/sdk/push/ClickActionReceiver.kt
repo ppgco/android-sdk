@@ -17,6 +17,7 @@ internal class ClickActionReceiver : BroadcastReceiver() {
         const val BUTTON_ID = "button_id"
         const val CAMPAIGN_ID = "campaign_id"
         const val PROJECT_ID = "project_id"
+        const val SUBSCRIBER_ID = "subscriber_id"
         const val LINK = "link"
     }
 
@@ -24,8 +25,11 @@ internal class ClickActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.tag(PushPushGo.TAG).d("ClickActionReceiver received click event")
-        if (intent?.getStringExtra(PROJECT_ID) != PushPushGo.getInstance().getProjectId()) {
-            Timber.tag(PushPushGo.TAG).d("Notification is not from current project. Skipping")
+
+        val intentProjectId = intent?.getStringExtra(PROJECT_ID)
+        val initializedProjectId = PushPushGo.getInstance().getProjectId()
+        if (intentProjectId != initializedProjectId) {
+            PushPushGo.getInstance().onInvalidProjectIdHandler(intentProjectId.orEmpty(), "todo", initializedProjectId)
             return
         }
 
@@ -37,7 +41,9 @@ internal class ClickActionReceiver : BroadcastReceiver() {
             uploadDelegate.sendEvent(
                 type = EventType.CLICKED,
                 buttonId = intent.getIntExtra(BUTTON_ID, 0),
-                campaign = intent.getStringExtra(CAMPAIGN_ID).orEmpty()
+                campaign = intent.getStringExtra(CAMPAIGN_ID).orEmpty(),
+                projectId = intent.getStringExtra(PROJECT_ID).orEmpty(),
+                subscriberId = intent.getStringExtra(SUBSCRIBER_ID).orEmpty(),
             )
 
             intent.getStringExtra(LINK)?.let { it ->

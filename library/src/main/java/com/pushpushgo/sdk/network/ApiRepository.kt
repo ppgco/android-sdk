@@ -55,6 +55,20 @@ internal class ApiRepository(
         sharedPref.isSubscribed = false
     }
 
+    suspend fun unregisterSubscriber(projectId: String, token: String, subscriberId: String) {
+        try {
+            apiService.unregisterSubscriber(
+                token = token,
+                projectId = projectId,
+                subscriberId = subscriberId,
+            )
+        } catch (e: PushPushException) {
+            if (!e.message.orEmpty().contains("Subscriber not found")) {
+                throw e
+            }
+        }
+    }
+
     suspend fun migrateSubscriber(newProjectId: String, newToken: String) {
         Timber.tag(PushPushGo.TAG).d("migrateSubscriber($newProjectId, $newToken) invoked")
 
@@ -63,17 +77,11 @@ internal class ApiRepository(
         }
 
         // unregister current
-        try {
-            apiService.unregisterSubscriber(
-                token = apiKey,
-                projectId = projectId,
-                subscriberId = sharedPref.subscriberId,
-            )
-        } catch (e: PushPushException) {
-            if (!e.message.orEmpty().contains("Subscriber not found")) {
-                throw e
-            }
-        }
+        unregisterSubscriber(
+            token = apiKey,
+            projectId = projectId,
+            subscriberId = sharedPref.subscriberId,
+        )
 
         // register new
         registerToken(
@@ -98,18 +106,18 @@ internal class ApiRepository(
         )
     }
 
-    suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
+    suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String, project: String?, subscriber: String?) {
         Timber.tag(PushPushGo.TAG).d("sendEvent($type) invoked")
 
         apiService.sendEvent(
             token = apiKey,
-            projectId = projectId,
+            projectId = project ?: projectId,
             event = Event(
                 type = type.value,
                 payload = Payload(
                     button = buttonId,
                     campaign = campaign,
-                    subscriber = sharedPref.subscriberId
+                    subscriber = subscriber ?: sharedPref.subscriberId,
                 )
             ),
         )

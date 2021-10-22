@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 
 class PushPushGo private constructor(
     private val application: Application,
@@ -32,7 +33,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.2.0-20211013~1"
+        const val VERSION = "1.2.0-20211022~1"
 
         internal const val TAG = "PPGo"
 
@@ -127,6 +128,11 @@ class PushPushGo private constructor(
 
     internal fun getUploadManager() = workModule.uploadManager
 
+    var onInvalidProjectIdHandler: InvalidProjectIdHandler = { pushProjectId, _, currentProjectId ->
+        Timber.tag(TAG)
+            .w("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
+    }
+
     /**
      * Settings used for migration to support switch user before start first time app after upgrade/switch
      * defaultIsSubscribed  default is false
@@ -142,7 +148,7 @@ class PushPushGo private constructor(
      *
      * @return boolean
      */
-    fun isPPGoPush(notificationIntent: Intent?): Boolean = notificationIntent?.getStringExtra("project") == projectId
+    fun isPPGoPush(notificationIntent: Intent?): Boolean = notificationIntent?.hasExtra("project") == true
 
     /**
      * function to check whether the given notification data belongs to the PPGo sender
@@ -151,7 +157,7 @@ class PushPushGo private constructor(
      *
      * @return boolean
      */
-    fun isPPGoPush(notificationData: Map<String, String>): Boolean = notificationData["project"] == projectId
+    fun isPPGoPush(notificationData: Map<String, String>): Boolean = notificationData.containsKey("project")
 
     /**
      * function to retrieve PPGo notification details
@@ -177,14 +183,20 @@ class PushPushGo private constructor(
      * helper function to handle click on notification from background
      */
     fun handleBackgroundNotificationClick(intent: Intent?) {
-        if (intent?.getStringExtra("project") != projectId) return
+        if (intent?.hasExtra("project") != true) return
+
+        val intentProjectId = intent.getStringExtra("project")
+        val subscriberId = intent.getStringExtra("subscriber").orEmpty()
+        if (intentProjectId != projectId) return onInvalidProjectIdHandler(intentProjectId.orEmpty(), subscriberId, projectId)
 
         val notify = deserializeNotificationData(intent.extras) ?: return
         notificationHandler(application, notify.redirectLink)
         uploadDelegate.sendEvent(
             type = EventType.CLICKED,
             buttonId = 0,
-            campaign = notify.campaignId
+            projectId = notify.project,
+            subscriberId = notify.subscriber,
+            campaign = notify.campaignId,
         )
     }
 
@@ -237,6 +249,16 @@ class PushPushGo private constructor(
         getUploadManager().sendUnregister()
     }
 
+    fun unregisterSubscriber(projectId: String, projectToken: String, subscriberId: String): ListenableFuture<Unit> {
+        return CoroutineScope(Job() + Dispatchers.IO).future {
+            getInstance().getNetwork().unregisterSubscriber(
+                projectId = projectId,
+                token = projectToken,
+                subscriberId = subscriberId,
+            )
+        }
+    }
+
     /**
      * function to re-subscribe to different project (previously unsubscribe from current project)
      * WARNING: after resubscribe use object returned by this function instead of previous one
@@ -254,7 +276,10 @@ class PushPushGo private constructor(
                 application = application,
                 projectId = newProjectId,
                 apiKey = newProjectToken
-            )
+            ).apply {
+                notificationHandler = this@PushPushGo.notificationHandler
+                onInvalidProjectIdHandler = this@PushPushGo.onInvalidProjectIdHandler
+            }
         }
     }
 
@@ -281,3 +306,5 @@ class PushPushGo private constructor(
 }
 
 typealias NotificationHandler = (context: Context, url: String) -> Unit
+
+typealias InvalidProjectIdHandler = (pushProjectId: String, pushSubscriberId: String, currentProjectId: String) -> Unit

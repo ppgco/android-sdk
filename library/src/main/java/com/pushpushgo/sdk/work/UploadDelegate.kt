@@ -26,9 +26,9 @@ internal class UploadDelegate {
         }
     }
 
-    fun sendEvent(type: EventType, buttonId: Int, campaign: String) {
+    fun sendEvent(type: EventType, buttonId: Int, campaign: String, projectId: String?, subscriberId: String?) {
         uploadScope.launch(errorHandler) {
-            PushPushGo.getInstance().getNetwork().sendEvent(type, buttonId, campaign)
+            PushPushGo.getInstance().getNetwork().sendEvent(type, buttonId, campaign, projectId, subscriberId)
         }
     }
 

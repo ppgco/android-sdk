@@ -27,6 +27,8 @@ internal fun deserializeNotificationData(data: Bundle?): PushPushNotification? {
     val actions = moshi.adapter<List<Action>>(Types.newParameterizedType(List::class.java, Action::class.java))
 
     return PushPushNotification(
+        project = data.getString("project").orEmpty(),
+        subscriber = data.getString("subscriber").orEmpty(),
         campaignId = data.getString("campaign").orEmpty(),
         notification = notification.fromJson(ppNotification)!!,
         actions = actions.fromJson(data.getString("actions")!!).orEmpty(),

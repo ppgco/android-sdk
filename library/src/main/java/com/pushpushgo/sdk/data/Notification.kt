@@ -6,6 +6,12 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 internal data class PushPushNotification(
 
+    @Json(name = "project")
+    val project: String,
+
+    @Json(name = "subscriber")
+    val subscriber: String,
+
     @Json(name = "campaignId")
     val campaignId: String,
 
@@ -22,7 +28,7 @@ internal data class PushPushNotification(
     val image: String,
 
     @Json(name = "redirectLink")
-    val redirectLink: String
+    val redirectLink: String,
 )
 
 @JsonClass(generateAdapter = true)
@@ -47,7 +53,7 @@ internal data class Notification(
     val priority: Int = 0,
 
     @Json(name = "click_action")
-    val click_action: String?
+    val click_action: String?,
 )
 
 @JsonClass(generateAdapter = true)
@@ -60,5 +66,5 @@ internal data class Action(
     val action: String,
 
     @Json(name = "title")
-    val title: String
+    val title: String,
 )
