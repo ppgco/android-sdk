@@ -53,9 +53,11 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo/isPPGoPush/#kotlin.collections.Map
 $dokka.location:com.pushpushgo.sdk/PushPushGo/isSubscribed/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-subscribed.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/migrateToNewProject/#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/migrate-to-new-project.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/notificationHandler/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/notification-handler.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/onInvalidProjectIdHandler/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/on-invalid-project-id-handler.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/registerSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/register-subscriber.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/resubscribe/#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/resubscribe.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#kotlin.String#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
 com.pushpushgo.sdk
 com.pushpushgo.sdk.dto
 com.pushpushgo.sdk.exception
