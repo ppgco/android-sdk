@@ -45,6 +45,8 @@ class PushPushGo private constructor(
 
     var notificationHandler: NotificationHandler = { _, _ -> }
 
+    var onInvalidProjectIdHandler: InvalidProjectIdHandler = { _, _, _ -> }
+
     fun createBeacon(): BeaconBuilder = BeaconBuilder()
 
     fun getApiKey(): String = apiKey
@@ -75,6 +77,11 @@ class PushPushGo private constructor(
     fun resubscribe(newProjectId: String, newProjectToken: String): PushPushGo = this
 
     fun unregisterSubscriber() = Unit
+
+    fun unregisterSubscriber(projectId: String, projectToken: String, subscriberId: String): ListenableFuture<Unit> =
+        Futures.immediateFuture(Unit)
 }
 
 typealias NotificationHandler = (context: Context, url: String) -> Unit
+
+typealias InvalidProjectIdHandler = (pushProjectId: String, pushSubscriberId: String, currentProjectId: String) -> Unit

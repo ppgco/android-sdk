@@ -32,6 +32,7 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
 	public final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
 	public final fun getNotificationHandler ()Lkotlin/jvm/functions/Function2;
+	public final fun getOnInvalidProjectIdHandler ()Lkotlin/jvm/functions/Function3;
 	public final fun getProjectId ()Ljava/lang/String;
 	public final fun getPushToken ()Ljava/lang/String;
 	public final fun getPushTokenAsync ()Lcom/google/common/util/concurrent/ListenableFuture;
@@ -44,7 +45,9 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun resubscribe (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun setDefaultIsSubscribed (Z)V
 	public final fun setNotificationHandler (Lkotlin/jvm/functions/Function2;)V
+	public final fun setOnInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
 	public final fun unregisterSubscriber ()V
+	public final fun unregisterSubscriber (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
 }
 
 public final class com/pushpushgo/sdk/PushPushGo$Companion {
