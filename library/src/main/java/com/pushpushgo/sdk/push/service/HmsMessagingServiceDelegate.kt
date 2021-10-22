@@ -13,11 +13,11 @@ class HmsMessagingServiceDelegate(private val context: Context) {
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(context) }
 
-    private val helper by lazy { PushNotificationDelegate() }
+    private val delegate by lazy { PushNotificationDelegate() }
 
     fun onMessageReceived(remoteMessage: RemoteMessage) {
         Timber.tag(PushPushGo.TAG).d("onMessageReceived(%s)", remoteMessage.toString())
-        helper.onMessageReceived(
+        delegate.onMessageReceived(
             pushMessage = remoteMessage.toPushMessage(),
             context = context,
             isSubscribed = preferencesHelper.isSubscribed
@@ -26,7 +26,7 @@ class HmsMessagingServiceDelegate(private val context: Context) {
 
     fun onNewToken(token: String) {
         preferencesHelper.lastHCMToken = token
-        helper.onNewToken(token, preferencesHelper.isSubscribed)
+        delegate.onNewToken(token, preferencesHelper.isSubscribed)
     }
 
     private fun RemoteMessage.toPushMessage() = PushMessage(

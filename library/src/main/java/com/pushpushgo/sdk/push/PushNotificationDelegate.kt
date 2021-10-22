@@ -18,24 +18,21 @@ import com.pushpushgo.sdk.utils.mapToBundle
 import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.*
 import timber.log.Timber
-import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 
-internal class PushNotificationDelegate : CoroutineScope {
+internal class PushNotificationDelegate {
 
     private val uploadDelegate by lazy { UploadDelegate() }
 
     private val errorHandler = CoroutineExceptionHandler { _, throwable -> Timber.tag(PushPushGo.TAG).e(throwable) }
 
-    private var job: Job = Job()
-
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + job
+    private val job = SupervisorJob()
+    private val delegateScope = CoroutineScope(job + Dispatchers.Main)
 
     fun onMessageReceived(pushMessage: PushMessage, context: Context, isSubscribed: Boolean) {
         Timber.tag(PushPushGo.TAG).d("From: %s", pushMessage.from)
 
-        launch(errorHandler) {
+        delegateScope.launch(errorHandler) {
             val notificationId = getUniqueNotificationId()
             val projectId = PushPushGo.getInstance().getProjectId()
             Timber.tag(PushPushGo.TAG).d("Notification unique id: $notificationId")
@@ -71,7 +68,7 @@ internal class PushNotificationDelegate : CoroutineScope {
     }
 
     fun onDestroy() {
-        job.cancel()
+        job.cancelChildren()
     }
 
     private fun getUniqueNotificationId() = Random.nextInt(0, Int.MAX_VALUE)
