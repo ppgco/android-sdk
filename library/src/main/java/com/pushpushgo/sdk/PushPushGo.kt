@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -33,7 +32,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.2.0-20211022~1"
+        const val VERSION = "1.2.0-20211025~1"
 
         internal const val TAG = "PPGo"
 
@@ -41,7 +40,6 @@ class PushPushGo private constructor(
          * an instance of PushPushGo library
          */
         @Volatile
-        @SuppressLint("StaticFieldLeak")
         private var INSTANCE: PushPushGo? = null
 
         fun isInitialized(): Boolean {

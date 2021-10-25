@@ -26,27 +26,28 @@ internal class ClickActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         Timber.tag(PushPushGo.TAG).d("ClickActionReceiver received click event")
 
-        val intentProjectId = intent?.getStringExtra(PROJECT_ID)
+        val intentProjectId = intent?.getStringExtra(PROJECT_ID).orEmpty()
+        val intentSubscriberId = intent?.getStringExtra(SUBSCRIBER_ID).orEmpty()
         val initializedProjectId = PushPushGo.getInstance().getProjectId()
         if (intentProjectId != initializedProjectId) {
-            PushPushGo.getInstance().onInvalidProjectIdHandler(intentProjectId.orEmpty(), "todo", initializedProjectId)
+            PushPushGo.getInstance().onInvalidProjectIdHandler(intentProjectId, intentSubscriberId, initializedProjectId)
             return
         }
 
-        intent.getIntExtra(NOTIFICATION_ID, 0).let {
+        intent?.getIntExtra(NOTIFICATION_ID, 0)?.let {
             NotificationManagerCompat.from(context).cancel(it)
         }
 
         if (PushPushGo.isInitialized() && SharedPreferencesHelper(context).isSubscribed) {
             uploadDelegate.sendEvent(
                 type = EventType.CLICKED,
-                buttonId = intent.getIntExtra(BUTTON_ID, 0),
-                campaign = intent.getStringExtra(CAMPAIGN_ID).orEmpty(),
-                projectId = intent.getStringExtra(PROJECT_ID).orEmpty(),
-                subscriberId = intent.getStringExtra(SUBSCRIBER_ID).orEmpty(),
+                buttonId = intent?.getIntExtra(BUTTON_ID, 0) ?: 0,
+                campaign = intent?.getStringExtra(CAMPAIGN_ID).orEmpty(),
+                projectId = intentProjectId,
+                subscriberId = intentSubscriberId,
             )
 
-            intent.getStringExtra(LINK)?.let { it ->
+            intent?.getStringExtra(LINK)?.let { it ->
                 PushPushGo.getInstance().notificationHandler(context, it)
             }
         }
