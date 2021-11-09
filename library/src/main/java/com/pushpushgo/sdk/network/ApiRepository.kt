@@ -63,8 +63,11 @@ internal class ApiRepository(
                 subscriberId = subscriberId,
             )
         } catch (e: PushPushException) {
-            if (!e.message.orEmpty().contains("Subscriber not found")) {
-                throw e
+            when (e.message.orEmpty()) {
+                "Not Found", "Subscriber not found" -> {
+                    Timber.e(e)
+                }
+                else -> throw e
             }
         }
     }
