@@ -290,12 +290,12 @@ internal class PushNotificationDelegate {
         context,
         getUniqueNotificationId(),
         launcherIntent.apply {
-            putExtra("notification", id)
+            putExtra("notification_id", id)
             putExtra("campaign", campaignId)
             putExtra("button", buttonId)
             putExtra("project", projectId)
             putExtra("subscriber", subscriberId)
-            putExtra("redirectLink", link)
+            putExtra("link", link)
         },
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntentCompat.FLAG_IMMUTABLE
     )

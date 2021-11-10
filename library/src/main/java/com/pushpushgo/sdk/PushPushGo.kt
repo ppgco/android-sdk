@@ -185,20 +185,25 @@ class PushPushGo private constructor(
         if (intent?.hasExtra("project") != true) return
 
         val intentProjectId = intent.getStringExtra("project")
-        val subscriberId = intent.getStringExtra("subscriber").orEmpty()
-        val buttonId = intent.getIntExtra("button", 0)
-        if (intentProjectId != projectId) return onInvalidProjectIdHandler(intentProjectId.orEmpty(), subscriberId, projectId)
+        val intentSubscriberId = intent.getStringExtra("subscriber").orEmpty()
+        val intentButtonId = intent.getIntExtra("button", 0)
+        val intentLink = intent.getStringExtra("link").orEmpty()
+        val intentCampaignId = intent.getStringExtra("campaign").orEmpty()
 
-        NotificationManagerCompat.from(application).cancel(intent.getIntExtra("notification", 0))
+        if (intentProjectId != projectId) {
+            return onInvalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, projectId)
+        }
 
-        val notify = deserializeNotificationData(intent.extras) ?: return
-        notificationHandler(application, notify.redirectLink)
+        NotificationManagerCompat.from(application).cancel(intent.getIntExtra("notification_id", 0))
+
+        val notify = deserializeNotificationData(intent.extras)
+        notificationHandler(application, notify?.redirectLink ?: intentLink)
         uploadDelegate.sendEvent(
             type = EventType.CLICKED,
-            buttonId = buttonId,
-            projectId = notify.project,
-            subscriberId = notify.subscriber,
-            campaign = notify.campaignId,
+            buttonId = intentButtonId,
+            projectId = notify?.project ?: intentProjectId,
+            subscriberId = notify?.subscriber ?: intentSubscriberId,
+            campaign = notify?.campaignId ?: intentCampaignId,
         )
     }
 
