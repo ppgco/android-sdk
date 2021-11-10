@@ -1,10 +1,10 @@
 package com.pushpushgo.sample
 
-import androidx.multidex.MultiDexApplication
+import android.app.Application
 import com.pushpushgo.sdk.PushPushGo
 import timber.log.Timber
 
-class MainApplication : MultiDexApplication() {
+class MainApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()

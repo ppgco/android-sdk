@@ -14,6 +14,7 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
+import com.pushpushgo.sdk.utils.PendingIntentCompat
 import com.pushpushgo.sdk.utils.mapToBundle
 import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.*
@@ -218,9 +219,22 @@ internal class PushNotificationDelegate {
         .setSmallIcon(R.drawable.ic_stat_pushpushgo_default)
         .setColor(ContextCompat.getColor(context, R.color.pushpushgo_notification_color_default))
         .apply {
-            if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK") setContentIntent(
-                getClickActionIntent(context, campaignId, 0, actionLink, id, projectId, subscriberId)
-            )
+            val launcherIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+
+            if (clickAction.isNotBlank() && clickAction == "APP_PUSH_CLICK" && launcherIntent != null) {
+                setContentIntent(
+                    getClickActionIntent(
+                        context = context,
+                        campaignId = campaignId,
+                        buttonId = 0,
+                        link = actionLink,
+                        id = id,
+                        projectId = projectId,
+                        subscriberId = subscriberId,
+                        launcherIntent = launcherIntent
+                    )
+                )
+            }
 
             if (badge > 0) setNumber(badge)
 
@@ -245,9 +259,21 @@ internal class PushNotificationDelegate {
                 )
             }
 
-            actions.forEachIndexed { i, action ->
-                val intent = getClickActionIntent(context, campaignId, i + 1, action.link, id, projectId, subscriberId)
-                addAction(NotificationCompat.Action.Builder(0, action.title, intent).build())
+            launcherIntent?.let {
+                actions.forEachIndexed { index, action ->
+                    val intent = getClickActionIntent(
+                        context = context,
+                        campaignId = campaignId,
+                        buttonId = index + 1,
+                        link = action.link,
+                        id = id,
+                        projectId = projectId,
+                        subscriberId = subscriberId,
+                        launcherIntent = it
+                    )
+
+                    addAction(NotificationCompat.Action.Builder(0, action.title, intent).build())
+                }
             }
         }.build()
 
@@ -259,14 +285,18 @@ internal class PushNotificationDelegate {
         id: Int,
         projectId: String,
         subscriberId: String,
-    ) = PendingIntent.getBroadcast(
-        context, getUniqueNotificationId(), Intent(context, ClickActionReceiver::class.java).apply {
-            putExtra(ClickActionReceiver.NOTIFICATION_ID, id)
-            putExtra(ClickActionReceiver.CAMPAIGN_ID, campaignId)
-            putExtra(ClickActionReceiver.BUTTON_ID, buttonId)
-            putExtra(ClickActionReceiver.PROJECT_ID, projectId)
-            putExtra(ClickActionReceiver.SUBSCRIBER_ID, subscriberId)
-            putExtra(ClickActionReceiver.LINK, link)
-        }, PendingIntent.FLAG_UPDATE_CURRENT
+        launcherIntent: Intent,
+    ) = PendingIntent.getActivity(
+        context,
+        getUniqueNotificationId(),
+        launcherIntent.apply {
+            putExtra("notification", id)
+            putExtra("campaign", campaignId)
+            putExtra("button", buttonId)
+            putExtra("project", projectId)
+            putExtra("subscriber", subscriberId)
+            putExtra("redirectLink", link)
+        },
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntentCompat.FLAG_IMMUTABLE
     )
 }

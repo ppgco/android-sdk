@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import androidx.core.app.NotificationManagerCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.pushpushgo.sdk.BuildConfig.DEBUG
 import com.pushpushgo.sdk.data.EventType
@@ -185,13 +186,16 @@ class PushPushGo private constructor(
 
         val intentProjectId = intent.getStringExtra("project")
         val subscriberId = intent.getStringExtra("subscriber").orEmpty()
+        val buttonId = intent.getIntExtra("button", 0)
         if (intentProjectId != projectId) return onInvalidProjectIdHandler(intentProjectId.orEmpty(), subscriberId, projectId)
+
+        NotificationManagerCompat.from(application).cancel(intent.getIntExtra("notification", 0))
 
         val notify = deserializeNotificationData(intent.extras) ?: return
         notificationHandler(application, notify.redirectLink)
         uploadDelegate.sendEvent(
             type = EventType.CLICKED,
-            buttonId = 0,
+            buttonId = buttonId,
             projectId = notify.project,
             subscriberId = notify.subscriber,
             campaign = notify.campaignId,
