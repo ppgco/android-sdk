@@ -13,6 +13,7 @@ import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.dto.PPGoNotification
 import com.pushpushgo.sdk.exception.PushPushException
+import com.pushpushgo.sdk.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.handleNotificationLinkClick
@@ -182,19 +183,20 @@ class PushPushGo private constructor(
      * helper function to handle click on notification from background
      */
     fun handleBackgroundNotificationClick(intent: Intent?) {
-        if (intent?.hasExtra("project") != true) return
+        if (intent?.hasExtra(PushNotificationDelegate.PROJECT_ID_EXTRA) != true) return
 
-        val intentProjectId = intent.getStringExtra("project")
-        val intentSubscriberId = intent.getStringExtra("subscriber").orEmpty()
-        val intentButtonId = intent.getIntExtra("button", 0)
-        val intentLink = intent.getStringExtra("link").orEmpty()
-        val intentCampaignId = intent.getStringExtra("campaign").orEmpty()
+        val intentProjectId = intent.getStringExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
+        val intentSubscriberId = intent.getStringExtra(PushNotificationDelegate.SUBSCRIBER_ID_EXTRA).orEmpty()
+        val intentButtonId = intent.getIntExtra(PushNotificationDelegate.BUTTON_ID_EXTRA, 0)
+        val intentLink = intent.getStringExtra(PushNotificationDelegate.LINK_EXTRA).orEmpty()
+        val intentCampaignId = intent.getStringExtra(PushNotificationDelegate.CAMPAIGN_ID_EXTRA).orEmpty()
+        val intentNotificationId = intent.getIntExtra(PushNotificationDelegate.NOTIFICATION_ID_EXTRA, 0)
 
         if (intentProjectId != projectId) {
             return onInvalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, projectId)
         }
 
-        NotificationManagerCompat.from(application).cancel(intent.getIntExtra("notification_id", 0))
+        NotificationManagerCompat.from(application).cancel(intentNotificationId)
 
         val notify = deserializeNotificationData(intent.extras)
         notificationHandler(application, notify?.redirectLink ?: intentLink)

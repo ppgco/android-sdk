@@ -290,13 +290,22 @@ internal class PushNotificationDelegate {
         context,
         getUniqueNotificationId(),
         launcherIntent.apply {
-            putExtra("notification_id", id)
-            putExtra("campaign", campaignId)
-            putExtra("button", buttonId)
-            putExtra("project", projectId)
-            putExtra("subscriber", subscriberId)
-            putExtra("link", link)
+            putExtra(NOTIFICATION_ID_EXTRA, id)
+            putExtra(CAMPAIGN_ID_EXTRA, campaignId)
+            putExtra(BUTTON_ID_EXTRA, buttonId)
+            putExtra(PROJECT_ID_EXTRA, projectId)
+            putExtra(SUBSCRIBER_ID_EXTRA, subscriberId)
+            putExtra(LINK_EXTRA, link)
         },
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntentCompat.FLAG_IMMUTABLE
     )
+
+    companion object {
+        const val NOTIFICATION_ID_EXTRA = "notification_id"
+        const val CAMPAIGN_ID_EXTRA = "campaign"
+        const val BUTTON_ID_EXTRA = "button"
+        const val PROJECT_ID_EXTRA = "project"
+        const val SUBSCRIBER_ID_EXTRA = "subscriber"
+        const val LINK_EXTRA = "link"
+    }
 }
