@@ -198,8 +198,11 @@ class PushPushGo private constructor(
 
         NotificationManagerCompat.from(application).cancel(intentNotificationId)
 
+        //TODO Remove duplicated code
         val notify = deserializeNotificationData(intent.extras)
         notificationHandler(application, notify?.redirectLink ?: intentLink)
+        intent.removeExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
+
         uploadDelegate.sendEvent(
             type = EventType.CLICKED,
             buttonId = intentButtonId,
