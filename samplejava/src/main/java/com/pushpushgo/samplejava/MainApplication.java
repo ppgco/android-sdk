@@ -1,12 +1,12 @@
 package com.pushpushgo.samplejava;
 
-import androidx.multidex.MultiDexApplication;
+import android.app.Application;
 
 import com.pushpushgo.sdk.PushPushGo;
 
 import timber.log.Timber;
 
-public class MainApplication extends MultiDexApplication {
+public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
