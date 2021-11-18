@@ -192,8 +192,8 @@ class PushPushGo private constructor(
         val intentCampaignId = intent.getStringExtra(PushNotificationDelegate.CAMPAIGN_ID_EXTRA).orEmpty()
         val intentNotificationId = intent.getIntExtra(PushNotificationDelegate.NOTIFICATION_ID_EXTRA, 0)
 
-        if (intentProjectId != projectId) {
-            return onInvalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, projectId)
+        if (intentProjectId != getInstance().projectId) {
+            return onInvalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, getInstance().projectId)
         }
 
         NotificationManagerCompat.from(application).cancel(intentNotificationId)
