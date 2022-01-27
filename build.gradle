@@ -1,14 +1,15 @@
 buildscript {
+    ext.kotlin_version = "1.6.10"
     repositories {
         google()
         gradlePluginPortal()
         maven { url 'https://developer.huawei.com/repo/' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.3'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.31"
+        classpath 'com.android.tools.build:gradle:7.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.3.10'
-        classpath 'com.huawei.agconnect:agcp:1.6.1.300'
+        classpath 'com.huawei.agconnect:agcp:1.6.3.200'
     }
 }
 
