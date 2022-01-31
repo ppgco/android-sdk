@@ -31,7 +31,7 @@ internal fun deserializeNotificationData(data: Bundle?): PushPushNotification? {
         subscriber = data.getString("subscriber").orEmpty(),
         campaignId = data.getString("campaign").orEmpty(),
         notification = notification.fromJson(ppNotification)!!,
-        actions = actions.fromJson(data.getString("actions")!!).orEmpty(),
+        actions = data.getString("actions")?.let { actions.fromJson(it) }.orEmpty(),
         icon = data.getString("icon").orEmpty(),
         image = data.getString("image").orEmpty(),
         redirectLink = data.getString("redirectLink").orEmpty()
