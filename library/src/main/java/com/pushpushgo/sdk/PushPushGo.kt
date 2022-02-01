@@ -225,6 +225,12 @@ class PushPushGo private constructor(
     fun getProjectId(): String = projectId
 
     /**
+     * function to read Your subscriber id from an PushPushGo library instance
+     * @return subscriber id String
+     */
+    fun getSubscriberId(): String = networkModule.sharedPref.subscriberId
+
+    /**
      * function to check if user subscribed to notifications
      * @return boolean true if subscribed
      */
