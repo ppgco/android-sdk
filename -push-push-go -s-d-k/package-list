@@ -47,6 +47,7 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo/getNotificationDetails/#kotlin.col
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getProjectId/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-project-id.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getPushToken/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-push-token.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getPushTokenAsync/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-push-token-async.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/getSubscriberId/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-subscriber-id.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/handleBackgroundNotificationClick/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/handle-background-notification-click.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/isPPGoPush/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-p-p-go-push.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/isPPGoPush/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/is-p-p-go-push.html
