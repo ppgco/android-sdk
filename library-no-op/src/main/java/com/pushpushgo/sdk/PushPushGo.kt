@@ -5,14 +5,16 @@ import android.content.Context
 import android.content.Intent
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.pushpushgo.sdk.BuildConfig.DEBUG
 import com.pushpushgo.sdk.dto.PPGoNotification
 import com.pushpushgo.sdk.exception.PushPushException
 
 @Suppress("unused", "UNUSED_PARAMETER")
 class PushPushGo private constructor(
-    private val context: Application,
+    private val application: Application,
     private val apiKey: String,
     private val projectId: String,
+    private val isNetworkDebug: Boolean,
 ) {
 
     companion object {
@@ -28,14 +30,14 @@ class PushPushGo private constructor(
 
         @JvmStatic
         fun getInstance(application: Application) = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: PushPushGo(application, "", "").also { INSTANCE = it }
+            INSTANCE ?: PushPushGo(application, "", "", DEBUG).also { INSTANCE = it }
         }
 
         @JvmStatic
         @JvmOverloads
         fun getInstance(application: Application, apiKey: String, projectId: String, isDebug: Boolean = false): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(application, apiKey, projectId)
+                INSTANCE = PushPushGo(application, apiKey, projectId, isDebug)
             }
             return INSTANCE as PushPushGo
         }
@@ -56,6 +58,8 @@ class PushPushGo private constructor(
     fun getNotificationDetails(notificationData: Map<String, String>): PPGoNotification? = null
 
     fun getProjectId(): String = projectId
+
+    fun getSubscriberId(): String = ""
 
     fun getPushToken(): String = ""
 
