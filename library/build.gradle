@@ -22,6 +22,7 @@ android {
         versionCode 12
         versionName "1.3.0-SNAPSHOT"
 
+        consumerProguardFiles("ppgo-sdk.pro")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -29,7 +30,6 @@ android {
         release {
             minifyEnabled false
             buildConfigField "String", "BASE_URL", '"https://api.pushpushgo.com/"'
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             buildConfigField "String", "BASE_URL", '"https://api.master1.qappg.co/"'
