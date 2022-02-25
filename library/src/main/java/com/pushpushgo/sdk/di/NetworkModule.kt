@@ -8,18 +8,16 @@ import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
 import com.pushpushgo.sdk.utils.PlatformType
 import com.pushpushgo.sdk.utils.getPlatformType
-import org.kodein.di.Kodein
-import org.kodein.di.KodeinAware
-import org.kodein.di.generic.*
+import org.kodein.di.*
 
-internal class NetworkModule(context: Context, apiKey: String, projectId: String, isDebug: Boolean) : KodeinAware {
+internal class NetworkModule(context: Context, apiKey: String, projectId: String, isDebug: Boolean) : DIAware {
 
     companion object {
         const val API_KEY = "api_key"
         const val PROJECT_ID = "project_id"
     }
 
-    override val kodein by Kodein.lazy {
+    override val di by DI.lazy {
         constant(tag = API_KEY) with apiKey
         constant(tag = PROJECT_ID) with projectId
         bind<PlatformType>() with singleton { getPlatformType() }
@@ -47,6 +45,5 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
     }
 
     val sharedPref by instance<SharedPreferencesHelper>()
-
     val apiRepository by instance<ApiRepository>()
 }

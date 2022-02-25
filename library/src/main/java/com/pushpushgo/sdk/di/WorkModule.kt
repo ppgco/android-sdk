@@ -4,16 +4,11 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.work.UploadManager
-import org.kodein.di.Kodein
-import org.kodein.di.KodeinAware
-import org.kodein.di.generic.bind
-import org.kodein.di.generic.instance
-import org.kodein.di.generic.provider
-import org.kodein.di.generic.singleton
+import org.kodein.di.*
 
-internal class WorkModule(context: Context) : KodeinAware {
+internal class WorkModule(context: Context) : DIAware {
 
-    override val kodein by Kodein.lazy {
+    override val di by DI.lazy {
         bind<Context>() with provider { context }
         bind<SharedPreferencesHelper>() with singleton { SharedPreferencesHelper(instance()) }
         bind<WorkManager>() with singleton { WorkManager.getInstance(instance()) }
