@@ -43,6 +43,7 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun isSubscribed ()Z
 	public final fun migrateToNewProject (Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun registerSubscriber ()V
+	public final fun registerSubscriberSync ()Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun resubscribe (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun setDefaultIsSubscribed (Z)V
 	public final fun setNotificationHandler (Lkotlin/jvm/functions/Function2;)V

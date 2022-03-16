@@ -261,6 +261,18 @@ class PushPushGo private constructor(
     }
 
     /**
+     * function to register subscriber, by in synchronous manner
+     *
+     * @return string subscriber ID
+     */
+    fun registerSubscriberSync(): ListenableFuture<String> {
+        return CoroutineScope(Job() + Dispatchers.IO).future {
+            getNetwork().registerToken(null)
+            getSubscriberId()
+        }
+    }
+
+    /**
      * function to unregister subscriber
      */
     fun unregisterSubscriber() {
