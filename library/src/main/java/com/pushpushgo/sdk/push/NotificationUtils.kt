@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.push
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -40,9 +41,9 @@ internal fun deserializeNotificationData(data: Bundle?): PushPushNotification? {
 
 internal fun handleNotificationLinkClick(context: Context, uri: String) {
     Intent.parseUri(uri, 0).let {
-        it.addFlags(FLAG_ACTIVITY_NEW_TASK)
-        if (it.resolveActivity(context.packageManager) != null) context.startActivity(it)
-        else {
+        try {
+            context.startActivity(it)
+        } catch (e: ActivityNotFoundException) {
             Timber.tag(PushPushGo.TAG).e("Not found activity to open uri: %s", uri)
             Toast.makeText(context, uri, Toast.LENGTH_SHORT).show()
         }
