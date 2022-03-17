@@ -65,6 +65,7 @@ and in your main activity:
 ```
 
 3. Add to your MainActivity:
+
 in onCreate():
 ```java
 if (savedInstanceState == null) {
@@ -74,6 +75,11 @@ if (savedInstanceState == null) {
 in onNewIntent():
 ```java
 PushPushGo.getInstance().handleBackgroundNotificationClick(intent);
+```
+and in AndroidManifest.xml
+```xml
+<activity
+        android:launchMode="singleTop"
 ```
 
 4. Add to Your Application.onCreate():

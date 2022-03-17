@@ -34,7 +34,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "1.2.0-20220225~1"
+        const val VERSION = "1.2.0-20220317~1"
 
         internal const val TAG = "PPGo"
 
@@ -72,22 +72,22 @@ class PushPushGo private constructor(
         @JvmOverloads
         fun getInstance(application: Application, apiKey: String, projectId: String, isDebug: Boolean = DEBUG): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(application, apiKey, projectId, isDebug)
+                INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isDebug)
             }
             return INSTANCE as PushPushGo
         }
 
         @JvmStatic
         private fun reinitialize(application: Application, apiKey: String, projectId: String): PushPushGo {
-            INSTANCE = PushPushGo(application, apiKey, projectId, DEBUG)
+            INSTANCE = createPushPushGoInstance(application, apiKey, projectId, DEBUG)
 
             return INSTANCE as PushPushGo
         }
 
         private fun buildPushPushGoFromContext(application: Application): PushPushGo {
             val (projectId, apiKey) = extractCredentialsFromContext(application)
-            validateCredentials(projectId, apiKey)
-            return PushPushGo(application, apiKey, projectId, DEBUG)
+
+            return createPushPushGoInstance(application, apiKey, projectId, DEBUG)
         }
 
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
@@ -101,6 +101,11 @@ class PushPushGo private constructor(
                 ?: throw PushPushException("You have to declare projectId in Your Manifest file")
 
             return projectId to apiKey
+        }
+
+        private fun createPushPushGoInstance(app: Application, key: String, project: String, isDebug: Boolean): PushPushGo {
+            validateCredentials(project, key)
+            return PushPushGo(app, key, project, isDebug)
         }
 
         private fun validateCredentials(projectId: String, apiKey: String) {
