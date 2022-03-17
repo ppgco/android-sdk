@@ -55,11 +55,32 @@ dependencies {
     android:name="com.pushpushgo.projectId"
     android:value="{projectId}" />
 ```
-3. Add to Your Application.onCreate():
-```java
-PushPushGo.getInstance(applicationContext);
+
+and in your main activity:
+```xml
+<intent-filter>
+  <action android:name="APP_PUSH_CLICK" />
+  <category android:name="android.intent.category.DEFAULT" />
+</intent-filter>
 ```
-4. Configuration
+
+3. Add to your MainActivity:
+in onCreate():
+```java
+if (savedInstanceState == null) {
+    PushPushGo.getInstance().handleBackgroundNotificationClick(intent);
+}
+```
+in onNewIntent():
+```java
+PushPushGo.getInstance().handleBackgroundNotificationClick(intent);
+```
+
+4. Add to Your Application.onCreate():
+```java
+PushPushGo.getInstance(this);
+```
+5. Configuration
 - Change default notification color: override `@color/pushpushgo_notification_color_default`
 - Change default notification channel id: override `@string/pushpushgo_notification_default_channel_id`
 - Change default notification channel name: override `@string/pushpushgo_notification_default_channel_name`
