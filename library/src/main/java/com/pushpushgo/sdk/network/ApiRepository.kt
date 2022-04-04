@@ -95,7 +95,6 @@ internal class ApiRepository(
     }
 
     suspend fun sendBeacon(beacon: String) {
-        Timber.tag(PushPushGo.TAG).d("sendBeacon($beacon) invoked")
         if (!sharedPref.isSubscribed) {
             Timber.tag(PushPushGo.TAG).d("Beacon not sent. Reason: not subscribed")
             return
@@ -110,8 +109,6 @@ internal class ApiRepository(
     }
 
     suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String, project: String?, subscriber: String?) {
-        Timber.tag(PushPushGo.TAG).d("sendEvent($type) invoked")
-
         apiService.sendEvent(
             token = apiKey,
             projectId = project ?: projectId,
@@ -127,8 +124,6 @@ internal class ApiRepository(
     }
 
     suspend fun getBitmapFromUrl(url: String?): Bitmap? {
-        Timber.tag(PushPushGo.TAG).d("getDrawable($url) invoked")
-
         if (url.isNullOrBlank()) return null
 
         return BitmapFactory.decodeStream(
