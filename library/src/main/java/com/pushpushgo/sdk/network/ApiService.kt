@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk.network
 
-import com.pushpushgo.sdk.BuildConfig
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.network.data.TokenRequest
@@ -25,7 +24,7 @@ internal interface ApiService {
     suspend fun registerSubscriber(
         @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
-        @Body body: TokenRequest
+        @Body body: TokenRequest,
     ): TokenResponse
 
     @DELETE("{projectId}/subscriber/{subscriberId}")
@@ -40,14 +39,14 @@ internal interface ApiService {
         @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
         @Path("subscriberId") subscriberId: String,
-        @Body beacon: RequestBody
+        @Body beacon: RequestBody,
     ): Response<Void>
 
     @POST("{projectId}/event/")
     suspend fun sendEvent(
         @Header("X-Token") token: String,
         @Path("projectId") projectId: String,
-        @Body event: Event
+        @Body event: Event,
     ): Response<Void>
 
     @GET
@@ -58,6 +57,7 @@ internal interface ApiService {
             requestInterceptor: RequestInterceptor,
             responseInterceptor: ResponseInterceptor,
             platformType: PlatformType,
+            baseUrl: String,
             isNetworkDebug: Boolean,
         ): ApiService {
             val okHttpClient = OkHttpClient.Builder()
@@ -75,7 +75,7 @@ internal interface ApiService {
 
             return Retrofit.Builder()
                 .client(okHttpClient)
-                .baseUrl("${BuildConfig.BASE_URL.removeSuffix("/")}/v1/${platformType.apiName}/")
+                .baseUrl("$baseUrl/v1/${platformType.apiName}/")
                 .addConverterFactory(MoshiConverterFactory.create())
                 .build().create()
         }

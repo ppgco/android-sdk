@@ -29,10 +29,6 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            buildConfigField "String", "BASE_URL", '"https://api.pushpushgo.com/"'
-        }
-        debug {
-            buildConfigField "String", "BASE_URL", '"https://api.master1.qappg.co/"'
         }
     }
     compileOptions {
@@ -85,7 +81,7 @@ dependencies {
 
     // testing
     testImplementation 'junit:junit:4.13.2'
-    testImplementation "io.mockk:mockk:1.12.2"
+    testImplementation "io.mockk:mockk:1.12.3"
     testImplementation 'org.json:json:20210307'
 }
 
@@ -106,14 +102,6 @@ afterEvaluate {
 
                 groupId = configGroupId
                 artifactId = configArtifactId
-                version = android.defaultConfig.versionName
-            }
-            debug(MavenPublication) {
-                from components.debug
-                artifact androidSourcesJar
-
-                groupId = configGroupId
-                artifactId = configArtifactId + '-debug'
                 version = android.defaultConfig.versionName
             }
         }

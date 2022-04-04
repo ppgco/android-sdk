@@ -30,6 +30,7 @@ class PushPushGo private constructor(
     private val application: Application,
     private val apiKey: String,
     private val projectId: String,
+    private val isProduction: Boolean,
     private val isNetworkDebug: Boolean,
 ) {
 
@@ -70,16 +71,20 @@ class PushPushGo private constructor(
          */
         @JvmStatic
         @JvmOverloads
-        fun getInstance(application: Application, apiKey: String, projectId: String, isDebug: Boolean = DEBUG): PushPushGo {
+        fun getInstance(
+            application: Application, apiKey: String, projectId: String, isProduction: Boolean, isDebug: Boolean = DEBUG,
+        ): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isDebug)
+                INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, isDebug)
             }
             return INSTANCE as PushPushGo
         }
 
         @JvmStatic
-        private fun reinitialize(application: Application, apiKey: String, projectId: String): PushPushGo {
-            INSTANCE = createPushPushGoInstance(application, apiKey, projectId, DEBUG)
+        private fun reinitialize(
+            application: Application, apiKey: String, projectId: String, isProduction: Boolean, isDebug: Boolean,
+        ): PushPushGo {
+            INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, isDebug)
 
             return INSTANCE as PushPushGo
         }
@@ -87,7 +92,7 @@ class PushPushGo private constructor(
         private fun buildPushPushGoFromContext(application: Application): PushPushGo {
             val (projectId, apiKey) = extractCredentialsFromContext(application)
 
-            return createPushPushGoInstance(application, apiKey, projectId, DEBUG)
+            return createPushPushGoInstance(application, apiKey, projectId, isProduction = true, DEBUG)
         }
 
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
@@ -103,9 +108,11 @@ class PushPushGo private constructor(
             return projectId to apiKey
         }
 
-        private fun createPushPushGoInstance(app: Application, key: String, project: String, isDebug: Boolean): PushPushGo {
+        private fun createPushPushGoInstance(
+            app: Application, key: String, project: String, isProduction: Boolean, isDebug: Boolean,
+        ): PushPushGo {
             validateCredentials(project, key)
-            return PushPushGo(app, key, project, isDebug)
+            return PushPushGo(app, key, project, isProduction, isDebug)
         }
 
         private fun validateCredentials(projectId: String, apiKey: String) {
@@ -123,7 +130,15 @@ class PushPushGo private constructor(
         NotificationStatusChecker.start(application)
     }
 
-    private val networkModule by lazy { NetworkModule(application, apiKey, projectId, isNetworkDebug) }
+    private val networkModule by lazy {
+        NetworkModule(
+            context = application,
+            apiKey = apiKey,
+            projectId = projectId,
+            isProduction = isProduction,
+            isDebug = isNetworkDebug,
+        )
+    }
 
     private val workModule by lazy { WorkModule(application) }
 
@@ -310,7 +325,9 @@ class PushPushGo private constructor(
             reinitialize(
                 application = application,
                 projectId = newProjectId,
-                apiKey = newProjectToken
+                apiKey = newProjectToken,
+                isProduction = isProduction,
+                isDebug = isNetworkDebug,
             ).apply {
                 notificationHandler = this@PushPushGo.notificationHandler
                 onInvalidProjectIdHandler = this@PushPushGo.onInvalidProjectIdHandler
@@ -330,7 +347,9 @@ class PushPushGo private constructor(
         return reinitialize(
             application = application,
             projectId = newProjectId,
-            apiKey = newProjectToken
+            apiKey = newProjectToken,
+            isProduction = isProduction,
+            isDebug = isNetworkDebug,
         )
     }
 

@@ -10,7 +10,13 @@ import com.pushpushgo.sdk.utils.PlatformType
 import com.pushpushgo.sdk.utils.getPlatformType
 import org.kodein.di.*
 
-internal class NetworkModule(context: Context, apiKey: String, projectId: String, isDebug: Boolean) : DIAware {
+internal class NetworkModule(
+    context: Context,
+    apiKey: String,
+    projectId: String,
+    isProduction: Boolean,
+    isDebug: Boolean,
+) : DIAware {
 
     companion object {
         const val API_KEY = "api_key"
@@ -27,19 +33,23 @@ internal class NetworkModule(context: Context, apiKey: String, projectId: String
         bind<SharedPreferencesHelper>() with singleton { SharedPreferencesHelper(instance()) }
         bind<ApiService>() with singleton {
             ApiService(
-                instance(),
-                instance(),
-                instance(),
+                requestInterceptor = instance(),
+                responseInterceptor = instance(),
+                platformType = instance(),
                 isNetworkDebug = isDebug,
+                baseUrl = when {
+                    isProduction -> "https://api.pushpushgo.com"
+                    else -> "https://api.master1.qappg.co"
+                }
             )
         }
         bind<ApiRepository>() with singleton {
             ApiRepository(
-                instance(),
-                instance(),
-                instance(),
-                instance(PROJECT_ID),
-                instance(API_KEY),
+                apiService = instance(),
+                context = instance(),
+                sharedPref = instance(),
+                projectId = instance(PROJECT_ID),
+                apiKey = instance(API_KEY),
             )
         }
     }
