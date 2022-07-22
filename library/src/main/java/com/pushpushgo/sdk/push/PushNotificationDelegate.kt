@@ -15,23 +15,24 @@ import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.utils.PendingIntentCompat
+import com.pushpushgo.sdk.utils.logDebug
+import com.pushpushgo.sdk.utils.logError
 import com.pushpushgo.sdk.utils.mapToBundle
 import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.*
-import timber.log.Timber
 import kotlin.random.Random
 
 internal class PushNotificationDelegate {
 
     private val uploadDelegate by lazy { UploadDelegate() }
 
-    private val errorHandler = CoroutineExceptionHandler { _, throwable -> Timber.tag(PushPushGo.TAG).e(throwable) }
+    private val errorHandler = CoroutineExceptionHandler { _, throwable -> logError(throwable) }
 
     private val job = SupervisorJob()
     private val delegateScope = CoroutineScope(job + Dispatchers.Main)
 
     fun onMessageReceived(pushMessage: PushMessage, context: Context) {
-        Timber.tag(PushPushGo.TAG).d("From: %s", pushMessage.from)
+        logDebug("From: ${pushMessage.from}")
 
         val pushProjectId = pushMessage.data["project"].orEmpty()
         val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
@@ -44,7 +45,7 @@ internal class PushNotificationDelegate {
     private fun processPushMessage(pushMessage: PushMessage, context: Context) {
         delegateScope.launch(errorHandler) {
             val notificationId = getUniqueNotificationId()
-            Timber.tag(PushPushGo.TAG).d("Notification unique id: $notificationId")
+            logDebug("Notification unique id: $notificationId")
 
             val notification = when {
                 pushMessage.data.isNotEmpty() -> getDataNotification(
@@ -61,12 +62,12 @@ internal class PushNotificationDelegate {
             }
 
             NotificationManagerCompat.from(context).notify(notificationId, notification)
-            Timber.tag(PushPushGo.TAG).d("Notification sent: $notificationId => $notification")
+            logDebug("Notification sent: $notificationId => $notification")
         }
     }
 
     fun onNewToken(token: String, isSubscribed: Boolean) {
-        Timber.tag(PushPushGo.TAG).d("Refreshed token: $token")
+        logDebug("Refreshed token: $token")
 
         if (PushPushGo.isInitialized() && isSubscribed) {
             PushPushGo.getInstance().getUploadManager().sendRegister(token)
@@ -84,7 +85,7 @@ internal class PushNotificationDelegate {
         remoteMessage: PushMessage,
         notificationId: Int,
     ): Notification {
-        Timber.tag(PushPushGo.TAG).d("Message data payload: %s", remoteMessage.data)
+        logDebug("Message data payload: ${remoteMessage.data}")
 
         val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
             ?: return getSimpleNotification(context, remoteMessage, notificationId)
@@ -98,7 +99,7 @@ internal class PushNotificationDelegate {
         remoteMessage: PushMessage,
         notificationId: Int,
     ): Notification {
-        Timber.tag(PushPushGo.TAG).d("Message notification title: %s", remoteMessage.notification?.title)
+        logDebug("Message notification title: ${remoteMessage.notification?.title}")
 
         return createNotification(
             id = notificationId,
@@ -153,7 +154,7 @@ internal class PushNotificationDelegate {
                 }
             }
         } catch (e: Throwable) {
-            Timber.tag(PushPushGo.TAG).e(e, "Failed to download bitmap picture")
+            logError("Failed to download bitmap picture", e)
         }
 
         return null

@@ -8,8 +8,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
 import androidx.core.content.getSystemService
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.utils.logDebug
+import com.pushpushgo.sdk.utils.logError
 import kotlinx.coroutines.*
-import timber.log.Timber
 import java.util.*
 
 internal class NotificationStatusChecker private constructor(
@@ -18,7 +19,7 @@ internal class NotificationStatusChecker private constructor(
 
     private val checkerScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val errorHandler = CoroutineExceptionHandler { _, e -> Timber.e(e) }
+    private val errorHandler = CoroutineExceptionHandler { _, e -> logError(e) }
 
     private val pref = SharedPreferencesHelper(context)
 
@@ -46,20 +47,20 @@ internal class NotificationStatusChecker private constructor(
 
     private fun checkNotificationsStatus() {
         if (areNotificationsEnabled() && pref.isSubscribed) {
-            if (BuildConfig.DEBUG) Timber.tag(PushPushGo.TAG).v("Notifications enabled")
+            if (BuildConfig.DEBUG) logDebug("Notifications enabled")
 
             if (pref.subscriberId.isBlank()) {
                 checkerScope.launch(errorHandler) {
-                    Timber.tag(PushPushGo.TAG).d("Notifications enabled, but not subscribed. Registering token...")
+                    logDebug("Notifications enabled, but not subscribed. Registering token...")
                     PushPushGo.getInstance().registerSubscriber()
                 }
             }
         } else {
-            if (BuildConfig.DEBUG) Timber.tag(PushPushGo.TAG).v("Notifications disabled")
+            if (BuildConfig.DEBUG) logDebug("Notifications disabled")
 
             if (pref.subscriberId.isNotBlank()) {
                 checkerScope.launch(errorHandler) {
-                    Timber.tag(PushPushGo.TAG).d("Notifications disabled, but subscribed. Unregistering subscriber...")
+                    logDebug("Notifications disabled, but subscribed. Unregistering subscriber...")
                     PushPushGo.getInstance().getNetwork().unregisterSubscriber(pref.isSubscribed)
                 }
             }

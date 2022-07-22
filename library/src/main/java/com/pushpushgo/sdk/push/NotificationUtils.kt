@@ -10,14 +10,13 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
-import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.NotificationJsonAdapter
 import com.pushpushgo.sdk.data.PushPushNotification
+import com.pushpushgo.sdk.utils.logError
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import timber.log.Timber
 
 private val moshi = Moshi.Builder().build()
 
@@ -45,7 +44,7 @@ internal fun handleNotificationLinkClick(context: Context, uri: String) {
         try {
             context.startActivity(it)
         } catch (e: ActivityNotFoundException) {
-            Timber.tag(PushPushGo.TAG).e("Not found activity to open uri: %s", uri)
+            logError("Not found activity to open uri: $uri", e)
             Toast.makeText(context, uri, Toast.LENGTH_SHORT).show()
         }
     }

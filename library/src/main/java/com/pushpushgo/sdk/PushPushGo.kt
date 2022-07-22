@@ -23,18 +23,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.guava.future
-import timber.log.Timber
 
 class PushPushGo private constructor(
     private val application: Application,
     private val apiKey: String,
     private val projectId: String,
     private val isProduction: Boolean,
-    private val isNetworkDebug: Boolean,
+    internal val isDebug: Boolean,
 ) {
 
     companion object {
-        const val VERSION = "1.2.0-20220317~1"
+        const val VERSION = "1.2.0-20220722~1"
 
         internal const val TAG = "PPGo"
 
@@ -135,7 +134,7 @@ class PushPushGo private constructor(
             apiKey = apiKey,
             projectId = projectId,
             isProduction = isProduction,
-            isDebug = isNetworkDebug,
+            isDebug = isDebug,
         )
     }
 
@@ -148,8 +147,7 @@ class PushPushGo private constructor(
     internal fun getUploadManager() = workModule.uploadManager
 
     var onInvalidProjectIdHandler: InvalidProjectIdHandler = { pushProjectId, _, currentProjectId ->
-        Timber.tag(TAG)
-            .w("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
+        logDebug("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
     }
 
     /**
@@ -318,7 +316,7 @@ class PushPushGo private constructor(
                 projectId = newProjectId,
                 apiKey = newProjectToken,
                 isProduction = isProduction,
-                isDebug = isNetworkDebug,
+                isDebug = isDebug,
             ).apply {
                 notificationHandler = this@PushPushGo.notificationHandler
                 onInvalidProjectIdHandler = this@PushPushGo.onInvalidProjectIdHandler

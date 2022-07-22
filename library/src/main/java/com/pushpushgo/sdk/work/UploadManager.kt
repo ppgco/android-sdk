@@ -1,13 +1,12 @@
 package com.pushpushgo.sdk.work
 
 import androidx.work.*
-import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.utils.logDebug
 import com.pushpushgo.sdk.work.UploadWorker.Companion.DATA
 import com.pushpushgo.sdk.work.UploadWorker.Companion.REGISTER
 import com.pushpushgo.sdk.work.UploadWorker.Companion.TYPE
 import com.pushpushgo.sdk.work.UploadWorker.Companion.UNREGISTER
-import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 internal class UploadManager(
@@ -21,7 +20,7 @@ internal class UploadManager(
     }
 
     fun sendRegister(token: String?) {
-        Timber.tag(PushPushGo.TAG).d("Register enqueued")
+        logDebug("Register enqueued")
 
         enqueueJob(REGISTER, isMustRunImmediately = true, data = token)
         listOf(UNREGISTER).forEach {
@@ -31,11 +30,11 @@ internal class UploadManager(
 
     fun sendUnregister() {
         if (!sharedPref.isSubscribed) {
-            Timber.tag(PushPushGo.TAG).d("Can't unregister, because device not registered. Skipping")
+            logDebug("Can't unregister, because device not registered. Skipping")
             return
         }
 
-        Timber.tag(PushPushGo.TAG).d("Unregister enqueued")
+        logDebug("Unregister enqueued")
 
         enqueueJob(UNREGISTER, isMustRunImmediately = true)
         listOf(REGISTER).forEach {

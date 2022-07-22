@@ -2,26 +2,27 @@ package com.pushpushgo.sdk.work
 
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.EventType
+import com.pushpushgo.sdk.utils.logDebug
+import com.pushpushgo.sdk.utils.logError
 import kotlinx.coroutines.*
 import org.json.JSONObject
-import timber.log.Timber
 
 internal class UploadDelegate {
 
     private val uploadScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val errorHandler = CoroutineExceptionHandler { _, e -> Timber.e(e) }
+    private val errorHandler = CoroutineExceptionHandler { _, e -> logError(e) }
 
     suspend fun doNetworkWork(type: String?, data: String?) {
         if (!PushPushGo.getInstance().isSubscribed() && type != UploadWorker.REGISTER) {
-            return Timber.d("UploadWorker: skipped. Reason: not subscribed")
+            return logDebug("UploadWorker: skipped. Reason: not subscribed")
         }
 
         with(PushPushGo.getInstance().getNetwork()) {
             when (type) {
                 UploadWorker.REGISTER -> registerToken(data)
                 UploadWorker.UNREGISTER -> unregisterSubscriber()
-                else -> Timber.tag(PushPushGo.TAG).w("Unknown upload data type")
+                else -> logDebug("Unknown upload data type")
             }
         }
     }

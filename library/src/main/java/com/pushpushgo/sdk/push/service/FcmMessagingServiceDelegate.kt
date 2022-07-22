@@ -2,12 +2,11 @@ package com.pushpushgo.sdk.push.service
 
 import android.content.Context
 import com.google.firebase.messaging.RemoteMessage
-import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.PushMessage
 import com.pushpushgo.sdk.push.PushNotification
 import com.pushpushgo.sdk.push.PushNotificationDelegate
-import timber.log.Timber
+import com.pushpushgo.sdk.utils.logDebug
 
 class FcmMessagingServiceDelegate(private val context: Context) {
 
@@ -16,7 +15,7 @@ class FcmMessagingServiceDelegate(private val context: Context) {
     private val delegate by lazy { PushNotificationDelegate() }
 
     fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Timber.tag(PushPushGo.TAG).d("onMessageReceived(%s)", remoteMessage.toString())
+        logDebug("onMessageReceived($remoteMessage)")
         delegate.onMessageReceived(
             pushMessage = remoteMessage.toPushMessage(),
             context = context,

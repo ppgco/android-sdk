@@ -3,9 +3,9 @@ package com.pushpushgo.sdk.work
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.utils.logDebug
+import com.pushpushgo.sdk.utils.logError
 import kotlinx.coroutines.coroutineScope
-import timber.log.Timber
 
 internal class UploadWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
 
@@ -20,7 +20,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
     private val delegate by lazy { UploadDelegate() }
 
     override suspend fun doWork(): Result = coroutineScope {
-        Timber.tag(PushPushGo.TAG).d("UploadWorker: started")
+        logDebug("UploadWorker: started")
 
         val type = inputData.getString(TYPE)
         val data = inputData.getString(DATA)
@@ -28,7 +28,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
         try {
             delegate.doNetworkWork(type, data)
         } catch (e: Throwable) {
-            Timber.tag(PushPushGo.TAG).e(e, "UploadWorker error: %s", e.message)
+            logError("UploadWorker error", e)
 
             return@coroutineScope when {
                 "Please configure FCM keys and senderIds on your " in e.message.orEmpty() -> Result.failure()
@@ -37,7 +37,7 @@ internal class UploadWorker(context: Context, parameters: WorkerParameters) : Co
             }
         }
 
-        Timber.tag(PushPushGo.TAG).d("UploadWorker: success")
+        logDebug("UploadWorker: success")
 
         Result.success()
     }

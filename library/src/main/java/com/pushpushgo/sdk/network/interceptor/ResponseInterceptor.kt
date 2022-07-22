@@ -2,9 +2,9 @@ package com.pushpushgo.sdk.network.interceptor
 
 import android.util.JsonReader
 import com.pushpushgo.sdk.exception.PushPushException
+import com.pushpushgo.sdk.utils.logError
 import okhttp3.Interceptor
 import okhttp3.Response
-import timber.log.Timber
 import java.io.StringReader
 
 internal class ResponseInterceptor : Interceptor {
@@ -22,7 +22,7 @@ internal class ResponseInterceptor : Interceptor {
                     throw PushPushException(reader.nextString())
                 }
             } catch (e: RuntimeException) {
-                Timber.e(e)
+                logError(e)
             }
         }
         return response

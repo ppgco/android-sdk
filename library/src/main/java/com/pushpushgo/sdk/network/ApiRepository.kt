@@ -3,18 +3,18 @@ package com.pushpushgo.sdk.network
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.data.Event
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.Payload
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.getPlatformPushToken
+import com.pushpushgo.sdk.utils.logDebug
+import com.pushpushgo.sdk.utils.logError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import timber.log.Timber
 
 internal class ApiRepository(
     private val apiService: ApiService,
@@ -25,11 +25,11 @@ internal class ApiRepository(
 ) {
 
     suspend fun registerToken(token: String?, apiKey: String = this.apiKey, projectId: String = this.projectId) {
-        Timber.tag(PushPushGo.TAG).d("registerToken invoked: $token")
+        logDebug("registerToken invoked: $token")
         val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: withContext(Dispatchers.IO) {
             getPlatformPushToken(context)
         }
-        Timber.d("Token to register: $tokenToRegister")
+        logDebug("Token to register: $tokenToRegister")
 
         val data = apiService.registerSubscriber(
             token = apiKey,
@@ -40,11 +40,11 @@ internal class ApiRepository(
             sharedPref.subscriberId = data.id
             sharedPref.isSubscribed = true
         }
-        Timber.tag(PushPushGo.TAG).d("RegisterSubscriber received: $data")
+        logDebug("RegisterSubscriber received: $data")
     }
 
     suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
-        Timber.tag(PushPushGo.TAG).d("unregisterSubscriber($isSubscribed) invoked")
+        logDebug("unregisterSubscriber($isSubscribed) invoked")
 
         apiService.unregisterSubscriber(
             token = apiKey,
@@ -64,19 +64,17 @@ internal class ApiRepository(
             )
         } catch (e: PushPushException) {
             when (e.message.orEmpty()) {
-                "Not Found", "Subscriber not found" -> {
-                    Timber.e(e)
-                }
+                "Not Found", "Subscriber not found" -> logError(e)
                 else -> throw e
             }
         }
     }
 
     suspend fun migrateSubscriber(newProjectId: String, newToken: String) {
-        Timber.tag(PushPushGo.TAG).d("migrateSubscriber($newProjectId, $newToken) invoked")
+        logDebug("migrateSubscriber($newProjectId, $newToken) invoked")
 
         if (newProjectId.isBlank() || newToken.isBlank()) {
-            return Timber.tag(PushPushGo.TAG).i("Empty new project info!")
+            return logDebug("Empty new project info!")
         }
 
         // unregister current
@@ -96,7 +94,7 @@ internal class ApiRepository(
 
     suspend fun sendBeacon(beacon: String) {
         if (!sharedPref.isSubscribed) {
-            Timber.tag(PushPushGo.TAG).d("Beacon not sent. Reason: not subscribed")
+            logDebug("Beacon not sent. Reason: not subscribed")
             return
         }
 
