@@ -1,373 +1,356 @@
+<!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>PushPushGo</title>
-<link href="../../../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script><script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script><link href="../../../styles/style.css" rel="Stylesheet"><link href="../../../styles/logo-styles.css" rel="Stylesheet"><link href="../../../styles/jetbrains-mono.css" rel="Stylesheet"><link href="../../../styles/main.css" rel="Stylesheet"><script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script><script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script><script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script><script type="text/javascript" src="../../../scripts/main.js" async="async"></script>  </head>
-  <body>
-    <div id="container">
-      <div id="leftColumn"><a href="../../../index.html">
-          <div id="logo"></div>
-        </a>
-        <div id="paneSearch"></div>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+const savedDarkMode = storage ? JSON.parse(storage) : false
+if(savedDarkMode === true){
+    document.getElementsByTagName("html")[0].classList.add("theme-dark")
+}</script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/jetbrains-mono.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+</head>
+<body>
+<div class="navigation-wrapper" id="navigation-wrapper">
+    <div id="leftToggler"><span class="icon-toggler"></span></div>
+    <div class="library-name">
+            <a href="../../../index.html">
+                    <span>PushPushGo SDK</span>
+            </a>
+    </div>
+    <div>
+    </div>
+    <div class="pull-right d-flex">
+        <button id="theme-toggle-button"><span id="theme-toggle"></span></button>
+        <div id="searchBar"></div>
+    </div>
+</div>
+<div id="container">
+    <div id="leftColumn">
         <div id="sideMenu"></div>
-      </div>
-      <div id="main">
-        <div id="leftToggler"><span class="icon-toggler"></span></div>
-<script type="text/javascript" src="../../../scripts/main.js"></script>        <div class="main-content" id="content" pageIds="PushPushGo SDK::com.pushpushgo.sdk/PushPushGo///PointingToDeclaration//-1887420133">
-          <div class="navigation-wrapper" id="navigation-wrapper">
-            <div class="breadcrumbs"><a href="../../../index.html">PushPushGo SDK</a>/<a href="../index.html">com.pushpushgo.sdk</a>/<a href="index.html">PushPushGo</a></div>
-            <div class="pull-right d-flex">
-              <div id="searchBar"></div>
-            </div>
-          </div>
-          <div class="cover ">
-            <h1 class="cover"><span>Push</span><wbr></wbr><span>Push</span><wbr></wbr><span>Go</span></h1>
-            <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">class <a href="index.html">PushPushGo</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-          </div>
-          <div class="tabbedcontent">
-            <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Types">Types</button><button class="section-tab" data-togglable="Functions">Functions</button><button class="section-tab" data-togglable="Properties">Properties</button></div>
-            <div class="tabs-section-body">
-              <h2 class="">Types</h2>
-              <div class="table" data-togglable="Types"><a data-name="-924546467%2FClasslikes%2F-1887420133" anchor-label="Companion" id="-924546467%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="-companion/index.html">Companion</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-924546467%2FClasslikes%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">object <a href="-companion/index.html">Companion</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+    </div>
+    <div id="main">
+<div class="main-content" id="content" pageIds="PushPushGo SDK::com.pushpushgo.sdk/PushPushGo///PointingToDeclaration//-1887420133">
+  <div class="breadcrumbs"><a href="../../../index.html">PushPushGo SDK</a><span class="delimiter">/</span><a href="../index.html">com.pushpushgo.sdk</a><span class="delimiter">/</span><a href="index.html">PushPushGo</a></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Push</span><wbr></wbr><span>Push</span><wbr></wbr><span><span>Go</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">PushPushGo</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
   </div>
-</div>
-</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <h2 class="">Functions</h2>
-              <div class="table" data-togglable="Functions"><a data-name="875029348%2FFunctions%2F-1887420133" anchor-label="createBeacon" id="875029348%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="create-beacon.html">createBeacon</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="875029348%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="create-beacon.html">createBeacon</a>(): <a href="../-beacon-builder/index.html">BeaconBuilder</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="875029348%2FFunctions%2F-1887420133" anchor-label="createBeacon" id="875029348%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="875029348%2FFunctions%2F-1887420133" anchor-label="createBeacon" id="875029348%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to construct and send beacon</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-897223525%2FFunctions%2F-1887420133" anchor-label="getApiKey" id="-897223525%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="get-api-key.html">getApiKey</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-897223525%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="get-api-key.html">getApiKey</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-897223525%2FFunctions%2F-1887420133" anchor-label="getApiKey" id="-897223525%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-897223525%2FFunctions%2F-1887420133" anchor-label="getApiKey" id="-897223525%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to read Your API Key from an PushPushGo library instance</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="1001576401%2FFunctions%2F-1887420133" anchor-label="getNotificationDetails" id="1001576401%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="get-notification-details.html">getNotificationDetails</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1001576401%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="get-notification-details.html">getNotificationDetails</a>(notificationIntent: <a href="https://developer.android.com/reference/kotlin/android/content/Intent.html">Intent</a>?): <a href="../../com.pushpushgo.sdk.dto/-p-p-go-notification/index.html">PPGoNotification</a>?<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="231483760%2FFunctions%2F-1887420133" anchor-label="getNotificationDetails" id="231483760%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="231483760%2FFunctions%2F-1887420133" anchor-label="getNotificationDetails" id="231483760%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to retrieve PPGo notification details</div></div>
-<div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="get-notification-details.html">getNotificationDetails</a>(notificationData: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html">Map</a>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;): <a href="../../com.pushpushgo.sdk.dto/-p-p-go-notification/index.html">PPGoNotification</a>?<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="626885869%2FFunctions%2F-1887420133" anchor-label="getNotificationDetails" id="626885869%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="626885869%2FFunctions%2F-1887420133" anchor-label="getNotificationDetails" id="626885869%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to retrieve PPGo notification details</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-373922266%2FFunctions%2F-1887420133" anchor-label="getProjectId" id="-373922266%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="get-project-id.html">getProjectId</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-373922266%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="get-project-id.html">getProjectId</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-373922266%2FFunctions%2F-1887420133" anchor-label="getProjectId" id="-373922266%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-373922266%2FFunctions%2F-1887420133" anchor-label="getProjectId" id="-373922266%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to read Your API Key from an PushPushGo library instance</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="511060891%2FFunctions%2F-1887420133" anchor-label="getPushToken" id="511060891%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="get-push-token.html">getPushToken</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="511060891%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace strikethrough">fun <a href="get-push-token.html">getPushToken</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="511060891%2FFunctions%2F-1887420133" anchor-label="getPushToken" id="511060891%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="511060891%2FFunctions%2F-1887420133" anchor-label="getPushToken" id="511060891%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to retrieve last push token used to subscribe</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-1770953789%2FFunctions%2F-1887420133" anchor-label="getPushTokenAsync" id="-1770953789%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="get-push-token-async.html">getPushTokenAsync</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1770953789%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="get-push-token-async.html">getPushTokenAsync</a>(): <span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-1770953789%2FFunctions%2F-1887420133" anchor-label="getPushTokenAsync" id="-1770953789%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-1770953789%2FFunctions%2F-1887420133" anchor-label="getPushTokenAsync" id="-1770953789%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>async function to retrieve last push token used to subscribe that</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-472743331%2FFunctions%2F-1887420133" anchor-label="getSubscriberId" id="-472743331%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="get-subscriber-id.html">getSubscriberId</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-472743331%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="get-subscriber-id.html">getSubscriberId</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-472743331%2FFunctions%2F-1887420133" anchor-label="getSubscriberId" id="-472743331%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-472743331%2FFunctions%2F-1887420133" anchor-label="getSubscriberId" id="-472743331%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to read Your subscriber id from an PushPushGo library instance</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-2121195772%2FFunctions%2F-1887420133" anchor-label="handleBackgroundNotificationClick" id="-2121195772%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="handle-background-notification-click.html">handleBackgroundNotificationClick</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2121195772%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="handle-background-notification-click.html">handleBackgroundNotificationClick</a>(intent: <a href="https://developer.android.com/reference/kotlin/android/content/Intent.html">Intent</a>?)<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-2121195772%2FFunctions%2F-1887420133" anchor-label="handleBackgroundNotificationClick" id="-2121195772%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-2121195772%2FFunctions%2F-1887420133" anchor-label="handleBackgroundNotificationClick" id="-2121195772%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>helper function to handle click on notification from background</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="1663296423%2FFunctions%2F-1887420133" anchor-label="isPPGoPush" id="1663296423%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="is-p-p-go-push.html">isPPGoPush</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1663296423%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="is-p-p-go-push.html">isPPGoPush</a>(notificationIntent: <a href="https://developer.android.com/reference/kotlin/android/content/Intent.html">Intent</a>?): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="807086779%2FFunctions%2F-1887420133" anchor-label="isPPGoPush" id="807086779%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="807086779%2FFunctions%2F-1887420133" anchor-label="isPPGoPush" id="807086779%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to check whether the given notification data belongs to the PPGo sender</div></div>
-<div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="is-p-p-go-push.html">isPPGoPush</a>(notificationData: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html">Map</a>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="897120184%2FFunctions%2F-1887420133" anchor-label="isPPGoPush" id="897120184%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="897120184%2FFunctions%2F-1887420133" anchor-label="isPPGoPush" id="897120184%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to check whether the given notification data belongs to the PPGo sender</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="131656480%2FFunctions%2F-1887420133" anchor-label="isSubscribed" id="131656480%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="is-subscribed.html">isSubscribed</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="131656480%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="is-subscribed.html">isSubscribed</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="131656480%2FFunctions%2F-1887420133" anchor-label="isSubscribed" id="131656480%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="131656480%2FFunctions%2F-1887420133" anchor-label="isSubscribed" id="131656480%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to check if user subscribed to notifications</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-857618094%2FFunctions%2F-1887420133" anchor-label="migrateToNewProject" id="-857618094%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="migrate-to-new-project.html">migrateToNewProject</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-857618094%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="migrate-to-new-project.html">migrateToNewProject</a>(newProjectId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, newProjectToken: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span>&lt;<a href="index.html">PushPushGo</a>&gt;<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-857618094%2FFunctions%2F-1887420133" anchor-label="migrateToNewProject" id="-857618094%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-857618094%2FFunctions%2F-1887420133" anchor-label="migrateToNewProject" id="-857618094%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to re-subscribe to different project (previously unsubscribe from current project) WARNING: after resubscribe use object returned by this function instead of previous one</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-1415513735%2FFunctions%2F-1887420133" anchor-label="registerSubscriber" id="-1415513735%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="register-subscriber.html">registerSubscriber</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1415513735%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="register-subscriber.html">registerSubscriber</a>()<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-1415513735%2FFunctions%2F-1887420133" anchor-label="registerSubscriber" id="-1415513735%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-1415513735%2FFunctions%2F-1887420133" anchor-label="registerSubscriber" id="-1415513735%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to register subscriber</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-421812962%2FFunctions%2F-1887420133" anchor-label="registerSubscriberSync" id="-421812962%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="register-subscriber-sync.html">registerSubscriberSync</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-421812962%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="register-subscriber-sync.html">registerSubscriberSync</a>(): <span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="-421812962%2FFunctions%2F-1887420133" anchor-label="registerSubscriberSync" id="-421812962%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="-421812962%2FFunctions%2F-1887420133" anchor-label="registerSubscriberSync" id="-421812962%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to register subscriber, by in synchronous manner</div></div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="1236506954%2FFunctions%2F-1887420133" anchor-label="resubscribe" id="1236506954%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="resubscribe.html">resubscribe</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1236506954%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace strikethrough">fun <a href="resubscribe.html">resubscribe</a>(newProjectId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, newProjectToken: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <a href="index.html">PushPushGo</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-1327492222%2FFunctions%2F-1887420133" anchor-label="unregisterSubscriber" id="-1327492222%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="unregister-subscriber.html">unregisterSubscriber</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1327492222%2FFunctions%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title"><div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="unregister-subscriber.html">unregisterSubscriber</a>()<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-<a data-name="1211273088%2FFunctions%2F-1887420133" anchor-label="unregisterSubscriber" id="1211273088%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="brief "><a data-name="1211273088%2FFunctions%2F-1887420133" anchor-label="unregisterSubscriber" id="1211273088%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>function to unregister subscriber</div></div>
-<div class="divergent-group" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release"><div class="with-platform-tags"><span class="pull-right"></span></div>
-
-  <div>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace">fun <a href="unregister-subscriber.html">unregisterSubscriber</a>(projectId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, projectToken: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, subscriberId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a>&gt;<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <h2 class="">Properties</h2>
-              <div class="table" data-togglable="Properties"><a data-name="-1423318159%2FProperties%2F-1887420133" anchor-label="defaultIsSubscribed" id="-1423318159%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="default-is-subscribed.html">defaultIsSubscribed</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1423318159%2FProperties%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title">
-                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><a data-name="-1423318159%2FProperties%2F-1887420133" anchor-label="defaultIsSubscribed" id="-1423318159%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="symbol monospace">var <a href="default-is-subscribed.html">defaultIsSubscribed</a>: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a> = false<span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="-1423318159%2FProperties%2F-1887420133" anchor-label="defaultIsSubscribed" id="-1423318159%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>Settings used for migration to support switch user before start first time app after upgrade/switch defaultIsSubscribed  default is false</div></div></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="1578520279%2FProperties%2F-1887420133" anchor-label="notificationHandler" id="1578520279%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="notification-handler.html">notificationHandler</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1578520279%2FProperties%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title">
-                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><a data-name="1578520279%2FProperties%2F-1887420133" anchor-label="notificationHandler" id="1578520279%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="symbol monospace">var <a href="notification-handler.html">notificationHandler</a>: <a href="../index.html#519765676%2FClasslikes%2F-1887420133">NotificationHandler</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-<a data-name="-1491720952%2FProperties%2F-1887420133" anchor-label="onInvalidProjectIdHandler" id="-1491720952%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
-                <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
-                  <div class="main-subrow keyValue ">
-                    <div class=""><span class="inline-flex"><a href="on-invalid-project-id-handler.html">onInvalidProjectIdHandler</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1491720952%2FProperties%2F-1887420133"></span>
-                          <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                        </span></span></div>
-                    <div>
-                      <div class="title">
-                        <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><a data-name="-1491720952%2FProperties%2F-1887420133" anchor-label="onInvalidProjectIdHandler" id="-1491720952%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="symbol monospace">var <a href="on-invalid-project-id-handler.html">onInvalidProjectIdHandler</a>: <a href="../index.html#-731167074%2FClasslikes%2F-1887420133">InvalidProjectIdHandler</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Types">Types</button><button class="section-tab" data-togglable="Functions">Functions</button><button class="section-tab" data-togglable="Properties">Properties</button></div>
+    <div class="tabs-section-body">
+      <h2 class="">Types</h2>
+      <div class="table" data-togglable="Types"><a data-name="-924546467%2FClasslikes%2F-1887420133" anchor-label="Companion" id="-924546467%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-924546467%2FClasslikes%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
               </div>
             </div>
           </div>
         </div>
-        <div class="footer"><span class="go-to-top-icon"><a href="#content"></a></span><span>© 2022 Copyright</span><span class="pull-right"><span>Generated by </span><a href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span></div>
+      </div>
+      <h2 class="">Functions</h2>
+      <div class="table" data-togglable="Functions"><a data-name="875029348%2FFunctions%2F-1887420133" anchor-label="createBeacon" id="875029348%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="create-beacon.html"><span>create</span><wbr></wbr><span><span>Beacon</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="875029348%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="create-beacon.html"><span class="token function">createBeacon</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-beacon-builder/index.html">BeaconBuilder</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to construct and send beacon</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-897223525%2FFunctions%2F-1887420133" anchor-label="getApiKey" id="-897223525%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-api-key.html"><span>get</span><wbr></wbr><span>Api</span><wbr></wbr><span><span>Key</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-897223525%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="get-api-key.html"><span class="token function">getApiKey</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to read Your API Key from an PushPushGo library instance</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1001576401%2FFunctions%2F-1887420133" anchor-label="getNotificationDetails" id="1001576401%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-notification-details.html"><span>get</span><wbr></wbr><span>Notification</span><wbr></wbr><span><span>Details</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1001576401%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="get-notification-details.html"><span class="token function">getNotificationDetails</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">notificationIntent<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/Intent.html">Intent</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.pushpushgo.sdk.dto/-p-p-go-notification/index.html">PPGoNotification</a><span class="token operator">?</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="get-notification-details.html"><span class="token function">getNotificationDetails</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">notificationData<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.pushpushgo.sdk.dto/-p-p-go-notification/index.html">PPGoNotification</a><span class="token operator">?</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to retrieve PPGo notification details</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-373922266%2FFunctions%2F-1887420133" anchor-label="getProjectId" id="-373922266%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-project-id.html"><span>get</span><wbr></wbr><span>Project</span><wbr></wbr><span><span>Id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-373922266%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="get-project-id.html"><span class="token function">getProjectId</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to read Your API Key from an PushPushGo library instance</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="511060891%2FFunctions%2F-1887420133" anchor-label="getPushToken" id="511060891%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-push-token.html"><span>get</span><wbr></wbr><span>Push</span><wbr></wbr><span><span>Token</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="511060891%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace strikethrough"><strike><span class="token keyword"></span></strike><strike><span class="token keyword">fun </span></strike><a href="get-push-token.html"><strike><span class="token function">getPushToken</span></strike></a><strike><span class="token punctuation">(</span></strike><strike><span class="token punctuation">)</span></strike><strike><span class="token operator">: </span></strike><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to retrieve last push token used to subscribe</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1770953789%2FFunctions%2F-1887420133" anchor-label="getPushTokenAsync" id="-1770953789%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-push-token-async.html"><span>get</span><wbr></wbr><span>Push</span><wbr></wbr><span>Token</span><wbr></wbr><span><span>Async</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1770953789%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="get-push-token-async.html"><span class="token function">getPushTokenAsync</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">async function to retrieve last push token used to subscribe that</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-472743331%2FFunctions%2F-1887420133" anchor-label="getSubscriberId" id="-472743331%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-subscriber-id.html"><span>get</span><wbr></wbr><span>Subscriber</span><wbr></wbr><span><span>Id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-472743331%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="get-subscriber-id.html"><span class="token function">getSubscriberId</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to read Your subscriber id from an PushPushGo library instance</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-2121195772%2FFunctions%2F-1887420133" anchor-label="handleBackgroundNotificationClick" id="-2121195772%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="handle-background-notification-click.html"><span>handle</span><wbr></wbr><span>Background</span><wbr></wbr><span>Notification</span><wbr></wbr><span><span>Click</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2121195772%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="handle-background-notification-click.html"><span class="token function">handleBackgroundNotificationClick</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">intent<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/Intent.html">Intent</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">helper function to handle click on notification from background</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1663296423%2FFunctions%2F-1887420133" anchor-label="isPPGoPush" id="1663296423%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="is-p-p-go-push.html"><span>is</span><wbr></wbr><span>PPGo</span><wbr></wbr><span><span>Push</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1663296423%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="is-p-p-go-push.html"><span class="token function">isPPGoPush</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">notificationIntent<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/Intent.html">Intent</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="is-p-p-go-push.html"><span class="token function">isPPGoPush</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">notificationData<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to check whether the given notification data belongs to the PPGo sender</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="131656480%2FFunctions%2F-1887420133" anchor-label="isSubscribed" id="131656480%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="is-subscribed.html"><span>is</span><wbr></wbr><span><span>Subscribed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="131656480%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="is-subscribed.html"><span class="token function">isSubscribed</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to check if user subscribed to notifications</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-857618094%2FFunctions%2F-1887420133" anchor-label="migrateToNewProject" id="-857618094%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="migrate-to-new-project.html"><span>migrate</span><wbr></wbr><span>To</span><wbr></wbr><span>New</span><wbr></wbr><span><span>Project</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-857618094%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="migrate-to-new-project.html"><span class="token function">migrateToNewProject</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">newProjectId<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">newProjectToken<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">PushPushGo</a><span class="token operator">&gt;</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to re-subscribe to different project (previously unsubscribe from current project) WARNING: after resubscribe use object returned by this function instead of previous one</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1415513735%2FFunctions%2F-1887420133" anchor-label="registerSubscriber" id="-1415513735%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="register-subscriber.html"><span>register</span><wbr></wbr><span><span>Subscriber</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1415513735%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="register-subscriber.html"><span class="token function">registerSubscriber</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to register subscriber</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-421812962%2FFunctions%2F-1887420133" anchor-label="registerSubscriberSync" id="-421812962%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="register-subscriber-sync.html"><span>register</span><wbr></wbr><span>Subscriber</span><wbr></wbr><span><span>Sync</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-421812962%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="register-subscriber-sync.html"><span class="token function">registerSubscriberSync</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to register subscriber, by in synchronous manner</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1236506954%2FFunctions%2F-1887420133" anchor-label="resubscribe" id="1236506954%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="resubscribe.html"><span><span>resubscribe</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1236506954%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace strikethrough"><strike><span class="token keyword"></span></strike><strike><span class="token keyword">fun </span></strike><a href="resubscribe.html"><strike><span class="token function">resubscribe</span></strike></a><strike><span class="token punctuation">(</span></strike><span class="parameters "><span class="parameter ">newProjectId<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">newProjectToken<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><strike><span class="token punctuation">)</span></strike><strike><span class="token operator">: </span></strike><a href="index.html">PushPushGo</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1327492222%2FFunctions%2F-1887420133" anchor-label="unregisterSubscriber" id="-1327492222%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="unregister-subscriber.html"><span>unregister</span><wbr></wbr><span><span>Subscriber</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1327492222%2FFunctions%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="unregister-subscriber.html"><span class="token function">unregisterSubscriber</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><p class="paragraph">function to unregister subscriber</p></div><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="unregister-subscriber.html"><span class="token function">unregisterSubscriber</span></a><span class="token punctuation">(</span><span class="parameters wrapped"><span class="parameter indented">&nbsp;&nbsp;&nbsp;&nbsp;projectId<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter indented">&nbsp;&nbsp;&nbsp;&nbsp;projectToken<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter indented">&nbsp;&nbsp;&nbsp;&nbsp;subscriberId<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.google.common.util.concurrent/ListenableFuture///PointingToDeclaration/">ListenableFuture</span><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator">&gt;</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h2 class="">Properties</h2>
+      <div class="table" data-togglable="Properties"><a data-name="-1423318159%2FProperties%2F-1887420133" anchor-label="defaultIsSubscribed" id="-1423318159%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="default-is-subscribed.html"><span>default</span><wbr></wbr><span>Is</span><wbr></wbr><span><span>Subscribed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1423318159%2FProperties%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><a data-name="-1423318159%2FProperties%2F-1887420133" anchor-label="defaultIsSubscribed" id="-1423318159%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">var </span><a href="default-is-subscribed.html">defaultIsSubscribed</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><div class="brief "><a data-name="-1423318159%2FProperties%2F-1887420133" anchor-label="defaultIsSubscribed" id="-1423318159%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><p class="paragraph">Settings used for migration to support switch user before start first time app after upgrade/switch defaultIsSubscribed  default is false</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1578520279%2FProperties%2F-1887420133" anchor-label="notificationHandler" id="1578520279%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="notification-handler.html"><span>notification</span><wbr></wbr><span><span>Handler</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1578520279%2FProperties%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><a data-name="1578520279%2FProperties%2F-1887420133" anchor-label="notificationHandler" id="1578520279%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">var </span><a href="notification-handler.html">notificationHandler</a><span class="token operator">: </span><a href="../index.html#519765676%2FClasslikes%2F-1887420133">NotificationHandler</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1491720952%2FProperties%2F-1887420133" anchor-label="onInvalidProjectIdHandler" id="-1491720952%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="on-invalid-project-id-handler.html"><span>on</span><wbr></wbr><span>Invalid</span><wbr></wbr><span>Project</span><wbr></wbr><span>Id</span><wbr></wbr><span><span>Handler</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1491720952%2FProperties%2F-1887420133"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-depenent-content" data-active="" data-togglable=":library:dokkaHtml/release"><a data-name="-1491720952%2FProperties%2F-1887420133" anchor-label="onInvalidProjectIdHandler" id="-1491720952%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">var </span><a href="on-invalid-project-id-handler.html">onInvalidProjectIdHandler</a><span class="token operator">: </span><a href="../index.html#-731167074%2FClasslikes%2F-1887420133">InvalidProjectIdHandler</a><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </body>
+  </div>
+</div>
+      <div class="footer">
+        <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2022 Copyright</span><span
+                class="pull-right"><span>Generated by </span><a
+                href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span>
+      </div>
+    </div>
+</div>
+</body>
 </html>
-
