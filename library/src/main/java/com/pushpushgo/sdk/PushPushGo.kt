@@ -23,7 +23,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.guava.future
-import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 
 class PushPushGo private constructor(
@@ -257,20 +256,12 @@ class PushPushGo private constructor(
     fun isSubscribed(): Boolean = networkModule.sharedPref.isSubscribed
 
     /**
-     * function to retrieve last push token used to subscribe
+     * function to retrieve last push token used to subscribe that
      */
-    @Deprecated("use getPushTokenAsync() instead")
-    fun getPushToken(): String = runBlocking { getPushTokenSuspend() }
-
-    /**
-     * async function to retrieve last push token used to subscribe that
-     */
-    fun getPushTokenAsync(): ListenableFuture<String> = CoroutineScope(Job() + Dispatchers.IO).future {
-        getPushTokenSuspend()
-    }
-
-    private suspend fun getPushTokenSuspend(): String {
-        return networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(application)
+    fun getPushToken(): ListenableFuture<String> {
+        return CoroutineScope(Job() + Dispatchers.IO).future {
+            networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(application)
+        }
     }
 
     /**
@@ -333,24 +324,6 @@ class PushPushGo private constructor(
                 onInvalidProjectIdHandler = this@PushPushGo.onInvalidProjectIdHandler
             }
         }
-    }
-
-    @Deprecated("use migrateToNewProject instead")
-    fun resubscribe(newProjectId: String, newProjectToken: String): PushPushGo {
-        runBlocking {
-            getInstance().getNetwork().migrateSubscriber(
-                newProjectId = newProjectId,
-                newToken = newProjectToken,
-            )
-        }
-
-        return reinitialize(
-            application = application,
-            projectId = newProjectId,
-            apiKey = newProjectToken,
-            isProduction = isProduction,
-            isDebug = isNetworkDebug,
-        )
     }
 
     /**

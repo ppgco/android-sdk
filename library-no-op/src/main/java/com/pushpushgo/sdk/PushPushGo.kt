@@ -64,9 +64,7 @@ class PushPushGo private constructor(
 
     fun getSubscriberId(): String = ""
 
-    fun getPushToken(): String = ""
-
-    fun getPushTokenAsync(): ListenableFuture<String> = Futures.immediateFuture("null")
+    fun getPushToken(): ListenableFuture<String> = Futures.immediateFuture("null")
 
     fun handleBackgroundNotificationClick(intent: Intent?) = Unit
 
@@ -82,8 +80,6 @@ class PushPushGo private constructor(
     fun registerSubscriber() = Unit
 
     fun registerSubscriberSync(): ListenableFuture<String> = Futures.immediateFuture("")
-
-    fun resubscribe(newProjectId: String, newProjectToken: String): PushPushGo = this
 
     fun unregisterSubscriber() = Unit
 
