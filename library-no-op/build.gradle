@@ -25,7 +25,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 }
 
@@ -53,6 +53,7 @@ afterEvaluate {
             noop(MavenPublication) {
                 from components.release
                 artifact androidSourcesJar
+
                 groupId = configGroupId
                 artifactId = configArtifactId
                 version = android.defaultConfig.versionName
