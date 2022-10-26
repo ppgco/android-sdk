@@ -5,6 +5,7 @@ apply plugin: 'com.google.gms.google-services'
 android {
     compileSdkVersion 32
 
+    namespace 'com.pushpushgo.sample'
     defaultConfig {
         applicationId "com.pushpushgo.sample"
         minSdkVersion 21
@@ -33,6 +34,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = 11
     }
 
     buildTypes {

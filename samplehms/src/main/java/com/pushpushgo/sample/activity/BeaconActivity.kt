@@ -17,7 +17,6 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
 
     private val ppg by lazy { PushPushGo.getInstance() }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
