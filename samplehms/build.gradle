@@ -53,9 +53,9 @@ dependencies {
     implementation project(path: ':library')
     implementation 'com.jakewharton.timber:timber:5.0.1'
 
-    implementation 'androidx.appcompat:appcompat:1.4.2'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
-    implementation 'com.huawei.agconnect:agconnect-core:1.7.0.300'
-    implementation 'com.huawei.hms:push:6.5.0.300'
+    implementation 'com.huawei.agconnect:agconnect-core:1.7.2.300'
+    implementation 'com.huawei.hms:push:6.7.0.300'
 }
