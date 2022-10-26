@@ -39,7 +39,7 @@ dependencyResolutionManagement {
             library('androidx-preference', 'androidx.preference:preference-ktx:1.2.0')
             library('androidx-work-runtime', 'androidx.work:work-runtime-ktx:2.7.1')
             library('androidx-work-gcm', 'androidx.work:work-gcm:2.7.1')
-            library('androidx-appcompat', 'androidx.appcompat:appcompat:1.5.1')
+            library('androidx-appcompat', 'androidx.appcompat:appcompat:1.6.0-rc01')
             library('androidx-constraintlayout', 'androidx.constraintlayout:constraintlayout:2.1.4')
             library('androidx-lifecycle', 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1')
         }
