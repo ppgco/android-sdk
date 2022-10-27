@@ -14,13 +14,9 @@ internal fun logWarning(text: String) {
 }
 
 internal fun logError(text: String, exception: Throwable?) {
-    if (!PushPushGo.getInstance().isDebug) return
-
     Log.e(PushPushGo.TAG, text, exception)
 }
 
 internal fun logError(exception: Throwable?) {
-    if (!PushPushGo.getInstance().isDebug) return
-
     Log.e(PushPushGo.TAG, "", exception)
 }
