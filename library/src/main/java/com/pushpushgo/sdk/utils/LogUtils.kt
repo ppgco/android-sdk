@@ -9,6 +9,10 @@ internal fun logDebug(text: String) {
     Log.d(PushPushGo.TAG, text)
 }
 
+internal fun logWarning(text: String) {
+    Log.w(PushPushGo.TAG, text)
+}
+
 internal fun logError(text: String, exception: Throwable?) {
     if (!PushPushGo.getInstance().isDebug) return
 

@@ -277,7 +277,7 @@ class PushPushGo private constructor(
     }
 
     /**
-     * function to register subscriber, by in synchronous manner
+     * function to register subscriber, but in synchronous manner
      *
      * @return string subscriber ID
      */

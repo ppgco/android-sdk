@@ -14,9 +14,11 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
+import com.pushpushgo.sdk.utils.*
 import com.pushpushgo.sdk.utils.PendingIntentCompat
 import com.pushpushgo.sdk.utils.logDebug
 import com.pushpushgo.sdk.utils.logError
+import com.pushpushgo.sdk.utils.logWarning
 import com.pushpushgo.sdk.utils.mapToBundle
 import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.*
@@ -43,6 +45,12 @@ internal class PushNotificationDelegate {
     }
 
     private fun processPushMessage(pushMessage: PushMessage, context: Context) {
+        val notificationManager = NotificationManagerCompat.from(context)
+
+        if (notificationManager.areNotificationsEnabled()) {
+            return logWarning("Push notifications are disabled by user")
+        }
+
         delegateScope.launch(errorHandler) {
             val notificationId = getUniqueNotificationId()
             logDebug("Notification unique id: $notificationId")
@@ -61,7 +69,7 @@ internal class PushNotificationDelegate {
                 else -> throw IllegalStateException("Unknown notification type")
             }
 
-            NotificationManagerCompat.from(context).notify(notificationId, notification)
+            notificationManager.notify(notificationId, notification)
             logDebug("Notification sent: $notificationId => $notification")
         }
     }
