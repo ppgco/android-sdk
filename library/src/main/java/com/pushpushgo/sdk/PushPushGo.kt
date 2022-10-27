@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.pushpushgo.sdk.BuildConfig.DEBUG
@@ -93,10 +94,16 @@ class PushPushGo private constructor(
             return createPushPushGoInstance(application, apiKey, projectId, isProduction = true, DEBUG)
         }
 
+        @Suppress("DEPRECATION")
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
-            val ai = context.packageManager.getApplicationInfo(
+            val ai = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getApplicationInfo(
+                    context.packageName, PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong())
+                )
+            } else context.packageManager.getApplicationInfo(
                 context.packageName, PackageManager.GET_META_DATA
             )
+
             val bundle = ai.metaData
             val apiKey = bundle.getString("com.pushpushgo.apikey")
                 ?: throw PushPushException("You have to declare apiKey in Your Manifest file")
