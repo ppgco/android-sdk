@@ -47,7 +47,7 @@ internal class PushNotificationDelegate {
     private fun processPushMessage(pushMessage: PushMessage, context: Context) {
         val notificationManager = NotificationManagerCompat.from(context)
 
-        if (notificationManager.areNotificationsEnabled()) {
+        if (!notificationManager.areNotificationsEnabled()) {
             return logWarning("Push notifications are disabled by user")
         }
 

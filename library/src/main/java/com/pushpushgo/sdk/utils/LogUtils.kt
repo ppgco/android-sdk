@@ -13,7 +13,7 @@ internal fun logWarning(text: String) {
     Log.w(PushPushGo.TAG, text)
 }
 
-internal fun logError(text: String, exception: Throwable?) {
+internal fun logError(text: String, exception: Throwable? = null) {
     Log.e(PushPushGo.TAG, text, exception)
 }
 

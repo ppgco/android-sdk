@@ -50,6 +50,10 @@ internal fun handleNotificationLinkClick(context: Context, uri: String) {
     }
 }
 
+internal fun areNotificationsEnabled(context: Context): Boolean {
+    return NotificationManagerCompat.from(context).areNotificationsEnabled()
+}
+
 internal fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val id = context.getString(R.string.pushpushgo_notification_default_channel_id)

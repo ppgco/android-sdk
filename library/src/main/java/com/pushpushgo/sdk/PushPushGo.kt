@@ -14,6 +14,7 @@ import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.dto.PPGoNotification
 import com.pushpushgo.sdk.exception.PushPushException
+import com.pushpushgo.sdk.push.*
 import com.pushpushgo.sdk.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.createNotificationChannel
 import com.pushpushgo.sdk.push.deserializeNotificationData
@@ -273,6 +274,10 @@ class PushPushGo private constructor(
      * function to register subscriber
      */
     fun registerSubscriber() {
+        if (!areNotificationsEnabled(application)) {
+            return logError("Notifications disabled! Subscriber registration canceled")
+        }
+
         getUploadManager().sendRegister(null)
     }
 
@@ -283,6 +288,10 @@ class PushPushGo private constructor(
      */
     fun registerSubscriberSync(): ListenableFuture<String> {
         return CoroutineScope(Job() + Dispatchers.IO).future {
+            check(areNotificationsEnabled(application)) {
+                "Notifications disabled! Subscriber registration canceled"
+            }
+
             getNetwork().registerToken(null)
             getSubscriberId()
         }
@@ -314,6 +323,10 @@ class PushPushGo private constructor(
      */
     fun migrateToNewProject(newProjectId: String, newProjectToken: String): ListenableFuture<PushPushGo> {
         return CoroutineScope(Job() + Dispatchers.IO).future {
+            check(areNotificationsEnabled(application)) {
+                "Notifications disabled! Subscriber registration canceled"
+            }
+
             getInstance().getNetwork().migrateSubscriber(
                 newProjectId = newProjectId,
                 newToken = newProjectToken,
