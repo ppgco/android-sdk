@@ -15,7 +15,7 @@ class FcmMessagingServiceDelegate(private val context: Context) {
     private val delegate by lazy { PushNotificationDelegate() }
 
     fun onMessageReceived(remoteMessage: RemoteMessage) {
-        logDebug("onMessageReceived($remoteMessage)")
+        logDebug("onMessageReceived(${remoteMessage.data})")
         delegate.onMessageReceived(
             pushMessage = remoteMessage.toPushMessage(),
             context = context,

@@ -15,11 +15,6 @@ import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
 import com.pushpushgo.sdk.utils.*
-import com.pushpushgo.sdk.utils.PendingIntentCompat
-import com.pushpushgo.sdk.utils.logDebug
-import com.pushpushgo.sdk.utils.logError
-import com.pushpushgo.sdk.utils.logWarning
-import com.pushpushgo.sdk.utils.mapToBundle
 import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.*
 import kotlin.random.Random
@@ -35,6 +30,10 @@ internal class PushNotificationDelegate {
 
     fun onMessageReceived(pushMessage: PushMessage, context: Context) {
         logDebug("From: ${pushMessage.from}")
+
+        if (!PushPushGo.getInstance().isPPGoPush(pushMessage.data)) {
+            return logWarning("Push is not from PPGo")
+        }
 
         val pushProjectId = pushMessage.data["project"].orEmpty()
         val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
