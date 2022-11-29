@@ -17,6 +17,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
 internal class ApiRepository(
+    private val mobileApiService: MobileApiService,
     private val apiService: ApiService,
     private val context: Context,
     private val sharedPref: SharedPreferencesHelper,
@@ -31,7 +32,7 @@ internal class ApiRepository(
         }
         logDebug("Token to register: $tokenToRegister")
 
-        val data = apiService.registerSubscriber(
+        val data = mobileApiService.registerSubscriber(
             token = apiKey,
             projectId = projectId,
             body = TokenRequest(tokenToRegister)
@@ -46,7 +47,7 @@ internal class ApiRepository(
     suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
         logDebug("unregisterSubscriber($isSubscribed) invoked")
 
-        apiService.unregisterSubscriber(
+        mobileApiService.unregisterSubscriber(
             token = apiKey,
             projectId = projectId,
             subscriberId = sharedPref.subscriberId,
@@ -57,7 +58,7 @@ internal class ApiRepository(
 
     suspend fun unregisterSubscriber(projectId: String, token: String, subscriberId: String) {
         try {
-            apiService.unregisterSubscriber(
+            mobileApiService.unregisterSubscriber(
                 token = token,
                 projectId = projectId,
                 subscriberId = subscriberId,
@@ -98,7 +99,7 @@ internal class ApiRepository(
             return
         }
 
-        apiService.sendBeacon(
+        mobileApiService.sendBeacon(
             token = apiKey,
             projectId = projectId,
             subscriberId = sharedPref.subscriberId,
@@ -107,7 +108,7 @@ internal class ApiRepository(
     }
 
     suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String, project: String?, subscriber: String?) {
-        apiService.sendEvent(
+        mobileApiService.sendEvent(
             token = apiKey,
             projectId = project ?: projectId,
             event = Event(
@@ -121,11 +122,13 @@ internal class ApiRepository(
         )
     }
 
+    suspend fun getAllTags() = apiService.getAllTags(apiKey, projectId)
+
     suspend fun getBitmapFromUrl(url: String?): Bitmap? {
         if (url.isNullOrBlank()) return null
 
         return BitmapFactory.decodeStream(
-            apiService.getRawResponse(url).byteStream()
+            mobileApiService.getRawResponse(url).byteStream()
         )
     }
 }

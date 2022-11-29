@@ -14,6 +14,7 @@ import com.pushpushgo.sdk.di.NetworkModule
 import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.dto.PPGoNotification
 import com.pushpushgo.sdk.exception.PushPushException
+import com.pushpushgo.sdk.network.data.ProjectTag
 import com.pushpushgo.sdk.push.*
 import com.pushpushgo.sdk.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.createNotificationChannel
@@ -311,6 +312,15 @@ class PushPushGo private constructor(
                 token = projectToken,
                 subscriberId = subscriberId,
             )
+        }
+    }
+
+    /**
+     * function to get all available tags or search
+     */
+    fun getAllTags(): ListenableFuture<List<ProjectTag>> {
+        return CoroutineScope(Job() + Dispatchers.IO).future {
+            getInstance().getNetwork().getAllTags()
         }
     }
 
