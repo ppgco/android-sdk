@@ -49,9 +49,9 @@
 
         <meta-data
             android:name="com.pushpushgo.apikey"
-            android:value="6ca79ddf-4209-4a02-8d95-b2961f6fee8f"/>
+            android:value="f9a93f7c-5470-43ff-ace2-d2d1814edaf4" />
         <meta-data
             android:name="com.pushpushgo.projectId"
-            android:value="6357a751c2839af9c0dda407"/>
+            android:value="5d411352784425000bd02a15" />
     </application>
 </manifest>
