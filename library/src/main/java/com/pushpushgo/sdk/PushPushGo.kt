@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import com.google.common.util.concurrent.ListenableFuture
 import com.pushpushgo.sdk.BuildConfig.DEBUG
+import com.pushpushgo.sdk.beacon.BeaconBuilder
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.mapToDto
 import com.pushpushgo.sdk.di.NetworkModule

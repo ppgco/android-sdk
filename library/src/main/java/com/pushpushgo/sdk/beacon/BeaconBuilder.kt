@@ -1,4 +1,4 @@
-package com.pushpushgo.sdk
+package com.pushpushgo.sdk.beacon
 
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.work.UploadDelegate
@@ -9,9 +9,9 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
 
     private val selectors = mutableMapOf<String, Any>()
 
-    private val tags = mutableListOf<Pair<String, String>>()
+    private val tags = mutableListOf<BeaconTag>()
 
-    private val tagsToDelete = mutableListOf<Pair<String, String>>()
+    private val tagsToDelete = mutableListOf<BeaconTag>()
 
     private var customId = ""
 
@@ -22,54 +22,33 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
      * @param value Selector value. Supported types: boolean, string, char, number
      * @return instance of builder
      */
-    fun set(key: String, value: Any): BeaconBuilder {
-        selectors[key] = value
-
-        return this
-    }
+    fun set(key: String, value: Any) = apply { selectors[key] = value }
 
     /**
-     * @param tag Tag name
-     * @param label Tag label
+     * @param tag BeaconTag object containing tag and label
      *
      * @return instance of builder
      */
-    fun appendTag(tag: String, label: String): BeaconBuilder {
-        tags.add(tag to label)
+    fun appendTag(tag: BeaconTag) = apply { tags.add(tag) }
 
-        return this
-    }
+    fun appendTag(tag: String) = apply { tags.add(BeaconTag(tag, "default")) }
 
-    fun appendTag(tag: String): BeaconBuilder {
-        tags.add(tag to "default")
+    fun appendTags(vararg beaconTags: BeaconTag) = apply { tags.addAll(beaconTags) }
 
-        return this
-    }
-
-    fun getTags(): MutableList<Pair<String, String>> {
-        return tags
-    }
+    fun getTags() = tags
 
     /**
-     * @param name Tag name
+     * @param tag BeaconTag object containing tag and label
      *
      * @return instance of builder
      */
-    fun removeTag(tag: String, label: String): BeaconBuilder {
-        tagsToDelete.add(tag to label)
+    fun removeTag(tag: BeaconTag) = apply { tagsToDelete.add(tag) }
 
-        return this
-    }
+    fun removeTag(tag: String) = apply { tagsToDelete.add(BeaconTag(tag, "default")) }
 
-    fun removeTag(tag: String): BeaconBuilder {
-        tagsToDelete.add(tag to "default")
+    fun removeTags(vararg beaconTags: BeaconTag) = apply { tagsToDelete.addAll(beaconTags) }
 
-        return this
-    }
-
-    fun getTagsToDelete(): MutableList<Pair<String, String>> {
-        return tagsToDelete
-    }
+    fun getTagsToDelete() = tagsToDelete
 
     /**
      * Set custom beacon ID
@@ -78,17 +57,9 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
      *
      * @return instance of builder
      */
-    fun setCustomId(id: String?): BeaconBuilder {
-        customId = id.orEmpty()
+    fun setCustomId(id: String?) = apply { customId = id.orEmpty() }
 
-        return this
-    }
-
-    fun setCustomId(id: Int?): BeaconBuilder {
-        customId = (id ?: 0).toString().takeIf { it != "0" }.orEmpty()
-
-        return this
-    }
+    fun setCustomId(id: Int?) = apply { customId = (id ?: 0).toString().takeIf { it != "0" }.orEmpty() }
 
     /**
      * @throws PushPushException on unsupported selector value type

@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk
 
+import com.pushpushgo.sdk.beacon.BeaconBuilder
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.work.UploadDelegate
 import io.mockk.*
