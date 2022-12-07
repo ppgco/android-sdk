@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk
 
 import com.pushpushgo.sdk.beacon.BeaconBuilder
+import com.pushpushgo.sdk.beacon.BeaconTag
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.work.UploadDelegate
 import io.mockk.*
@@ -102,16 +103,16 @@ internal class BeaconBuilderTest {
     }
 
     @Test
-    fun `append tag with label`() {
+    fun `append tag with beacon tag object`() {
         beaconBuilder = BeaconBuilder(uploadDelegate)
 
-        beaconBuilder.appendTag("tag1", "label1")
+        beaconBuilder.appendTag(BeaconTag("tag1", "label1"))
 
         val tags = beaconBuilder.getTags()
 
         assertEquals(1, tags.size)
-        assertEquals(tags[0].first, "tag1")
-        assertEquals(tags[0].second, "label1")
+        assertEquals(tags[0].name, "tag1")
+        assertEquals(tags[0].label, "label1")
     }
 
     @Test
@@ -123,27 +124,29 @@ internal class BeaconBuilderTest {
         val tags = beaconBuilder.getTags()
 
         assertEquals(1, tags.size)
-        assertEquals(tags[0].first, "tag1")
-        assertEquals(tags[0].second, "default")
+        assertEquals(tags[0].name, "tag1")
+        assertEquals(tags[0].label, "default")
     }
 
     @Test
-    fun `append many tags with label`() {
+    fun `append many tags with beacon tag object`() {
         every { uploadDelegate.sendBeacon(any()) } just Runs
         beaconBuilder = BeaconBuilder(uploadDelegate)
 
-        beaconBuilder.appendTag("tag1", "label1")
-            .appendTag("tag2", "label2")
-            .appendTag("tag3", "label3")
+        beaconBuilder.appendTags(
+            BeaconTag("tag1", "label1"),
+            BeaconTag("tag2", "label2"),
+            BeaconTag("tag3", "label3")
+        )
 
         beaconBuilder.send()
         val tags = beaconBuilder.getTags()
 
         assertEquals(3, tags.size)
-        assertEquals(tags[0].first, "tag1")
-        assertEquals(tags[0].second, "label1")
-        assertEquals(tags[2].first, "tag3")
-        assertEquals(tags[2].second, "label3")
+        assertEquals(tags[0].name, "tag1")
+        assertEquals(tags[0].label, "label1")
+        assertEquals(tags[2].name, "tag3")
+        assertEquals(tags[2].label, "label3")
 
         verify {
             uploadDelegate.sendBeacon(match {
@@ -153,22 +156,71 @@ internal class BeaconBuilderTest {
     }
 
     @Test
-    fun `remove tag`() {
+    fun `remove tag with beacon tag object`() {
         every { uploadDelegate.sendBeacon(any()) } just Runs
         beaconBuilder = BeaconBuilder(uploadDelegate)
 
-        beaconBuilder.removeTag("tag1", "tag2")
+        beaconBuilder.removeTag(BeaconTag("tag1", "label1"))
         beaconBuilder.send()
 
         val tags = beaconBuilder.getTagsToDelete()
 
-        assertEquals(2, tags.size)
-        assertEquals(tags[0], "tag1")
-        assertEquals(tags[1], "tag2")
+        assertEquals(1, tags.size)
+        assertEquals(tags[0].name, "tag1")
+        assertEquals(tags[0].label, "label1")
 
         verify {
             uploadDelegate.sendBeacon(match {
-                it["tagsToDelete"].toString() == """["tag1","tag2"]"""
+                (it["tagsToDelete"] as JSONArray).get(0).toString() == """{"tag":"tag1","label":"label1"}"""
+            })
+        }
+    }
+
+    @Test
+    fun `remove tag without label`() {
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
+
+        beaconBuilder.removeTag("tag1")
+        beaconBuilder.send()
+
+        val tags = beaconBuilder.getTagsToDelete()
+
+        assertEquals(1, tags.size)
+        assertEquals(tags[0].name, "tag1")
+        assertEquals(tags[0].label, "default")
+
+        verify {
+            uploadDelegate.sendBeacon(match {
+                (it["tagsToDelete"] as JSONArray).get(0).toString() == """{"tag":"tag1","label":"default"}"""
+            })
+        }
+    }
+
+    @Test
+    fun `remove many tag with beacon tag object`() {
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
+
+        beaconBuilder.removeTags(
+            BeaconTag("tag1", "label1"),
+            BeaconTag("tag2", "label2"),
+            BeaconTag("tag3", "label3")
+        )
+
+        beaconBuilder.send()
+
+        val tags = beaconBuilder.getTagsToDelete()
+
+        assertEquals(3, tags.size)
+        assertEquals(tags[0].name, "tag1")
+        assertEquals(tags[0].label, "label1")
+        assertEquals(tags[2].name, "tag3")
+        assertEquals(tags[2].label, "label3")
+
+        verify {
+            uploadDelegate.sendBeacon(match {
+                (it["tagsToDelete"] as JSONArray).get(0).toString() == """{"tag":"tag1","label":"label1"}"""
             })
         }
     }

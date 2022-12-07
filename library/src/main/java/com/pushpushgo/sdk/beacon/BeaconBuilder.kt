@@ -31,7 +31,7 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
      */
     fun appendTag(tag: BeaconTag) = apply { tags.add(tag) }
 
-    fun appendTag(tag: String) = apply { tags.add(BeaconTag(tag, "default")) }
+    fun appendTag(name: String) = apply { tags.add(BeaconTag(name, "default")) }
 
     fun appendTags(vararg beaconTags: BeaconTag) = apply { tags.addAll(beaconTags) }
 
@@ -44,7 +44,7 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
      */
     fun removeTag(tag: BeaconTag) = apply { tagsToDelete.add(tag) }
 
-    fun removeTag(tag: String) = apply { tagsToDelete.add(BeaconTag(tag, "default")) }
+    fun removeTag(name: String) = apply { tagsToDelete.add(BeaconTag(name, "default")) }
 
     fun removeTags(vararg beaconTags: BeaconTag) = apply { tagsToDelete.addAll(beaconTags) }
 
