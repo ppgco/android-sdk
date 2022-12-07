@@ -18,7 +18,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 internal class ApiRepository(
     private val mobileApiService: MobileApiService,
-    private val apiService: ApiService,
     private val context: Context,
     private val sharedPref: SharedPreferencesHelper,
     private val projectId: String,
@@ -121,8 +120,6 @@ internal class ApiRepository(
             ),
         )
     }
-
-    suspend fun getAllTags() = apiService.getAllTags(apiKey, projectId)
 
     suspend fun getBitmapFromUrl(url: String?): Bitmap? {
         if (url.isNullOrBlank()) return null

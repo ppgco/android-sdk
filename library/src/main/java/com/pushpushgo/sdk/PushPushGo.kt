@@ -316,15 +316,6 @@ class PushPushGo private constructor(
     }
 
     /**
-     * function to get all available tags or search
-     */
-    fun getAllTags(): ListenableFuture<List<ProjectTag>> {
-        return CoroutineScope(Job() + Dispatchers.IO).future {
-            getInstance().getNetwork().getAllTags()
-        }
-    }
-
-    /**
      * function to re-subscribe to different project (previously unsubscribe from current project)
      * WARNING: after resubscribe use object returned by this function instead of previous one
      *

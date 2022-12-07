@@ -2,7 +2,6 @@ package com.pushpushgo.sdk.di
 
 import android.content.Context
 import com.pushpushgo.sdk.network.ApiRepository
-import com.pushpushgo.sdk.network.ApiService
 import com.pushpushgo.sdk.network.MobileApiService
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -44,21 +43,9 @@ internal class NetworkModule(
                 }
             )
         }
-        bind<ApiService>() with singleton {
-            ApiService(
-                requestInterceptor = instance(),
-                responseInterceptor = instance(),
-                isNetworkDebug = isDebug,
-                baseUrl = when {
-                    isProduction -> "https://api.pushpushgo.com"
-                    else -> "https://api.master1.qappg.co"
-                }
-            )
-        }
         bind<ApiRepository>() with singleton {
             ApiRepository(
                 mobileApiService = instance(),
-                apiService = instance(),
                 context = instance(),
                 sharedPref = instance(),
                 projectId = instance(PROJECT_ID),
