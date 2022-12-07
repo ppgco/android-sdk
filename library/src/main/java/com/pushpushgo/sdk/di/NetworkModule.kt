@@ -45,7 +45,7 @@ internal class NetworkModule(
         }
         bind<ApiRepository>() with singleton {
             ApiRepository(
-                mobileApiService = instance(),
+                apiService = instance(),
                 context = instance(),
                 sharedPref = instance(),
                 projectId = instance(PROJECT_ID),
