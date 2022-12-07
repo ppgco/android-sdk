@@ -1,7 +1,6 @@
 package com.pushpushgo.sdk.network
 
 import com.pushpushgo.sdk.data.Event
-import com.pushpushgo.sdk.network.data.ProjectTag
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -18,7 +17,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.create
 import retrofit2.http.*
 
-internal interface MobileApiService {
+internal interface ApiService {
 
     @POST("{projectId}/subscriber")
     suspend fun registerSubscriber(
@@ -59,7 +58,7 @@ internal interface MobileApiService {
             platformType: PlatformType,
             baseUrl: String,
             isNetworkDebug: Boolean,
-        ): MobileApiService {
+        ): ApiService {
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(requestInterceptor)
                 .addInterceptor(responseInterceptor)

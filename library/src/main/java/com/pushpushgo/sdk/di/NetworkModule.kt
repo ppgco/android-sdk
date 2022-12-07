@@ -2,7 +2,7 @@ package com.pushpushgo.sdk.di
 
 import android.content.Context
 import com.pushpushgo.sdk.network.ApiRepository
-import com.pushpushgo.sdk.network.MobileApiService
+import com.pushpushgo.sdk.network.ApiService
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.network.interceptor.ResponseInterceptor
@@ -31,8 +31,8 @@ internal class NetworkModule(
         bind<RequestInterceptor>() with singleton { RequestInterceptor() }
         bind<ResponseInterceptor>() with singleton { ResponseInterceptor() }
         bind<SharedPreferencesHelper>() with singleton { SharedPreferencesHelper(instance()) }
-        bind<MobileApiService>() with singleton {
-            MobileApiService(
+        bind<ApiService>() with singleton {
+            ApiService(
                 requestInterceptor = instance(),
                 responseInterceptor = instance(),
                 platformType = instance(),

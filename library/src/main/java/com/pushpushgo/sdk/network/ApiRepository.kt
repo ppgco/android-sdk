@@ -17,7 +17,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
 internal class ApiRepository(
-    private val mobileApiService: MobileApiService,
+    private val apiService: ApiService,
     private val context: Context,
     private val sharedPref: SharedPreferencesHelper,
     private val projectId: String,
@@ -31,7 +31,7 @@ internal class ApiRepository(
         }
         logDebug("Token to register: $tokenToRegister")
 
-        val data = mobileApiService.registerSubscriber(
+        val data = apiService.registerSubscriber(
             token = apiKey,
             projectId = projectId,
             body = TokenRequest(tokenToRegister)
@@ -46,7 +46,7 @@ internal class ApiRepository(
     suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
         logDebug("unregisterSubscriber($isSubscribed) invoked")
 
-        mobileApiService.unregisterSubscriber(
+        apiService.unregisterSubscriber(
             token = apiKey,
             projectId = projectId,
             subscriberId = sharedPref.subscriberId,
@@ -57,7 +57,7 @@ internal class ApiRepository(
 
     suspend fun unregisterSubscriber(projectId: String, token: String, subscriberId: String) {
         try {
-            mobileApiService.unregisterSubscriber(
+            apiService.unregisterSubscriber(
                 token = token,
                 projectId = projectId,
                 subscriberId = subscriberId,
@@ -98,7 +98,7 @@ internal class ApiRepository(
             return
         }
 
-        mobileApiService.sendBeacon(
+        apiService.sendBeacon(
             token = apiKey,
             projectId = projectId,
             subscriberId = sharedPref.subscriberId,
@@ -107,7 +107,7 @@ internal class ApiRepository(
     }
 
     suspend fun sendEvent(type: EventType, buttonId: Int, campaign: String, project: String?, subscriber: String?) {
-        mobileApiService.sendEvent(
+        apiService.sendEvent(
             token = apiKey,
             projectId = project ?: projectId,
             event = Event(
@@ -125,7 +125,7 @@ internal class ApiRepository(
         if (url.isNullOrBlank()) return null
 
         return BitmapFactory.decodeStream(
-            mobileApiService.getRawResponse(url).byteStream()
+            apiService.getRawResponse(url).byteStream()
         )
     }
 }
