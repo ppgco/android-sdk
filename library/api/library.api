@@ -1,15 +1,3 @@
-public final class com/pushpushgo/sdk/BeaconBuilder {
-	public final fun appendTag (Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
-	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
-	public final fun getTags ()Ljava/util/List;
-	public final fun getTagsToDelete ()Ljava/util/List;
-	public final fun removeTag ([Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
-	public final fun send ()V
-	public final fun set (Ljava/lang/String;Ljava/lang/Object;)Lcom/pushpushgo/sdk/BeaconBuilder;
-	public final fun setCustomId (Ljava/lang/Integer;)Lcom/pushpushgo/sdk/BeaconBuilder;
-	public final fun setCustomId (Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
-}
-
 public final class com/pushpushgo/sdk/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -21,7 +9,7 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public static final field Companion Lcom/pushpushgo/sdk/PushPushGo$Companion;
 	public static final field VERSION Ljava/lang/String;
 	public synthetic fun <init> (Landroid/app/Application;Ljava/lang/String;Ljava/lang/String;ZZLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun createBeacon ()Lcom/pushpushgo/sdk/BeaconBuilder;
+	public final fun createBeacon ()Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
 	public final fun getApiKey ()Ljava/lang/String;
 	public final fun getDefaultIsSubscribed ()Z
 	public static final fun getInstance ()Lcom/pushpushgo/sdk/PushPushGo;
@@ -56,6 +44,34 @@ public final class com/pushpushgo/sdk/PushPushGo$Companion {
 	public final fun getInstance (Landroid/app/Application;Ljava/lang/String;Ljava/lang/String;ZZ)Lcom/pushpushgo/sdk/PushPushGo;
 	public static synthetic fun getInstance$default (Lcom/pushpushgo/sdk/PushPushGo$Companion;Landroid/app/Application;Ljava/lang/String;Ljava/lang/String;ZZILjava/lang/Object;)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun isInitialized ()Z
+}
+
+public final class com/pushpushgo/sdk/beacon/BeaconBuilder {
+	public final fun appendTag (Lcom/pushpushgo/sdk/beacon/BeaconTag;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun appendTag (Ljava/lang/String;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun appendTags ([Lcom/pushpushgo/sdk/beacon/BeaconTag;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun getTags ()Ljava/util/List;
+	public final fun getTagsToDelete ()Ljava/util/List;
+	public final fun removeTag (Lcom/pushpushgo/sdk/beacon/BeaconTag;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun removeTag (Ljava/lang/String;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun removeTags ([Lcom/pushpushgo/sdk/beacon/BeaconTag;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun send ()V
+	public final fun set (Ljava/lang/String;Ljava/lang/Object;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun setCustomId (Ljava/lang/Integer;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+	public final fun setCustomId (Ljava/lang/String;)Lcom/pushpushgo/sdk/beacon/BeaconBuilder;
+}
+
+public final class com/pushpushgo/sdk/beacon/BeaconTag {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/beacon/BeaconTag;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/beacon/BeaconTag;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/pushpushgo/sdk/beacon/BeaconTag;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLabel ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/pushpushgo/sdk/dto/PPGoNotification {

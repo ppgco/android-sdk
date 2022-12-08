@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.pushpushgo.sample.R
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.beacon.BeaconTag
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
@@ -54,14 +55,15 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
         findViewById<Button>(R.id.beacon4).setOnClickListener {
             ppg.createBeacon()
                 .appendTag("demo")
-                .appendTag("${Build.MANUFACTURER} ${Build.MODEL}", "phone_model")
+                .appendTag(BeaconTag("${Build.MANUFACTURER} ${Build.MODEL}", "phone_model"))
                 .setCustomId("ATAGS")
                 .send()
         }
 
         findViewById<Button>(R.id.beacon5).setOnClickListener {
             ppg.createBeacon()
-                .removeTag("desktop", "test")
+                .removeTag("desktop")
+                .removeTag("test")
                 .setCustomId("RTAGS")
                 .send()
         }
