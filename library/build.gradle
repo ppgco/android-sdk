@@ -83,6 +83,9 @@ dependencies {
     testImplementation 'org.json:json:20220320'
     testImplementation 'androidx.test.ext:junit-ktx:1.1.5'
     testImplementation 'org.robolectric:robolectric:4.9.2'
+
+    testImplementation platform(libs.firebase.bom)
+    testImplementation 'com.google.firebase:firebase-messaging-ktx'
 }
 
 task androidSourcesJar(type: Jar) {
