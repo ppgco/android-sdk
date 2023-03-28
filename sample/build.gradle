@@ -32,11 +32,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaLanguageVersion.of(11)
+        targetCompatibility JavaLanguageVersion.of(11)
     }
     kotlinOptions {
-        jvmTarget = 11
+        jvmTarget = JavaLanguageVersion.of(11)
     }
 
     buildTypes {
@@ -50,6 +50,11 @@ android {
         debug {
 //            applicationIdSuffix ".debug"
         }
+    }
+}
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
     }
 }
 

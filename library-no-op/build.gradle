@@ -21,12 +21,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaLanguageVersion.of(11)
+        targetCompatibility JavaLanguageVersion.of(11)
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = JavaLanguageVersion.of(11)
+    }
+}
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
     }
 }
 
@@ -36,7 +41,7 @@ dependencies {
     compileOnly platform(libs.firebase.bom)
     compileOnly 'com.google.firebase:firebase-messaging'
 
-    api "com.google.guava:guava:31.0.1-android"
+    api "com.google.guava:guava:31.1-android"
 }
 
 task androidSourcesJar(type: Jar) {

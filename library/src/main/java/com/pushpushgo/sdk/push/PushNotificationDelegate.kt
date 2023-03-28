@@ -92,8 +92,6 @@ internal class PushNotificationDelegate {
         remoteMessage: PushMessage,
         notificationId: Int,
     ): Notification {
-        logDebug("Message data payload: ${remoteMessage.data}")
-
         val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
             ?: return getSimpleNotification(context, remoteMessage, notificationId)
 

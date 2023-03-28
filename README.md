@@ -1,7 +1,7 @@
 # PushPushGo Android SDK
 
 [![JitPack](https://img.shields.io/jitpack/v/github/ppgco/android-sdk?style=flat-square)](https://jitpack.io/#ppgco/android-sdk)
-![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/ppgco/android-sdk/Tests/master?style=flat-square)
+![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/ppgco/android-sdk/test.yml?branch=master&style=flat-square)
 ![GitHub tag (latest)](https://img.shields.io/github/v/tag/ppgco/android-sdk?style=flat-square)
 
 ## Requirements

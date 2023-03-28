@@ -11,7 +11,7 @@ internal enum class PlatformType(val apiName: String) {
     HCM("huawei")
 }
 
-private fun hasHMSPushKitLibrary() = try {
+private fun hasHMSPushKitLibrary(): Boolean = try {
     checkNotNull(com.huawei.hms.aaid.HmsInstanceId::class.java.name)
     checkNotNull(com.huawei.agconnect.AGConnectOptionsBuilder::class.java.name)
     true
@@ -20,7 +20,7 @@ private fun hasHMSPushKitLibrary() = try {
 }
 
 private fun hasFCMLibrary() = try {
-    checkNotNull(com.google.firebase.messaging.FirebaseMessaging::class.java)
+    checkNotNull(com.google.firebase.messaging.FirebaseMessaging::class.java.name)
     true
 } catch (e: Throwable) {
     false
