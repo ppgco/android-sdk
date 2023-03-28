@@ -23,8 +23,7 @@ $dokka.location:com.pushpushgo.sdk.push.service/HmsMessagingServiceDelegate/onMe
 $dokka.location:com.pushpushgo.sdk.push.service/HmsMessagingServiceDelegate/onNewToken/#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.push.service/-hms-messaging-service-delegate/on-new-token.html
 $dokka.location:com.pushpushgo.sdk////PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/index.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/index.html
-$dokka.location:com.pushpushgo.sdk/BeaconBuilder/appendTag/#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/append-tag.html
-$dokka.location:com.pushpushgo.sdk/BeaconBuilder/appendTag/#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/append-tag.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/appendTag/#kotlin.String#kotlin.String#kotlin.String#kotlin.Int/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/append-tag.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/getTags/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/get-tags.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/getTagsToDelete/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/get-tags-to-delete.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/removeTag/#kotlin.Array[kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/remove-tag.html
