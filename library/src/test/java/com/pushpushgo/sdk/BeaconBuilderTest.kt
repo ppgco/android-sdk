@@ -145,8 +145,13 @@ internal class BeaconBuilderTest {
         assertEquals(tags[2].second, "label3")
 
         verify {
-            uploadDelegate.sendBeacon(match {
-                (it["tags"] as JSONArray).get(0).toString() == """{"tag":"tag1","label":"label1"}"""
+            uploadDelegate.sendBeacon(withArg {
+                val tag = (it["tags"] as JSONArray).getJSONObject(0)
+
+                assertEquals("tag1", tag["tag"])
+                assertEquals("label1", tag["label"])
+                assertEquals("append", tag["strategy"])
+                assertEquals(0, tag["ttl"])
             })
         }
     }

@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk
 
+import com.pushpushgo.sdk.data.BeaconTag
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.work.UploadDelegate
 import org.json.JSONArray
@@ -9,7 +10,7 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
 
     private val selectors = mutableMapOf<String, Any>()
 
-    private val tags = mutableListOf<Pair<String, String>>()
+    private val tags = mutableListOf<BeaconTag>()
 
     private val tagsToDelete = mutableListOf<String>()
 
@@ -31,23 +32,20 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
     /**
      * @param tag Tag name
      * @param label Tag label
+     * @param strategy Determining whether the tags assigned to the given label should be accumulated (append) or overwritten (rewrite) (then the subscriber may have only one, most up-to-date tag at a time)
+     * @param ttl Time to Live (TTL) is a parameter that specifies the time (in days or hours) after which a given tag is going to be removed. If you don't want to remove tags, type 0.
      *
      * @return instance of builder
      */
-    fun appendTag(tag: String, label: String): BeaconBuilder {
-        tags.add(tag to label)
-
-        return this
-    }
-
-    fun appendTag(tag: String): BeaconBuilder {
-        tags.add(tag to "default")
+    @JvmOverloads
+    fun appendTag(tag: String, label: String = "default", strategy: String = "append", ttl: Int = 0): BeaconBuilder {
+        tags.add(BeaconTag(tag = tag, label = label, strategy = strategy, ttl = ttl))
 
         return this
     }
 
     fun getTags(): MutableList<Pair<String, String>> {
-        return tags
+        return tags.map { it.tag to it.label }.toMutableList()
     }
 
     /**
@@ -112,10 +110,12 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
         tags.ifEmpty { return }
 
         put("tags", JSONArray().apply {
-            tags.forEach { (tag, label) ->
+            tags.forEach { (tag, label, strategy, ttl) ->
                 put(JSONObject().apply {
                     put("tag", tag)
                     put("label", label)
+                    put("strategy", strategy)
+                    put("ttl", ttl)
                 })
             }
         })
