@@ -68,4 +68,6 @@ dependencies {
 
     implementation platform(libs.firebase.bom)
     implementation 'com.google.firebase:firebase-messaging-ktx'
+
+    implementation "com.google.guava:guava:31.1-android"
 }

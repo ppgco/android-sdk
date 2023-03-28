@@ -15,10 +15,6 @@ import com.pushpushgo.sdk.di.WorkModule
 import com.pushpushgo.sdk.dto.PPGoNotification
 import com.pushpushgo.sdk.exception.PushPushException
 import com.pushpushgo.sdk.push.*
-import com.pushpushgo.sdk.push.PushNotificationDelegate
-import com.pushpushgo.sdk.push.createNotificationChannel
-import com.pushpushgo.sdk.push.deserializeNotificationData
-import com.pushpushgo.sdk.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.utils.*
 import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.CoroutineScope
@@ -282,11 +278,11 @@ class PushPushGo private constructor(
     }
 
     /**
-     * function to register subscriber, but in synchronous manner
+     * function to register subscriber and returns future with subscriber id
      *
      * @return string subscriber ID
      */
-    fun registerSubscriberSync(): ListenableFuture<String> {
+    fun createSubscriber(): ListenableFuture<String> {
         return CoroutineScope(Job() + Dispatchers.IO).future {
             check(areNotificationsEnabled(application)) {
                 "Notifications disabled! Subscriber registration canceled"

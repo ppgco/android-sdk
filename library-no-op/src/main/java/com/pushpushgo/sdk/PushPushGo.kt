@@ -79,7 +79,7 @@ class PushPushGo private constructor(
 
     fun registerSubscriber() = Unit
 
-    fun registerSubscriberSync(): ListenableFuture<String> = Futures.immediateFuture("")
+    fun createSubscriber(): ListenableFuture<String> = Futures.immediateFuture("")
 
     fun unregisterSubscriber() = Unit
 

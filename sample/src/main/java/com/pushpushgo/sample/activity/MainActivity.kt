@@ -10,8 +10,12 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.google.common.util.concurrent.FutureCallback
+import com.google.common.util.concurrent.Futures
 import com.pushpushgo.sample.R
 import com.pushpushgo.sdk.PushPushGo
 
@@ -28,13 +32,31 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.version).text = PushPushGo.VERSION
 
         findViewById<Button>(R.id.register).setOnClickListener {
-            ppg.registerSubscriber()
+            Futures.addCallback(ppg.createSubscriber(), object : FutureCallback<String> {
+                override fun onSuccess(result: String?) {
+                    Toast.makeText(this@MainActivity, "Subscribed! $result", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onFailure(t: Throwable) {
+                    Toast.makeText(this@MainActivity, "Can't subscribe! ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            }, ContextCompat.getMainExecutor(this))
         }
         findViewById<Button>(R.id.unregister).setOnClickListener {
             ppg.unregisterSubscriber()
         }
         findViewById<Button>(R.id.check).setOnClickListener {
             findViewById<TextView>(R.id.content).text = "Status: " + (if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
+
+            Futures.addCallback(ppg.getPushToken(), object : FutureCallback<String> {
+                override fun onSuccess(result: String?) {
+                    findViewById<TextView>(R.id.token).text = result
+                }
+
+                override fun onFailure(t: Throwable) {
+                    findViewById<TextView>(R.id.token).text = t.message
+                }
+            }, ContextCompat.getMainExecutor(this))
         }
         findViewById<Button>(R.id.beacons).setOnClickListener {
             startActivity(Intent(baseContext, BeaconActivity::class.java))
