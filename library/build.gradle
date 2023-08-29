@@ -14,7 +14,7 @@ tasks.named("dokkaHtml") {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdk 33
 
     namespace 'com.pushpushgo.sdk'
     defaultConfig {
@@ -31,12 +31,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaLanguageVersion.of(11)
-        targetCompatibility JavaLanguageVersion.of(11)
+        sourceCompatibility JavaLanguageVersion.of(17)
+        targetCompatibility JavaLanguageVersion.of(17)
     }
 
     kotlinOptions {
-        jvmTarget = JavaLanguageVersion.of(11)
+        jvmTarget = JavaLanguageVersion.of(17)
     }
 
     testOptions {
@@ -44,10 +44,10 @@ android {
             includeAndroidResources = true
         }
     }
-}
-kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
     }
 }
 
@@ -79,33 +79,31 @@ dependencies {
 
     // testing
     testImplementation 'junit:junit:4.13.2'
-    testImplementation "io.mockk:mockk:1.13.4"
-    testImplementation 'org.json:json:20220320'
+    testImplementation "io.mockk:mockk:1.13.7"
+    testImplementation 'org.json:json:20230227'
     testImplementation 'androidx.test.ext:junit-ktx:1.1.5'
-    testImplementation 'org.robolectric:robolectric:4.9.2'
+    testImplementation 'org.robolectric:robolectric:4.10.3'
 
     testImplementation platform(libs.firebase.bom)
     testImplementation 'com.google.firebase:firebase-messaging-ktx'
 }
 
-task androidSourcesJar(type: Jar) {
+tasks.register('androidSourcesJar', Jar) {
     archiveClassifier.set('sources')
     from android.sourceSets.main.java.srcDirs
 }
 
-def configArtifactId = 'sdk'
-def configGroupId = 'com.pushpushgo'
+publishing {
+    publications {
+        release(MavenPublication) {
+            artifact androidSourcesJar
 
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
+            groupId = 'com.pushpushgo'
+            artifactId = 'sdk'
+            version = libs.versions.sdk.get()
+
+            afterEvaluate {
                 from components.release
-                artifact androidSourcesJar
-
-                groupId = configGroupId
-                artifactId = configArtifactId
-                version = libs.versions.sdk.get()
             }
         }
     }

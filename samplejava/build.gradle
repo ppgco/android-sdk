@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdkVersion 33
+    compileSdk 33
 
     namespace 'com.pushpushgo.samplejava'
     defaultConfig {
@@ -31,8 +31,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaLanguageVersion.of(11)
-        targetCompatibility JavaLanguageVersion.of(11)
+        sourceCompatibility JavaLanguageVersion.of(17)
+        targetCompatibility JavaLanguageVersion.of(17)
     }
 
     buildTypes {

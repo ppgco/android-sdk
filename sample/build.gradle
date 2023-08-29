@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdkVersion 33
+    compileSdk 33
 
     namespace 'com.pushpushgo.sample'
     defaultConfig {
@@ -32,11 +32,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaLanguageVersion.of(11)
-        targetCompatibility JavaLanguageVersion.of(11)
+        sourceCompatibility JavaLanguageVersion.of(17)
+        targetCompatibility JavaLanguageVersion.of(17)
     }
     kotlinOptions {
-        jvmTarget = JavaLanguageVersion.of(11)
+        jvmTarget = JavaLanguageVersion.of(17)
     }
 
     buildTypes {
@@ -50,11 +50,6 @@ android {
         debug {
 //            applicationIdSuffix ".debug"
         }
-    }
-}
-kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
     }
 }
 

@@ -16,3 +16,4 @@ sample/release
 .idea/jarRepositories.xml
 .idea/discord.xml
 build
+.idea/kotlinc.xml

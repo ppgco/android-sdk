@@ -5,14 +5,14 @@ dependencyResolutionManagement {
     versionCatalogs {
         libs {
             version('sdk', '2.1.0-SNAPSHOT')
-            version('kotlin', '1.8.10')
-            version('coroutines', '1.6.4')
-            version('kodein', '7.19.0')
-            version('retrofit', '2.9.0')
+            version('kotlin', '1.9.10')
+            version('coroutines', '1.7.3')
+            version('kodein', '7.20.2')
+            version('retrofit', '2.10.0-SNAPSHOT')
             version('moshi', '1.14.0')
 
-            plugin('dokka', 'org.jetbrains.dokka').versionRef('kotlin')
-            plugin('validator', 'org.jetbrains.kotlinx.binary-compatibility-validator').version('0.13.0')
+            plugin('dokka', 'org.jetbrains.dokka').version("1.8.20")
+            plugin('validator', 'org.jetbrains.kotlinx.binary-compatibility-validator').version('0.13.2')
 
             library('timber', 'com.jakewharton.timber:timber:5.0.1')
 
@@ -29,12 +29,12 @@ dependencyResolutionManagement {
             library('moshi-codegen', 'com.squareup.moshi', 'moshi-kotlin-codegen').versionRef('moshi')
             library('moshi-adapters', 'com.squareup.moshi', 'moshi-adapters').versionRef('moshi')
 
-            library('okhttp-bom', 'com.squareup.okhttp3:okhttp-bom:4.10.0')
+            library('okhttp-bom', 'com.squareup.okhttp3:okhttp-bom:4.11.0')
 
-            library('firebase-bom', 'com.google.firebase:firebase-bom:31.3.0')
+            library('firebase-bom', 'com.google.firebase:firebase-bom:32.2.3')
 
-            library('hms-push', 'com.huawei.hms:push:6.9.0.300')
-            library('hms-agconnect', 'com.huawei.agconnect:agconnect-core:1.8.1.300')
+            library('hms-push', 'com.huawei.hms:push:6.11.0.300')
+            library('hms-agconnect', 'com.huawei.agconnect:agconnect-core:1.9.1.300')
 
             library('androidx-preference', 'androidx.preference:preference-ktx:1.2.0')
             library('androidx-work-runtime', 'androidx.work:work-runtime-ktx:2.8.1')
