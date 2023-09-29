@@ -60,7 +60,7 @@ internal data class Notification(
 internal data class Action(
 
     @Json(name = "link")
-    val link: String,
+    val link: String?,
 
     @Json(name = "action")
     val action: String,

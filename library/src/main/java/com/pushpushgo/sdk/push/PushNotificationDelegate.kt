@@ -287,7 +287,7 @@ internal class PushNotificationDelegate {
         context: Context,
         campaignId: String,
         buttonId: Int,
-        link: String,
+        link: String?,
         id: Int,
         projectId: String,
         subscriberId: String,

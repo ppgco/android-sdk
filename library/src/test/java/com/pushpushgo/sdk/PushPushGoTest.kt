@@ -76,6 +76,23 @@ class PushPushGoTest {
     }
 
     @Test
+    fun `get notification data mapping with some nulls from map`() {
+        val dto = PPGoNotification(
+            title = "Notification title",
+            body = "Notification body",
+            campaignId = "campaign ID",
+            priority = 0,
+            redirectLink = "https://pushpushgo.com/pl/blog",
+        )
+        assertEquals(dto, systemUnderTest.getNotificationDetails(mapOf(
+            "campaign" to "campaign ID",
+            "redirectLink" to "https://pushpushgo.com/pl/blog",
+            "notification" to """{"badge":1,"sound":"default","vibrate":"true","title":"Notification title","body":"Notification body","priority":0,"click_action":"APP_PUSH_CLICK"}""",
+            "actions" to """[{"link":"https://pushpushgo.com","action":"ACTION_PUSH","title":"Test action"},{"link":null,"action":"ACTION_PUSH","title":"Test action"}]"""
+        )))
+    }
+
+    @Test
     fun `get notification data mapping from invalid map`() {
         assertEquals(null, systemUnderTest.getNotificationDetails(mapOf("adsasfdafdf" to "")))
     }
