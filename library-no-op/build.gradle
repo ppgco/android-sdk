@@ -52,8 +52,6 @@ tasks.register('androidSourcesJar', Jar) {
 publishing {
     publications {
         release(MavenPublication) {
-            artifact androidSourcesJar
-
             groupId = 'com.pushpushgo'
             artifactId = 'sdk-no-op'
             version = libs.versions.sdk.get()
