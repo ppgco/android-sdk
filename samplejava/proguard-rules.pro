@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-dontwarn com.huawei.agconnect.AGConnectOptions
+-dontwarn com.huawei.agconnect.AGConnectOptionsBuilder
+-dontwarn com.huawei.hms.aaid.HmsInstanceId
+-dontwarn com.huawei.hms.push.HmsMessageService

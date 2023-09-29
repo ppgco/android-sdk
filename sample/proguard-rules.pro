@@ -19,3 +19,9 @@
 
 #Config for okhttp
 -dontwarn org.conscrypt.ConscryptHostnameVerifier
+
+#Config for HMS
+-dontwarn com.huawei.agconnect.AGConnectOptions
+-dontwarn com.huawei.agconnect.AGConnectOptionsBuilder
+-dontwarn com.huawei.hms.aaid.HmsInstanceId
+-dontwarn com.huawei.hms.push.HmsMessageService
