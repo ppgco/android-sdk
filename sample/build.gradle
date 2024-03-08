@@ -3,13 +3,13 @@ apply plugin: 'kotlin-android'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdk 33
+    compileSdk 34
 
     namespace 'com.pushpushgo.sample'
     defaultConfig {
         applicationId "com.pushpushgo.sample"
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode 10
         versionName "1.0"
 

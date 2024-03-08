@@ -17,3 +17,5 @@ sample/release
 .idea/discord.xml
 build
 .idea/kotlinc.xml
+.idea/deploymentTargetDropDown.xml
+.idea/migrations.xml

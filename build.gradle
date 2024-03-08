@@ -5,11 +5,11 @@ buildscript {
         maven { url 'https://developer.huawei.com/repo/' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.2'
-        classpath "org.jetbrains.dokka:dokka-core:1.8.20"
+        classpath 'com.android.tools.build:gradle:8.3.0'
+        classpath "org.jetbrains.dokka:dokka-core:1.9.20"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10"
-        classpath 'com.google.gms:google-services:4.3.15'
-        classpath 'com.huawei.agconnect:agcp:1.9.1.301'
+        classpath 'com.google.gms:google-services:4.4.1'
+        classpath 'com.huawei.agconnect:agcp:1.9.1.303'
     }
 }
 
@@ -21,8 +21,4 @@ allprojects {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
         maven { url 'https://developer.huawei.com/repo/' }
     }
-}
-
-tasks.register('clean', Delete) {
-    delete rootProject.buildDir
 }
