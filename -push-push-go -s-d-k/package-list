@@ -31,6 +31,8 @@ $dokka.location:com.pushpushgo.sdk/BeaconBuilder/send/#/PointingToDeclaration/-
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/set/#kotlin.String#kotlin.Any/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/setCustomId/#kotlin.Int?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set-custom-id.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/setCustomId/#kotlin.String?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set-custom-id.html
+$dokka.location:com.pushpushgo.sdk/InvalidProjectIdHandler///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-invalid-project-id-handler/index.html
+$dokka.location:com.pushpushgo.sdk/NotificationHandler///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-notification-handler/index.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/index.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/VERSION/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/-v-e-r-s-i-o-n.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
