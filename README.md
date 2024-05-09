@@ -29,12 +29,12 @@ allprojects {
 // /app/build.gradle
 dependencies {
     // local repo
-    implementation 'com.pushpushgo:sdk:2.1.0-SNAPSHOT'
+    implementation 'com.pushpushgo:sdk:<version>'
 
     // or
 
     // jitpack
-    implementation "com.github.ppgco.android-sdk:sdk:2.1.0-SNAPSHOT"
+    implementation "com.github.ppgco.android-sdk:sdk:<version>"
 
     // GMS
     implementation platform('com.google.firebase:firebase-bom:33.0.0')
