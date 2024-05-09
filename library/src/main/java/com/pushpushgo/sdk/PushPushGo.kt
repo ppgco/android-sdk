@@ -91,7 +91,6 @@ class PushPushGo private constructor(
             return createPushPushGoInstance(application, apiKey, projectId, isProduction = true, DEBUG)
         }
 
-        @Suppress("DEPRECATION")
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
             val ai = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 context.packageManager.getApplicationInfo(
