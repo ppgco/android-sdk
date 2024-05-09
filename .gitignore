@@ -19,3 +19,4 @@ build
 .idea/kotlinc.xml
 .idea/deploymentTargetDropDown.xml
 .idea/migrations.xml
+.idea/deploymentTargetSelector.xml

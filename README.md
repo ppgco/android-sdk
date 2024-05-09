@@ -37,11 +37,11 @@ dependencies {
     implementation "com.github.ppgco.android-sdk:sdk:2.1.0-SNAPSHOT"
 
     // GMS
-    implementation platform('com.google.firebase:firebase-bom:32.2.3')
+    implementation platform('com.google.firebase:firebase-bom:33.0.0')
     implementation 'com.google.firebase:firebase-messaging'
 
     // HMS
-    implementation 'com.huawei.agconnect:agconnect-core:1.9.1.300'
+    implementation 'com.huawei.agconnect:agconnect-core:1.9.1.303'
     implementation 'com.huawei.hms:push:6.11.0.300'
 }
 ```
