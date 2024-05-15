@@ -24,7 +24,7 @@ class FcmMessagingServiceDelegate(private val context: Context) {
 
     fun onNewToken(token: String) {
         preferencesHelper.lastFCMToken = token
-        delegate.onNewToken(token, preferencesHelper.isSubscribed)
+        delegate.onNewToken(token)
     }
 
     private fun RemoteMessage.toPushMessage() = PushMessage(

@@ -11,8 +11,6 @@ import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.utils.getPlatformPushToken
 import com.pushpushgo.sdk.utils.logDebug
 import com.pushpushgo.sdk.utils.logError
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
@@ -26,9 +24,10 @@ internal class ApiRepository(
 
     suspend fun registerToken(token: String?, apiKey: String = this.apiKey, projectId: String = this.projectId) {
         logDebug("registerToken invoked: $token")
-        val tokenToRegister = token ?: sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: withContext(Dispatchers.IO) {
-            getPlatformPushToken(context)
-        }
+        val tokenToRegister = token
+            ?: sharedPref.lastToken.takeIf { it.isNotEmpty() }
+            ?: getPlatformPushToken(context)
+
         logDebug("Token to register: $tokenToRegister")
 
         val data = apiService.registerSubscriber(
@@ -52,7 +51,7 @@ internal class ApiRepository(
             subscriberId = sharedPref.subscriberId,
         )
         sharedPref.subscriberId = ""
-        sharedPref.isSubscribed = false
+        sharedPref.isSubscribed = isSubscribed
     }
 
     suspend fun unregisterSubscriber(projectId: String, token: String, subscriberId: String) {
@@ -97,11 +96,6 @@ internal class ApiRepository(
     }
 
     suspend fun sendBeacon(beacon: String) {
-        if (!sharedPref.isSubscribed) {
-            logDebug("Beacon not sent. Reason: not subscribed")
-            return
-        }
-
         apiService.sendBeacon(
             token = apiKey,
             projectId = projectId,

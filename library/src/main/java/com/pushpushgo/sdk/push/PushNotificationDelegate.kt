@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.push
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
@@ -43,6 +44,7 @@ internal class PushNotificationDelegate {
         } else processPushMessage(pushMessage, context)
     }
 
+    @SuppressLint("MissingPermission")
     private fun processPushMessage(pushMessage: PushMessage, context: Context) {
         val notificationManager = NotificationManagerCompat.from(context)
 
@@ -73,12 +75,12 @@ internal class PushNotificationDelegate {
         }
     }
 
-    fun onNewToken(token: String, isSubscribed: Boolean) {
+    fun onNewToken(token: String) {
         logDebug("Refreshed token: $token")
+        if (!PushPushGo.isInitialized()) return
+        if (!PushPushGo.getInstance().areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
 
-        if (PushPushGo.isInitialized() && isSubscribed) {
-            PushPushGo.getInstance().getUploadManager().sendRegister(token)
-        }
+        PushPushGo.getInstance().getUploadManager().sendRegister(token)
     }
 
     fun onDestroy() {

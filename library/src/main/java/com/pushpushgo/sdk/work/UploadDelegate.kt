@@ -21,7 +21,7 @@ internal class UploadDelegate {
         with(PushPushGo.getInstance().getNetwork()) {
             when (type) {
                 UploadWorker.REGISTER -> registerToken(data)
-                UploadWorker.UNREGISTER -> unregisterSubscriber()
+                UploadWorker.UNREGISTER -> unregisterSubscriber(isSubscribed = false)
                 else -> logDebug("Unknown upload data type")
             }
         }
@@ -29,11 +29,22 @@ internal class UploadDelegate {
 
     fun sendEvent(type: EventType, buttonId: Int, campaign: String, projectId: String?, subscriberId: String?) {
         uploadScope.launch(errorHandler) {
-            PushPushGo.getInstance().getNetwork().sendEvent(type, buttonId, campaign, projectId, subscriberId)
+            PushPushGo.getInstance().getNetwork().sendEvent(
+                type = type,
+                buttonId = buttonId,
+                campaign = campaign,
+                project = projectId,
+                subscriber = subscriberId,
+            )
         }
     }
 
     fun sendBeacon(beacon: JSONObject) {
+        if (!PushPushGo.getInstance().areNotificationsEnabled()) {
+            logDebug("Beacon not sent. Reason: notifications disabled")
+            return
+        }
+
         uploadScope.launch(errorHandler) {
             PushPushGo.getInstance().getNetwork().sendBeacon(beacon.toString())
         }

@@ -9,9 +9,11 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-internal suspend fun getPlatformPushToken(context: Context) = when (getPlatformType()) {
-    PlatformType.FCM -> getFcmPushToken()
-    PlatformType.HCM -> getHcmPushToken(context)
+internal suspend fun getPlatformPushToken(context: Context) = withContext(Dispatchers.IO) {
+    when (getPlatformType()) {
+        PlatformType.FCM -> getFcmPushToken()
+        PlatformType.HCM -> getHcmPushToken(context)
+    }
 }
 
 private suspend fun getFcmPushToken() = suspendCoroutine { cont ->
