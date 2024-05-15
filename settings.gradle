@@ -4,7 +4,7 @@ if (!System.env.JITPACK) include ':sample', ':samplehms', ':samplejava'
 dependencyResolutionManagement {
     versionCatalogs {
         libs {
-            version('sdk', '2.1.0')
+            version('sdk', '2.1.1-SNAPSHOT')
             version('kotlin', '1.9.23')
             version('coroutines', '1.8.0')
             version('kodein', '7.21.2')

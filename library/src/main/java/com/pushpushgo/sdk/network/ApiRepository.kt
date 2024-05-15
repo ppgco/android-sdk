@@ -64,7 +64,11 @@ internal class ApiRepository(
             )
         } catch (e: PushPushException) {
             when (e.message.orEmpty()) {
-                "Not Found", "Subscriber not found" -> logError(e)
+                "Subscriber not belongs to given project",
+                "Not Found",
+                "Subscriber not found",
+                -> logError(e)
+
                 else -> throw e
             }
         }
