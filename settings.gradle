@@ -5,7 +5,7 @@ dependencyResolutionManagement {
     versionCatalogs {
         libs {
             version('sdk', '2.1.1-SNAPSHOT')
-            version('kotlin', '1.9.23')
+            version('kotlin', '1.9.24')
             version('coroutines', '1.8.0')
             version('kodein', '7.21.2')
             version('retrofit', '2.11.0')
@@ -32,7 +32,7 @@ dependencyResolutionManagement {
 
             library('okhttp-bom', 'com.squareup.okhttp3:okhttp-bom:4.12.0')
 
-            library('firebase-bom', 'com.google.firebase:firebase-bom:33.0.0')
+            library('firebase-bom', 'com.google.firebase:firebase-bom:33.1.0')
 
             library('hms-push', 'com.huawei.hms:push:6.11.0.300')
             library('hms-agconnect', 'com.huawei.agconnect:agconnect-core:1.9.1.303')
