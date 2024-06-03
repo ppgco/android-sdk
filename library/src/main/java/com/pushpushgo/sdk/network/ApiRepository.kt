@@ -63,6 +63,7 @@ internal class ApiRepository(
             )
         } catch (e: PushPushException) {
             when (e.message.orEmpty()) {
+                "Cannot perform operation on inactive subscriber",
                 "Subscriber not belongs to given project",
                 "Not Found",
                 "Subscriber not found",
