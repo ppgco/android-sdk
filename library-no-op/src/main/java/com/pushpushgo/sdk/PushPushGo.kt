@@ -77,6 +77,8 @@ class PushPushGo private constructor(
     fun migrateToNewProject(newProjectId: String, newProjectToken: String): ListenableFuture<PushPushGo> =
         Futures.immediateFuture(this)
 
+    fun areNotificationsEnabled(): Boolean = false
+
     fun registerSubscriber() = Unit
 
     fun createSubscriber(): ListenableFuture<String> = Futures.immediateFuture("")

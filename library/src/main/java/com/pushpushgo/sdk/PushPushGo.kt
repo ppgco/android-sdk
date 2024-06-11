@@ -353,7 +353,7 @@ class PushPushGo private constructor(
         }
     }
 
-    internal fun areNotificationsEnabled(): Boolean {
+    fun areNotificationsEnabled(): Boolean {
         return areNotificationsEnabled(application)
     }
 
