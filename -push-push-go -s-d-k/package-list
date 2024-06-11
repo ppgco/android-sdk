@@ -40,6 +40,7 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.app
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.app.Application/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/isInitialized/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/is-initialized.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/index.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/areNotificationsEnabled/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/are-notifications-enabled.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/createBeacon/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/create-beacon.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/createSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/create-subscriber.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/defaultIsSubscribed/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/default-is-subscribed.html
