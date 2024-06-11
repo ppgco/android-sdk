@@ -61,7 +61,7 @@ internal class NotificationStatusChecker private constructor(
             if (pref.subscriberId.isNotBlank()) {
                 checkerScope.launch(errorHandler) {
                     logDebug("Notifications disabled, but subscribed. Unregistering subscriber...")
-                    PushPushGo.getInstance().getNetwork().unregisterSubscriber(pref.isSubscribed)
+                    PushPushGo.getInstance().getNetwork().unregisterSubscriber()
                 }
             }
         }

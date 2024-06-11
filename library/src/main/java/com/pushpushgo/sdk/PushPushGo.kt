@@ -283,6 +283,7 @@ class PushPushGo private constructor(
             return logError("Notifications disabled! Subscriber registration canceled")
         }
 
+        networkModule.sharedPref.isSubscribed = true
         getUploadManager().sendRegister(null)
     }
 
@@ -298,6 +299,7 @@ class PushPushGo private constructor(
             }
 
             getNetwork().registerToken(null)
+            networkModule.sharedPref.isSubscribed = true
             getSubscriberId()
         }
     }
@@ -307,6 +309,7 @@ class PushPushGo private constructor(
      */
     fun unregisterSubscriber() {
         getUploadManager().sendUnregister()
+        networkModule.sharedPref.isSubscribed = false
     }
 
     fun unregisterSubscriber(projectId: String, projectToken: String, subscriberId: String): ListenableFuture<Unit> {
@@ -316,6 +319,7 @@ class PushPushGo private constructor(
                 token = projectToken,
                 subscriberId = subscriberId,
             )
+            networkModule.sharedPref.isSubscribed = false
         }
     }
 

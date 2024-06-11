@@ -37,13 +37,12 @@ internal class ApiRepository(
         )
         if (data.id.isNotBlank()) {
             sharedPref.subscriberId = data.id
-            sharedPref.isSubscribed = true
         }
         logDebug("RegisterSubscriber received: $data")
     }
 
-    suspend fun unregisterSubscriber(isSubscribed: Boolean = false) {
-        logDebug("unregisterSubscriber($isSubscribed) invoked")
+    suspend fun unregisterSubscriber() {
+        logDebug("unregisterSubscriber() invoked")
 
         apiService.unregisterSubscriber(
             token = apiKey,
@@ -51,7 +50,6 @@ internal class ApiRepository(
             subscriberId = sharedPref.subscriberId,
         )
         sharedPref.subscriberId = ""
-        sharedPref.isSubscribed = isSubscribed
     }
 
     suspend fun unregisterSubscriber(projectId: String, token: String, subscriberId: String) {

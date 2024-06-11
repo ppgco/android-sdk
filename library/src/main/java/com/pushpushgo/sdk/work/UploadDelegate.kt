@@ -21,7 +21,7 @@ internal class UploadDelegate {
         with(PushPushGo.getInstance().getNetwork()) {
             when (type) {
                 UploadWorker.REGISTER -> registerToken(data)
-                UploadWorker.UNREGISTER -> unregisterSubscriber(isSubscribed = false)
+                UploadWorker.UNREGISTER -> unregisterSubscriber()
                 else -> logDebug("Unknown upload data type")
             }
         }
