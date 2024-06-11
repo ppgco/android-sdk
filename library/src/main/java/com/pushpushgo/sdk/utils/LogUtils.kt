@@ -18,5 +18,5 @@ internal fun logError(text: String, exception: Throwable? = null) {
 }
 
 internal fun logError(exception: Throwable?) {
-    Log.e(PushPushGo.TAG, "", exception)
+    Log.e(PushPushGo.TAG, exception?.message, exception)
 }
