@@ -7,7 +7,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="n">
         <service
             android:name=".push.service.FcmMessagingService"
