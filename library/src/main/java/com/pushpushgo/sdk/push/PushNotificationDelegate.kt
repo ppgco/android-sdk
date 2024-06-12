@@ -126,7 +126,7 @@ internal class PushNotificationDelegate {
     }
 
     private fun sendDeliveredEvent(notification: PushPushNotification) {
-        if (PushPushGo.isInitialized() && PushPushGo.getInstance().isSubscribed()) {
+        if (PushPushGo.isInitialized() && PushPushGo.getInstance().getSubscriberId().isNotBlank()) {
             uploadDelegate.sendEvent(
                 type = EventType.DELIVERED,
                 buttonId = 0,

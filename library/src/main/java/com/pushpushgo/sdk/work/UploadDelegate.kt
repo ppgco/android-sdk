@@ -14,7 +14,7 @@ internal class UploadDelegate {
     private val errorHandler = CoroutineExceptionHandler { _, e -> logError(e) }
 
     suspend fun doNetworkWork(type: String?, data: String?) {
-        if (!PushPushGo.getInstance().isSubscribed() && type != UploadWorker.REGISTER) {
+        if (PushPushGo.getInstance().getSubscriberId().isBlank() && type != UploadWorker.REGISTER) {
             return logDebug("UploadWorker: skipped. Reason: not subscribed")
         }
 
@@ -40,8 +40,8 @@ internal class UploadDelegate {
     }
 
     fun sendBeacon(beacon: JSONObject) {
-        if (!PushPushGo.getInstance().areNotificationsEnabled()) {
-            logDebug("Beacon not sent. Reason: notifications disabled")
+        if (PushPushGo.getInstance().getSubscriberId().isBlank()) {
+            logDebug("Beacon not sent. Reason: not subscribed")
             return
         }
 
