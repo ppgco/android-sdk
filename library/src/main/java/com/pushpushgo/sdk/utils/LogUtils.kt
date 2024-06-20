@@ -4,6 +4,7 @@ import android.util.Log
 import com.pushpushgo.sdk.PushPushGo
 
 internal fun logDebug(text: String) {
+    if (!PushPushGo.isInitialized()) return
     if (!PushPushGo.getInstance().isDebug) return
 
     Log.d(PushPushGo.TAG, text)
