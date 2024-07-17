@@ -31,7 +31,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "2.0.0-20230328~2"
+        const val VERSION = "2.0.2-20240717"
 
         internal const val TAG = "PPGo"
 
@@ -92,7 +92,7 @@ class PushPushGo private constructor(
         }
 
         @Suppress("DEPRECATION")
-        private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
+        fun extractCredentialsFromContext(context: Context): Pair<String, String> {
             val ai = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 context.packageManager.getApplicationInfo(
                     context.packageName, PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong())
