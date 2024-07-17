@@ -31,15 +31,20 @@ internal class PushNotificationDelegate {
     fun onMessageReceived(pushMessage: PushMessage, context: Context) {
         logDebug("From: ${pushMessage.from}")
 
-        if (!PushPushGo.getInstance().isPPGoPush(pushMessage.data)) {
+        if (!pushMessage.data.containsKey("project")) {
             return logWarning("Push is not from PPGo")
         }
 
+        val (projectId) = PushPushGo.extractCredentialsFromContext(context);
+
         val pushProjectId = pushMessage.data["project"].orEmpty()
         val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
-        val initializedProjectId = PushPushGo.getInstance().getProjectId()
-        if (pushProjectId != initializedProjectId) {
-            PushPushGo.getInstance().onInvalidProjectIdHandler(pushProjectId, pushSubscriberId, initializedProjectId)
+        if (pushProjectId != projectId) {
+            if (PushPushGo.isInitialized()) {
+                PushPushGo.getInstance().onInvalidProjectIdHandler(pushProjectId, pushSubscriberId, projectId)
+            } else {
+                logDebug("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $projectId")
+            }
         } else processPushMessage(pushMessage, context)
     }
 
