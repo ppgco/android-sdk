@@ -64,20 +64,20 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
 }  
 
-dependencies { 
-    // GMS 
+dependencies {
+    // GMS
     implementation(platform(libs.firebase.bom))
-	implementation(libs.firebase.messaging)
-	// HMS
-	implementation(libs.agconnect.core)
-	implementation(libs.hms.push)
+    implementation(libs.firebase.messaging)
+    // HMS
+    implementation(libs.agconnect.core)
+    implementation(libs.hms.push)
 }
 
 
 
 // /build.gradle.kts
 plugins {
-	alias(libs.plugins.google.gms.google.services) apply false
+    alias(libs.plugins.google.gms.google.services) apply false
 }
 ```  
 4. **Provide GMS / HMS credentials in PushPushGo application (/project/providers)**
@@ -109,14 +109,16 @@ plugins {
 
 Groovy DSL
 ```groovy
- // /build.gradle
- allprojects {
-	 repositories {
-		 // local repo
-		 mavenLocal()
-        // or
-        // jitpack
-		 maven { url 'https://jitpack.io' } }}
+// /build.gradle
+allprojects {
+    repositories {
+    // local repo
+    mavenLocal()
+    // or
+    // jitpack
+    maven { url 'https://jitpack.io' }
+    }
+}
 
 
 // /app/build.gradle
@@ -132,10 +134,10 @@ Kotlin DSL
 ```kotlin
 // /settings.gradle.kts
 dependencyResolutionManagement {
-	repositories { 
-		google()
-		mavenCentral()
-	    maven ( "https://jitpack.io" )
+    repositories {
+        google()
+        mavenCentral()
+        maven ( "https://jitpack.io" )
     }
 }
 
@@ -152,7 +154,7 @@ ppg-sdk = { module = "com.github.ppgco.android-sdk:sdk", version.ref = "ppgSdk" 
 
 // /app/build.gradle.kts
 dependencies {
-	implementation(libs.ppg.sdk)
+    implementation(libs.ppg.sdk)
 }
 
 ```
@@ -177,8 +179,8 @@ In your main activity tag:
 ```
 ```xml
 <intent-filter>
-	<action android:name="APP_PUSH_CLICK" />
-	<category android:name="android.intent.category.DEFAULT" />
+    <action android:name="APP_PUSH_CLICK" />
+    <category android:name="android.intent.category.DEFAULT" />
 </intent-filter>
 ```
 3. **Add to your MainActivity**:
@@ -186,7 +188,7 @@ In your main activity tag:
 in onCreate():
 ```java
 if (savedInstanceState == null) {
-	PushPushGo.getInstance().handleBackgroundNotificationClick(intent);
+    PushPushGo.getInstance().handleBackgroundNotificationClick(intent);
 }
 ```
 in onNewIntent():
@@ -233,14 +235,20 @@ PushPushGo.getInstance().createBeacon()
 ## Publishing
 
 To maven local repository:
-```sh $ ./gradlew :library:publishToMavenLocal```
+```sh
+$ ./gradlew :library:publishToMavenLocal
+```
 
 ## Tests
 Run tests in `library` module:
-```sh $ ./gradlew :library:testDebug```
+```sh
+$ ./gradlew :library:testDebug
+```
 
 Generate coverage report:    
-```sh $ ./gradlew :library:jacocoTestReport```
+```sh
+$ ./gradlew :library:jacocoTestReport
+```
 
 HTML coverage report path:
 `library/build/reports/jacocoTestReport/html/`
