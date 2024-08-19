@@ -38,9 +38,9 @@ internal fun deserializeNotificationData(data: Bundle?): PushPushNotification? {
     )
 }
 
-internal fun handleNotificationLinkClick(context: Context, uri: String) {
+internal fun handleNotificationLinkClick(context: Context, uri: String, overrideFlags: Int) {
     Intent.parseUri(uri, 0).let {
-        it.addFlags(FLAG_ACTIVITY_NEW_TASK)
+        it.addFlags(overrideFlags)
         try {
             context.startActivity(it)
         } catch (e: ActivityNotFoundException) {

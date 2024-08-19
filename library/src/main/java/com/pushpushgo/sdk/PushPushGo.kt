@@ -41,7 +41,7 @@ class PushPushGo private constructor(
 ) {
 
     companion object {
-        const val VERSION = "2.1.0-20240509~1"
+        const val VERSION = "2.2.0-20240819~1"
 
         internal const val TAG = "PPGo"
 
@@ -169,7 +169,7 @@ class PushPushGo private constructor(
      */
     var defaultIsSubscribed: Boolean = false
 
-    var notificationHandler: NotificationHandler = { context, url -> handleNotificationLinkClick(context, url) }
+    var notificationHandler: NotificationHandler = { context, url, overrideFlags -> handleNotificationLinkClick(context, url, overrideFlags) }
 
     /**
      * function to check whether the given notification data belongs to the PPGo sender
@@ -212,7 +212,7 @@ class PushPushGo private constructor(
     /**
      * helper function to handle click on notification from background
      */
-    fun handleBackgroundNotificationClick(intent: Intent?) {
+    fun handleBackgroundNotificationClick(intent: Intent?, overrideFlags: Int = Intent.FLAG_ACTIVITY_NEW_TASK) {
         if (intent?.hasExtra(PushNotificationDelegate.PROJECT_ID_EXTRA) != true) return
 
         val intentProjectId = intent.getStringExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
@@ -230,7 +230,7 @@ class PushPushGo private constructor(
 
         //TODO Remove duplicated code
         val notify = deserializeNotificationData(intent.extras)
-        notificationHandler(application, notify?.redirectLink ?: intentLink)
+        notificationHandler(application, notify?.redirectLink ?: intentLink, overrideFlags)
         intent.removeExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
 
         uploadDelegate.sendEvent(
@@ -363,6 +363,6 @@ class PushPushGo private constructor(
     fun createBeacon(): BeaconBuilder = BeaconBuilder(uploadDelegate)
 }
 
-typealias NotificationHandler = (context: Context, url: String) -> Unit
+typealias NotificationHandler = (context: Context, url: String, overrideFlags: Int) -> Unit
 
 typealias InvalidProjectIdHandler = (pushProjectId: String, pushSubscriberId: String, currentProjectId: String) -> Unit
