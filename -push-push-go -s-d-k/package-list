@@ -45,6 +45,7 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo/createBeacon/#/PointingToDeclarati
 $dokka.location:com.pushpushgo.sdk/PushPushGo/createSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/create-subscriber.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/defaultIsSubscribed/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/default-is-subscribed.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getApiKey/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-api-key.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/getCustomClickIntentFlags/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-custom-click-intent-flags.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getNotificationDetails/#android.content.Intent?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-notification-details.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getNotificationDetails/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-notification-details.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/getProjectId/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/get-project-id.html
@@ -58,6 +59,7 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo/migrateToNewProject/#kotlin.String
 $dokka.location:com.pushpushgo.sdk/PushPushGo/notificationHandler/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/notification-handler.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/onInvalidProjectIdHandler/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/on-invalid-project-id-handler.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/registerSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/register-subscriber.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo/setCustomClickIntentFlags/#kotlin.Int/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/set-custom-click-intent-flags.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#kotlin.String#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
 com.pushpushgo.sdk
