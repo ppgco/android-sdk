@@ -210,6 +210,20 @@ class PushPushGo private constructor(
         deserializeNotificationData(notificationData.mapToBundle())?.mapToDto()
 
     /**
+     * function set custom intent flags to shared preferences
+     * when push receives then check for this flags and add
+     * them in PendingIntent launcherActivity as flags
+     */
+    fun setCustomClickIntentFlags(flags: Int) {
+        networkModule.sharedPref.customIntentFlags = flags
+    }
+
+    /**
+     * function returns custom flags from shared contexts for click intent
+     */
+    fun getCustomClickIntentFlags(): Int = networkModule.sharedPref.customIntentFlags;
+
+    /**
      * helper function to handle click on notification from background
      */
     fun handleBackgroundNotificationClick(intent: Intent?, overrideFlags: Int = Intent.FLAG_ACTIVITY_NEW_TASK) {

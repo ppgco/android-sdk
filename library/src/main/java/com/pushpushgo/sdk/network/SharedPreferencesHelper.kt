@@ -13,10 +13,10 @@ internal class SharedPreferencesHelper(context: Context) {
         internal const val LAST_FCM_TOKEN = "_PushPushGoSDK_curr_token_"
         internal const val LAST_HCM_TOKEN = "_PushPushGoSDK_curr_hms_token_"
         internal const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"
+        internal const val CUSTOM_INTENT_FLAGS = "_PushPushGoSDK_custom_intent_flags_"
     }
 
     private val sharedPreferences = getDefaultSharedPreferences(context)
-
     var isSubscribed
         get() = sharedPreferences.getBoolean(
             IS_SUBSCRIBED,
@@ -24,6 +24,15 @@ internal class SharedPreferencesHelper(context: Context) {
         )
         set(value) {
             sharedPreferences.edit().putBoolean(IS_SUBSCRIBED, value).apply()
+        }
+
+    var customIntentFlags
+        get() = sharedPreferences.getInt(
+            CUSTOM_INTENT_FLAGS,
+            0,
+        )
+        set(value) {
+            sharedPreferences.edit().putInt(CUSTOM_INTENT_FLAGS, value).apply()
         }
 
     var subscriberId

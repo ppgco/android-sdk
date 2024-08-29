@@ -304,6 +304,16 @@ internal class PushNotificationDelegate {
             putExtra(PROJECT_ID_EXTRA, projectId)
             putExtra(SUBSCRIBER_ID_EXTRA, subscriberId)
             putExtra(LINK_EXTRA, link)
+
+            logDebug("launcher intenet flags before override: $flags")
+
+            if (PushPushGo.isInitialized()) {
+                val customFlags = PushPushGo.getInstance().getCustomClickIntentFlags();
+                logDebug("launcher intent flags restored: $customFlags")
+                if (customFlags > 0) {
+                    flags = customFlags;
+                }
+            }
         },
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntentCompat.FLAG_IMMUTABLE
     )
