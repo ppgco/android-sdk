@@ -145,7 +145,7 @@ dependencyResolutionManagement {
 
 // /libs.versions.toml
 [versions]
-ppgSdk = "2.2.1"
+ppgSdk = "2.2.2"
 
 [libraries]
 ppg-sdk = { module = "com.github.ppgco.android-sdk:sdk", version.ref = "ppgSdk" }
