@@ -178,6 +178,26 @@ internal class BeaconBuilderTest {
     }
 
     @Test
+    fun `remove tag with a custom label`() {
+        every { uploadDelegate.sendBeacon(any()) } just Runs
+        beaconBuilder = BeaconBuilder(uploadDelegate)
+
+        beaconBuilder.removeTags(mapOf("tag_name" to "test_label"))
+        beaconBuilder.send()
+
+        val tags = beaconBuilder.getTagsToDelete()
+
+        assertEquals(1, tags.size)
+        assertEquals(tags[0], "tag_name")
+
+        verify {
+            uploadDelegate.sendBeacon(match {
+                it["tagsToDelete"].toString() == """[{"tag":"tag_name","label":"test_label"}]"""
+            })
+        }
+    }
+
+    @Test
     fun `set custom id`() {
         every { uploadDelegate.sendBeacon(any()) } just Runs
 

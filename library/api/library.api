@@ -6,6 +6,7 @@ public final class com/pushpushgo/sdk/BeaconBuilder {
 	public static synthetic fun appendTag$default (Lcom/pushpushgo/sdk/BeaconBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Lcom/pushpushgo/sdk/BeaconBuilder;
 	public final fun getTags ()Ljava/util/List;
 	public final fun getTagsToDelete ()Ljava/util/List;
+	public final fun removeTag (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
 	public final fun removeTag ([Ljava/lang/String;)Lcom/pushpushgo/sdk/BeaconBuilder;
 	public final fun send ()V
 	public final fun set (Ljava/lang/String;Ljava/lang/Object;)Lcom/pushpushgo/sdk/BeaconBuilder;

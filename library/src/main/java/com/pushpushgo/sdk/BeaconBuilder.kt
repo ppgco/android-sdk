@@ -12,7 +12,7 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
 
     private val tags = mutableListOf<BeaconTag>()
 
-    private val tagsToDelete = mutableListOf<String>()
+    private val tagsToDelete = mutableMapOf<String, String>()
 
     private var customId = ""
 
@@ -54,13 +54,27 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
      * @return instance of builder
      */
     fun removeTag(vararg name: String): BeaconBuilder {
-        tagsToDelete.addAll(name)
+        tagsToDelete.putAll(name.map { it to "default" })
 
         return this
     }
 
-    fun getTagsToDelete(): MutableList<String> {
-        return tagsToDelete
+    /**
+     * @param tags Map of tags to remove
+     *
+     * key: tag name
+     * value: tag label
+     *
+     * @return instance of builder
+     */
+    fun removeTags(tags: Map<String, String>): BeaconBuilder {
+        tagsToDelete.putAll(tags)
+
+        return this
+    }
+
+    fun getTagsToDelete(): List<String> {
+        return tagsToDelete.keys.toList()
     }
 
     /**
@@ -125,8 +139,17 @@ class BeaconBuilder internal constructor(private val uploadDelegate: UploadDeleg
         tagsToDelete.ifEmpty { return }
 
         put("tagsToDelete", JSONArray().apply {
-            tagsToDelete.forEach {
-                put(it)
+            if (tagsToDelete.all { it.value == "default" }) {
+                tagsToDelete.forEach {
+                    put(it.key)
+                }
+            } else {
+                tagsToDelete.forEach { (tag, label) ->
+                    put(JSONObject().apply {
+                        put("tag", tag)
+                        put("label", label)
+                    })
+                }
             }
         })
     }
