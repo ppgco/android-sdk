@@ -27,6 +27,7 @@ $dokka.location:com.pushpushgo.sdk/BeaconBuilder/appendTag/#kotlin.String#kotlin
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/getTags/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/get-tags.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/getTagsToDelete/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/get-tags-to-delete.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/removeTag/#kotlin.Array[kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/remove-tag.html
+$dokka.location:com.pushpushgo.sdk/BeaconBuilder/removeTags/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/remove-tags.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/send/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/send.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/set/#kotlin.String#kotlin.Any/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set.html
 $dokka.location:com.pushpushgo.sdk/BeaconBuilder/setCustomId/#kotlin.Int?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-beacon-builder/set-custom-id.html
