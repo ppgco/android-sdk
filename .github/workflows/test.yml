@@ -32,7 +32,7 @@ jobs:
           ./gradlew :library:testDebug --stacktrace
 
   api-check:
-    name: Unit tests
+    name: API changes check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

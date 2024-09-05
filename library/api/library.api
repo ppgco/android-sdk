@@ -28,6 +28,7 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun createBeacon ()Lcom/pushpushgo/sdk/BeaconBuilder;
 	public final fun createSubscriber ()Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getCustomClickIntentFlags ()I
 	public final fun getDefaultIsSubscribed ()Z
 	public static final fun getInstance ()Lcom/pushpushgo/sdk/PushPushGo;
 	public static final fun getInstance (Landroid/app/Application;)Lcom/pushpushgo/sdk/PushPushGo;
@@ -35,19 +36,21 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public static final fun getInstance (Landroid/app/Application;Ljava/lang/String;Ljava/lang/String;ZZ)Lcom/pushpushgo/sdk/PushPushGo;
 	public final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
 	public final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
-	public final fun getNotificationHandler ()Lkotlin/jvm/functions/Function2;
+	public final fun getNotificationHandler ()Lkotlin/jvm/functions/Function3;
 	public final fun getOnInvalidProjectIdHandler ()Lkotlin/jvm/functions/Function3;
 	public final fun getProjectId ()Ljava/lang/String;
 	public final fun getPushToken ()Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun getSubscriberId ()Ljava/lang/String;
-	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;)V
+	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
+	public static synthetic fun handleBackgroundNotificationClick$default (Lcom/pushpushgo/sdk/PushPushGo;Landroid/content/Intent;IILjava/lang/Object;)V
 	public final fun isPPGoPush (Landroid/content/Intent;)Z
 	public final fun isPPGoPush (Ljava/util/Map;)Z
 	public final fun isSubscribed ()Z
 	public final fun migrateToNewProject (Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun registerSubscriber ()V
+	public final fun setCustomClickIntentFlags (I)V
 	public final fun setDefaultIsSubscribed (Z)V
-	public final fun setNotificationHandler (Lkotlin/jvm/functions/Function2;)V
+	public final fun setNotificationHandler (Lkotlin/jvm/functions/Function3;)V
 	public final fun setOnInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
 	public final fun unregisterSubscriber ()V
 	public final fun unregisterSubscriber (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
