@@ -37,7 +37,7 @@ $dokka.location:com.pushpushgo.sdk/NotificationHandler///PointingToDeclaration/
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/index.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/VERSION/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/-v-e-r-s-i-o-n.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
-$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.app.Application#kotlin.String#kotlin.String#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
+$dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.app.Application#kotlin.String#kotlin.String#kotlin.Boolean#kotlin.String?#kotlin.Boolean/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/getInstance/#android.app.Application/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/get-instance.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo.Companion/isInitialized/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/-companion/is-initialized.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/index.html
