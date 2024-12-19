@@ -15,6 +15,7 @@ class PushPushGo private constructor(
     private val apiKey: String,
     private val projectId: String,
     private val isProduction: Boolean,
+    private val customBaseUrl: String?,
     private val isNetworkDebug: Boolean,
 ) {
 
@@ -31,16 +32,16 @@ class PushPushGo private constructor(
 
         @JvmStatic
         fun getInstance(application: Application) = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: PushPushGo(application, "", "", true, DEBUG).also { INSTANCE = it }
+            INSTANCE ?: PushPushGo(application, "", "", true, null, DEBUG).also { INSTANCE = it }
         }
 
         @JvmStatic
         @JvmOverloads
         fun getInstance(
-            application: Application, apiKey: String, projectId: String, isProduction: Boolean, isDebug: Boolean = false,
+            application: Application, apiKey: String, projectId: String, isProduction: Boolean, customBaseUrl: String?, isDebug: Boolean = false,
         ): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = PushPushGo(application, apiKey, projectId, isProduction, isDebug)
+                INSTANCE = PushPushGo(application, apiKey, projectId, isProduction, customBaseUrl, isDebug)
             }
             return INSTANCE as PushPushGo
         }
