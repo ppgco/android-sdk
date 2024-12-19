@@ -15,6 +15,7 @@ internal class NetworkModule(
     apiKey: String,
     projectId: String,
     isProduction: Boolean,
+    customBaseUrl: String?,
     isDebug: Boolean,
 ) : DIAware {
 
@@ -39,6 +40,7 @@ internal class NetworkModule(
                 isNetworkDebug = isDebug,
                 baseUrl = when {
                     isProduction -> "https://api.pushpushgo.com"
+                    customBaseUrl != null -> customBaseUrl
                     else -> "https://api.master1.qappg.co"
                 }
             )

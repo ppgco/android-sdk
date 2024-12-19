@@ -12,7 +12,7 @@ class HmsMessagingServiceDelegate(private val context: Context) {
 
     private val preferencesHelper by lazy { SharedPreferencesHelper(context) }
 
-    private val delegate by lazy { PushNotificationDelegate() }
+    private val delegate by lazy { PushNotificationDelegate(context) }
 
     fun onMessageReceived(remoteMessage: RemoteMessage) {
         logDebug("onMessageReceived(${remoteMessage.data})")

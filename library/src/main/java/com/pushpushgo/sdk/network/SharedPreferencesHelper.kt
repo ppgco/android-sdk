@@ -6,7 +6,7 @@ import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.utils.PlatformType
 import com.pushpushgo.sdk.utils.getPlatformType
 
-internal class SharedPreferencesHelper(context: Context) {
+internal class SharedPreferencesHelper(context: Context, prefsName: String? = null) {
 
     companion object {
         internal const val SUBSCRIBER_ID = "_PushPushGoSDK_sub_id_"
@@ -14,9 +14,15 @@ internal class SharedPreferencesHelper(context: Context) {
         internal const val LAST_HCM_TOKEN = "_PushPushGoSDK_curr_hms_token_"
         internal const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"
         internal const val CUSTOM_INTENT_FLAGS = "_PushPushGoSDK_custom_intent_flags_"
+        private const val MAX_KEYS = 1000
     }
 
-    private val sharedPreferences = getDefaultSharedPreferences(context)
+    private val sharedPreferences = if (prefsName != null) {
+        context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+    } else {
+        getDefaultSharedPreferences(context)
+    }
+
     var isSubscribed
         get() = sharedPreferences.getBoolean(
             IS_SUBSCRIBED,
@@ -58,4 +64,19 @@ internal class SharedPreferencesHelper(context: Context) {
             PlatformType.FCM -> lastFCMToken
             PlatformType.HCM -> lastHCMToken
         }
+
+    fun getNotificationId(key: String): Int {
+        return sharedPreferences.getInt(key, -1)
+    }
+
+    fun setNotificationId(key: String, id: Int) {
+        val allEntries = sharedPreferences.all
+        if (allEntries.size >= MAX_KEYS) {
+            val firstKey = allEntries.keys.firstOrNull()
+            if (firstKey != null) {
+                sharedPreferences.edit().remove(firstKey).apply()
+            }
+        }
+        sharedPreferences.edit().putInt(key, id).apply()
+    }
 }

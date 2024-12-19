@@ -37,6 +37,7 @@ class PushPushGo private constructor(
     private val apiKey: String,
     private val projectId: String,
     private val isProduction: Boolean,
+    private val customBaseUrl: String?,
     internal val isDebug: Boolean,
 ) {
 
@@ -78,19 +79,19 @@ class PushPushGo private constructor(
         @JvmStatic
         @JvmOverloads
         fun getInstance(
-            application: Application, apiKey: String, projectId: String, isProduction: Boolean, isDebug: Boolean = DEBUG,
+            application: Application, apiKey: String, projectId: String, isProduction: Boolean, customBaseUrl: String?, isDebug: Boolean = DEBUG,
         ): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, isDebug)
+                INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, customBaseUrl, isDebug)
             }
             return INSTANCE as PushPushGo
         }
 
         @JvmStatic
         private fun reinitialize(
-            application: Application, apiKey: String, projectId: String, isProduction: Boolean, isDebug: Boolean,
+            application: Application, apiKey: String, projectId: String, isProduction: Boolean, customBaseUrl: String?, isDebug: Boolean,
         ): PushPushGo {
-            INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, isDebug)
+            INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, customBaseUrl, isDebug)
 
             return INSTANCE as PushPushGo
         }
@@ -98,7 +99,7 @@ class PushPushGo private constructor(
         private fun buildPushPushGoFromContext(application: Application): PushPushGo {
             val (projectId, apiKey) = extractCredentialsFromContext(application)
 
-            return createPushPushGoInstance(application, apiKey, projectId, isProduction = true, DEBUG)
+            return createPushPushGoInstance(application, apiKey, projectId, isProduction = true, customBaseUrl = null, DEBUG)
         }
 
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
@@ -120,10 +121,10 @@ class PushPushGo private constructor(
         }
 
         private fun createPushPushGoInstance(
-            app: Application, key: String, project: String, isProduction: Boolean, isDebug: Boolean,
+            app: Application, key: String, project: String, isProduction: Boolean, customBaseUrl: String?, isDebug: Boolean
         ): PushPushGo {
             validateCredentials(project, key)
-            return PushPushGo(app, key, project, isProduction, isDebug)
+            return PushPushGo(app, key, project, isProduction, customBaseUrl, isDebug)
         }
 
         private fun validateCredentials(projectId: String, apiKey: String) {
@@ -147,6 +148,7 @@ class PushPushGo private constructor(
             apiKey = apiKey,
             projectId = projectId,
             isProduction = isProduction,
+            customBaseUrl = customBaseUrl,
             isDebug = isDebug,
         )
     }
@@ -221,7 +223,7 @@ class PushPushGo private constructor(
     /**
      * function returns custom flags from shared contexts for click intent
      */
-    fun getCustomClickIntentFlags(): Int = networkModule.sharedPref.customIntentFlags;
+    fun getCustomClickIntentFlags(): Int = networkModule.sharedPref.customIntentFlags
 
     /**
      * helper function to handle click on notification from background
@@ -359,6 +361,7 @@ class PushPushGo private constructor(
                 projectId = newProjectId,
                 apiKey = newProjectToken,
                 isProduction = isProduction,
+                customBaseUrl = customBaseUrl,
                 isDebug = isDebug,
             ).apply {
                 notificationHandler = this@PushPushGo.notificationHandler

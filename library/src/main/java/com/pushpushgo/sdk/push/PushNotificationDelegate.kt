@@ -15,12 +15,15 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
+import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.utils.*
 import com.pushpushgo.sdk.work.UploadDelegate
 import kotlinx.coroutines.*
 import kotlin.random.Random
 
-internal class PushNotificationDelegate {
+internal class PushNotificationDelegate(context: Context) {
+
+    private val preferencesHelper = SharedPreferencesHelper(context, "notification_prefs")
 
     private val uploadDelegate by lazy { UploadDelegate() }
 
@@ -53,8 +56,8 @@ internal class PushNotificationDelegate {
         }
 
         delegateScope.launch(errorHandler) {
-            val notificationId = getUniqueNotificationId()
-            logDebug("Notification unique id: $notificationId")
+            val notificationId = getNotificationId(pushMessage.data["nId"] ?: "default")
+            logDebug("Notification ID: $notificationId")
 
             val notification = when {
                 pushMessage.data.isNotEmpty() -> getDataNotification(
@@ -62,11 +65,13 @@ internal class PushNotificationDelegate {
                     remoteMessage = pushMessage,
                     notificationId = notificationId,
                 )
+
                 pushMessage.notification != null -> getSimpleNotification(
                     context = context,
                     remoteMessage = pushMessage,
                     notificationId = notificationId,
                 )
+
                 else -> throw IllegalStateException("Unknown notification type")
             }
 
@@ -88,6 +93,17 @@ internal class PushNotificationDelegate {
     }
 
     private fun getUniqueNotificationId() = Random.nextInt(0, Int.MAX_VALUE)
+
+    private fun getNotificationId(data: String): Int {
+        val existingId = preferencesHelper.getNotificationId(data)
+        return if (existingId != -1) {
+            existingId
+        } else {
+            val randomId = getUniqueNotificationId()
+            preferencesHelper.setNotificationId(data, randomId)
+            randomId
+        }
+    }
 
     private suspend fun getDataNotification(
         context: Context,
