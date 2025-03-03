@@ -37,12 +37,12 @@ class PushPushGo private constructor(
     private val apiKey: String,
     private val projectId: String,
     private val isProduction: Boolean,
-    private val customBaseUrl: String?,
     internal val isDebug: Boolean,
+    private val customBaseUrl: String?,
 ) {
 
     companion object {
-        const val VERSION = "2.2.2-20240830~1"
+        const val VERSION = "2.2.4-20250303~1"
 
         internal const val TAG = "PPGo"
 
@@ -74,24 +74,28 @@ class PushPushGo private constructor(
          * function to create an instance of PushPushGo object to handle push notifications
          * @param application - an application to handle DI
          * @param apiKey - key to communicate with RESTFul API
+         * @param projectId - project identifier
+         * @param isProduction - flag indicating if this is a production environment
+         * @param isDebug - flag for debug mode
+         * @param customBaseUrl - optional custom base URL for API endpoints
          * @return PushPushGo instance
          */
         @JvmStatic
         @JvmOverloads
         fun getInstance(
-            application: Application, apiKey: String, projectId: String, isProduction: Boolean, customBaseUrl: String?, isDebug: Boolean = DEBUG,
+            application: Application, apiKey: String, projectId: String, isProduction: Boolean, isDebug: Boolean = DEBUG, customBaseUrl: String? = null,
         ): PushPushGo {
             if (INSTANCE == null) {
-                INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, customBaseUrl, isDebug)
+                INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, isDebug, customBaseUrl)
             }
             return INSTANCE as PushPushGo
         }
 
         @JvmStatic
         private fun reinitialize(
-            application: Application, apiKey: String, projectId: String, isProduction: Boolean, customBaseUrl: String?, isDebug: Boolean,
+            application: Application, apiKey: String, projectId: String, isProduction: Boolean, isDebug: Boolean, customBaseUrl: String?,
         ): PushPushGo {
-            INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, customBaseUrl, isDebug)
+            INSTANCE = createPushPushGoInstance(application, apiKey, projectId, isProduction, isDebug, customBaseUrl)
 
             return INSTANCE as PushPushGo
         }
@@ -99,7 +103,7 @@ class PushPushGo private constructor(
         private fun buildPushPushGoFromContext(application: Application): PushPushGo {
             val (projectId, apiKey) = extractCredentialsFromContext(application)
 
-            return createPushPushGoInstance(application, apiKey, projectId, isProduction = true, customBaseUrl = null, DEBUG)
+            return createPushPushGoInstance(application, apiKey, projectId, isProduction = true, DEBUG, null)
         }
 
         private fun extractCredentialsFromContext(context: Context): Pair<String, String> {
@@ -121,10 +125,10 @@ class PushPushGo private constructor(
         }
 
         private fun createPushPushGoInstance(
-            app: Application, key: String, project: String, isProduction: Boolean, customBaseUrl: String?, isDebug: Boolean
+            app: Application, key: String, project: String, isProduction: Boolean, isDebug: Boolean, customBaseUrl: String?,
         ): PushPushGo {
             validateCredentials(project, key)
-            return PushPushGo(app, key, project, isProduction, customBaseUrl, isDebug)
+            return PushPushGo(app, key, project, isProduction, isDebug, customBaseUrl)
         }
 
         private fun validateCredentials(projectId: String, apiKey: String) {
@@ -148,8 +152,8 @@ class PushPushGo private constructor(
             apiKey = apiKey,
             projectId = projectId,
             isProduction = isProduction,
-            customBaseUrl = customBaseUrl,
             isDebug = isDebug,
+            customBaseUrl = customBaseUrl,
         )
     }
 
@@ -361,8 +365,8 @@ class PushPushGo private constructor(
                 projectId = newProjectId,
                 apiKey = newProjectToken,
                 isProduction = isProduction,
-                customBaseUrl = customBaseUrl,
                 isDebug = isDebug,
+                customBaseUrl = customBaseUrl,
             ).apply {
                 notificationHandler = this@PushPushGo.notificationHandler
                 onInvalidProjectIdHandler = this@PushPushGo.onInvalidProjectIdHandler

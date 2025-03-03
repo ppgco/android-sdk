@@ -15,8 +15,8 @@ internal class NetworkModule(
     apiKey: String,
     projectId: String,
     isProduction: Boolean,
-    customBaseUrl: String?,
     isDebug: Boolean,
+    customBaseUrl: String?,
 ) : DIAware {
 
     companion object {

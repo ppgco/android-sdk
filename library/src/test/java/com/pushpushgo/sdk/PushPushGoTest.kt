@@ -18,11 +18,11 @@ class PushPushGoTest {
     fun setUp() {
         systemUnderTest = PushPushGo.getInstance(
             application = getApplicationContext(),
-            projectId = "hm93nzyt5bmczmtjeghy2aph",
             apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-            customBaseUrl = null,
+            projectId = "hm93nzyt5bmczmtjeghy2aph",
             isProduction = false,
             isDebug = true,
+            customBaseUrl = null,
         )
     }
 

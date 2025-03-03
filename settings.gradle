@@ -34,8 +34,8 @@ dependencyResolutionManagement {
 
             library('firebase-bom', 'com.google.firebase:firebase-bom:33.1.0')
 
-            library('hms-push', 'com.huawei.hms:push:6.11.0.300')
-            library('hms-agconnect', 'com.huawei.agconnect:agconnect-core:1.9.1.303')
+            library('hms-push', 'com.huawei.hms:push:6.13.0.300')
+            library('hms-agconnect', 'com.huawei.agconnect:agconnect-core:1.9.1.304')
 
             library('androidx-preference', 'androidx.preference:preference-ktx:1.2.1')
             library('androidx-work-runtime', 'androidx.work', 'work-runtime-ktx').versionRef("work")
