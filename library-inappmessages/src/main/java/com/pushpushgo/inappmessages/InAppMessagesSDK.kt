@@ -1,0 +1,92 @@
+package com.pushpushgo.inappmessages
+
+import android.app.Activity
+import android.content.Context
+import com.pushpushgo.inappmessages.manager.InAppMessageManager
+import com.pushpushgo.inappmessages.manager.InAppMessageManagerImpl
+import com.pushpushgo.inappmessages.persistence.InAppMessagePersistenceImpl
+import com.pushpushgo.inappmessages.repository.InAppMessageRepositoryImpl
+import com.pushpushgo.inappmessages.ui.InAppMessageDisplayer
+import com.pushpushgo.inappmessages.ui.InAppMessageDisplayerImpl
+
+import com.pushpushgo.inappmessages.model.TriggerType
+
+class InAppMessagesSDK private constructor(
+    private val application: android.app.Application,
+    private val projectId: String,
+    private val apiKey: String,
+    private val baseUrl: String? = null,
+    displayer: InAppMessageDisplayer? = null
+) {
+    private var manager: InAppMessageManager? = null
+    private var displayer: InAppMessageDisplayer? = null
+
+    companion object {
+        @Volatile
+        private var INSTANCE: InAppMessagesSDK? = null
+
+        @JvmStatic
+        fun initialize(
+            application: android.app.Application,
+            projectId: String,
+            apiKey: String,
+            baseUrl: String? = null,
+            displayer: InAppMessageDisplayer? = null
+        ): InAppMessagesSDK {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: InAppMessagesSDK(application, projectId, apiKey, baseUrl, displayer).also { INSTANCE = it }
+            }
+        }
+
+        @JvmStatic
+        fun getInstance(): InAppMessagesSDK =
+            INSTANCE ?: throw IllegalStateException("InAppMessagesSDK is not initialized!")
+    }
+
+    init {
+        val repository = InAppMessageRepositoryImpl(application, "in_app_messages.json")
+        val persistence = InAppMessagePersistenceImpl(application)
+        manager = InAppMessageManagerImpl(repository, persistence)
+        manager?.initialize()
+        this.displayer = displayer ?: InAppMessageDisplayerImpl()
+    }
+
+    /**
+     * Shows all in-app messages that should be displayed automatically:
+     * - If currentRoute is null: shows all messages with trigger.type == APP_OPEN
+     * - If currentRoute is not null: shows all messages with trigger.type == ROUTE and trigger.route == currentRoute, and all with trigger.type == APP_OPEN
+     *
+     * Call this once on app start (with currentRoute = null),
+     * and on route/view change (with currentRoute = route name).
+     */
+    fun showActiveMessages(activity: Activity, currentRoute: String? = null) {
+        manager?.let {
+            val messages = it.getActiveMessages().filter { msg ->
+                (msg.trigger.type == TriggerType.APP_OPEN) ||
+                (currentRoute != null && msg.trigger.type == TriggerType.ROUTE && msg.trigger.route == currentRoute)
+            }
+            messages.forEach { message ->
+                displayer?.showMessage(activity, message)
+            }
+        }
+    }
+
+    /**
+     * Shows all in-app messages for a custom trigger.
+     * Only messages with trigger.type == CUSTOM and matching key (and value, if provided) will be shown.
+     */
+    fun showMessagesOnTrigger(activity: Activity, key: String, value: String? = null) {
+        manager?.let {
+            val messages = it.getActiveMessages().filter { msg ->
+                msg.trigger.type == TriggerType.CUSTOM &&
+                msg.trigger.key == key &&
+                (value == null || msg.trigger.value == value)
+            }
+            messages.forEach { message ->
+                displayer?.showMessage(activity, message)
+            }
+        }
+    }
+}
+
+
