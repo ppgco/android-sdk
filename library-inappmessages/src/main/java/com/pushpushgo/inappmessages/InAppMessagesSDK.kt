@@ -1,6 +1,7 @@
 package com.pushpushgo.inappmessages
 
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import com.pushpushgo.inappmessages.manager.InAppMessageManager
 import com.pushpushgo.inappmessages.manager.InAppMessageManagerImpl
@@ -8,15 +9,13 @@ import com.pushpushgo.inappmessages.persistence.InAppMessagePersistenceImpl
 import com.pushpushgo.inappmessages.repository.InAppMessageRepositoryImpl
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayer
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayerImpl
-
 import com.pushpushgo.inappmessages.model.TriggerType
 
 class InAppMessagesSDK private constructor(
-    private val application: android.app.Application,
+    private val application: Application,
     private val projectId: String,
     private val apiKey: String,
     private val baseUrl: String? = null,
-    displayer: InAppMessageDisplayer? = null
 ) {
     private var manager: InAppMessageManager? = null
     private var displayer: InAppMessageDisplayer? = null
@@ -31,10 +30,9 @@ class InAppMessagesSDK private constructor(
             projectId: String,
             apiKey: String,
             baseUrl: String? = null,
-            displayer: InAppMessageDisplayer? = null
         ): InAppMessagesSDK {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: InAppMessagesSDK(application, projectId, apiKey, baseUrl, displayer).also { INSTANCE = it }
+                INSTANCE ?: InAppMessagesSDK(application, projectId, apiKey, baseUrl).also { INSTANCE = it }
             }
         }
 
@@ -46,9 +44,9 @@ class InAppMessagesSDK private constructor(
     init {
         val repository = InAppMessageRepositoryImpl(application, "in_app_messages.json")
         val persistence = InAppMessagePersistenceImpl(application)
-        manager = InAppMessageManagerImpl(repository, persistence)
+        manager = InAppMessageManagerImpl(repository, persistence, application)
         manager?.initialize()
-        this.displayer = displayer ?: InAppMessageDisplayerImpl()
+        this.displayer = displayer ?: InAppMessageDisplayerImpl(persistence)
     }
 
     /**

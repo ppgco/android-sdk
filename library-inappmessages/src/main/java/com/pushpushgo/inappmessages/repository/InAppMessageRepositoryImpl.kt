@@ -2,13 +2,13 @@ package com.pushpushgo.inappmessages.repository
 
 import android.content.Context
 import com.pushpushgo.inappmessages.model.ActionType
-import com.pushpushgo.inappmessages.model.InAppActionPlugin
+import com.pushpushgo.inappmessages.model.InAppAction
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.Audience
 import com.pushpushgo.inappmessages.model.UserAudienceType
 import com.pushpushgo.inappmessages.model.DeviceType
 import com.pushpushgo.inappmessages.model.OSType
-import com.pushpushgo.inappmessages.model.InAppSettings
+import com.pushpushgo.inappmessages.model.TimeSettings
 import com.pushpushgo.inappmessages.model.Trigger
 import com.pushpushgo.inappmessages.model.TriggerType
 import kotlinx.coroutines.Dispatchers
@@ -32,9 +32,9 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
 
     private fun parseMessage(obj: JSONObject): InAppMessage {
         val audienceObj = obj.getJSONObject("audience")
-        val settingsObj = obj.getJSONObject("settings")
+        val settingsObj = obj.getJSONObject("timeSettings")
         val actionsArray = obj.getJSONArray("actions")
-        val actions = mutableListOf<InAppActionPlugin>()
+        val actions = mutableListOf<InAppAction>()
         for (i in 0 until actionsArray.length()) {
             val actionObj = actionsArray.getJSONObject(i)
             val actionType = ActionType.valueOf(actionObj.getString("actionType").uppercase())
@@ -44,7 +44,7 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
                     payload[key] = actionObj.get(key)
                 }
             }
-            actions.add(InAppActionPlugin(actionType, payload))
+            actions.add(InAppAction(actionType, payload))
         }
         val triggerObj = obj.getJSONObject("trigger")
 val triggerType = TriggerType.valueOf(triggerObj.getString("type"))
@@ -60,7 +60,7 @@ return InAppMessage(
             template = obj.optString("template", "default"),
             actions = actions,
             audience = Audience(
-                aud = UserAudienceType.valueOf(audienceObj.getString("aud")),
+                users = UserAudienceType.valueOf(audienceObj.getString("users")),
                 device = audienceObj.getJSONArray("device").let { arr ->
                     List(arr.length()) { DeviceType.valueOf(arr.getString(it)) }
                 },
@@ -68,7 +68,7 @@ return InAppMessage(
                     List(arr.length()) { OSType.valueOf(arr.getString(it)) }
                 }
             ),
-            settings = InAppSettings(
+            timeSettings = TimeSettings(
                 showAfterDelay = settingsObj.optLong("showAfterDelay", 0L),
                 showAgain = settingsObj.optBoolean("showAgain", false),
                 showAgainTime = settingsObj.optLong("showAgainTime", 0L)

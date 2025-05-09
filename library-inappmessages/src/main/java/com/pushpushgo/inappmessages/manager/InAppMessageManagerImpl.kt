@@ -1,6 +1,11 @@
 package com.pushpushgo.inappmessages.manager
 
 import com.pushpushgo.inappmessages.model.InAppMessage
+import com.pushpushgo.inappmessages.utils.DeviceInfoProvider
+import android.content.Context
+import com.pushpushgo.inappmessages.model.DeviceType
+import com.pushpushgo.inappmessages.model.OSType
+import com.pushpushgo.inappmessages.model.TriggerType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.repository.InAppMessageRepository
 import kotlinx.coroutines.CoroutineScope
@@ -11,7 +16,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class InAppMessageManagerImpl(
     private val repository: InAppMessageRepository,
-    private val persistence: InAppMessagePersistence
+    private val persistence: InAppMessagePersistence,
+    private val context: Context
 ) : InAppMessageManager {
     private val activeMessages = CopyOnWriteArrayList<InAppMessage>()
     private val allMessages = CopyOnWriteArrayList<InAppMessage>()
@@ -30,7 +36,7 @@ class InAppMessageManagerImpl(
     private fun buildTriggerMap(messages: List<InAppMessage>) {
         triggerMap.clear()
         for (msg in messages) {
-            if (msg.trigger.type == com.pushpushgo.inappmessages.model.TriggerType.CUSTOM) {
+            if (msg.trigger.type == TriggerType.CUSTOM) {
                 msg.trigger.key?.let { key ->
                     triggerMap.getOrPut(key) { mutableListOf() }.add(msg)
                 }
@@ -38,9 +44,11 @@ class InAppMessageManagerImpl(
         }
     }
 
-    private fun refreshActiveMessages() {
+    override fun refreshActiveMessages() {
         val now = now()
         activeMessages.clear()
+        val deviceType = DeviceInfoProvider.getCurrentDeviceType(context)
+        val osType = DeviceInfoProvider.getCurrentOSType()
         activeMessages.addAll(
             allMessages.filter { msg ->
                 val notDismissed = !persistence.isMessageDismissed(msg.id)
@@ -50,7 +58,9 @@ class InAppMessageManagerImpl(
                         (sch.endTime == null || now.isBefore(sch.endTime))
                 } ?: true
                 val notExpiredByDate = msg.expiration?.let { now.isBefore(it) } ?: true
-                notDismissed && notExpired && inSchedule && notExpiredByDate
+                val deviceAllowed = msg.audience.device.contains(DeviceType.ALL) || msg.audience.device.contains(deviceType)
+                val osAllowed = msg.audience.os.contains(OSType.ALL) || msg.audience.os.contains(osType)
+                notDismissed && notExpired && inSchedule && notExpiredByDate && deviceAllowed && osAllowed
             }
         )
     }
@@ -59,7 +69,7 @@ class InAppMessageManagerImpl(
         val triggeredMessages = triggerMap[key] ?: return
         for (msg in triggeredMessages) {
             if (
-                msg.trigger.type == com.pushpushgo.inappmessages.model.TriggerType.CUSTOM &&
+                msg.trigger.type == TriggerType.CUSTOM &&
                 msg.trigger.key == key &&
                 (msg.trigger.value == null || msg.trigger.value == value)
             ) {

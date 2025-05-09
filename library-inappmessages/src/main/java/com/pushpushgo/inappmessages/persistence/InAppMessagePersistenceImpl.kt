@@ -20,4 +20,13 @@ class InAppMessagePersistenceImpl(context: Context) : InAppMessagePersistence {
     override fun markMessageExpired(messageId: String) {
         prefs.edit { putBoolean("expired_$messageId", true) }
     }
+
+    override fun getLastShownAt(messageId: String): Long? =
+        if (prefs.contains("last_shown_$messageId")) prefs.getLong("last_shown_$messageId", 0L) else null
+
+    override fun setLastShownAt(messageId: String, timestamp: Long) {
+        prefs.edit {
+            putLong("last_shown_$messageId", timestamp)
+        }
+    }
 }

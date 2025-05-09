@@ -3,7 +3,6 @@ package com.pushpushgo.inappmessages.ui
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,12 +15,13 @@ import com.pushpushgo.inappmessages.R
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.ActionType
 import androidx.core.net.toUri
+import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
+import com.pushpushgo.inappmessages.manager.InAppMessageManager
 
-/**
- * Default implementation for displaying in-app messages as banners, modals, or tooltips.
- * Extend or replace this class to customize UI/UX for your app.
- */
-class InAppMessageDisplayerImpl : InAppMessageDisplayer {
+class InAppMessageDisplayerImpl(
+    private val persistence: InAppMessagePersistence? = null,
+    private val manager: InAppMessageManager? = null
+) : InAppMessageDisplayer {
     private var currentDialog: Dialog? = null
 
     override fun showMessage(activity: Activity, message: InAppMessage) {
@@ -33,9 +33,11 @@ class InAppMessageDisplayerImpl : InAppMessageDisplayer {
         }
     }
 
-    override fun dismissMessage(messageId: String) {
+    override fun dismissMessage(message: InAppMessage) {
         currentDialog?.dismiss()
         currentDialog = null
+        persistence?.markMessageDismissed(message.id)
+        manager?.refreshActiveMessages()
     }
 
     @SuppressLint("InflateParams")
@@ -74,13 +76,6 @@ class InAppMessageDisplayerImpl : InAppMessageDisplayer {
             val tooltipView = inflater.inflate(R.layout.inapp_message_tooltip, null)
             val textView = tooltipView.findViewById<TextView>(R.id.inapp_tooltip_text)
             textView.text = message.name
-            // Styling
-            message.style?.let { style ->
-                val bgColor = style.backgroundColor ?: Color.DKGRAY
-                val textColor = style.textColor ?: Color.WHITE
-                tooltipView.setBackgroundColor(bgColor)
-                textView.setTextColor(textColor)
-            }
             val popup = PopupWindow(tooltipView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true)
             popup.elevation = 8f
             tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
@@ -147,6 +142,5 @@ class InAppMessageDisplayerImpl : InAppMessageDisplayer {
         } else {
             button?.isVisible = false
         }
-        // Optionally add styling logic here if needed (from payload or template)
     }
 }

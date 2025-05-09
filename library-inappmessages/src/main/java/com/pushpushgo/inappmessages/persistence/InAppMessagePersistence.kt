@@ -5,4 +5,6 @@ interface InAppMessagePersistence {
     fun markMessageDismissed(messageId: String)
     fun isMessageExpired(messageId: String): Boolean
     fun markMessageExpired(messageId: String)
+    fun getLastShownAt(messageId: String): Long?
+    fun setLastShownAt(messageId: String, timestamp: Long)
 }

@@ -6,4 +6,5 @@ interface InAppMessageManager {
     fun initialize()
     fun trigger(key: String, value: String? = null)
     fun getActiveMessages(): List<InAppMessage>
+    fun refreshActiveMessages()
 }
