@@ -26,7 +26,7 @@ class InAppMessagesSDK private constructor(
 
         @JvmStatic
         fun initialize(
-            application: android.app.Application,
+            application: Application,
             projectId: String,
             apiKey: String,
             baseUrl: String? = null,

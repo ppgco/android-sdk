@@ -36,30 +36,62 @@ class InAppMessageDisplayerImpl(
     override fun dismissMessage(message: InAppMessage) {
         currentDialog?.dismiss()
         currentDialog = null
-        persistence?.markMessageDismissed(message.id)
+        if (message.timeSettings.showAgain) {
+            // For showAgain messages, record the timestamp for cooldown calculation
+            val now = System.currentTimeMillis()
+            persistence?.setLastShownAt(message.id, now)
+            android.util.Log.d("InAppMsgDisplayer", "dismissMessage: Set lastShownAt for ${message.id} to $now")
+        } else {
+            // Regular dismissal (permanent) for one-time messages
+            persistence?.markMessageDismissed(message.id)
+        }
         manager?.refreshActiveMessages()
     }
 
     @SuppressLint("InflateParams")
     private fun showBanner(activity: Activity, message: InAppMessage) {
+        // Skip display if message is dismissed and not set to show again
+        if (message.timeSettings.showAgain.not() && persistence?.isMessageDismissed(message.id) == true) {
+            android.util.Log.d("InAppMsgDisplayer", "showBanner: Message ${message.id} is dismissed and showAgain is false, not showing.")
+            return
+        }
+        
         val inflater = LayoutInflater.from(activity)
         val view = inflater.inflate(R.layout.inapp_message_banner, null)
         bindMessageView(view, message)
         val dialog = Dialog(activity, R.style.InAppMessageDialog_Banner)
         dialog.setContentView(view)
         dialog.setCancelable(message.dismissible)
+        dialog.setOnDismissListener {
+            // Only call dismissMessage if dialog is being dismissed by user (not programmatically)
+            if (currentDialog != null) {
+                dismissMessage(message)
+            }
+        }
         dialog.show()
         currentDialog = dialog
     }
 
     @SuppressLint("InflateParams")
     private fun showModal(activity: Activity, message: InAppMessage) {
+        // Skip display if message is dismissed and not set to show again
+        if (message.timeSettings.showAgain.not() && persistence?.isMessageDismissed(message.id) == true) {
+            android.util.Log.d("InAppMsgDisplayer", "showModal: Message ${message.id} is dismissed and showAgain is false, not showing.")
+            return
+        }
+
         val inflater = LayoutInflater.from(activity)
         val view = inflater.inflate(R.layout.inapp_message_modal, null)
         bindMessageView(view, message)
         val dialog = Dialog(activity, R.style.InAppMessageDialog_Modal)
         dialog.setContentView(view)
         dialog.setCancelable(message.dismissible)
+        dialog.setOnDismissListener {
+            // Only call dismissMessage if dialog is being dismissed by user (not programmatically)
+            if (currentDialog != null) {
+                dismissMessage(message)
+            }
+        }
         dialog.show()
         currentDialog = dialog
     }
@@ -71,6 +103,12 @@ class InAppMessageDisplayerImpl(
      */
     @SuppressLint("InflateParams")
     fun showTooltip(activity: Activity, message: InAppMessage, anchorView: View? = null) {
+        // Skip display if message is dismissed and not set to show again
+        if (message.timeSettings.showAgain.not() && persistence?.isMessageDismissed(message.id) == true) {
+            android.util.Log.d("InAppMsgDisplayer", "showTooltip: Message ${message.id} is dismissed and showAgain is false, not showing.")
+            return
+        }
+
         if (anchorView != null) {
             val inflater = LayoutInflater.from(activity)
             val tooltipView = inflater.inflate(R.layout.inapp_message_tooltip, null)

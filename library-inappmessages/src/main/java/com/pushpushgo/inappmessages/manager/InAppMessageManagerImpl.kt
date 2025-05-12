@@ -44,14 +44,47 @@ class InAppMessageManagerImpl(
         }
     }
 
+    /**
+     * Checks if a message is eligible to be shown based on cooldown state and dismissal status
+     */
+    private fun isMessageEligibleToShow(msg: InAppMessage): Boolean {
+        val nowMillis = System.currentTimeMillis()
+        
+        // For one-time messages, check if dismissed
+        if (!msg.timeSettings.showAgain && persistence.isMessageDismissed(msg.id)) {
+            return false
+        }
+        
+        // For showAgain messages, check cooldown period
+        if (msg.timeSettings.showAgain) {
+            val lastShownAt = persistence.getLastShownAt(msg.id)
+            if (lastShownAt != null) {
+                val elapsed = nowMillis - lastShownAt
+                val canShowAgain = elapsed >= msg.timeSettings.showAgainTime
+                
+                android.util.Log.d("InAppMsgManager", "isMessageEligibleToShow: [${msg.id}] lastShownAt=$lastShownAt elapsed=$elapsed showAgainTime=${msg.timeSettings.showAgainTime} canShowAgain=$canShowAgain")
+                
+                if (!canShowAgain) {
+                    return false // Still in cooldown
+                }
+            }
+        }
+        
+        return true
+    }
+    
     override fun refreshActiveMessages() {
         val now = now()
         activeMessages.clear()
         val deviceType = DeviceInfoProvider.getCurrentDeviceType(context)
         val osType = DeviceInfoProvider.getCurrentOSType()
+        
         activeMessages.addAll(
             allMessages.filter { msg ->
-                val notDismissed = !persistence.isMessageDismissed(msg.id)
+                // Check cooldown and dismissal status
+                val isEligible = isMessageEligibleToShow(msg)
+                
+                // Standard filters
                 val notExpired = !persistence.isMessageExpired(msg.id)
                 val inSchedule = msg.schedule?.let { sch ->
                     (sch.startTime == null || now.isAfter(sch.startTime)) &&
@@ -60,19 +93,27 @@ class InAppMessageManagerImpl(
                 val notExpiredByDate = msg.expiration?.let { now.isBefore(it) } ?: true
                 val deviceAllowed = msg.audience.device.contains(DeviceType.ALL) || msg.audience.device.contains(deviceType)
                 val osAllowed = msg.audience.os.contains(OSType.ALL) || msg.audience.os.contains(osType)
-                notDismissed && notExpired && inSchedule && notExpiredByDate && deviceAllowed && osAllowed
+                
+                isEligible && notExpired && inSchedule && notExpiredByDate && deviceAllowed && osAllowed
             }
         )
     }
 
     override fun trigger(key: String, value: String?) {
         val triggeredMessages = triggerMap[key] ?: return
+        
         for (msg in triggeredMessages) {
             if (
                 msg.trigger.type == TriggerType.CUSTOM &&
                 msg.trigger.key == key &&
                 (msg.trigger.value == null || msg.trigger.value == value)
             ) {
+                // Check if message is eligible (not dismissed and not in cooldown)
+                if (!isMessageEligibleToShow(msg)) {
+                    continue
+                }
+                
+                // Add message to active list if not already present
                 if (!activeMessages.contains(msg)) {
                     activeMessages.add(msg)
                 }
@@ -80,5 +121,8 @@ class InAppMessageManagerImpl(
         }
     }
 
-    override fun getActiveMessages(): List<InAppMessage> = activeMessages.toList()
+    override fun getActiveMessages(): List<InAppMessage> {
+        // Filter active messages to only include eligible ones (not dismissed and not in cooldown)
+        return activeMessages.filter { msg -> isMessageEligibleToShow(msg) }
+    }
 }
