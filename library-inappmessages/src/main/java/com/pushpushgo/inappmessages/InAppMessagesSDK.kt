@@ -58,6 +58,9 @@ class InAppMessagesSDK private constructor(
      * and on route/view change (with currentRoute = route name).
      */
     fun showActiveMessages(activity: Activity, currentRoute: String? = null) {
+        // Cancel any pending delayed messages when route/activity changes
+        displayer?.cancelPendingMessages()
+        
         manager?.let {
             val messages = it.getActiveMessages().filter { msg ->
                 (msg.trigger.type == TriggerType.APP_OPEN) ||
@@ -74,6 +77,9 @@ class InAppMessagesSDK private constructor(
      * Only messages with trigger.type == CUSTOM and matching key (and value, if provided) will be shown.
      */
     fun showMessagesOnTrigger(activity: Activity, key: String, value: String? = null) {
+        // Cancel any pending delayed messages when trigger changes
+        displayer?.cancelPendingMessages()
+        
         manager?.let {
             val messages = it.getActiveMessages().filter { msg ->
                 msg.trigger.type == TriggerType.CUSTOM &&

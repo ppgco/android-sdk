@@ -3,6 +3,8 @@ package com.pushpushgo.inappmessages.ui
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,20 +19,73 @@ import com.pushpushgo.inappmessages.model.ActionType
 import androidx.core.net.toUri
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.manager.InAppMessageManager
+import java.lang.ref.WeakReference
 
 class InAppMessageDisplayerImpl(
     private val persistence: InAppMessagePersistence? = null,
     private val manager: InAppMessageManager? = null
 ) : InAppMessageDisplayer {
     private var currentDialog: Dialog? = null
-
+    
+    // Map to store pending delayed messages and their handlers
+    private val pendingMessages = mutableMapOf<String, Handler>()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    
     override fun showMessage(activity: Activity, message: InAppMessage) {
+        // Cancel any existing pending show operation for this message
+        pendingMessages[message.id]?.removeCallbacksAndMessages(null)
+        
+        val delay = message.timeSettings.showAfterDelay
+        if (delay > 0) {
+            android.util.Log.d("InAppMsgDisplayer", "Scheduling message ${message.id} to show after $delay ms")
+            
+            // Store activity as weak reference to prevent memory leaks
+            val activityRef = WeakReference(activity)
+            
+            // Schedule delayed display
+            mainHandler.postDelayed({
+                pendingMessages.remove(message.id)
+                
+                // Get activity from weak reference
+                val activityInstance = activityRef.get()
+                if (activityInstance == null || activityInstance.isFinishing) {
+                    android.util.Log.d("InAppMsgDisplayer", "Activity no longer available, not showing message ${message.id}")
+                    return@postDelayed
+                }
+                
+                // Show the message after delay
+                android.util.Log.d("InAppMsgDisplayer", "Showing message ${message.id} after delay")
+                showMessageByType(activityInstance, message)
+            }, delay)
+            
+            // Store handler to allow cancellation if needed
+            pendingMessages[message.id] = mainHandler
+        } else {
+            // Show immediately if no delay
+            showMessageByType(activity, message)
+        }
+    }
+    
+    private fun showMessageByType(activity: Activity, message: InAppMessage) {
         when (message.template.lowercase()) {
             "banner" -> showBanner(activity, message)
             "modal" -> showModal(activity, message)
             "tooltip" -> showTooltip(activity, message)
             else -> showBanner(activity, message) // fallback
         }
+    }
+    
+    override fun cancelPendingMessages() {
+        android.util.Log.d("InAppMsgDisplayer", "Cancelling ${pendingMessages.size} pending delayed messages")
+        
+        // Cancel all pending handlers
+        pendingMessages.forEach { (messageId, handler) -> 
+            handler.removeCallbacksAndMessages(null)
+            android.util.Log.d("InAppMsgDisplayer", "Cancelled pending delayed message: $messageId")
+        }
+        
+        // Clear the collection
+        pendingMessages.clear()
     }
 
     override fun dismissMessage(message: InAppMessage) {
