@@ -1,4 +1,4 @@
-include ':library', ":library-no-op"
+include ':library', ":library-no-op", ":library-inappmessages"
 if (!System.env.JITPACK) include ':sample', ':samplehms', ':samplejava'
 
 dependencyResolutionManagement {

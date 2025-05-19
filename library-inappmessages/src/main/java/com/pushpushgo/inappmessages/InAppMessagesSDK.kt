@@ -2,7 +2,6 @@ package com.pushpushgo.inappmessages
 
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import com.pushpushgo.inappmessages.manager.InAppMessageManager
 import com.pushpushgo.inappmessages.manager.InAppMessageManagerImpl
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistenceImpl
