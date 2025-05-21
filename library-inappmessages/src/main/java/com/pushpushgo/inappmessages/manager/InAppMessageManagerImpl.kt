@@ -1,164 +1,295 @@
 package com.pushpushgo.inappmessages.manager
 
-import com.pushpushgo.inappmessages.model.InAppMessage
-import com.pushpushgo.inappmessages.utils.DeviceInfoProvider
 import android.content.Context
+import android.util.Log
 import com.pushpushgo.inappmessages.model.DeviceType
+import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.OSType
 import com.pushpushgo.inappmessages.model.TriggerType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.repository.InAppMessageRepository
+import com.pushpushgo.inappmessages.utils.DeviceInfoProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.ZonedDateTime
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.coroutines.CoroutineContext
 
 class InAppMessageManagerImpl(
     private val repository: InAppMessageRepository,
     private val persistence: InAppMessagePersistence,
     private val context: Context,
-) : InAppMessageManager {
+) : InAppMessageManager, CoroutineScope {
+    
+    private val tag = "InAppMessageManager"
+    
+    // Coroutine context for this scope
+    private val job = SupervisorJob()
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Default + job
+    
+    // Schedule refresh configuration
     private var scheduleRefreshJob: Job? = null
     private val scheduleRefreshInterval = 60_000L // Check schedules every minute
+    
+    // Thread-safe collections for message management
     private val activeMessages = CopyOnWriteArrayList<InAppMessage>()
     private val allMessages = CopyOnWriteArrayList<InAppMessage>()
     private val triggerMap = mutableMapOf<String, MutableList<InAppMessage>>()
+    
+    // Device info
+    private val currentDeviceType by lazy { DeviceInfoProvider.getCurrentDeviceType(context) }
+    private val currentOsType = OSType.ANDROID
 
     override fun initialize() {
-        CoroutineScope(Dispatchers.Main).launch {
-            val messages = repository.fetchMessages()
-            allMessages.clear()
-            allMessages.addAll(messages)
-            buildTriggerMap(messages)
-            refreshActiveMessages()
-
-            // Start periodic schedule checks
-            startScheduleRefresh()
-        }
-    }
-
-    private fun startScheduleRefresh() {
-        scheduleRefreshJob?.cancel()
-        scheduleRefreshJob = CoroutineScope(Dispatchers.Main).launch {
-            while (true) {
-                delay(scheduleRefreshInterval)
-                // Check if any messages need to be updated due to schedule changes
-                refreshActiveMessages()
-                android.util.Log.d("InAppMsgManager", "Performed periodic schedule check")
-            }
-        }
-    }
-
-    private fun buildTriggerMap(messages: List<InAppMessage>) {
-        triggerMap.clear()
-        for (msg in messages) {
-            if (msg.trigger.type == TriggerType.CUSTOM) {
-                msg.trigger.key?.let { key ->
-                    triggerMap.getOrPut(key) { mutableListOf() }.add(msg)
+        launch {
+            try {
+                Log.d(tag, "Initializing InAppMessageManager")
+                
+                // Fetch messages in IO context
+                val messages = withContext(Dispatchers.IO) {
+                    repository.fetchMessages()
                 }
+                
+                Log.d(tag, "Fetched ${messages.size} messages")
+                
+                // Update collections
+                allMessages.clear()
+                allMessages.addAll(messages)
+                
+                // Build trigger map and refresh active messages
+                buildTriggerMap(messages)
+                refreshActiveMessages()
+
+                // Start periodic schedule checks
+                startScheduleRefresh()
+                
+                Log.d(tag, "InAppMessageManager initialized successfully")
+            } catch (e: Exception) {
+                Log.e(tag, "Error initializing InAppMessageManager: ${e.message}")
             }
         }
     }
 
     /**
-     * Checks if a message is eligible to be shown based on cooldown state and dismissal status
+     * Start a periodic job to refresh message schedules
+     * This runs on a background thread to avoid blocking the main thread
      */
-    private fun isMessageEligibleToShow(msg: InAppMessage): Boolean {
+    private fun startScheduleRefresh() {
+        // Cancel any existing job
+        scheduleRefreshJob?.cancel()
+        
+        // Start a new job in the current scope to leverage its lifecycle
+        scheduleRefreshJob = launch(Dispatchers.IO) {
+            try {
+                Log.d(tag, "Starting periodic schedule refresh every ${scheduleRefreshInterval}ms")
+                
+                while (true) {
+                    delay(scheduleRefreshInterval)
+                    
+                    // Don't block on refresh, just log and continue if there's an error
+                    try {
+                        refreshActiveMessages()
+                        Log.d(tag, "Performed periodic schedule check")
+                    } catch (e: Exception) {
+                        Log.e(tag, "Error during periodic schedule refresh: ${e.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(tag, "Schedule refresh job failed: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Builds a map of trigger keys to messages for fast lookup when triggers occur
+     * Only messages with CUSTOM trigger type are included in the map
+     * 
+     * @param messages List of all available messages
+     */
+    private fun buildTriggerMap(messages: List<InAppMessage>) {
+        // Use synchronized to prevent concurrent modification issues
+        synchronized(triggerMap) {
+            triggerMap.clear()
+            
+            // Use functional approach with filter and groupBy when possible
+            messages
+                .filter { it.trigger.type == TriggerType.CUSTOM && it.trigger.key != null }
+                .forEach { msg -> 
+                    msg.trigger.key?.let { key ->
+                        triggerMap.getOrPut(key) { mutableListOf() }.add(msg)
+                    }
+                }
+            
+            Log.d(tag, "Built trigger map with ${triggerMap.size} unique trigger keys")
+        }
+    }
+
+    /**
+     * Checks if a message is eligible to be shown based on cooldown state and dismissal status
+     * 
+     * @param msg The message to check eligibility for
+     * @return true if the message is eligible to be shown, false otherwise
+     */
+    private suspend fun isMessageEligibleToShow(msg: InAppMessage): Boolean = withContext(Dispatchers.IO) {
         val nowMillis = System.currentTimeMillis()
-
-        // For one-time messages, check if dismissed
-        if (!msg.timeSettings.showAgain && persistence.isMessageDismissed(msg.id)) {
-            return false
-        }
-
-        // For showAgain messages, check cooldown period
-        if (msg.timeSettings.showAgain) {
-            val lastShownAt = persistence.getLastShownAt(msg.id)
-            if (lastShownAt != null) {
-                val elapsed = nowMillis - lastShownAt
-                val canShowAgain = elapsed >= msg.timeSettings.showAgainTime
-
-                android.util.Log.d(
-                    "InAppMsgManager",
-                    "isMessageEligibleToShow: [${msg.id}] lastShownAt=$lastShownAt elapsed=$elapsed showAgainTime=${msg.timeSettings.showAgainTime} canShowAgain=$canShowAgain"
-                )
-
-                if (!canShowAgain) {
-                    return false // Still in cooldown
-                }
+        
+        // Check for one-time messages (showAgain = false)
+        if (!msg.timeSettings.showAgain) {
+            val isDismissed = persistence.isMessageDismissed(msg.id)
+            if (isDismissed) {
+                Log.d(tag, "Message [${msg.id}] is a one-time message and has been dismissed")
+                return@withContext false
             }
+            return@withContext true
         }
-
-        return true
+        
+        // For showAgain messages, check if the cooldown period has elapsed
+        val lastShownAt = persistence.getLastShownAt(msg.id)
+        if (lastShownAt != null) {
+            val elapsed = nowMillis - lastShownAt
+            val requiredCooldown = msg.timeSettings.showAgainTime
+            val canShowAgain = elapsed >= requiredCooldown
+            
+            Log.d(
+                tag,
+                "Message [${msg.id}] lastShownAt=$lastShownAt, elapsed=${elapsed}ms, " +
+                "cooldown=${requiredCooldown}ms, eligible=$canShowAgain"
+            )
+            
+            return@withContext canShowAgain
+        }
+        
+        // If never shown before, it's eligible
+        return@withContext true
     }
 
+    /**
+     * Refresh the list of active messages based on current conditions
+     * Filters messages by eligibility, schedule, device type, OS type, and expiration
+     */
     override fun refreshActiveMessages() {
-        // Get current time in system default zone for consistent time zone handling
-        val currentTime = ZonedDateTime.now()
-        activeMessages.clear()
-        val deviceType = DeviceInfoProvider.getCurrentDeviceType(context)
-        val osType = DeviceInfoProvider.getCurrentOSType()
-
-        activeMessages.addAll(
-            allMessages.filter { msg ->
-                // First check schedule boundaries - this is the absolute constraint
-                if (!isInScheduleWindow(msg)) {
-                    return@filter false
+        // Launch the refresh in a coroutine to avoid blocking the calling thread
+        launch {
+            try {
+                Log.d(tag, "Refreshing active messages")
+                
+                // Get current time in system default zone for consistent time zone handling
+                val currentTime = ZonedDateTime.now()
+                
+                // Run filtering in background thread
+                val filteredMessages = withContext(Dispatchers.Default) {
+                    allMessages.filter { msg ->
+                        // Check if message is eligible (not dismissed and not in cooldown)
+                        val isEligible = isMessageEligibleToShow(msg)
+                        
+                        // Check if message is in schedule window
+                        val inScheduleWindow = isInScheduleWindow(msg)
+                        
+                        // Check persisted expiration state
+                        val notExpired = !persistence.isMessageExpired(msg.id)
+                        
+                        // Also check expiration in ZonedDateTime if set
+                        val notExpiredByDate = msg.expiration?.let { expiration ->
+                            // Normalize expiration to same zone as current time for accurate comparison
+                            val normalizedExpiration = expiration.withZoneSameInstant(currentTime.zone)
+                            currentTime.isBefore(normalizedExpiration)
+                        } ?: true
+                        
+                        // Check device and OS compatibility
+                        val deviceAllowed = msg.audience.device.contains(DeviceType.ALL) || 
+                                msg.audience.device.contains(currentDeviceType)
+                        val osAllowed = msg.audience.os.contains(OSType.ALL) || 
+                                msg.audience.os.contains(currentOsType)
+                        
+                        // All conditions must be met
+                        val result = isEligible && inScheduleWindow && notExpired && notExpiredByDate && 
+                                deviceAllowed && osAllowed
+                        
+                        if (result) {
+                            Log.d(tag, "Message [${msg.id}] is active and eligible")
+                        }
+                        
+                        result
+                    }
                 }
-
-                // Second, check cooldown and dismissal status
-                val isEligible = isMessageEligibleToShow(msg)
-
-                // Other standard filters
-                val notExpired = !persistence.isMessageExpired(msg.id)
-                // Normalize expiration to same time zone as current time for proper comparison
-                val notExpiredByDate = msg.expiration?.let {
-                    val normalizedExpiration = it.withZoneSameInstant(currentTime.zone)
-                    currentTime.isBefore(normalizedExpiration)
-                } ?: true
-                val deviceAllowed = msg.audience.device.contains(DeviceType.ALL) || msg.audience.device.contains(deviceType)
-                val osAllowed = msg.audience.os.contains(OSType.ALL) || msg.audience.os.contains(osType)
-
-                val result = isEligible && notExpired && notExpiredByDate && deviceAllowed && osAllowed
-                result
+                
+                // Update active messages list (thread-safe operation)
+                synchronized(activeMessages) {
+                    activeMessages.clear()
+                    activeMessages.addAll(filteredMessages)
+                }
+                
+                Log.d(tag, "Active messages refreshed, count: ${activeMessages.size}")
+            } catch (e: Exception) {
+                Log.e(tag, "Error refreshing active messages: ${e.message}")
             }
-        )
+        }
     }
 
+    /**
+     * Trigger custom messages by key and optional value
+     * Only messages with matching key (and value if specified) will be triggered
+     * 
+     * @param key The trigger key to match
+     * @param value Optional value to match (null matches any value)
+     */
     override fun trigger(key: String, value: String?) {
-        val triggeredMessages = triggerMap[key] ?: return
+        // Launch in a coroutine to avoid blocking the calling thread
+        launch {
+            Log.d(tag, "Triggering messages with key=$key, value=$value")
+            
+            // Get messages that match this trigger
+            val matchingMessages = synchronized(triggerMap) {
+                triggerMap[key]?.filter { msg ->
+                    msg.trigger.type == TriggerType.CUSTOM &&
+                    msg.trigger.key == key &&
+                    (msg.trigger.value == null || msg.trigger.value == value)
+                } ?: emptyList()
+            }
+            
+            if (matchingMessages.isEmpty()) {
+                Log.d(tag, "No messages found for trigger key=$key")
+                return@launch
+            }
+            
+            Log.d(tag, "Found ${matchingMessages.size} matching messages for trigger key=$key")
+            
+            // Process each matching message
+            matchingMessages.forEach { msg ->
+                processTriggeredMessage(msg)
+            }
+        }
+    }
+    
+    /**
+     * Process a triggered message by checking eligibility and adding to active messages if appropriate
+     */
+    private suspend fun processTriggeredMessage(msg: InAppMessage) {
+        // First check if message is in schedule window - this is absolute
+        if (!isInScheduleWindow(msg)) {
+            Log.d(tag, "Message [${msg.id}] matched trigger but not in schedule window")
+            return
+        }
 
-        for (msg in triggeredMessages) {
-            if (
-                msg.trigger.type == TriggerType.CUSTOM &&
-                msg.trigger.key == key &&
-                (msg.trigger.value == null || msg.trigger.value == value)
-            ) {
-                // First check if message is in schedule window - this is absolute
-                if (!isInScheduleWindow(msg)) {
-                    android.util.Log.d("InAppMsgManager", "[${msg.id}] Trigger matched but message not in schedule window")
-                    continue
-                }
+        // Then check if message is eligible (not dismissed and not in cooldown)
+        if (!isMessageEligibleToShow(msg)) {
+            Log.d(tag, "Message [${msg.id}] matched trigger but not eligible due to dismissal/cooldown")
+            return
+        }
 
-                // Then check if message is eligible (not dismissed and not in cooldown)
-                if (!isMessageEligibleToShow(msg)) {
-                    android.util.Log.d(
-                        "InAppMsgManager",
-                        "[${msg.id}] Trigger matched but message not eligible due to dismissal/cooldown"
-                    )
-                    continue
-                }
-
-                // Add message to active list if not already present
-                if (!activeMessages.contains(msg)) {
-                    android.util.Log.d("InAppMsgManager", "[${msg.id}] Adding to active messages after trigger")
-                    activeMessages.add(msg)
-                } else {
-                    android.util.Log.d("InAppMsgManager", "[${msg.id}] Already in active messages")
-                }
+        // Add message to active list if not already present (thread-safe operation)
+        synchronized(activeMessages) {
+            if (!activeMessages.contains(msg)) {
+                Log.d(tag, "Adding message [${msg.id}] to active messages after trigger")
+                activeMessages.add(msg)
+            } else {
+                Log.d(tag, "Message [${msg.id}] already in active messages")
             }
         }
     }
@@ -170,39 +301,74 @@ class InAppMessageManagerImpl(
      * @param msg The message to check
      * @return true if the message is within its schedule or has no schedule
      */
-    private fun isInScheduleWindow(msg: InAppMessage): Boolean {
-        val schedule = msg.schedule ?: return true // No schedule means always in window
+    private suspend fun isInScheduleWindow(msg: InAppMessage): Boolean = withContext(Dispatchers.Default) {
+        val schedule = msg.schedule ?: return@withContext true // No schedule means always in window
 
         // Get current time in system default zone
         val currentTime = ZonedDateTime.now()
 
-        // Normalize start time to the same zone as current time if specified
+        // If there's no schedule constraints, message is always in window
+        if (schedule.startTime == null && schedule.endTime == null) {
+            return@withContext true
+        }
+        
+        // Normalize time zones for accurate comparison
         val normalizedStartTime = schedule.startTime?.withZoneSameInstant(currentTime.zone)
-
-        // Normalize end time to the same zone as current time if specified
         val normalizedEndTime = schedule.endTime?.withZoneSameInstant(currentTime.zone)
 
-        // Compare times with normalized zones for accurate comparison
+        // Check if current time is within schedule bounds
         val afterStart = normalizedStartTime == null || !currentTime.isBefore(normalizedStartTime)
         val beforeEnd = normalizedEndTime == null || currentTime.isBefore(normalizedEndTime)
+        val isInWindow = afterStart && beforeEnd
+        
+        // Log the result for debugging
+        Log.d(
+            tag,
+            "Schedule check for [${msg.id}]: " +
+            "start=${normalizedStartTime ?: "None"}, " +
+            "end=${normalizedEndTime ?: "None"}, " +
+            "current=$currentTime, " +
+            "inWindow=$isInWindow"
+        )
 
-        // Log schedule status for debugging with detailed time zone information
-        if (schedule.startTime != null || schedule.endTime != null) {
-            android.util.Log.d(
-                "InAppMsgManager", "[${msg.id}] Schedule check with normalized time zones: " +
-                    "afterStart=$afterStart, " +
-                    "beforeEnd=$beforeEnd, " +
-                    "currentTime=$currentTime (zone=${currentTime.zone})"
-            )
-        }
-
-        return afterStart && beforeEnd
+        return@withContext isInWindow
     }
 
+    /**
+     * Get the current list of active messages
+     * This method returns the cached list of active messages from the most recent refresh
+     * For the most up-to-date list, call refreshActiveMessages() first
+     * 
+     * @return List of active messages that are eligible to be shown
+     */
     override fun getActiveMessages(): List<InAppMessage> {
-        // First filter by schedule (absolute constraint), then by other eligibility criteria
-        return activeMessages
-            .filter { msg -> isInScheduleWindow(msg) }
-            .filter { msg -> isMessageEligibleToShow(msg) }
+        // Simply return the current active messages list, which is already filtered
+        // during refreshActiveMessages calls
+        return activeMessages.toList()
+    }
+    
+    /**
+     * Clean up resources when the manager is no longer needed
+     * Should be called when the app is closing or the manager is no longer needed
+     */
+    fun cleanup() {
+        Log.d(tag, "Cleaning up InAppMessageManager resources")
+        
+        // Cancel all coroutines
+        scheduleRefreshJob?.cancel()
+        job.cancel()
+        
+        // Clear collections
+        synchronized(activeMessages) {
+            activeMessages.clear()
+        }
+        synchronized(allMessages) {
+            allMessages.clear()
+        }
+        synchronized(triggerMap) {
+            triggerMap.clear()
+        }
+        
+        Log.d(tag, "InAppMessageManager resources cleaned up")
     }
 }

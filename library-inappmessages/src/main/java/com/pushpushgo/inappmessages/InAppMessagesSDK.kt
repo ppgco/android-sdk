@@ -2,13 +2,15 @@ package com.pushpushgo.inappmessages
 
 import android.app.Activity
 import android.app.Application
+import android.util.Log
 import com.pushpushgo.inappmessages.manager.InAppMessageManager
 import com.pushpushgo.inappmessages.manager.InAppMessageManagerImpl
+import com.pushpushgo.inappmessages.model.TriggerType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistenceImpl
 import com.pushpushgo.inappmessages.repository.InAppMessageRepositoryImpl
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayer
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayerImpl
-import com.pushpushgo.inappmessages.model.TriggerType
+import com.pushpushgo.inappmessages.utils.AutoCleanupManager
 
 class InAppMessagesSDK private constructor(
     private val application: Application,
@@ -16,8 +18,10 @@ class InAppMessagesSDK private constructor(
     private val apiKey: String,
     private val baseUrl: String? = null,
 ) {
+    private val tag = "InAppMessagesSDK"
     private var manager: InAppMessageManager? = null
     private var displayer: InAppMessageDisplayer? = null
+    private var autoCleanupManager: AutoCleanupManager? = null
 
     companion object {
         @Volatile
@@ -31,7 +35,9 @@ class InAppMessagesSDK private constructor(
             baseUrl: String? = null,
         ): InAppMessagesSDK {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: InAppMessagesSDK(application, projectId, apiKey, baseUrl).also { INSTANCE = it }
+                INSTANCE ?: InAppMessagesSDK(application, projectId, apiKey, baseUrl).also { 
+                    INSTANCE = it
+                }
             }
         }
 
@@ -39,6 +45,8 @@ class InAppMessagesSDK private constructor(
         fun getInstance(): InAppMessagesSDK =
             INSTANCE ?: throw IllegalStateException("InAppMessagesSDK is not initialized!")
     }
+    
+    // ActivityLifecycleCallbacks have been moved to AutoCleanupManager
 
     init {
         val repository = InAppMessageRepositoryImpl(application, "in_app_messages.json")
@@ -46,6 +54,39 @@ class InAppMessagesSDK private constructor(
         manager = InAppMessageManagerImpl(repository, persistence, application)
         manager?.initialize()
         this.displayer = displayer ?: InAppMessageDisplayerImpl(persistence)
+        
+        // Initialize the automatic cleanup manager
+        autoCleanupManager = AutoCleanupManager(
+            application = application,
+            cleanupCallback = { cleanup() }
+        )
+        // Start monitoring for background state
+        autoCleanupManager?.start()
+        
+        Log.d(tag, "InAppMessagesSDK initialized with automatic background cleanup")
+    }
+    
+    /**
+     * Cleans up resources used by the SDK
+     * This is called automatically after app is in background for a prolonged period,
+     * but can also be called manually from app's onDestroy()
+     */
+    private fun cleanup() {
+        Log.d(tag, "Cleaning up InAppMessagesSDK resources")
+        
+        // Stop the auto-cleanup manager
+        autoCleanupManager?.stop()
+        autoCleanupManager = null
+        
+        // Cancel any pending messages
+        displayer?.cancelPendingMessages()
+        
+        // Clean up manager resources if it's our implementation
+        if (manager is InAppMessageManagerImpl) {
+            (manager as InAppMessageManagerImpl).cleanup()
+        }
+        
+        Log.d(tag, "InAppMessagesSDK resources cleaned up")
     }
 
     /**
