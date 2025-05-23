@@ -11,6 +11,10 @@ import com.pushpushgo.inappmessages.repository.InAppMessageRepositoryImpl
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayer
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayerImpl
 import com.pushpushgo.inappmessages.utils.AutoCleanupManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class InAppMessagesSDK private constructor(
     private val application: Application,
@@ -101,36 +105,72 @@ class InAppMessagesSDK private constructor(
         // Cancel any pending delayed messages when route/activity changes
         displayer?.cancelPendingMessages()
         
-        manager?.let {
-            val messages = it.getActiveMessages().filter { msg ->
-                (msg.trigger.type == TriggerType.APP_OPEN) ||
-                (currentRoute != null && msg.trigger.type == TriggerType.ROUTE && msg.trigger.route == currentRoute)
-            }
-            messages.forEach { message ->
-                displayer?.showMessage(activity, message)
+        // Get manager and check for null
+        manager?.let { mgr ->
+            // Use coroutine scope to handle async eligibility checks
+            CoroutineScope(Dispatchers.Main).launch {
+                // Get potential messages that match the route trigger criteria
+                val potentialMessages = mgr.getActiveMessages().filter { msg ->
+                    (msg.trigger.type == TriggerType.APP_OPEN) ||
+                    (currentRoute != null && msg.trigger.type == TriggerType.ROUTE && msg.trigger.route == currentRoute)
+                }
+                
+                // Now check each message's eligibility in real-time
+                val trulyEligibleMessages = potentialMessages.filter { message ->
+                    mgr.isMessageEligible(message)
+                }
+                
+                // Log activity for debugging
+                if (trulyEligibleMessages.isNotEmpty()) {
+                    Log.d(tag, "Showing ${trulyEligibleMessages.size} eligible messages for ${if (currentRoute == null) "APP_OPEN" else "route=$currentRoute"}")
+                    trulyEligibleMessages.forEach { message ->
+                        displayer?.showMessage(activity, message)
+                    }
+                } else {
+                    Log.d(tag, "No eligible messages to show for ${if (currentRoute == null) "APP_OPEN" else "route=$currentRoute"}")
+                }
             }
         }
     }
 
     /**
-     * Shows all in-app messages for a custom trigger.
+     * Shows in-app messages for a custom trigger.
      * Only messages with trigger.type == CUSTOM and matching key (and value, if provided) will be shown.
+     * Also doesn't cancel pending messages for APP_OPEN trigger.
      */
     fun showMessagesOnTrigger(activity: Activity, key: String, value: String? = null) {
-        // Cancel any pending delayed messages when trigger changes
-        displayer?.cancelPendingMessages()
-        
-        manager?.let {
-            val messages = it.getActiveMessages().filter { msg ->
-                msg.trigger.type == TriggerType.CUSTOM &&
-                msg.trigger.key == key &&
-                (value == null || msg.trigger.value == value)
-            }
-            messages.forEach { message ->
-                displayer?.showMessage(activity, message)
+        // Get manager and check for null
+        manager?.let { mgr ->
+            CoroutineScope(Dispatchers.Main).launch {
+                // IMPORTANT: We need to process the trigger first and wait for it to complete
+                // before checking for messages
+                Log.d(tag, "Processing trigger for key=$key, value=${value ?: "null"}")
+                
+                // The trigger call sets up messages in the triggerMap
+                mgr.trigger(key, value)
+                
+                // Now get the messages that were triggered and are eligible
+                val matchingMessages = mgr.getActiveMessages().filter { msg ->
+                    msg.trigger.type == TriggerType.CUSTOM &&
+                    msg.trigger.key == key &&
+                    (value == null || msg.trigger.value == null || msg.trigger.value == value)
+                }
+                
+                // Check real-time eligibility (cooldown, schedule, etc.)
+                val eligibleMessages = matchingMessages.filter { message ->
+                    mgr.isMessageEligible(message)
+                }
+                
+                // Display eligible messages
+                if (eligibleMessages.isNotEmpty()) {
+                    Log.d(tag, "Showing ${eligibleMessages.size} eligible messages for custom trigger key=$key")
+                    eligibleMessages.forEach { message ->
+                        displayer?.showMessage(activity, message)
+                    }
+                } else {
+                    Log.d(tag, "No eligible messages to show for custom trigger key=$key")
+                }
             }
         }
     }
 }
-
-

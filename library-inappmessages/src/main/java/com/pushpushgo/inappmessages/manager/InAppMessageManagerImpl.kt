@@ -137,35 +137,52 @@ class InAppMessageManagerImpl(
      * @return true if the message is eligible to be shown, false otherwise
      */
     private suspend fun isMessageEligibleToShow(msg: InAppMessage): Boolean = withContext(Dispatchers.IO) {
+        isMessageEligible(msg)
+    }
+    
+    /**
+     * Implementation of the InAppMessageManager interface method
+     * Checks if a message is eligible to be shown based on cooldown state and dismissal status
+     * 
+     * @param message The message to check eligibility for
+     * @return true if the message is eligible to be shown, false otherwise
+     */
+    override suspend fun isMessageEligible(message: InAppMessage): Boolean = withContext(Dispatchers.IO) {
+        // Check schedule window if applicable
+        if (!isInScheduleWindow(message)) {
+            Log.d(tag, "Message [${message.id}] is outside schedule window and not eligible")
+            return@withContext false
+        }
+        
         val nowMillis = System.currentTimeMillis()
         
         // Check for one-time messages (showAgain = false)
-        if (!msg.timeSettings.showAgain) {
-            val isDismissed = persistence.isMessageDismissed(msg.id)
+        if (!message.timeSettings.showAgain) {
+            val isDismissed = persistence.isMessageDismissed(message.id)
             if (isDismissed) {
-                Log.d(tag, "Message [${msg.id}] is a one-time message and has been dismissed")
+                Log.d(tag, "Message [${message.id}] is a one-time message and has been dismissed")
                 return@withContext false
             }
             return@withContext true
         }
         
         // For showAgain messages, check if the cooldown period has elapsed
-        val lastShownAt = persistence.getLastShownAt(msg.id)
+        val lastShownAt = persistence.getLastShownAt(message.id)
         if (lastShownAt != null) {
             val elapsed = nowMillis - lastShownAt
-            val requiredCooldown = msg.timeSettings.showAgainTime
+            val requiredCooldown = message.timeSettings.showAgainTime
             val canShowAgain = elapsed >= requiredCooldown
             
             Log.d(
                 tag,
-                "Message [${msg.id}] lastShownAt=$lastShownAt, elapsed=${elapsed}ms, " +
+                "Message [${message.id}] lastShownAt=$lastShownAt, elapsed=${elapsed}ms, " +
                 "cooldown=${requiredCooldown}ms, eligible=$canShowAgain"
             )
             
             return@withContext canShowAgain
         }
         
-        // If never shown before, it's eligible
+        // If we reach here, the message has never been shown and has no cooldown
         return@withContext true
     }
 

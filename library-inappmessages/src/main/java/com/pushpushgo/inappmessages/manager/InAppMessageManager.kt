@@ -7,4 +7,5 @@ interface InAppMessageManager {
     fun trigger(key: String, value: String? = null)
     fun getActiveMessages(): List<InAppMessage>
     fun refreshActiveMessages()
+    suspend fun isMessageEligible(message: InAppMessage): Boolean
 }
