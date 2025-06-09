@@ -9,6 +9,7 @@ import com.pushpushgo.inappmessages.model.TriggerType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.repository.InAppMessageRepository
 import com.pushpushgo.inappmessages.utils.DeviceInfoProvider
+import com.pushpushgo.inappmessages.utils.PushNotificationStatusProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,6 +26,9 @@ class InAppMessageManagerImpl(
     private val persistence: InAppMessagePersistence,
     private val context: Context,
 ) : InAppMessageManager, CoroutineScope {
+    
+    // Provider for accessing push notification subscription status
+    private val notificationStatusProvider = PushNotificationStatusProvider(context)
     
     private val tag = "InAppMessageManager"
     
@@ -224,9 +228,12 @@ class InAppMessageManagerImpl(
                         val osAllowed = msg.audience.os.contains(OSType.ALL) || 
                                 msg.audience.os.contains(currentOsType)
                         
+                        // Check user audience type compatibility
+                        val userAllowed = notificationStatusProvider.matchesAudienceType(msg.audience.users)
+                        
                         // All conditions must be met
                         val result = isEligible && inScheduleWindow && notExpired && notExpiredByDate && 
-                                deviceAllowed && osAllowed
+                                deviceAllowed && osAllowed && userAllowed
                         
                         if (result) {
                             Log.d(tag, "Message [${msg.id}] is active and eligible")

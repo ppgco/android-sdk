@@ -42,8 +42,9 @@ dependencies {
     implementation("androidx.navigation:navigation-common-ktx:2.9.0")
     
     // Compose dependencies
-    implementation("androidx.compose.runtime:runtime:1.8.1")
-    
+    implementation("androidx.compose.runtime:runtime:1.8.2")
+    implementation("androidx.preference:preference-ktx:1.2.1")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")

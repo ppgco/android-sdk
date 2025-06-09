@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
 import androidx.core.content.getSystemService
@@ -68,7 +69,9 @@ internal class NotificationStatusChecker private constructor(
     }
 
     private fun areNotificationsEnabled(): Boolean {
-        if (!notificationManager.areNotificationsEnabled()) return false
+        val areNotificationsEnabled = notificationManager.areNotificationsEnabled()
+        pref.areNotificationsBlocked = !areNotificationsEnabled
+        if (!areNotificationsEnabled) return false
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
 
         val channelName = context.getString(R.string.pushpushgo_notification_default_channel_id)

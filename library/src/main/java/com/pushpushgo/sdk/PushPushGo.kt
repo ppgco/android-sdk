@@ -375,7 +375,9 @@ class PushPushGo private constructor(
     }
 
     fun areNotificationsEnabled(): Boolean {
-        return areNotificationsEnabled(application)
+        val areEnabled = areNotificationsEnabled(application)
+        networkModule.sharedPref.areNotificationsBlocked = !areEnabled
+        return areEnabled
     }
 
     /**
