@@ -4,7 +4,6 @@ import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
 import androidx.core.content.getSystemService

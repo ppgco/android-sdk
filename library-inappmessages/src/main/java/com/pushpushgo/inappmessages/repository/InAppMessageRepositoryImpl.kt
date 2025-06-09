@@ -126,6 +126,8 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
         return InAppMessage(
             id = obj.getString("id"),
             name = obj.optString("name", ""),
+            title = obj.optString("title", ""),
+            description = obj.optString("description", ""),
             template = obj.optString("template", "default"),
             actions = actions,
             audience = Audience(
@@ -143,8 +145,9 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
                 showAgainTime = settingsObj.optLong("showAgainTime", 0L)
             ),
             trigger = trigger,
-            dismissible = dismissible,
+            dismissible = obj.optBoolean("dismissible", true),
             type = type,
+            priority = obj.optInt("priority", 0),
             schedule = schedule,
             expiration = expiration
         )

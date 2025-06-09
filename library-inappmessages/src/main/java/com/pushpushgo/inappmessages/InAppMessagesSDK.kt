@@ -122,10 +122,9 @@ class InAppMessagesSDK private constructor(
                 
                 // Log activity for debugging
                 if (trulyEligibleMessages.isNotEmpty()) {
-                    Log.d(tag, "Showing ${trulyEligibleMessages.size} eligible messages for ${if (currentRoute == null) "APP_OPEN" else "route=$currentRoute"}")
-                    trulyEligibleMessages.forEach { message ->
-                        displayer?.showMessage(activity, message)
-                    }
+                    val highestPriorityMessage = trulyEligibleMessages.first()
+                    Log.d(tag, "Showing highest priority message ${highestPriorityMessage.id} (priority ${highestPriorityMessage.priority}) for ${if (currentRoute == null) "APP_OPEN" else "route=$currentRoute"}. Total eligible: ${trulyEligibleMessages.size}")
+                    displayer?.showMessage(activity, highestPriorityMessage)
                 } else {
                     Log.d(tag, "No eligible messages to show for ${if (currentRoute == null) "APP_OPEN" else "route=$currentRoute"}")
                 }
@@ -163,10 +162,9 @@ class InAppMessagesSDK private constructor(
                 
                 // Display eligible messages
                 if (eligibleMessages.isNotEmpty()) {
-                    Log.d(tag, "Showing ${eligibleMessages.size} eligible messages for custom trigger key=$key")
-                    eligibleMessages.forEach { message ->
-                        displayer?.showMessage(activity, message)
-                    }
+                    val highestPriorityMessage = eligibleMessages.first()
+                    Log.d(tag, "Showing highest priority message ${highestPriorityMessage.id} (priority ${highestPriorityMessage.priority}) for custom trigger key=$key. Total eligible: ${eligibleMessages.size}")
+                    displayer?.showMessage(activity, highestPriorityMessage)
                 } else {
                     Log.d(tag, "No eligible messages to show for custom trigger key=$key")
                 }

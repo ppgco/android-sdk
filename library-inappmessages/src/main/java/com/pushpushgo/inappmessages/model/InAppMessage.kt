@@ -44,12 +44,15 @@ data class InAppMessage(
     val id: String,
     val name: String,
     val template: String,
+    val title: String,
+    val description: String,
     val actions: List<InAppAction>,
     val audience: Audience,
     val timeSettings: TimeSettings,
     val trigger: Trigger,
     val dismissible: Boolean = true,
     val type: MessageType = MessageType.BANNER,
+    val priority: Int,
     val schedule: Schedule? = null,
-    val expiration: ZonedDateTime? = null,
+    val expiration: ZonedDateTime? = null
 )

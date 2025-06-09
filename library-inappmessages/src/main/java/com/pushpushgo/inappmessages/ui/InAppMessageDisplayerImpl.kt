@@ -222,7 +222,7 @@ class InAppMessageDisplayerImpl(
                 } else {
                     Toast.makeText(
                         activity,
-                        message.name,
+                        message.description,
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -238,7 +238,7 @@ class InAppMessageDisplayerImpl(
         val inflater = LayoutInflater.from(activity)
         val tooltipView = inflater.inflate(R.layout.inapp_message_tooltip, null)
         val textView = tooltipView.findViewById<TextView>(R.id.inapp_tooltip_text)
-        textView.text = message.name
+        textView.text = message.description
         
         val popup = PopupWindow(tooltipView, ViewGroup.LayoutParams.WRAP_CONTENT, 
                                 ViewGroup.LayoutParams.WRAP_CONTENT, true)
@@ -270,8 +270,8 @@ class InAppMessageDisplayerImpl(
         val button = view.findViewById<Button>(R.id.inapp_message_action_button)
 
         // Set text content
-        titleView?.text = message.name
-        messageView?.text = message.template
+        titleView?.text = message.title
+        messageView?.text = message.description
 
         // Configure action button if actions are available
         val action = message.actions.firstOrNull()

@@ -135,16 +135,6 @@ class InAppMessageManagerImpl(
     }
 
     /**
-     * Checks if a message is eligible to be shown based on cooldown state and dismissal status
-     * 
-     * @param msg The message to check eligibility for
-     * @return true if the message is eligible to be shown, false otherwise
-     */
-    private suspend fun isMessageEligibleToShow(msg: InAppMessage): Boolean = withContext(Dispatchers.IO) {
-        isMessageEligible(msg)
-    }
-    
-    /**
      * Implementation of the InAppMessageManager interface method
      * Checks if a message is eligible to be shown based on cooldown state and dismissal status
      * 
@@ -206,11 +196,8 @@ class InAppMessageManagerImpl(
                 // Run filtering in background thread
                 val filteredMessages = withContext(Dispatchers.Default) {
                     allMessages.filter { msg ->
-                        // Check if message is eligible (not dismissed and not in cooldown)
-                        val isEligible = isMessageEligibleToShow(msg)
-                        
-                        // Check if message is in schedule window
-                        val inScheduleWindow = isInScheduleWindow(msg)
+                        // Check if message is eligible (this covers schedule, dismissal, cooldown)
+                        val isEligible = isMessageEligible(msg)
                         
                         // Check persisted expiration state
                         val notExpired = !persistence.isMessageExpired(msg.id)
@@ -232,7 +219,8 @@ class InAppMessageManagerImpl(
                         val userAllowed = notificationStatusProvider.matchesAudienceType(msg.audience.users)
                         
                         // All conditions must be met
-                        val result = isEligible && inScheduleWindow && notExpired && notExpiredByDate && 
+                        // 'isEligible' already implies the message is in its schedule window
+                        val result = isEligible && notExpired && notExpiredByDate && 
                                 deviceAllowed && osAllowed && userAllowed
                         
                         if (result) {
@@ -302,7 +290,7 @@ class InAppMessageManagerImpl(
         }
 
         // Then check if message is eligible (not dismissed and not in cooldown)
-        if (!isMessageEligibleToShow(msg)) {
+        if (!isMessageEligible(msg)) {
             Log.d(tag, "Message [${msg.id}] matched trigger but not eligible due to dismissal/cooldown")
             return
         }
@@ -368,7 +356,8 @@ class InAppMessageManagerImpl(
     override fun getActiveMessages(): List<InAppMessage> {
         // Simply return the current active messages list, which is already filtered
         // during refreshActiveMessages calls
-        return activeMessages.toList()
+        // Sort by priority (descending, higher number higher priority).
+        return activeMessages.sortedByDescending { it.priority }
     }
     
     /**
