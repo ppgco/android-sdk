@@ -28,6 +28,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import kotlin.coroutines.CoroutineContext
+import android.widget.ImageView
+import com.bumptech.glide.Glide
 
 class InAppMessageDisplayerImpl(
     private val persistence: InAppMessagePersistence? = null
@@ -238,7 +240,23 @@ class InAppMessageDisplayerImpl(
         val inflater = LayoutInflater.from(activity)
         val tooltipView = inflater.inflate(R.layout.inapp_message_tooltip, null)
         val textView = tooltipView.findViewById<TextView>(R.id.inapp_tooltip_text)
+        val imageView = tooltipView.findViewById<ImageView>(R.id.inapp_message_image)
+        
         textView.text = message.description
+
+        // Load image if URL is present
+        imageView?.let {
+            if (!message.image.isNullOrEmpty()) {
+                it.isVisible = true
+                Glide.with(tooltipView.context)
+                    .load(message.image)
+                    // .placeholder(R.drawable.your_placeholder_icon) // Optional
+                    // .error(R.drawable.your_error_icon)           // Optional
+                    .into(it)
+            } else {
+                it.isVisible = false
+            }
+        }
         
         val popup = PopupWindow(tooltipView, ViewGroup.LayoutParams.WRAP_CONTENT, 
                                 ViewGroup.LayoutParams.WRAP_CONTENT, true)
@@ -268,10 +286,25 @@ class InAppMessageDisplayerImpl(
         val titleView = view.findViewById<TextView>(R.id.inapp_message_title)
         val messageView = view.findViewById<TextView>(R.id.inapp_message_body)
         val button = view.findViewById<Button>(R.id.inapp_message_action_button)
+        val imageView = view.findViewById<ImageView>(R.id.inapp_message_image)
 
         // Set text content
         titleView?.text = message.title
         messageView?.text = message.description
+
+        // Load image if URL is present
+        imageView?.let {
+            if (!message.image.isNullOrEmpty()) {
+                it.isVisible = true
+                Glide.with(view.context)
+                    .load(message.image)
+                    // .placeholder(R.drawable.placeholder)
+                    // .error(R.drawable.error)
+                    .into(it)
+            } else {
+                it.isVisible = false
+            }
+        }
 
         // Configure action button if actions are available
         val action = message.actions.firstOrNull()

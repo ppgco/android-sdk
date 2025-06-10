@@ -46,6 +46,7 @@ data class InAppMessage(
     val template: String,
     val title: String,
     val description: String,
+    val image: String,
     val actions: List<InAppAction>,
     val audience: Audience,
     val timeSettings: TimeSettings,

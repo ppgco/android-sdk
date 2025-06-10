@@ -120,14 +120,12 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
             }
         } else MessageType.BANNER
         
-        // Parse dismissible
-        val dismissible = obj.optBoolean("dismissible", true)
-        
         return InAppMessage(
             id = obj.getString("id"),
             name = obj.optString("name", ""),
             title = obj.optString("title", ""),
             description = obj.optString("description", ""),
+            image = obj.optString("image", ""),
             template = obj.optString("template", "default"),
             actions = actions,
             audience = Audience(

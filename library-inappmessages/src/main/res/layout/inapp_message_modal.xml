@@ -6,6 +6,15 @@
     android:background="@android:color/white"
     android:padding="24dp">
 
+    <ImageView
+        android:id="@+id/inapp_message_image"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        android:layout_marginBottom="12dp"/>
+
     <TextView
         android:id="@+id/inapp_message_title"
         android:layout_width="wrap_content"
