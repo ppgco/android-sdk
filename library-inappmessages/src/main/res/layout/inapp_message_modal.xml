@@ -31,11 +31,28 @@
         android:textColor="@android:color/black"
         android:layout_marginTop="8dp" />
 
-    <Button
-        android:id="@+id/inapp_message_action_button"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/inapp_message_actions_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Action"
+        android:orientation="horizontal"
         android:layout_marginTop="12dp"
-        android:visibility="gone" />
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/inapp_message_action_button_1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Action 1"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/inapp_message_action_button_2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Action 2"
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
 </LinearLayout>

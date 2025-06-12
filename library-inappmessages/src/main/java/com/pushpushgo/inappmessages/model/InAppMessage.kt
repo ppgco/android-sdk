@@ -9,6 +9,7 @@ enum class OSType { ALL, ANDROID, IOS, HARMONY, OTHER }
 enum class ActionType { URL, INTENT }
 enum class MessageType { BANNER, MODAL, TOOLTIP }
 enum class TriggerType { APP_OPEN, ROUTE, CUSTOM }
+enum class IntentActionType { VIEW, DIAL, SENDTO, SETTINGS, GEO }
 
 // --- Data classes ---
 data class Audience(
@@ -25,7 +26,12 @@ data class TimeSettings(
 
 data class InAppAction(
     val actionType: ActionType,
-    val payload: Map<String, Any?>
+    val title: String? = null,
+    // Fields for ActionType.URL
+    val url: String? = null,
+    // Fields for ActionType.INTENT
+    val intentAction: IntentActionType? = null,
+    val uri: String? = null
 )
 
 data class Trigger(

@@ -14,6 +14,7 @@ import com.pushpushgo.inappmessages.model.OSType
 import com.pushpushgo.inappmessages.model.TimeSettings
 import com.pushpushgo.inappmessages.model.Trigger
 import com.pushpushgo.inappmessages.model.TriggerType
+import com.pushpushgo.inappmessages.model.IntentActionType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -46,13 +47,28 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
         for (i in 0 until actionsArray.length()) {
             val actionObj = actionsArray.getJSONObject(i)
             val actionType = ActionType.valueOf(actionObj.getString("actionType").uppercase())
-            val payload = mutableMapOf<String, Any?>()
-            for (key in actionObj.keys()) {
-                if (key != "actionType") {
-                    payload[key] = actionObj.get(key)
+            val title = actionObj.optString("title", null)
+            val url = if (actionType == ActionType.URL) actionObj.optString("url", null) else null
+            val intentActionString = if (actionType == ActionType.INTENT) actionObj.optString("intentAction", null) else null
+            val intentAction = intentActionString?.let {
+                try {
+                    IntentActionType.valueOf(it.uppercase())
+                } catch (e: IllegalArgumentException) {
+                    Log.e("InAppMsgRepo", "Invalid intentAction value: $it")
+                    null
                 }
             }
-            actions.add(InAppAction(actionType, payload))
+            val uri = if (actionType == ActionType.INTENT) actionObj.optString("uri", null) else null
+
+            actions.add(
+                InAppAction(
+                    actionType = actionType,
+                    title = title,
+                    url = url,
+                    intentAction = intentAction,
+                    uri = uri
+                )
+            )
         }
         
         // Parse trigger

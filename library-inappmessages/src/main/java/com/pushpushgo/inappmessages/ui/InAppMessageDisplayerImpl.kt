@@ -16,6 +16,7 @@ import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import com.pushpushgo.inappmessages.R
 import com.pushpushgo.inappmessages.model.ActionType
+import com.pushpushgo.inappmessages.model.IntentActionType
 import com.pushpushgo.inappmessages.model.InAppAction
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
@@ -246,7 +247,7 @@ class InAppMessageDisplayerImpl(
 
         // Load image if URL is present
         imageView?.let {
-            if (!message.image.isNullOrEmpty()) {
+            if (message.image.isNotEmpty()) {
                 it.isVisible = true
                 Glide.with(tooltipView.context)
                     .load(message.image)
@@ -278,106 +279,125 @@ class InAppMessageDisplayerImpl(
             }
         }
     }
+private fun setupButtonAction(
+    button: Button?,
+    action: InAppAction?,
+    defaultTitle: String,
+    message: InAppMessage,
+    viewContext: android.content.Context
+) {
+    button?.let { btn ->
+        if (action != null) {
+            btn.isVisible = true
+            btn.text = action.title ?: defaultTitle
+            btn.setOnClickListener {
+                handleAction(viewContext, action)
+                currentDialog?.dismiss()
+                currentDialog = null
+                persistence?.markMessageDismissed(message.id)
+                persistence?.setLastShownAt(message.id, System.currentTimeMillis())
+            }
+        } else {
+            btn.isVisible = false
+        }
+    }
+}
 
     /**
      * Binds message data to the provided view.
      */
     private fun bindMessageView(view: View, message: InAppMessage) {
         val titleView = view.findViewById<TextView>(R.id.inapp_message_title)
-        val messageView = view.findViewById<TextView>(R.id.inapp_message_body)
-        val button = view.findViewById<Button>(R.id.inapp_message_action_button)
+        val bodyView = view.findViewById<TextView>(R.id.inapp_message_body)
         val imageView = view.findViewById<ImageView>(R.id.inapp_message_image)
 
-        // Set text content
+        // Bind title and body
         titleView?.text = message.title
-        messageView?.text = message.description
+        bodyView?.text = message.description
 
-        // Load image if URL is present
+        // Bind image using Glide
         imageView?.let {
-            if (!message.image.isNullOrEmpty()) {
-                it.isVisible = true
+            val imageUrl = message.image
+            it.isVisible = imageUrl.isNotEmpty() // Set visibility first
+            if (it.isVisible) { // Load only if visible
                 Glide.with(view.context)
-                    .load(message.image)
-                    // .placeholder(R.drawable.placeholder)
-                    // .error(R.drawable.error)
+                    .load(imageUrl)
                     .into(it)
-            } else {
-                it.isVisible = false
             }
         }
 
-        // Configure action button if actions are available
-        val action = message.actions.firstOrNull()
-        if (action != null) {
-            button?.apply {
-                isVisible = true
-                text = getButtonText(action.actionType)
-                setOnClickListener {
-                    handleAction(view.context, action)
-                }
-            }
+        val actionsContainer = view.findViewById<ViewGroup>(R.id.inapp_message_actions_container)
+        val actionButton1 = view.findViewById<Button>(R.id.inapp_message_action_button_1)
+        val actionButton2 = view.findViewById<Button>(R.id.inapp_message_action_button_2)
+
+        if (message.actions.isEmpty()) {
+            actionsContainer?.isVisible = false
+            actionButton1?.isVisible = false
+            actionButton2?.isVisible = false
         } else {
-            button?.isVisible = false
+            actionsContainer?.isVisible = true
+            setupButtonAction(actionButton1, message.actions.getOrNull(0), "Action 1", message, view.context)
+            setupButtonAction(actionButton2, message.actions.getOrNull(1), "Action 2", message, view.context)
         }
     }
-    
-    /**
-     * Get button text based on action type
-     */
-    private fun getButtonText(actionType: ActionType): String = when (actionType) {
-        ActionType.URL -> "Open"
-        ActionType.INTENT -> "Intent"
-    }
-    
+
     /**
      * Handle action when a button is clicked
      */
     private fun handleAction(context: android.content.Context, action: InAppAction) {
-        when (action.actionType) {
-            ActionType.URL -> {
-                val url = action.payload["url"] as? String
-                if (!url.isNullOrEmpty()) {
-                    launchUrl(context, url)
-                } else {
-                    Log.w(tag, "URL action provided with empty URL")
+        try {
+            when (action.actionType) {
+                ActionType.URL -> {
+                    val url = action.url
+                    if (!url.isNullOrEmpty()) {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                    } else {
+                        Log.e(tag, "URL is null or empty in payload")
+                        Toast.makeText(context, "Invalid URL", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                ActionType.INTENT -> {
+                    var intent: Intent? = null
+                    if (action.intentAction != null) {
+                        val intentActionString = when (action.intentAction) {
+                            IntentActionType.VIEW, IntentActionType.GEO -> Intent.ACTION_VIEW
+                            IntentActionType.DIAL -> Intent.ACTION_DIAL
+                            IntentActionType.SENDTO -> Intent.ACTION_SENDTO
+                            IntentActionType.SETTINGS -> android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        }
+                        intent = Intent(intentActionString)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                        when (action.intentAction) {
+                            IntentActionType.SETTINGS ->
+                                intent.data = "package:${context.packageName}".toUri()
+                            IntentActionType.DIAL ->
+                                if (!action.uri.isNullOrEmpty()) intent.data = "tel:${action.uri}".toUri()
+                            IntentActionType.SENDTO ->
+                                if (!action.uri.isNullOrEmpty()) intent.data = "mailto:${action.uri}".toUri()
+                            IntentActionType.VIEW ->
+                                // For VIEW, we assume the URI is complete with its scheme (e.g., http, myapp)
+                                if (!action.uri.isNullOrEmpty()) intent.data = action.uri.toUri()
+                            IntentActionType.GEO ->
+                                if (!action.uri.isNullOrEmpty()) intent.data = "geo:${action.uri}".toUri()
+                        }
+                    } else {
+                        // Log if intentAction is null, as it's now the primary way to define intents
+                        Log.e(tag, "intentAction is null for INTENT type. Payload: $action")
+                    }
+
+                    if (intent != null) {
+                        context.startActivity(intent)
+                    } else {
+                        Log.e(tag, "Could not create intent. Action details: $action")
+                        Toast.makeText(context, "Invalid action configuration", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
-            ActionType.INTENT -> {
-                val intentName = action.payload["intentName"] as? String
-                if (!intentName.isNullOrEmpty()) {
-                    launchIntent(context, intentName, action.payload["extras"] as? Map<*, *>)
-                } else {
-                    Log.w(tag, "Intent action provided with empty intent name")
-                }
-            }
-        }
-    }
-    
-    /**
-     * Launch a URL in the browser
-     */
-    private fun launchUrl(context: android.content.Context, url: String) {
-        try {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = url.toUri()
-            context.startActivity(intent)
         } catch (e: Exception) {
-            Log.e(tag, "Error launching URL: ${e.message}")
+            Log.e(tag, "Failed to handle action", e)
+            Toast.makeText(context, "Error performing action", Toast.LENGTH_SHORT).show()
         }
     }
-    
-    /**
-     * Launch an intent with extras
-     */
-    private fun launchIntent(context: android.content.Context, intentName: String, extras: Map<*, *>?) {
-        try {
-            val intent = Intent(intentName)
-            extras?.forEach { (k, v) ->
-                if (k is String && v is String) intent.putExtra(k, v)
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(tag, "Error launching intent: ${e.message}")
-        }
-    }
+
 }
