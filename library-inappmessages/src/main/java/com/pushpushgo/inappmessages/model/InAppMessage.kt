@@ -7,7 +7,7 @@ enum class UserAudienceType { ALL, SUBSCRIBER, NON_SUBSCRIBER, BLOCKED_NOTIFICAT
 enum class DeviceType { ALL, DESKTOP, MOBILE, TABLET, OTHER }
 enum class OSType { ALL, ANDROID, IOS, HARMONY, OTHER }
 enum class ActionType { URL, INTENT }
-enum class MessageType { BANNER, MODAL, TOOLTIP }
+enum class InAppMessageDisplayType { MODAL, BANNER, CARD, FULLSCREEN }
 enum class TriggerType { APP_OPEN, ROUTE, CUSTOM }
 enum class IntentActionType { VIEW, DIAL, SENDTO, SETTINGS, GEO }
 
@@ -49,16 +49,16 @@ data class Schedule(
 data class InAppMessage(
     val id: String,
     val name: String,
-    val template: String,
+    val displayType: InAppMessageDisplayType,
+    val template: String? = null,
     val title: String,
     val description: String,
-    val image: String,
+    val image: String?,
     val actions: List<InAppAction>,
     val audience: Audience,
     val timeSettings: TimeSettings,
     val trigger: Trigger,
     val dismissible: Boolean = true,
-    val type: MessageType = MessageType.BANNER,
     val priority: Int,
     val schedule: Schedule? = null,
     val expiration: ZonedDateTime? = null

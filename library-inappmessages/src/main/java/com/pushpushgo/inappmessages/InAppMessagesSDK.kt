@@ -5,16 +5,18 @@ import android.app.Application
 import android.util.Log
 import com.pushpushgo.inappmessages.manager.InAppMessageManager
 import com.pushpushgo.inappmessages.manager.InAppMessageManagerImpl
-import com.pushpushgo.inappmessages.model.TriggerType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistenceImpl
 import com.pushpushgo.inappmessages.repository.InAppMessageRepositoryImpl
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayer
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayerImpl
 import com.pushpushgo.inappmessages.utils.AutoCleanupManager
+import com.pushpushgo.inappmessages.ui.InAppUIController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+
 
 class InAppMessagesSDK private constructor(
     private val application: Application,
@@ -23,8 +25,10 @@ class InAppMessagesSDK private constructor(
     private val baseUrl: String? = null,
 ) {
     private val tag = "InAppMessagesSDK"
-    private var manager: InAppMessageManager? = null
-    private var displayer: InAppMessageDisplayer? = null
+    private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val manager: InAppMessageManager
+    private val displayer: InAppMessageDisplayer
+    private val uiController: InAppUIController
     private var autoCleanupManager: AutoCleanupManager? = null
 
     companion object {
@@ -49,24 +53,27 @@ class InAppMessagesSDK private constructor(
         fun getInstance(): InAppMessagesSDK =
             INSTANCE ?: throw IllegalStateException("InAppMessagesSDK is not initialized!")
     }
-    
-    // ActivityLifecycleCallbacks have been moved to AutoCleanupManager
 
     init {
         val repository = InAppMessageRepositoryImpl(application, "in_app_messages.json")
         val persistence = InAppMessagePersistenceImpl(application)
-        manager = InAppMessageManagerImpl(repository, persistence, application)
-        manager?.initialize()
-        this.displayer = displayer ?: InAppMessageDisplayerImpl(persistence)
-        
-        // Initialize the automatic cleanup manager
+        manager = InAppMessageManagerImpl(sdkScope, repository, persistence, application)
+        displayer = InAppMessageDisplayerImpl(persistence, onMessageDismissed = {
+            showActiveMessages()
+        })
+        uiController = InAppUIController(application, manager, displayer)
+
+        sdkScope.launch {
+            manager.initialize()
+        }
+        uiController.start()
+
         autoCleanupManager = AutoCleanupManager(
             application = application,
             cleanupCallback = { cleanup() }
         )
-        // Start monitoring for background state
         autoCleanupManager?.start()
-        
+
         Log.d(tag, "InAppMessagesSDK initialized with automatic background cleanup")
     }
     
@@ -82,13 +89,9 @@ class InAppMessagesSDK private constructor(
         autoCleanupManager?.stop()
         autoCleanupManager = null
         
-        // Cancel any pending messages
-        displayer?.cancelPendingMessages()
-        
-        // Clean up manager resources if it's our implementation
-        if (manager is InAppMessageManagerImpl) {
-            (manager as InAppMessageManagerImpl).cleanup()
-        }
+        uiController.stop()
+        displayer.cancelPendingMessages()
+        sdkScope.cancel()
         
         Log.d(tag, "InAppMessagesSDK resources cleaned up")
     }
@@ -101,34 +104,10 @@ class InAppMessagesSDK private constructor(
      * Call this once on app start (with currentRoute = null),
      * and on route/view change (with currentRoute = route name).
      */
-    fun showActiveMessages(activity: Activity, currentRoute: String? = null) {
-        // Cancel any pending delayed messages when route/activity changes
-        displayer?.cancelPendingMessages()
-        
-        // Get manager and check for null
-        manager?.let { mgr ->
-            // Use coroutine scope to handle async eligibility checks
-            CoroutineScope(Dispatchers.Main).launch {
-                // Get potential messages that match the route trigger criteria
-                val potentialMessages = mgr.getActiveMessages().filter { msg ->
-                    (msg.trigger.type == TriggerType.APP_OPEN) ||
-                    (currentRoute != null && msg.trigger.type == TriggerType.ROUTE && msg.trigger.route == currentRoute)
-                }
-                
-                // Now check each message's eligibility in real-time
-                val trulyEligibleMessages = potentialMessages.filter { message ->
-                    mgr.isMessageEligible(message)
-                }
-                
-                // Log activity for debugging
-                if (trulyEligibleMessages.isNotEmpty()) {
-                    val highestPriorityMessage = trulyEligibleMessages.first()
-                    Log.d(tag, "Showing highest priority message ${highestPriorityMessage.id} (priority ${highestPriorityMessage.priority}) for ${if (currentRoute == null) "APP_OPEN" else "route=$currentRoute"}. Total eligible: ${trulyEligibleMessages.size}")
-                    displayer?.showMessage(activity, highestPriorityMessage)
-                } else {
-                    Log.d(tag, "No eligible messages to show for ${if (currentRoute == null) "APP_OPEN" else "route=$currentRoute"}")
-                }
-            }
+    fun showActiveMessages(currentRoute: String? = null) {
+        Log.d(tag, "Request to show active messages for route: ${currentRoute ?: "APP_OPEN"}")
+        sdkScope.launch {
+            manager.refreshActiveMessages(currentRoute)
         }
     }
 
@@ -137,37 +116,12 @@ class InAppMessagesSDK private constructor(
      * Only messages with trigger.type == CUSTOM and matching key (and value, if provided) will be shown.
      * Also doesn't cancel pending messages for APP_OPEN trigger.
      */
-    fun showMessagesOnTrigger(activity: Activity, key: String, value: String? = null) {
-        // Get manager and check for null
-        manager?.let { mgr ->
-            CoroutineScope(Dispatchers.Main).launch {
-                // IMPORTANT: We need to process the trigger first and wait for it to complete
-                // before checking for messages
-                Log.d(tag, "Processing trigger for key=$key, value=${value ?: "null"}")
-                
-                // The trigger call sets up messages in the triggerMap
-                mgr.trigger(key, value)
-                
-                // Now get the messages that were triggered and are eligible
-                val matchingMessages = mgr.getActiveMessages().filter { msg ->
-                    msg.trigger.type == TriggerType.CUSTOM &&
-                    msg.trigger.key == key &&
-                    (value == null || msg.trigger.value == null || msg.trigger.value == value)
-                }
-                
-                // Check real-time eligibility (cooldown, schedule, etc.)
-                val eligibleMessages = matchingMessages.filter { message ->
-                    mgr.isMessageEligible(message)
-                }
-                
-                // Display eligible messages
-                if (eligibleMessages.isNotEmpty()) {
-                    val highestPriorityMessage = eligibleMessages.first()
-                    Log.d(tag, "Showing highest priority message ${highestPriorityMessage.id} (priority ${highestPriorityMessage.priority}) for custom trigger key=$key. Total eligible: ${eligibleMessages.size}")
-                    displayer?.showMessage(activity, highestPriorityMessage)
-                } else {
-                    Log.d(tag, "No eligible messages to show for custom trigger key=$key")
-                }
+    fun showMessagesOnTrigger(key: String, value: String? = null) {
+        Log.d(tag, "Request to show messages for custom trigger: $key")
+        sdkScope.launch {
+            val messageToShow = manager.trigger(key, value)
+            if (messageToShow != null) {
+                uiController.displayCustomMessage(messageToShow)
             }
         }
     }

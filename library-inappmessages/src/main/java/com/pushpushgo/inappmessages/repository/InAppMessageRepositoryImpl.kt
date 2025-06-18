@@ -9,7 +9,7 @@ import com.pushpushgo.inappmessages.model.Audience
 import com.pushpushgo.inappmessages.model.Schedule
 import com.pushpushgo.inappmessages.model.UserAudienceType
 import com.pushpushgo.inappmessages.model.DeviceType
-import com.pushpushgo.inappmessages.model.MessageType
+import com.pushpushgo.inappmessages.model.InAppMessageDisplayType
 import com.pushpushgo.inappmessages.model.OSType
 import com.pushpushgo.inappmessages.model.TimeSettings
 import com.pushpushgo.inappmessages.model.Trigger
@@ -42,23 +42,23 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
         val settingsObj = obj.getJSONObject("timeSettings")
         val actionsArray = obj.getJSONArray("actions")
         val actions = mutableListOf<InAppAction>()
-        
+
         // Parse actions
         for (i in 0 until actionsArray.length()) {
             val actionObj = actionsArray.getJSONObject(i)
             val actionType = ActionType.valueOf(actionObj.getString("actionType").uppercase())
-            val title = actionObj.optString("title", null)
-            val url = if (actionType == ActionType.URL) actionObj.optString("url", null) else null
-            val intentActionString = if (actionType == ActionType.INTENT) actionObj.optString("intentAction", null) else null
+            val title = actionObj.getNullableString("title")
+            val url = if (actionType == ActionType.URL) actionObj.getNullableString("url") else null
+            val intentActionString = if (actionType == ActionType.INTENT) actionObj.getNullableString("intentAction") else null
             val intentAction = intentActionString?.let {
                 try {
                     IntentActionType.valueOf(it.uppercase())
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     Log.e("InAppMsgRepo", "Invalid intentAction value: $it")
                     null
                 }
             }
-            val uri = if (actionType == ActionType.INTENT) actionObj.optString("uri", null) else null
+            val uri = if (actionType == ActionType.INTENT) actionObj.getNullableString("uri") else null
 
             actions.add(
                 InAppAction(
@@ -70,7 +70,7 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
                 )
             )
         }
-        
+
         // Parse trigger
         val triggerObj = obj.getJSONObject("trigger")
         val triggerType = TriggerType.valueOf(triggerObj.getString("type"))
@@ -79,13 +79,13 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
             TriggerType.ROUTE -> Trigger(type = TriggerType.ROUTE, route = triggerObj.getString("route"))
             TriggerType.CUSTOM -> Trigger(type = TriggerType.CUSTOM, key = triggerObj.getString("key"), value = triggerObj.optString("value"))
         }
-        
+
         // Parse schedule if present
         val schedule = if (obj.has("schedule")) {
             try {
                 val scheduleObj = obj.getJSONObject("schedule")
                 val formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
-                
+
                 val startTime = if (scheduleObj.has("startTime") && !scheduleObj.isNull("startTime")) {
                     try {
                         val startTimeStr = scheduleObj.getString("startTime")
@@ -95,7 +95,7 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
                         null
                     }
                 } else null
-                
+
                 val endTime = if (scheduleObj.has("endTime") && !scheduleObj.isNull("endTime")) {
                     try {
                         val endTimeStr = scheduleObj.getString("endTime")
@@ -105,7 +105,7 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
                         null
                     }
                 } else null
-                
+
                 Schedule(startTime, endTime).also {
                     Log.d("InAppMsgRepo", "Parsed schedule for message ${obj.getString("id")}: " +
                             "startTime=$startTime, endTime=$endTime")
@@ -115,7 +115,7 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
                 null
             }
         } else null
-        
+
         // Parse expiration
         val expiration = if (obj.has("expiration") && !obj.isNull("expiration")) {
             try {
@@ -126,23 +126,25 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
                 null
             }
         } else null
-        
-        // Parse message type
-        val type = if (obj.has("type") && !obj.isNull("type")) {
+
+        // Parse display type
+        val displayType = if (obj.has("displayType") && !obj.isNull("displayType")) {
             try {
-                MessageType.valueOf(obj.getString("type"))
-            } catch (e: IllegalArgumentException) {
-                MessageType.BANNER
+                InAppMessageDisplayType.valueOf(obj.getString("displayType").uppercase())
+            } catch (_: IllegalArgumentException) {
+                Log.w("InAppMsgRepo", "Invalid displayType value: ${obj.getString("displayType")}. Defaulting to MODAL.")
+                InAppMessageDisplayType.MODAL
             }
-        } else MessageType.BANNER
-        
+        } else InAppMessageDisplayType.MODAL
+
         return InAppMessage(
             id = obj.getString("id"),
             name = obj.optString("name", ""),
+            displayType = displayType,
+            template = obj.getNullableString("template"),
             title = obj.optString("title", ""),
             description = obj.optString("description", ""),
             image = obj.optString("image", ""),
-            template = obj.optString("template", "default"),
             actions = actions,
             audience = Audience(
                 users = UserAudienceType.valueOf(audienceObj.getString("users")),
@@ -160,10 +162,13 @@ class InAppMessageRepositoryImpl(private val context: Context, private val sourc
             ),
             trigger = trigger,
             dismissible = obj.optBoolean("dismissible", true),
-            type = type,
             priority = obj.optInt("priority", 0),
             schedule = schedule,
             expiration = expiration
         )
     }
+}
+
+private fun JSONObject.getNullableString(key: String): String? {
+    return if (has(key) && !isNull(key)) getString(key) else null
 }

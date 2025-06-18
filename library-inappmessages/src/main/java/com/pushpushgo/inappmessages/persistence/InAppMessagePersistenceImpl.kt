@@ -12,6 +12,7 @@ class InAppMessagePersistenceImpl(context: Context) : InAppMessagePersistence {
 
     override fun markMessageDismissed(messageId: String) {
         prefs.edit { putBoolean("dismissed_$messageId", true) }
+        setLastDismissedAt(messageId, System.currentTimeMillis())
     }
 
     override fun isMessageExpired(messageId: String): Boolean =
@@ -21,12 +22,23 @@ class InAppMessagePersistenceImpl(context: Context) : InAppMessagePersistence {
         prefs.edit { putBoolean("expired_$messageId", true) }
     }
 
-    override fun getLastShownAt(messageId: String): Long? =
-        if (prefs.contains("last_shown_$messageId")) prefs.getLong("last_shown_$messageId", 0L) else null
+    override fun getLastDismissedAt(messageId: String): Long? =
+        if (prefs.contains("last_dismissed_$messageId")) prefs.getLong("last_dismissed_$messageId", 0L) else null
 
-    override fun setLastShownAt(messageId: String, timestamp: Long) {
+    override fun setLastDismissedAt(messageId: String, timestamp: Long) {
         prefs.edit {
-            putLong("last_shown_$messageId", timestamp)
+            putLong("last_dismissed_$messageId", timestamp)
         }
+    }
+
+    override fun getFirstEligibleAt(messageId: String): Long? =
+        if (prefs.contains("first_eligible_at_$messageId")) prefs.getLong("first_eligible_at_$messageId", 0L) else null
+
+    override fun setFirstEligibleAt(messageId: String, timestamp: Long) {
+        prefs.edit { putLong("first_eligible_at_$messageId", timestamp) }
+    }
+
+    override fun resetFirstEligibleAt(messageId: String) {
+        prefs.edit { remove("first_eligible_at_$messageId") }
     }
 }

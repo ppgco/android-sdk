@@ -1,25 +1,23 @@
 package com.pushpushgo.inappmessages.ui
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.PopupWindow
-import android.widget.TextView
+import android.view.Gravity
+import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.net.toUri
-import androidx.core.view.isVisible
 import com.pushpushgo.inappmessages.R
 import com.pushpushgo.inappmessages.model.ActionType
-import com.pushpushgo.inappmessages.model.IntentActionType
 import com.pushpushgo.inappmessages.model.InAppAction
 import com.pushpushgo.inappmessages.model.InAppMessage
+import com.pushpushgo.inappmessages.model.InAppMessageDisplayType
+import com.pushpushgo.inappmessages.model.IntentActionType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
+import com.pushpushgo.inappmessages.ui.composables.InAppMessageContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,367 +26,232 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import kotlinx.coroutines.isActive
+import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
-import android.widget.ImageView
-import com.bumptech.glide.Glide
 
-class InAppMessageDisplayerImpl(
-    private val persistence: InAppMessagePersistence? = null
+internal class InAppMessageDisplayerImpl(
+    private val persistence: InAppMessagePersistence? = null,
+    private val onMessageDismissed: () -> Unit,
 ) : InAppMessageDisplayer, CoroutineScope {
-    
+
     private val tag = "InAppMsgDisplayer"
-    
+
     // Coroutine context and job for managing message display jobs
     private val job = SupervisorJob()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
-    
+
     // Store current UI elements
     private var currentDialog: Dialog? = null
+
+    // Flag to prevent re-entrant calls to dismissMessage
+    private var isDismissing = false
     
     // Map to store pending delayed message jobs
-    private val pendingMessages = mutableMapOf<String, Job>()
-    
+    private val pendingMessageJobs = mutableMapOf<String, Pair<InAppMessage, Job>>()
+
     override fun showMessage(activity: Activity, message: InAppMessage) {
-        // Cancel any existing pending job for this message
-        pendingMessages[message.id]?.cancel()
-        pendingMessages.remove(message.id)
-        
-        val delay = message.timeSettings.showAfterDelay
-        if (delay > 0) {
-            Log.d(tag, "Scheduling message ${message.id} to show after $delay ms")
-            
-            // Store activity as weak reference to prevent memory leaks
+        // Cancel all other pending jobs before scheduling a new one.
+        // This ensures only one message is either pending or being displayed at a time.
+        cancelPendingMessages(isActivityPaused = false)
+
+        val delayMs = message.timeSettings.showAfterDelay
+        if (delayMs > 0) {
+            Log.d(tag, "Scheduling message ${message.id} (delay: ${delayMs}ms) for activity: ${activity.localClassName}")
             val activityRef = WeakReference(activity)
-            
-            // Schedule delayed display using coroutines
-            val job = launch {
-                delay(delay)
-                
-                // Get activity from weak reference
-                val activityInstance = activityRef.get()
-                if (activityInstance == null || activityInstance.isFinishing) {
-                    Log.d(tag, "Activity no longer available, not showing message ${message.id}")
-                    return@launch
+
+            val newJob = launch { // This is a CoroutineScope.launch
+                try {
+                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Starting delay of $delayMs ms.")
+                    delay(delayMs)
+                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Delay finished.")
+
+                    val currentActivity = activityRef.get()
+                    if (currentActivity == null || currentActivity.isFinishing) {
+                        Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Activity ${activity.localClassName} no longer available or finishing.")
+                        return@launch
+                    }
+
+                    if (!isActive) { // Check if job was cancelled during delay
+                        Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Job was cancelled during delay (isActive=false).")
+                        return@launch
+                    }
+
+                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Showing message on activity ${currentActivity.localClassName}.")
+                    withContext(Dispatchers.Main) { // Ensure UI ops on Main
+                        if (shouldBeDisplayed(message)) {
+                            showMessageByType(currentActivity, message)
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}] was cancelled: ${e.message}")
+                } catch (t: Throwable) {
+                    Log.e(tag, "Job for ${message.id} [${this.coroutineContext[Job]}] failed", t)
+                } finally {
+                    // Always remove the job from the map when it's done.
+                    // This check prevents a race condition where a new job for the same ID is added
+                    // before the old one's finally block executes.
+                    if (pendingMessageJobs[message.id]?.second == this.coroutineContext[Job]) {
+                        pendingMessageJobs.remove(message.id)
+                    }
                 }
-                
-                // Show the message after delay
-                Log.d(tag, "Showing message ${message.id} after delay")
-                withContext(Dispatchers.Main) {
-                    showMessageByType(activityInstance, message)
-                }
-                
-                pendingMessages.remove(message.id)
             }
-            
-            // Store job to allow cancellation if needed
-            pendingMessages[message.id] = job
+            Log.d(tag, "showMessage: Stored new job for ${message.id}. Job: $newJob")
+            pendingMessageJobs[message.id] = message to newJob
         } else {
-            // Show immediately if no delay
-            showMessageByType(activity, message)
+            launch {
+                if (shouldBeDisplayed(message)) {
+                    showMessageByType(activity, message)
+                }
+            }
         }
     }
-    
-    private fun showMessageByType(activity: Activity, message: InAppMessage) {
-        when (message.template.lowercase()) {
-            "banner" -> showBanner(activity, message)
-            "modal" -> showModal(activity, message)
-            "tooltip" -> showTooltip(activity, message)
-            else -> showBanner(activity, message) // fallback
+
+    private suspend fun showMessageByType(activity: Activity, message: InAppMessage) {
+        // Dismiss any currently visible message before showing a new one
+        hideMessage()
+
+        when (message.displayType) {
+            InAppMessageDisplayType.CARD,
+            InAppMessageDisplayType.FULLSCREEN -> showModal(activity, message)
+            InAppMessageDisplayType.BANNER -> showBanner(activity, message)
+            InAppMessageDisplayType.MODAL -> showModal(activity, message)
         }
     }
-    
-    override fun cancelPendingMessages() {
-        Log.d(tag, "Cancelling ${pendingMessages.size} pending delayed messages")
-        
-        // Cancel all pending coroutine jobs
-        pendingMessages.forEach { (messageId, job) -> 
-            job.cancel()
-            Log.d(tag, "Cancelled pending delayed message: $messageId")
+
+    override fun cancelPendingMessages(isActivityPaused: Boolean) {
+        if (pendingMessageJobs.isEmpty()) {
+            return
         }
-        
-        // Clear the collection
-        pendingMessages.clear()
+        Log.d(tag, "Cancelling all ${pendingMessageJobs.size} pending message jobs.")
+
+        // Create a copy of the values to avoid ConcurrentModificationException
+        val jobsToCancel = ArrayList(pendingMessageJobs.values)
+        jobsToCancel.forEach { (_, job) ->
+            job.cancel(CancellationException("Pending message cancelled by new event"))
+        }
+        pendingMessageJobs.clear()
+    }
+
+    private fun hideMessage() {
+        currentDialog?.let {
+            if (it.isShowing) {
+                it.dismiss()
+            }
+        }
+        currentDialog = null
     }
 
     override fun dismissMessage(message: InAppMessage) {
-        currentDialog?.dismiss()
-        currentDialog = null
-        
-        // Launch in IO context to handle persistence operations
-        launch(Dispatchers.IO) {
-            if (message.timeSettings.showAgain) {
-                // For showAgain messages, record the timestamp for cooldown calculation
-                val now = System.currentTimeMillis()
-                persistence?.setLastShownAt(message.id, now)
-                Log.d(tag, "dismissMessage: Set lastShownAt for ${message.id} to $now")
-            } else {
-                // For one-time messages, mark as dismissed permanently
+        if (isDismissing) return // Prevent re-entrant calls
+
+        try {
+            isDismissing = true
+
+            Log.d(tag, "dismissMessage: Marking message ${message.id} as dismissed.")
+            launch(Dispatchers.IO) {
                 persistence?.markMessageDismissed(message.id)
-                Log.d(tag, "dismissMessage: Marked message ${message.id} as dismissed")
             }
+            hideMessage()
+            onMessageDismissed()
+        } finally {
+            // Allow the next dismissal call after this one has fully completed
+            isDismissing = false
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showBanner(activity: Activity, message: InAppMessage) {
-        // Run eligibility check in IO context first, then switch to UI
-        launch {
-            // Check in IO context if message should be shown
-            val shouldShow = withContext(Dispatchers.IO) {
-                !(message.timeSettings.showAgain.not() && persistence?.isMessageDismissed(message.id) == true)
+    private suspend fun showBanner(activity: Activity, message: InAppMessage) {
+        if (shouldBeDisplayed(message).not()) return
+
+        // Ensure UI operations are on the main thread
+        withContext(Dispatchers.Main) {
+            currentDialog?.dismiss()
+
+            val composeView = createComposeView(activity, message)
+            val dialog = Dialog(activity, R.style.InAppMessageDialog_Banner).apply {
+                setContentView(composeView)
+                setCancelable(message.dismissible)
+                setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
             }
-            
-            if (!shouldShow) {
-                Log.d(tag, "showBanner: Message ${message.id} is dismissed and showAgain is false, not showing.")
-                return@launch
+            dialog.show()
+            currentDialog = dialog
+        }
+    }
+
+    private suspend fun showModal(activity: Activity, message: InAppMessage) {
+        if (shouldBeDisplayed(message).not()) return
+
+        // Ensure UI operations are on the main thread
+        withContext(Dispatchers.Main) {
+            currentDialog?.dismiss()
+
+            val composeView = createComposeView(activity, message)
+            val dialog = Dialog(activity, R.style.InAppMessageDialog_Modal).apply {
+                setContentView(composeView)
+                setCancelable(message.dismissible)
+                setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
             }
-            
-            // UI operations must be on Main thread
-            withContext(Dispatchers.Main) {
-                val inflater = LayoutInflater.from(activity)
-                val view = inflater.inflate(R.layout.inapp_message_banner, null)
-                bindMessageView(view, message)
-                val dialog = Dialog(activity, R.style.InAppMessageDialog_Banner)
-                dialog.setContentView(view)
-                dialog.setCancelable(message.dismissible)
-                dialog.setOnDismissListener {
-                    // Only call dismissMessage if dialog is being dismissed by user (not programmatically)
-                    if (currentDialog != null) {
+            dialog.show()
+            currentDialog = dialog
+        }
+    }
+
+    private suspend fun shouldBeDisplayed(message: InAppMessage): Boolean {
+        val isDismissed = withContext(Dispatchers.IO) {
+            persistence?.isMessageDismissed(message.id)
+        }
+        if (isDismissed == true && !message.timeSettings.showAgain) {
+            Log.d(tag, "Message ${message.id} is already dismissed and not set to show again.")
+            return false
+        }
+        return true
+    }
+
+    private fun createComposeView(activity: Activity, message: InAppMessage): ComposeView {
+        return ComposeView(activity).apply {
+            // Set the ViewTreeLifecycleOwner and SavedStateRegistryOwner for the ComposeView.
+            // This is crucial for Jetpack Compose to work correctly in a Dialog or any view
+            // that is not directly part of the Activity's main content view, as it allows
+            // the composable to observe LiveData, use ViewModels, and save instance state.
+            setViewTreeLifecycleOwner(activity as? androidx.lifecycle.LifecycleOwner)
+            setViewTreeSavedStateRegistryOwner(activity as? androidx.savedstate.SavedStateRegistryOwner)
+
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+            setContent {
+                InAppMessageContent(
+                    message = message,
+                    onDismiss = { dismissMessage(message) },
+                    onAction = { action ->
+                        handleAction(activity, action)
                         dismissMessage(message)
                     }
-                }
-                dialog.show()
-                currentDialog = dialog
+                )
             }
         }
     }
 
-    @SuppressLint("InflateParams")
-    private fun showModal(activity: Activity, message: InAppMessage) {
-        // Run eligibility check in IO context first, then switch to UI
-        launch {
-            // Check in IO context if message should be shown
-            val shouldShow = withContext(Dispatchers.IO) {
-                !(message.timeSettings.showAgain.not() && persistence?.isMessageDismissed(message.id) == true)
-            }
-            
-            if (!shouldShow) {
-                Log.d(tag, "showModal: Message ${message.id} is dismissed and showAgain is false, not showing.")
-                return@launch
-            }
-            
-            // UI operations must be on Main thread
-            withContext(Dispatchers.Main) {
-                // Dismiss any existing dialog
-                currentDialog?.dismiss()
-                
-                val inflater = LayoutInflater.from(activity)
-                val view = inflater.inflate(R.layout.inapp_message_modal, null)
-                bindMessageView(view, message)
-                val dialog = Dialog(activity, R.style.InAppMessageDialog_Modal)
-                dialog.setContentView(view)
-                dialog.setCancelable(message.dismissible)
-                dialog.setOnDismissListener {
-                    // Only call dismissMessage if dialog is being dismissed by user (not programmatically)
-                    if (currentDialog == dialog) {
-                        dismissMessage(message)
-                        currentDialog = null
-                    }
-                }
-                dialog.show()
-                currentDialog = dialog
-            }
-        }
-    }
-
-    /**
-     * Show a tooltip message. If anchorView is provided, show a PopupWindow anchored to the view.
-     * Otherwise, fallback to Toast.
-     */
-    @SuppressLint("InflateParams")
-    private fun showTooltip(activity: Activity, message: InAppMessage, anchorView: View? = null) {
-        launch {
-            // Check in IO context if message should be shown
-            val shouldShow = withContext(Dispatchers.IO) {
-                !(message.timeSettings.showAgain.not() && persistence?.isMessageDismissed(message.id) == true)
-            }
-            
-            if (!shouldShow) {
-                Log.d(tag, "showTooltip: Message ${message.id} is dismissed and showAgain is false, not showing.")
-                return@launch
-            }
-            
-            withContext(Dispatchers.Main) {
-                if (anchorView != null) {
-                    showTooltipWithAnchor(activity, message, anchorView)
-                } else {
-                    Toast.makeText(
-                        activity,
-                        message.description,
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
-    }
-    
-    /**
-     * Display tooltip anchored to a specific view
-     */
-    @SuppressLint("InflateParams")
-    private fun showTooltipWithAnchor(activity: Activity, message: InAppMessage, anchorView: View) {
-        val inflater = LayoutInflater.from(activity)
-        val tooltipView = inflater.inflate(R.layout.inapp_message_tooltip, null)
-        val textView = tooltipView.findViewById<TextView>(R.id.inapp_tooltip_text)
-        val imageView = tooltipView.findViewById<ImageView>(R.id.inapp_message_image)
-        
-        textView.text = message.description
-
-        // Load image if URL is present
-        imageView?.let {
-            if (message.image.isNotEmpty()) {
-                it.isVisible = true
-                Glide.with(tooltipView.context)
-                    .load(message.image)
-                    // .placeholder(R.drawable.your_placeholder_icon) // Optional
-                    // .error(R.drawable.your_error_icon)           // Optional
-                    .into(it)
-            } else {
-                it.isVisible = false
-            }
-        }
-        
-        val popup = PopupWindow(tooltipView, ViewGroup.LayoutParams.WRAP_CONTENT, 
-                                ViewGroup.LayoutParams.WRAP_CONTENT, true)
-        popup.elevation = 8f
-        tooltipView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-        
-        val location = IntArray(2)
-        anchorView.getLocationOnScreen(location)
-        val yOffset = -tooltipView.measuredHeight
-        popup.showAsDropDown(anchorView, 0, yOffset)
-        
-        // Auto-dismiss after 5 seconds
-        launch {
-            delay(5000)
-            withContext(Dispatchers.Main) {
-                if (popup.isShowing) {
-                    popup.dismiss()
-                }
-            }
-        }
-    }
-private fun setupButtonAction(
-    button: Button?,
-    action: InAppAction?,
-    defaultTitle: String,
-    message: InAppMessage,
-    viewContext: android.content.Context
-) {
-    button?.let { btn ->
-        if (action != null) {
-            btn.isVisible = true
-            btn.text = action.title ?: defaultTitle
-            btn.setOnClickListener {
-                handleAction(viewContext, action)
-                currentDialog?.dismiss()
-                currentDialog = null
-                persistence?.markMessageDismissed(message.id)
-                persistence?.setLastShownAt(message.id, System.currentTimeMillis())
-            }
-        } else {
-            btn.isVisible = false
-        }
-    }
-}
-
-    /**
-     * Binds message data to the provided view.
-     */
-    private fun bindMessageView(view: View, message: InAppMessage) {
-        val titleView = view.findViewById<TextView>(R.id.inapp_message_title)
-        val bodyView = view.findViewById<TextView>(R.id.inapp_message_body)
-        val imageView = view.findViewById<ImageView>(R.id.inapp_message_image)
-
-        // Bind title and body
-        titleView?.text = message.title
-        bodyView?.text = message.description
-
-        // Bind image using Glide
-        imageView?.let {
-            val imageUrl = message.image
-            it.isVisible = imageUrl.isNotEmpty() // Set visibility first
-            if (it.isVisible) { // Load only if visible
-                Glide.with(view.context)
-                    .load(imageUrl)
-                    .into(it)
-            }
-        }
-
-        val actionsContainer = view.findViewById<ViewGroup>(R.id.inapp_message_actions_container)
-        val actionButton1 = view.findViewById<Button>(R.id.inapp_message_action_button_1)
-        val actionButton2 = view.findViewById<Button>(R.id.inapp_message_action_button_2)
-
-        if (message.actions.isEmpty()) {
-            actionsContainer?.isVisible = false
-            actionButton1?.isVisible = false
-            actionButton2?.isVisible = false
-        } else {
-            actionsContainer?.isVisible = true
-            setupButtonAction(actionButton1, message.actions.getOrNull(0), "Action 1", message, view.context)
-            setupButtonAction(actionButton2, message.actions.getOrNull(1), "Action 2", message, view.context)
-        }
-    }
-
-    /**
-     * Handle action when a button is clicked
-     */
-    private fun handleAction(context: android.content.Context, action: InAppAction) {
+    private fun handleAction(context: Context, action: InAppAction) {
         try {
             when (action.actionType) {
                 ActionType.URL -> {
-                    val url = action.url
-                    if (!url.isNullOrEmpty()) {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-                    } else {
-                        Log.e(tag, "URL is null or empty in payload")
-                        Toast.makeText(context, "Invalid URL", Toast.LENGTH_SHORT).show()
-                    }
+                    action.url?.takeIf { it.isNotEmpty() }?.let {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, it.toUri()).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        })
+                    } ?: Log.e(tag, "URL is null or empty in payload")
                 }
                 ActionType.INTENT -> {
-                    var intent: Intent? = null
-                    if (action.intentAction != null) {
-                        val intentActionString = when (action.intentAction) {
-                            IntentActionType.VIEW, IntentActionType.GEO -> Intent.ACTION_VIEW
-                            IntentActionType.DIAL -> Intent.ACTION_DIAL
-                            IntentActionType.SENDTO -> Intent.ACTION_SENDTO
-                            IntentActionType.SETTINGS -> android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                        }
-                        intent = Intent(intentActionString)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-                        when (action.intentAction) {
-                            IntentActionType.SETTINGS ->
-                                intent.data = "package:${context.packageName}".toUri()
-                            IntentActionType.DIAL ->
-                                if (!action.uri.isNullOrEmpty()) intent.data = "tel:${action.uri}".toUri()
-                            IntentActionType.SENDTO ->
-                                if (!action.uri.isNullOrEmpty()) intent.data = "mailto:${action.uri}".toUri()
-                            IntentActionType.VIEW ->
-                                // For VIEW, we assume the URI is complete with its scheme (e.g., http, myapp)
-                                if (!action.uri.isNullOrEmpty()) intent.data = action.uri.toUri()
-                            IntentActionType.GEO ->
-                                if (!action.uri.isNullOrEmpty()) intent.data = "geo:${action.uri}".toUri()
-                        }
-                    } else {
-                        // Log if intentAction is null, as it's now the primary way to define intents
-                        Log.e(tag, "intentAction is null for INTENT type. Payload: $action")
-                    }
-
-                    if (intent != null) {
+                    createIntentForAction(context, action)?.let { intent ->
                         context.startActivity(intent)
-                    } else {
+                    } ?: run {
                         Log.e(tag, "Could not create intent. Action details: $action")
                         Toast.makeText(context, "Invalid action configuration", Toast.LENGTH_SHORT).show()
                     }
@@ -400,4 +263,28 @@ private fun setupButtonAction(
         }
     }
 
+    private fun createIntentForAction(context: Context, action: InAppAction): Intent? {
+        val intentAction = when (action.intentAction) {
+            IntentActionType.VIEW, IntentActionType.GEO -> Intent.ACTION_VIEW
+            IntentActionType.DIAL -> Intent.ACTION_DIAL
+            IntentActionType.SENDTO -> Intent.ACTION_SENDTO
+            IntentActionType.SETTINGS -> android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+            null -> null
+        } ?: return null // Return null if intentAction is not recognized
+
+        val intentData = when (action.intentAction) {
+            IntentActionType.SETTINGS -> "package:${context.packageName}".toUri()
+            IntentActionType.DIAL -> action.uri?.let { "tel:$it".toUri() }
+            IntentActionType.SENDTO -> action.uri?.let { "mailto:$it".toUri() }
+            IntentActionType.GEO -> action.uri?.let { "geo:$it".toUri() }
+            IntentActionType.VIEW -> action.uri?.toUri()
+            null -> null
+        }
+
+        return Intent().apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            this.action = intentAction
+            this.data = intentData
+        }
+    }
 }

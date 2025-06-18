@@ -15,7 +15,7 @@ import android.util.Log
 class PushNotificationStatusProvider(private val context: Context) {
     
     companion object {
-        private const val TAG = "PushNotifStatusProvider"
+        private const val TAG = "PushNotificationStatusProvider"
         
         // These constants match the ones in PushPushGo SDK's SharedPreferencesHelper
         private const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"

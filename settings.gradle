@@ -20,6 +20,7 @@ dependencyResolutionManagement {
             library('coroutines-core', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-core').versionRef('coroutines')
             library('coroutines-android', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-android').versionRef('coroutines')
             library('coroutines-guava', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-guava').versionRef('coroutines')
+            library('coroutines-test', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-test').versionRef('coroutines')
 
             library('kodein', 'org.kodein.di', 'kodein-di').versionRef('kodein')
 
