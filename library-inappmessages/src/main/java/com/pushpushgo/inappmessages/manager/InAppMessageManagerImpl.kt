@@ -3,8 +3,10 @@ package com.pushpushgo.inappmessages.manager
 import android.content.Context
 import android.util.Log
 import com.pushpushgo.inappmessages.model.DeviceType
+import com.pushpushgo.inappmessages.model.DisplayType
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.OSType
+import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.model.TriggerType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.repository.InAppMessageRepository
@@ -127,23 +129,23 @@ internal class InAppMessageManagerImpl(
     private fun buildTriggerMap(messages: List<InAppMessage>) {
         Log.d(tag, "buildTriggerMap called with ${messages.size} messages.")
         messages.forEach { msg ->
-            Log.d(tag, "buildTriggerMap: Processing message id=${msg.id}, triggerType=${msg.trigger.type}, triggerKey=${msg.trigger.key}, triggerValue=${msg.trigger.value}")
+            Log.d(tag, "buildTriggerMap: Processing message id=${msg.id}, triggerType=${msg.settings.triggerType}, triggerKey=${msg.settings.key}, triggerValue=${msg.settings.value}")
         }
 
         synchronized(triggerMap) {
             triggerMap.clear()
             val customTriggerMessages = messages
-                .filter { it.trigger.type == TriggerType.CUSTOM && it.trigger.key != null }
+                .filter { it.settings.triggerType == TriggerType.CUSTOM && it.settings.key != null }
 
             Log.d(tag, "buildTriggerMap: Found ${customTriggerMessages.size} messages with CUSTOM trigger type and non-null key.")
 
             customTriggerMessages.forEach { msg ->
-                // msg.trigger.key is non-null here due to the filter
-                val key = msg.trigger.key!! 
+                // msg.settings.key is non-null here due to the filter
+                val key = msg.settings.key!!
                 triggerMap.getOrPut(key) { mutableListOf() }.add(msg)
                 Log.d(tag, "buildTriggerMap: Added message id=${msg.id} to triggerMap for key='$key'")
             }
-            
+
             val finalMapLog = triggerMap.entries.joinToString { "'${it.key}': ${it.value.map { m -> m.id }.size} msg(s)" }
             Log.d(tag, "Built trigger map. Size: ${triggerMap.size}. Contents: {$finalMapLog}")
         }
@@ -158,7 +160,7 @@ internal class InAppMessageManagerImpl(
      */
     override suspend fun isMessageEligible(message: InAppMessage): Boolean = withContext(Dispatchers.IO) {
         // 1. Check permanent dismissal (for one-time messages)
-        if (!message.timeSettings.showAgain && persistence.isMessageDismissed(message.id)) {
+        if (message.settings.showAgain == ShowAgainType.NEVER && persistence.isMessageDismissed(message.id)) {
             Log.d(tag, "Message [${message.id}] is a one-time message and has been permanently dismissed.")
             return@withContext false
         }
@@ -170,8 +172,8 @@ internal class InAppMessageManagerImpl(
         }
 
         // 3. Check user audience type
-        if (!notificationStatusProvider.matchesAudienceType(message.audience.users)) {
-            Log.d(tag, "Message [${message.id}] does not match user audience type: ${message.audience.users}")
+        if (!notificationStatusProvider.matchesAudienceType(message.audience.userType)) {
+            Log.d(tag, "Message [${message.id}] does not match user audience type: ${message.audience.userType}")
             return@withContext false
         }
 
@@ -180,12 +182,12 @@ internal class InAppMessageManagerImpl(
         // 4. 'showAfterDelay' is handled by InAppMessageDisplayerImpl.
 
         // 5. Check 'showAgain' (cooldown for repeatable messages)
-        if (message.timeSettings.showAgain) {
+        if (message.settings.showAgain == ShowAgainType.AFTER_TIME) {
             val lastDismissedAt = persistence.getLastDismissedAt(message.id)
+            val requiredCooldown = message.settings.showAfterTime ?: 0L
 
-            if (lastDismissedAt != null) { // Check if it was ever dismissed
+            if (lastDismissedAt != null && requiredCooldown > 0) { // Check if it was ever dismissed and has a cooldown
                 val elapsedSinceLastDismissal = nowMillis - lastDismissedAt
-                val requiredCooldown = message.timeSettings.showAgainTime
 
                 if (elapsedSinceLastDismissal < requiredCooldown) {
                     Log.d(
@@ -218,22 +220,42 @@ internal class InAppMessageManagerImpl(
 
         val newJob = scope.launch(Dispatchers.IO) {
             try {
-                Log.d(tag, "Refreshing active messages for effective route: ${effectiveRoute ?: "APP_OPEN"}")
+                Log.d(tag, "Refreshing active messages for effective route: ${effectiveRoute ?: "ENTER"}")
 
-                val routeAndGlobalMessages = allMessages.filter {
-                    (it.trigger.type == TriggerType.ROUTE && it.trigger.route == effectiveRoute && effectiveRoute != null) || it.trigger.type == TriggerType.APP_OPEN
+                val eventBasedMessages = allMessages.filter { msg ->
+                    // CUSTOM triggers are handled by the `trigger` method, not by general refresh.
+                    if (msg.settings.triggerType == TriggerType.CUSTOM) {
+                        return@filter false
+                    }
+
+                    val displayOnRules = msg.settings.displayOn
+                    if (displayOnRules.isEmpty()) {
+                        // No specific route rules, treat as a global message (e.g., for all pages).
+                        true
+                    } else {
+                        // Specific route rules exist. The message should only appear on these routes.
+                        if (effectiveRoute == null) {
+                            // If we're not on a specific route, don't show route-specific messages.
+                            false
+                        } else {
+                            val matchingRule = displayOnRules.find { it.path == effectiveRoute }
+                            // Show only if a rule for the current route exists and its `display` is true.
+                            matchingRule?.display ?: false
+                        }
+                    }
                 }
 
-                val initiallyFiltered = routeAndGlobalMessages.filter { msg ->
+                val initiallyFiltered = eventBasedMessages.filter { msg ->
+                    val enabled = msg.enabled
                     val notExpired = msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
                     val correctDeviceType = msg.audience.device.contains(currentDeviceType) || msg.audience.device.contains(DeviceType.ALL)
-                    val correctOsType = msg.audience.os.contains(currentOsType) || msg.audience.os.contains(OSType.ALL)
-                    notExpired && correctDeviceType && correctOsType
+                    val correctOsType = msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
+                    enabled && notExpired && correctDeviceType && correctOsType
                 }
 
                 val finalEligibleMessages = mutableListOf<InAppMessage>()
                 for (msg in initiallyFiltered) {
-                    if (msg.timeSettings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
+                    if ((msg.settings.showAfterDelay ?: 0) > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
                         Log.d(tag, "Message [${msg.id}] with showAfterDelay. Setting firstEligibleAt during refresh.")
                         persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
                     }
@@ -254,9 +276,9 @@ internal class InAppMessageManagerImpl(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) {
-                    Log.d(tag, "Refresh for route '${effectiveRoute ?: "APP_OPEN"}' was cancelled.")
+                    Log.d(tag, "Refresh for route '${effectiveRoute ?: "ENTER"}' was cancelled.")
                 } else {
-                    Log.e(tag, "Error refreshing active messages for route: ${effectiveRoute ?: "APP_OPEN"}", e)
+                    Log.e(tag, "Error refreshing active messages for route: ${effectiveRoute ?: "ENTER"}", e)
                 }
             }
         }
@@ -282,9 +304,9 @@ internal class InAppMessageManagerImpl(
 
         val potentialMessages = synchronized(triggerMap) {
             triggerMap[key]?.filter { msg ->
-                val typeMatch = msg.trigger.type == TriggerType.CUSTOM
-                val keyMatch = msg.trigger.key == key
-                val valueMatch = (value == null || msg.trigger.value == value)
+                val typeMatch = msg.settings.triggerType == TriggerType.CUSTOM
+                val keyMatch = msg.settings.key == key
+                val valueMatch = (value == null || msg.settings.value == value)
                 typeMatch && keyMatch && valueMatch
             } ?: emptyList()
         }
@@ -299,7 +321,7 @@ internal class InAppMessageManagerImpl(
         for (msg in potentialMessages.sortedByDescending { it.priority }) { // Check higher priority first
             if (isInScheduleWindow(msg) && isMessageEligible(msg)) {
                 // If the message has a showAfterDelay and its firstEligibleAt is not set, set it now.
-                if (msg.timeSettings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
+                if ((msg.settings.showAfterDelay ?: 0) > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
                     Log.d(tag, "Trigger for message [${msg.id}] with showAfterDelay. Setting firstEligibleAt.")
                     persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
                 }

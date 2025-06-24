@@ -11,11 +11,10 @@ import android.widget.Toast
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.net.toUri
 import com.pushpushgo.inappmessages.R
-import com.pushpushgo.inappmessages.model.ActionType
-import com.pushpushgo.inappmessages.model.InAppAction
 import com.pushpushgo.inappmessages.model.InAppMessage
+import com.pushpushgo.inappmessages.model.InAppMessageAction
+import com.pushpushgo.inappmessages.model.InAppMessageActionType
 import com.pushpushgo.inappmessages.model.InAppMessageDisplayType
-import com.pushpushgo.inappmessages.model.IntentActionType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.ui.composables.InAppMessageContent
 import kotlinx.coroutines.CoroutineScope
@@ -58,7 +57,7 @@ internal class InAppMessageDisplayerImpl(
         // This ensures only one message is either pending or being displayed at a time.
         cancelPendingMessages(isActivityPaused = false)
 
-        val delayMs = message.timeSettings.showAfterDelay
+        val delayMs = message.settings.showAfterDelay ?: 0
         if (delayMs > 0) {
             Log.d(tag, "Scheduling message ${message.id} (delay: ${delayMs}ms) for activity: ${activity.localClassName}")
             val activityRef = WeakReference(activity)
@@ -66,7 +65,7 @@ internal class InAppMessageDisplayerImpl(
             val newJob = launch { // This is a CoroutineScope.launch
                 try {
                     Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Starting delay of $delayMs ms.")
-                    delay(delayMs)
+                    delay(delayMs.toLong())
                     Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Delay finished.")
 
                     val currentActivity = activityRef.get()
@@ -203,7 +202,7 @@ internal class InAppMessageDisplayerImpl(
         val isDismissed = withContext(Dispatchers.IO) {
             persistence?.isMessageDismissed(message.id)
         }
-        if (isDismissed == true && !message.timeSettings.showAgain) {
+        if (isDismissed == true && message.settings.showAgain != "AFTER_TIME") {
             Log.d(tag, "Message ${message.id} is already dismissed and not set to show again.")
             return false
         }
@@ -229,7 +228,7 @@ internal class InAppMessageDisplayerImpl(
                 InAppMessageContent(
                     message = message,
                     onDismiss = { dismissMessage(message) },
-                    onAction = { action ->
+                    onAction = { action: InAppMessageAction ->
                         handleAction(activity, action)
                         dismissMessage(message)
                     }
@@ -238,53 +237,24 @@ internal class InAppMessageDisplayerImpl(
         }
     }
 
-    private fun handleAction(context: Context, action: InAppAction) {
+    private fun handleAction(context: Context, action: InAppMessageAction) {
         try {
             when (action.actionType) {
-                ActionType.URL -> {
+                InAppMessageActionType.REDIRECT -> {
                     action.url?.takeIf { it.isNotEmpty() }?.let {
                         context.startActivity(Intent(Intent.ACTION_VIEW, it.toUri()).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         })
-                    } ?: Log.e(tag, "URL is null or empty in payload")
+                    } ?: Log.e(tag, "URL is null or empty in REDIRECT action")
                 }
-                ActionType.INTENT -> {
-                    createIntentForAction(context, action)?.let { intent ->
-                        context.startActivity(intent)
-                    } ?: run {
-                        Log.e(tag, "Could not create intent. Action details: $action")
-                        Toast.makeText(context, "Invalid action configuration", Toast.LENGTH_SHORT).show()
-                    }
+                InAppMessageActionType.SUBSCRIBE, InAppMessageActionType.JS -> {
+                    Log.d(tag, "Action type '${action.actionType}' not yet implemented in SDK.")
+                    Toast.makeText(context, "Action not yet supported", Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (e: Exception) {
             Log.e(tag, "Failed to handle action", e)
             Toast.makeText(context, "Error performing action", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun createIntentForAction(context: Context, action: InAppAction): Intent? {
-        val intentAction = when (action.intentAction) {
-            IntentActionType.VIEW, IntentActionType.GEO -> Intent.ACTION_VIEW
-            IntentActionType.DIAL -> Intent.ACTION_DIAL
-            IntentActionType.SENDTO -> Intent.ACTION_SENDTO
-            IntentActionType.SETTINGS -> android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-            null -> null
-        } ?: return null // Return null if intentAction is not recognized
-
-        val intentData = when (action.intentAction) {
-            IntentActionType.SETTINGS -> "package:${context.packageName}".toUri()
-            IntentActionType.DIAL -> action.uri?.let { "tel:$it".toUri() }
-            IntentActionType.SENDTO -> action.uri?.let { "mailto:$it".toUri() }
-            IntentActionType.GEO -> action.uri?.let { "geo:$it".toUri() }
-            IntentActionType.VIEW -> action.uri?.toUri()
-            null -> null
-        }
-
-        return Intent().apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            this.action = intentAction
-            this.data = intentData
         }
     }
 }
