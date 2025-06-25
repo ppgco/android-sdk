@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.view.Gravity
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.compose.ui.platform.ComposeView
@@ -13,10 +14,11 @@ import androidx.core.net.toUri
 import com.pushpushgo.inappmessages.R
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
-import com.pushpushgo.inappmessages.model.InAppMessageActionType
-import com.pushpushgo.inappmessages.model.InAppMessageDisplayType
+import com.pushpushgo.inappmessages.model.InAppActionType
+import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.ui.composables.InAppMessageContent
+import com.pushpushgo.inappmessages.ui.composables.WebsiteToHomeScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,9 +29,11 @@ import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.pushpushgo.inappmessages.model.AnimationType
 import kotlinx.coroutines.isActive
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
+import androidx.core.graphics.drawable.toDrawable
 
 internal class InAppMessageDisplayerImpl(
     private val persistence: InAppMessagePersistence? = null,
@@ -57,15 +61,16 @@ internal class InAppMessageDisplayerImpl(
         // This ensures only one message is either pending or being displayed at a time.
         cancelPendingMessages(isActivityPaused = false)
 
-        val delayMs = message.settings.showAfterDelay ?: 0
-        if (delayMs > 0) {
+        val delaySec = message.settings.showAfterDelay
+        if (delaySec > 0) {
+            val delayMs = delaySec * 1000L
             Log.d(tag, "Scheduling message ${message.id} (delay: ${delayMs}ms) for activity: ${activity.localClassName}")
             val activityRef = WeakReference(activity)
 
             val newJob = launch { // This is a CoroutineScope.launch
                 try {
                     Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Starting delay of $delayMs ms.")
-                    delay(delayMs.toLong())
+                    delay(delayMs)
                     Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Delay finished.")
 
                     val currentActivity = activityRef.get()
@@ -82,7 +87,7 @@ internal class InAppMessageDisplayerImpl(
                     Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Showing message on activity ${currentActivity.localClassName}.")
                     withContext(Dispatchers.Main) { // Ensure UI ops on Main
                         if (shouldBeDisplayed(message)) {
-                            showMessageByType(currentActivity, message)
+                            showMessageByTemplate(currentActivity, message)
                         }
                     }
                 } catch (e: CancellationException) {
@@ -103,21 +108,27 @@ internal class InAppMessageDisplayerImpl(
         } else {
             launch {
                 if (shouldBeDisplayed(message)) {
-                    showMessageByType(activity, message)
+                    showMessageByTemplate(activity, message)
                 }
             }
         }
     }
 
-    private suspend fun showMessageByType(activity: Activity, message: InAppMessage) {
+    private suspend fun showMessageByTemplate(activity: Activity, message: InAppMessage) {
         // Dismiss any currently visible message before showing a new one
         hideMessage()
 
-        when (message.displayType) {
-            InAppMessageDisplayType.CARD,
-            InAppMessageDisplayType.FULLSCREEN -> showModal(activity, message)
-            InAppMessageDisplayType.BANNER -> showBanner(activity, message)
-            InAppMessageDisplayType.MODAL -> showModal(activity, message)
+        val dialogStyle = when (message.template) {
+            "WEBSITE_TO_HOME_SCREEN" -> R.style.InAppMessageDialog_Modal
+            // Here we can define other templates and their container styles
+            else -> {
+                Log.w(tag, "Unsupported template: ${message.template}, no container style defined.")
+                null
+            }
+        }
+
+        dialogStyle?.let {
+            displayMessageInContainer(activity, message, it)
         }
     }
 
@@ -162,7 +173,7 @@ internal class InAppMessageDisplayerImpl(
         }
     }
 
-    private suspend fun showBanner(activity: Activity, message: InAppMessage) {
+    private suspend fun displayMessageInContainer(activity: Activity, message: InAppMessage, dialogStyleResId: Int) {
         if (shouldBeDisplayed(message).not()) return
 
         // Ensure UI operations are on the main thread
@@ -170,27 +181,14 @@ internal class InAppMessageDisplayerImpl(
             currentDialog?.dismiss()
 
             val composeView = createComposeView(activity, message)
-            val dialog = Dialog(activity, R.style.InAppMessageDialog_Banner).apply {
+            val dialog = Dialog(activity, dialogStyleResId).apply {
                 setContentView(composeView)
                 setCancelable(message.dismissible)
-                setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
-            }
-            dialog.show()
-            currentDialog = dialog
-        }
-    }
-
-    private suspend fun showModal(activity: Activity, message: InAppMessage) {
-        if (shouldBeDisplayed(message).not()) return
-
-        // Ensure UI operations are on the main thread
-        withContext(Dispatchers.Main) {
-            currentDialog?.dismiss()
-
-            val composeView = createComposeView(activity, message)
-            val dialog = Dialog(activity, R.style.InAppMessageDialog_Modal).apply {
-                setContentView(composeView)
-                setCancelable(message.dismissible)
+                if (message.style.animationType == AnimationType.APPEAR) {
+                    window?.attributes?.windowAnimations = R.style.FadeInAnimation
+                }
+                window?.setBackgroundDrawable(android.graphics.Color.TRANSPARENT.toDrawable())
+                window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
             }
             dialog.show()
@@ -202,7 +200,7 @@ internal class InAppMessageDisplayerImpl(
         val isDismissed = withContext(Dispatchers.IO) {
             persistence?.isMessageDismissed(message.id)
         }
-        if (isDismissed == true && message.settings.showAgain != "AFTER_TIME") {
+        if (isDismissed == true && message.settings.showAgain != ShowAgainType.AFTER_TIME) {
             Log.d(tag, "Message ${message.id} is already dismissed and not set to show again.")
             return false
         }
@@ -225,14 +223,33 @@ internal class InAppMessageDisplayerImpl(
                 gravity = Gravity.CENTER
             }
             setContent {
-                InAppMessageContent(
-                    message = message,
-                    onDismiss = { dismissMessage(message) },
-                    onAction = { action: InAppMessageAction ->
-                        handleAction(activity, action)
+                val onAction = { action: InAppMessageAction ->
+                    handleAction(activity, action)
+                    // Dismiss the message for actions that should close it.
+                    if (action.actionType == InAppActionType.REDIRECT || action.actionType == InAppActionType.CLOSE) {
                         dismissMessage(message)
                     }
-                )
+                }
+
+                when (message.template) {
+                    "WEBSITE_TO_HOME_SCREEN" -> {
+                        WebsiteToHomeScreen(
+                            message = message,
+                            onDismiss = { dismissMessage(message) },
+                            onAction = onAction
+                        )
+                    }
+                    else -> {
+                        val tag = "InAppMsgDisplayer"
+                        // Fallback to a default view or log an error
+                        Log.w(tag, "No composable found for template: ${message.template}. Using default.")
+                        InAppMessageContent(
+                            message = message,
+                            onDismiss = { dismissMessage(message) },
+                            onAction = onAction
+                        )
+                    }
+                }
             }
         }
     }
@@ -240,16 +257,20 @@ internal class InAppMessageDisplayerImpl(
     private fun handleAction(context: Context, action: InAppMessageAction) {
         try {
             when (action.actionType) {
-                InAppMessageActionType.REDIRECT -> {
+                InAppActionType.REDIRECT -> {
                     action.url?.takeIf { it.isNotEmpty() }?.let {
                         context.startActivity(Intent(Intent.ACTION_VIEW, it.toUri()).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         })
                     } ?: Log.e(tag, "URL is null or empty in REDIRECT action")
                 }
-                InAppMessageActionType.SUBSCRIBE, InAppMessageActionType.JS -> {
+                InAppActionType.SUBSCRIBE, InAppActionType.JS -> {
                     Log.d(tag, "Action type '${action.actionType}' not yet implemented in SDK.")
                     Toast.makeText(context, "Action not yet supported", Toast.LENGTH_SHORT).show()
+                }
+                InAppActionType.CLOSE -> {
+                    // The message is dismissed by the caller of this function,
+                    // so no specific action is needed here for CLOSE.
                 }
             }
         } catch (e: Exception) {

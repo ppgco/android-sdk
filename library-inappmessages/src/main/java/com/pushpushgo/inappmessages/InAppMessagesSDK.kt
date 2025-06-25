@@ -1,21 +1,28 @@
 package com.pushpushgo.inappmessages
 
-import android.app.Activity
 import android.app.Application
 import android.util.Log
 import com.pushpushgo.inappmessages.manager.InAppMessageManager
 import com.pushpushgo.inappmessages.manager.InAppMessageManagerImpl
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistenceImpl
+import com.pushpushgo.inappmessages.network.InAppApi
 import com.pushpushgo.inappmessages.repository.InAppMessageRepositoryImpl
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayer
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayerImpl
-import com.pushpushgo.inappmessages.utils.AutoCleanupManager
 import com.pushpushgo.inappmessages.ui.InAppUIController
+import com.pushpushgo.inappmessages.utils.AutoCleanupManager
+import com.pushpushgo.inappmessages.utils.ZonedDateTimeAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 
 class InAppMessagesSDK private constructor(
@@ -55,7 +62,28 @@ class InAppMessagesSDK private constructor(
     }
 
     init {
-        val repository = InAppMessageRepositoryImpl(application, "in_app_messages.json")
+        val finalBaseUrl = if (baseUrl.isNullOrBlank()) "https://api.pushpushgo.com/" else baseUrl
+
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
+            .build()
+
+        val moshi = Moshi.Builder()
+            .add(ZonedDateTimeAdapter.FACTORY)
+            .add(KotlinJsonAdapterFactory())
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(finalBaseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+
+        val api = retrofit.create(InAppApi::class.java)
+
+        val repository = InAppMessageRepositoryImpl(api, projectId, apiKey)
         val persistence = InAppMessagePersistenceImpl(application)
         manager = InAppMessageManagerImpl(sdkScope, repository, persistence, application)
         displayer = InAppMessageDisplayerImpl(persistence, onMessageDismissed = {

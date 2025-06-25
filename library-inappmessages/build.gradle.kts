@@ -1,13 +1,14 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.24"
+    id("com.google.devtools.ksp") version "2.1.21-2.0.1"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.21"
 }
 
 android {
     namespace = "com.pushpushgo.inappmessages"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26
@@ -28,46 +29,56 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
-        languageVersion = "1.9"
-        apiVersion = "1.9"
+        languageVersion = "2.1"
+        apiVersion = "2.1"
     }
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14" // Aligned with Kotlin 1.8.10 and Compose BOM
-    }
+    // composeOptions {
+    //     kotlinCompilerExtensionVersion = "1.5.14" // Aligned with Kotlin 2.x
+    // }
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    kapt("com.github.bumptech.glide:compiler:4.16.0")
-    implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+    // Core & Appcompat
+    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.preference:preference-ktx:1.2.1")
 
-    // Lifecycle runtime
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    // Lifecycle & Navigation
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
+    implementation("androidx.navigation:navigation-runtime-ktx:2.9.0")
+    implementation("androidx.navigation:navigation-common-ktx:2.9.0")
 
-    // Navigation components
-    implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")
-    implementation("androidx.navigation:navigation-common-ktx:2.7.7")
-
-    // Compose dependencies
-    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
+    // Compose
+    implementation(platform("androidx.compose:compose-bom:2025.06.01"))
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.runtime:runtime:1.8.2")
-    implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.8.1") // For Google Fonts
 
-    // Kotlinx Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    // Image Loading
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Serialization
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
+    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    // Networking
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+    implementation("com.squareup.okhttp3:logging-interceptor")
+
+    // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.10")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }

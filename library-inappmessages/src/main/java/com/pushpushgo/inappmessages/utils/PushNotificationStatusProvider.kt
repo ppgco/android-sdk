@@ -58,7 +58,7 @@ class PushNotificationStatusProvider(private val context: Context) {
             UserAudienceType.ALL -> true
             UserAudienceType.SUBSCRIBER -> isSubscribed()
             UserAudienceType.NON_SUBSCRIBER -> !isSubscribed()
-            UserAudienceType.BLOCKED_NOTIFICATIONS -> isNotificationsBlocked()
+            UserAudienceType.NOTIFICATIONS_BLOCKED -> isNotificationsBlocked()
         }
     }
 }

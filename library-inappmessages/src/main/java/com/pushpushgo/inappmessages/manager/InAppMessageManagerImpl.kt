@@ -3,7 +3,6 @@ package com.pushpushgo.inappmessages.manager
 import android.content.Context
 import android.util.Log
 import com.pushpushgo.inappmessages.model.DeviceType
-import com.pushpushgo.inappmessages.model.DisplayType
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.OSType
 import com.pushpushgo.inappmessages.model.ShowAgainType
@@ -67,7 +66,8 @@ internal class InAppMessageManagerImpl(
                 
                 // Fetch messages in IO context
                 val messages = withContext(Dispatchers.IO) {
-                    repository.fetchMessages()
+                    Log.d(tag, "${repository.fetchMessages()}")
+                    repository.fetchMessages() 
                 }
                 
                 Log.d(tag, "Fetched ${messages.size} messages")
@@ -184,16 +184,17 @@ internal class InAppMessageManagerImpl(
         // 5. Check 'showAgain' (cooldown for repeatable messages)
         if (message.settings.showAgain == ShowAgainType.AFTER_TIME) {
             val lastDismissedAt = persistence.getLastDismissedAt(message.id)
-            val requiredCooldown = message.settings.showAfterTime ?: 0L
+            val requiredCooldownSec = message.settings.showAfterTime ?: 0L
 
-            if (lastDismissedAt != null && requiredCooldown > 0) { // Check if it was ever dismissed and has a cooldown
+            if (lastDismissedAt != null && requiredCooldownSec > 0) { // Check if it was ever dismissed and has a cooldown
                 val elapsedSinceLastDismissal = nowMillis - lastDismissedAt
+                val requiredCooldownMs = requiredCooldownSec * 1000L
 
-                if (elapsedSinceLastDismissal < requiredCooldown) {
+                if (elapsedSinceLastDismissal < requiredCooldownMs) {
                     Log.d(
                         tag,
                         "Message [${message.id}] showAgain: cooldown not yet passed. " +
-                                "${elapsedSinceLastDismissal}ms of ${requiredCooldown}ms since last dismissal."
+                                "${elapsedSinceLastDismissal}ms of ${requiredCooldownMs}ms since last dismissal."
                     )
                     return@withContext false // Still in cooldown since last dismissal
                 }
@@ -240,7 +241,7 @@ internal class InAppMessageManagerImpl(
                         } else {
                             val matchingRule = displayOnRules.find { it.path == effectiveRoute }
                             // Show only if a rule for the current route exists and its `display` is true.
-                            matchingRule?.display ?: false
+                            matchingRule?.display == true
                         }
                     }
                 }
@@ -255,7 +256,7 @@ internal class InAppMessageManagerImpl(
 
                 val finalEligibleMessages = mutableListOf<InAppMessage>()
                 for (msg in initiallyFiltered) {
-                    if ((msg.settings.showAfterDelay ?: 0) > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
+                    if (msg.settings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
                         Log.d(tag, "Message [${msg.id}] with showAfterDelay. Setting firstEligibleAt during refresh.")
                         persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
                     }
@@ -321,7 +322,7 @@ internal class InAppMessageManagerImpl(
         for (msg in potentialMessages.sortedByDescending { it.priority }) { // Check higher priority first
             if (isInScheduleWindow(msg) && isMessageEligible(msg)) {
                 // If the message has a showAfterDelay and its firstEligibleAt is not set, set it now.
-                if ((msg.settings.showAfterDelay ?: 0) > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
+                if (msg.settings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
                     Log.d(tag, "Trigger for message [${msg.id}] with showAfterDelay. Setting firstEligibleAt.")
                     persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
                 }

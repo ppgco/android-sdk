@@ -65,7 +65,6 @@ data class InAppMessage(
     val layout: InAppMessageLayout,
     @Json(name = "style")
     val style: InAppMessageStyle,
-    val displayType: InAppMessageDisplayType,
     val template: String? = null,
     @Json(name = "title")
     val title: InAppMessageTitle,
@@ -80,7 +79,7 @@ data class InAppMessage(
     @Json(name = "settings")
     val settings: InAppMessageSettings,
     val dismissible: Boolean = true,
-    val priority: Int,
+    val priority: Int?,
     val schedule: Schedule? = null,
     val expiration: ZonedDateTime? = null
 )

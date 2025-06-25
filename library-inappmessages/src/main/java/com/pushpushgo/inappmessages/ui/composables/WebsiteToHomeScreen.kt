@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -19,37 +20,77 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pushpushgo.inappmessages.model.* 
-import androidx.core.graphics.toColorInt
 import coil.compose.AsyncImage
+import com.pushpushgo.inappmessages.R
+import com.pushpushgo.inappmessages.model.FontFamily as ModelFontFamily
 import com.pushpushgo.inappmessages.model.FontStyle as ModelFontStyle
+import com.pushpushgo.inappmessages.model.InAppMessage
+import com.pushpushgo.inappmessages.model.InAppMessageAction
+import com.pushpushgo.inappmessages.model.InAppMessageDescription
+import com.pushpushgo.inappmessages.model.InAppMessageImage
+import com.pushpushgo.inappmessages.model.InAppMessageStyle
+import com.pushpushgo.inappmessages.model.InAppMessageTitle
+import androidx.core.graphics.toColorInt
 
 @Composable
-fun InAppMessageContent(
+fun WebsiteToHomeScreen(
     message: InAppMessage,
     onDismiss: () -> Unit,
     onAction: (InAppMessageAction) -> Unit,
 ) {
+    val provider = GoogleFont.Provider(
+        providerAuthority = "com.google.android.gms.fonts",
+        providerPackage = "com.google.android.gms",
+        certificates = R.array.com_google_android_gms_fonts_certs
+    )
+
+    val fontName = when (message.style.fontFamily) {
+        ModelFontFamily.ROBOTO -> "Roboto"
+        ModelFontFamily.OPEN_SANS -> "Open Sans"
+        ModelFontFamily.MONTSERRAT -> "Montserrat"
+        ModelFontFamily.INTER -> "Inter"
+        ModelFontFamily.POPPINS -> "Poppins"
+        ModelFontFamily.LATO -> "Lato"
+        ModelFontFamily.PLAYFAIR_DISPLAY -> "Playfair Display"
+        ModelFontFamily.FIRA_SANS -> "Fira Sans"
+        ModelFontFamily.ARIAL -> "Arial"
+        ModelFontFamily.GEORGIA -> "Georgia"
+    }
+
+    val composeFontFamily = FontFamily(
+        Font(googleFont = GoogleFont(name = fontName), fontProvider = provider)
+    )
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.Transparent) // Outer box is transparent
+            .fillMaxSize()
+            .background(
+                if (message.style.overlay) Color.Black.copy(alpha = 0.6f) else Color.Transparent
+            )
+            .padding(parsePadding(message.layout.margin))
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            shape = RoundedCornerShape(message.style.borderRadius.toFloatOrNull() ?: 0f),
+                .wrapContentHeight()
+                .align(Alignment.Center),
+            shape = parseBorderRadius(message.style.borderRadius),
             colors = CardDefaults.cardColors(
                 containerColor = Color.fromHex(message.style.backgroundColor)
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (message.style.dropShadow) 8.dp else 0.dp
             ),
             border = if (message.style.border) {
                 BorderStroke(
@@ -59,20 +100,27 @@ fun InAppMessageContent(
             } else null
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(parsePadding(message.layout.paddingBody)),
+                modifier = Modifier.padding(parsePadding(message.layout.padding)),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                message.image?.let {
-                    MessageImage(image = it)
-                    Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.dp))
+                message.image?.let { image ->
+                    if (!image.hideOnMobile) {
+                        MessageImage(image = image)
+                        Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.dp))
+                    }
                 }
-                MessageText(title = message.title)
-                Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.dp))
-                MessageText(description = message.description)
-                Spacer(modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.dp))
-                MessageButtons(actions = message.actions, onAction = onAction)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(parsePadding(message.layout.paddingBody)),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    MessageText(title = message.title, fontFamily = composeFontFamily)
+                    Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.dp))
+                    MessageText(description = message.description, fontFamily = composeFontFamily)
+                    Spacer(modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.dp))
+                    MessageButtons(actions = message.actions, fontFamily = composeFontFamily, onAction = onAction)
+                }
             }
         }
 
@@ -84,19 +132,19 @@ fun InAppMessageContent(
 private fun MessageImage(image: InAppMessageImage) {
     AsyncImage(
         model = image.url,
-        contentDescription = "In-App Message Image",
+        contentDescription = "In-app message image",
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp) // Default height, can be customized later
             .clip(RoundedCornerShape(8.dp)),
-        contentScale = ContentScale.Crop
+        contentScale = ContentScale.Fit
     )
 }
 
 @Composable
-private fun MessageText(title: InAppMessageTitle) {
+private fun MessageText(title: InAppMessageTitle, fontFamily: FontFamily) {
     Text(
         text = title.text,
+        fontFamily = fontFamily,
         color = Color.fromHex(title.color),
         fontSize = title.fontSize.sp,
         fontWeight = FontWeight(title.fontWeight),
@@ -107,9 +155,10 @@ private fun MessageText(title: InAppMessageTitle) {
 }
 
 @Composable
-private fun MessageText(description: InAppMessageDescription) {
+private fun MessageText(description: InAppMessageDescription, fontFamily: FontFamily) {
     Text(
         text = description.text,
+        fontFamily = fontFamily,
         color = Color.fromHex(description.color),
         fontSize = description.fontSize.sp,
         fontWeight = FontWeight(description.fontWeight),
@@ -122,26 +171,32 @@ private fun MessageText(description: InAppMessageDescription) {
 @Composable
 private fun MessageButtons(
     actions: List<InAppMessageAction>,
+    fontFamily: FontFamily,
     onAction: (InAppMessageAction) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         actions.forEach { action ->
             Button(
                 onClick = { onAction(action) },
-                shape = RoundedCornerShape(action.borderRadius.toFloatOrNull() ?: 8f),
+                shape = parseBorderRadius(action.borderRadius),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.fromHex(action.backgroundColor)
+                    containerColor = Color.fromHex(action.backgroundColor),
+                    contentColor = Color.fromHex(action.textColor)
                 ),
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = parsePadding(action.padding)
+                border = BorderStroke(1.dp, Color.fromHex(action.borderColor)),
+                contentPadding = parsePadding(action.padding),
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = action.text,
-                    color = Color.fromHex(action.textColor),
-                    fontSize = action.fontSize.sp,
+                    fontFamily = fontFamily,
                     fontWeight = FontWeight(action.fontWeight),
-                    fontStyle = if (action.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal,
-                    textDecoration = if (action.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None
+                    fontSize = action.fontSize.sp,
+                    textDecoration = if (action.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
+                    fontStyle = if (action.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal
                 )
             }
         }
@@ -157,6 +212,8 @@ private fun BoxScope.CloseButton(style: InAppMessageStyle, onDismiss: () -> Unit
         modifier = Modifier
             .align(Alignment.TopEnd)
             .padding(8.dp)
+            .size(style.closeIconWidth.dp * 2) // Make clickable area larger
+            .background(Color.Black.copy(alpha = 0.3f), shape = CircleShape)
     ) {
         Icon(
             imageVector = Icons.Default.Close,
@@ -171,10 +228,16 @@ private fun BoxScope.CloseButton(style: InAppMessageStyle, onDismiss: () -> Unit
 private fun Color.Companion.fromHex(hex: String): Color {
     return try {
         Color(hex.toColorInt())
-    } catch (e: Exception) {
-        Log.w("InAppMessageContent", "Invalid color hex: '$hex'. Using Black.", e)
-        Black // Fallback color
+    } catch (e: IllegalArgumentException) {
+        Log.w("Color.fromHex", "Invalid color hex: '$hex'. Using Black.", e)
+        Black
     }
+}
+
+private fun parseBorderRadius(borderRadius: String?): Shape {
+    if (borderRadius == null) return RoundedCornerShape(0.dp)
+    val radius = borderRadius.removeSuffix("px").toFloatOrNull() ?: 0f
+    return RoundedCornerShape(radius.dp)
 }
 
 private fun parsePadding(padding: String?): PaddingValues {
@@ -196,6 +259,3 @@ private fun TextAlign.Companion.fromString(value: String): TextAlign = when (val
     "center" -> Center
     else -> Center
 }
-
-
-
