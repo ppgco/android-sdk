@@ -17,7 +17,7 @@ import com.pushpushgo.inappmessages.model.InAppMessageAction
 import com.pushpushgo.inappmessages.model.InAppActionType
 import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
-import com.pushpushgo.inappmessages.ui.composables.InAppMessageContent
+import com.pushpushgo.inappmessages.ui.composables.InAppMessageDefaultTemplate
 import com.pushpushgo.inappmessages.ui.composables.WebsiteToHomeScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -243,7 +243,7 @@ internal class InAppMessageDisplayerImpl(
                         val tag = "InAppMsgDisplayer"
                         // Fallback to a default view or log an error
                         Log.w(tag, "No composable found for template: ${message.template}. Using default.")
-                        InAppMessageContent(
+                        InAppMessageDefaultTemplate(
                             message = message,
                             onDismiss = { dismissMessage(message) },
                             onAction = onAction

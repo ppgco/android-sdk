@@ -32,7 +32,7 @@ import coil.compose.AsyncImage
 import com.pushpushgo.inappmessages.model.FontStyle as ModelFontStyle
 
 @Composable
-fun InAppMessageContent(
+fun InAppMessageDefaultTemplate(
     message: InAppMessage,
     onDismiss: () -> Unit,
     onAction: (InAppMessageAction) -> Unit,
