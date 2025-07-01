@@ -59,7 +59,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.runtime:runtime")
-    implementation("androidx.compose.ui:ui-text-google-fonts:1.8.1") // For Google Fonts
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.8.3") // For Google Fonts
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.6.0")

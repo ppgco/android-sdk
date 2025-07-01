@@ -18,7 +18,7 @@ import com.pushpushgo.inappmessages.model.InAppActionType
 import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.ui.composables.InAppMessageDefaultTemplate
-import com.pushpushgo.inappmessages.ui.composables.WebsiteToHomeScreen
+import com.pushpushgo.inappmessages.ui.composables.TemplateRichMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -119,7 +119,7 @@ internal class InAppMessageDisplayerImpl(
         hideMessage()
 
         val dialogStyle = when (message.template) {
-            "WEBSITE_TO_HOME_SCREEN" -> R.style.InAppMessageDialog_Modal
+            "WEBSITE_TO_HOME_SCREEN", "PAYWALL_PUBLISH" -> R.style.InAppMessageDialog_Modal
             // Here we can define other templates and their container styles
             else -> {
                 Log.w(tag, "Unsupported template: ${message.template}, no container style defined.")
@@ -232,8 +232,8 @@ internal class InAppMessageDisplayerImpl(
                 }
 
                 when (message.template) {
-                    "WEBSITE_TO_HOME_SCREEN" -> {
-                        WebsiteToHomeScreen(
+                    "PAYWALL_PUBLISH", "WEBSITE_TO_HOME_SCREEN" -> {
+                        TemplateRichMessage(
                             message = message,
                             onDismiss = { dismissMessage(message) },
                             onAction = onAction
