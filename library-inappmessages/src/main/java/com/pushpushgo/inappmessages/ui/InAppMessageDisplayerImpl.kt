@@ -38,6 +38,7 @@ import androidx.core.graphics.drawable.toDrawable
 internal class InAppMessageDisplayerImpl(
     private val persistence: InAppMessagePersistence? = null,
     private val onMessageDismissed: () -> Unit,
+    private val onMessageEvent: (eventType: String, message: InAppMessage, ctaIndex: Int?) -> Unit = { _, _, _ -> }
 ) : InAppMessageDisplayer, CoroutineScope {
 
     private val tag = "InAppMsgDisplayer"
@@ -167,6 +168,7 @@ internal class InAppMessageDisplayerImpl(
             }
             hideMessage()
             onMessageDismissed()
+            onMessageEvent("close", message, null)
         } finally {
             // Allow the next dismissal call after this one has fully completed
             isDismissing = false
@@ -193,6 +195,8 @@ internal class InAppMessageDisplayerImpl(
             }
             dialog.show()
             currentDialog = dialog
+            // Fire show event after dialog is visible
+            onMessageEvent("show", message, null)
         }
     }
 
@@ -224,11 +228,12 @@ internal class InAppMessageDisplayerImpl(
             }
             setContent {
                 val onAction = { action: InAppMessageAction ->
+                    // Find CTA index (1-based) if this is a CTA
+                    val ctaIndex = message.actions.indexOf(action).takeIf { it >= 0 }?.plus(1)
+                    onMessageEvent("cta", message, ctaIndex)
                     handleAction(activity, action)
-                    // Dismiss the message for actions that should close it.
-                    if (action.actionType == InAppActionType.REDIRECT || action.actionType == InAppActionType.CLOSE) {
-                        dismissMessage(message)
-                    }
+                    // Every action click should dismiss the message to prevent multiple actions events
+                    dismissMessage(message)
                 }
 
                 when (message.template) {

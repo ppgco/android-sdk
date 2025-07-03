@@ -2,12 +2,12 @@ package com.pushpushgo.inappmessages.repository
 
 import android.util.Log
 import com.pushpushgo.inappmessages.model.InAppMessage
-import com.pushpushgo.inappmessages.network.InAppApi
+import com.pushpushgo.inappmessages.network.InAppListGetApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal class InAppMessageRepositoryImpl(
-    private val inAppApi: InAppApi,
+    private val inAppApi: InAppListGetApi,
     private val projectId: String,
     private val apiKey: String,
 ) : InAppMessageRepository {

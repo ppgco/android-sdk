@@ -1,6 +1,5 @@
 package com.pushpushgo.inappmessages.ui.composables
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -149,7 +148,6 @@ private fun MessageBody(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Log.d("CZCZ", fontFamily.toString())
         MessageText(title = message.title, fontFamily = fontFamily, message.style)
         Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp))
         MessageText(

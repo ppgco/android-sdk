@@ -1,14 +1,16 @@
 package com.pushpushgo.inappmessages.network
 
+import com.pushpushgo.inappmessages.data.event.InAppEventRequest
 import com.pushpushgo.inappmessages.model.network.InAppMessagesResponse
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-internal interface InAppApi {
-
+internal interface InAppListGetApi {
     @GET("/wi/projects/{projectId}/popups")
     suspend fun getInAppMessages(
         @Path("projectId") projectId: String,
@@ -18,4 +20,13 @@ internal interface InAppApi {
         @Query("offset") offset: Int = 0,
         @Query("limit") limit: Int = 20,
     ): Response<InAppMessagesResponse>
+}
+
+interface InAppEventApi {
+    @POST("/v1/android/{projectId}/inapp/event")
+    suspend fun sendInAppEvent(
+        @Header("X-Token") token: String,
+        @Path("projectId") projectId: String,
+        @Body event: InAppEventRequest
+    ): Response<Void>
 }
