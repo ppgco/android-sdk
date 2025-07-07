@@ -18,6 +18,7 @@ import com.pushpushgo.inappmessages.model.InAppActionType
 import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.ui.composables.InAppMessageDefaultTemplate
+import com.pushpushgo.inappmessages.ui.composables.TemplateBannerMessage
 import com.pushpushgo.inappmessages.ui.composables.TemplateRichMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,7 @@ internal class InAppMessageDisplayerImpl(
 
     // Flag to prevent re-entrant calls to dismissMessage
     private var isDismissing = false
-    
+
     // Map to store pending delayed message jobs
     private val pendingMessageJobs = mutableMapOf<String, Pair<InAppMessage, Job>>()
 
@@ -65,34 +66,55 @@ internal class InAppMessageDisplayerImpl(
         val delaySec = message.settings.showAfterDelay
         if (delaySec > 0) {
             val delayMs = delaySec * 1000L
-            Log.d(tag, "Scheduling message ${message.id} (delay: ${delayMs}ms) for activity: ${activity.localClassName}")
+            Log.d(
+                tag,
+                "Scheduling message ${message.id} (delay: ${delayMs}ms) for activity: ${activity.localClassName}"
+            )
             val activityRef = WeakReference(activity)
 
             val newJob = launch { // This is a CoroutineScope.launch
                 try {
-                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Starting delay of $delayMs ms.")
+                    Log.d(
+                        tag,
+                        "Job for ${message.id} [${this.coroutineContext[Job]}]: Starting delay of $delayMs ms."
+                    )
                     delay(delayMs)
-                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Delay finished.")
+                    Log.d(
+                        tag,
+                        "Job for ${message.id} [${this.coroutineContext[Job]}]: Delay finished."
+                    )
 
                     val currentActivity = activityRef.get()
                     if (currentActivity == null || currentActivity.isFinishing) {
-                        Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Activity ${activity.localClassName} no longer available or finishing.")
+                        Log.d(
+                            tag,
+                            "Job for ${message.id} [${this.coroutineContext[Job]}]: Activity ${activity.localClassName} no longer available or finishing."
+                        )
                         return@launch
                     }
 
                     if (!isActive) { // Check if job was cancelled during delay
-                        Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Job was cancelled during delay (isActive=false).")
+                        Log.d(
+                            tag,
+                            "Job for ${message.id} [${this.coroutineContext[Job]}]: Job was cancelled during delay (isActive=false)."
+                        )
                         return@launch
                     }
 
-                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}]: Showing message on activity ${currentActivity.localClassName}.")
+                    Log.d(
+                        tag,
+                        "Job for ${message.id} [${this.coroutineContext[Job]}]: Showing message on activity ${currentActivity.localClassName}."
+                    )
                     withContext(Dispatchers.Main) { // Ensure UI ops on Main
                         if (shouldBeDisplayed(message)) {
                             showMessageByTemplate(currentActivity, message)
                         }
                     }
                 } catch (e: CancellationException) {
-                    Log.d(tag, "Job for ${message.id} [${this.coroutineContext[Job]}] was cancelled: ${e.message}")
+                    Log.d(
+                        tag,
+                        "Job for ${message.id} [${this.coroutineContext[Job]}] was cancelled: ${e.message}"
+                    )
                 } catch (t: Throwable) {
                     Log.e(tag, "Job for ${message.id} [${this.coroutineContext[Job]}] failed", t)
                 } finally {
@@ -121,7 +143,7 @@ internal class InAppMessageDisplayerImpl(
 
         val dialogStyle = when (message.template) {
             "WEBSITE_TO_HOME_SCREEN", "PAYWALL_PUBLISH" -> R.style.InAppMessageDialog_Modal
-            // Here we can define other templates and their container styles
+            "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> R.style.InAppMessageDialog_Banner
             else -> {
                 Log.w(tag, "Unsupported template: ${message.template}, no container style defined.")
                 null
@@ -175,7 +197,9 @@ internal class InAppMessageDisplayerImpl(
         }
     }
 
-    private suspend fun displayMessageInContainer(activity: Activity, message: InAppMessage, dialogStyleResId: Int) {
+    private suspend fun displayMessageInContainer(
+        activity: Activity, message: InAppMessage, dialogStyleResId: Int
+    ) {
         if (shouldBeDisplayed(message).not()) return
 
         // Ensure UI operations are on the main thread
@@ -190,7 +214,9 @@ internal class InAppMessageDisplayerImpl(
                     window?.attributes?.windowAnimations = R.style.FadeInAnimation
                 }
                 window?.setBackgroundDrawable(android.graphics.Color.TRANSPARENT.toDrawable())
-                window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                window?.setLayout(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
             }
             dialog.show()
@@ -221,8 +247,7 @@ internal class InAppMessageDisplayerImpl(
             setViewTreeSavedStateRegistryOwner(activity as? androidx.savedstate.SavedStateRegistryOwner)
 
             layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
             ).apply {
                 gravity = Gravity.CENTER
             }
@@ -244,10 +269,17 @@ internal class InAppMessageDisplayerImpl(
                             onAction = onAction
                         )
                     }
+
+                    "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> {
+                        TemplateBannerMessage(
+                            message = message,
+                            onDismiss = { dismissMessage(message) },
+                            onAction = onAction
+                        )
+                    }
+
                     else -> {
-                        val tag = "InAppMsgDisplayer"
-                        // Fallback to a default view or log an error
-                        Log.w(tag, "No composable found for template: ${message.template}. Using default.")
+                        // Fallback to a default view
                         InAppMessageDefaultTemplate(
                             message = message,
                             onDismiss = { dismissMessage(message) },
@@ -269,10 +301,12 @@ internal class InAppMessageDisplayerImpl(
                         })
                     } ?: Log.e(tag, "URL is null or empty in REDIRECT action")
                 }
+
                 InAppActionType.SUBSCRIBE, InAppActionType.JS -> {
                     Log.d(tag, "Action type '${action.actionType}' not yet implemented in SDK.")
                     Toast.makeText(context, "Action not yet supported", Toast.LENGTH_SHORT).show()
                 }
+
                 InAppActionType.CLOSE -> {
                     // The message is dismissed by the caller of this function,
                     // so no specific action is needed here for CLOSE.

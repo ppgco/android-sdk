@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,7 +26,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -64,7 +65,7 @@ internal fun MessageImage(
 internal fun MessageText(
     title: InAppMessageTitle,
     fontFamily: FontFamily,
-    templateStyle: InAppMessageStyle
+    templateStyle: InAppMessageStyle,
 ) {
     val borderPadding = borderAdjustments(templateStyle)
     Text(
@@ -86,13 +87,13 @@ internal fun MessageText(
 internal fun MessageText(
     description: InAppMessageDescription,
     fontFamily: FontFamily,
-    templateStyle: InAppMessageStyle
+    templateStyle: InAppMessageStyle,
 ) {
     val borderPadding = borderAdjustments(templateStyle)
     Text(
         modifier = Modifier
             .fillMaxWidth()
-            .padding( start = borderPadding, end = borderPadding),
+            .padding(start = borderPadding, end = borderPadding),
         text = description.text,
         fontFamily = fontFamily,
         color = Color.fromHex(description.color),
@@ -113,34 +114,60 @@ internal fun MessageButtons(
 ) {
     val borderPadding = borderAdjustments(templateStyle)
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .padding( start = borderPadding, end = borderPadding)
+            .padding(start = borderPadding, end = borderPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         actions.forEach { action ->
-            Button(
-                onClick = { onAction(action) },
-                shape = parseBorderRadius(action.borderRadius),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.fromHex(action.backgroundColor),
-                    contentColor = Color.fromHex(action.textColor)
-                ),
-                border = BorderStroke(1.dp, Color.fromHex(action.borderColor)),
-                contentPadding = parsePadding(action.padding),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text(
-                    text = action.text,
-                    fontFamily = fontFamily,
-                    fontWeight = FontWeight(action.fontWeight),
-                    fontSize = action.fontSizeSp,
-                    textDecoration = if (action.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
-                    fontStyle = if (action.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal
-                )
-            }
+            if (!action.enabled) return@forEach
+
+            MessageButton(action, fontFamily, onAction, templateStyle)
         }
+    }
+}
+
+@Composable
+internal fun MessageButton(
+    action: InAppMessageAction,
+    fontFamily: FontFamily,
+    onAction: (InAppMessageAction) -> Unit,
+    style: InAppMessageStyle,
+) {
+    if (!action.enabled) return
+
+    val borderPadding = borderAdjustments(style)
+
+    Button(
+        onClick = { onAction(action) },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = borderPadding, end = borderPadding),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.fromHex(action.backgroundColor),
+            contentColor = Color.fromHex(action.textColor)
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = Color.fromHex(action.borderColor)
+        ),
+        shape = parseBorderRadius(action.borderRadius),
+        contentPadding = parsePadding(action.padding)
+    ) {
+        Text(
+            text = action.text,
+            color = Color.fromHex(action.textColor),
+            fontFamily = fontFamily,
+            fontWeight = FontWeight(action.fontWeight),
+            fontSize = action.fontSizeSp,
+            textDecoration = if (action.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
+            fontStyle = if (action.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal,
+            textAlign = TextAlign.Center,
+            lineHeight = 1.5.em,
+            overflow = TextOverflow.Clip
+        )
     }
 }
 
@@ -148,7 +175,7 @@ internal fun MessageButtons(
 internal fun CloseButton(
     style: InAppMessageStyle,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val borderPadding = borderAdjustments(style)
     if (!style.closeIcon) return
@@ -156,8 +183,8 @@ internal fun CloseButton(
     IconButton(
         onClick = onDismiss,
         modifier = modifier
-            .size(style.closeIconWidth.pxToDp * 2) // Make clickable area larger
-            .padding(top = borderPadding, end = borderPadding)
+            .size(style.closeIconWidth.pxToDp * 2)
+            .padding(borderPadding)
     ) {
         Icon(
             imageVector = Icons.Default.Close,
@@ -241,13 +268,13 @@ internal fun parsePadding(padding: String?): PaddingValues {
 }
 
 val InAppMessageTitle.fontSizeSp: TextUnit
-    get() = (this.fontSize * 1.44f).sp
+    get() = (this.fontSize * 1.3f).sp
 
 val InAppMessageDescription.fontSizeSp: TextUnit
-    get() = (this.fontSize * 1.44f).sp
+    get() = (this.fontSize * 1.3f).sp
 
 val InAppMessageAction.fontSizeSp: TextUnit
-    get() = (this.fontSize * 1.44f).sp
+    get() = (this.fontSize * 1.3f).sp
 
 val Int.pxToDp: Dp
     get() = (this * 1.333f).dp
