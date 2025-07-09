@@ -34,9 +34,9 @@ import com.pushpushgo.inappmessages.model.InAppMessageAction
 
 
 /**
- * Banner-style message template for EXIT_INTENT_ECOMM
- * This template creates a compact banner with an image, text, and buttons
- * Typically positioned at top-right of the screen
+ * Banner-style message template for:
+ * "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL",
+ * "UNBLOCK_NOTIFICATIONS", "LOW_STOCK"
  */
 @Composable
 fun TemplateBannerMessage(
@@ -67,17 +67,16 @@ fun TemplateBannerMessage(
         Font(googleFont = GoogleFont(name = fontName), fontProvider = provider)
     )
 
-    // Matching backend unused values like top-right etc. (as we only support centered view)
     val alignment = when {
         message.layout.placement.toString().startsWith("TOP") == true -> Alignment.TopCenter
         message.layout.placement.toString().startsWith("BOTTOM") == true -> Alignment.BottomCenter
-        else -> Alignment.Center // Default to center for "LEFT", "RIGHT", "CENTER" or null values
+        else -> Alignment.Center
     }
-    
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.95f),
+            .fillMaxHeight(),
         contentAlignment = alignment
     ) {
 
@@ -85,10 +84,7 @@ fun TemplateBannerMessage(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = 10.dp,
-                    end = 10.dp,
-                    top = 5.dp,
-                    bottom = 5.dp
+                    start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp
                 )
                 .wrapContentHeight()
                 .shadow(
@@ -111,15 +107,14 @@ fun TemplateBannerMessage(
                 Box(modifier = Modifier.padding(parsePadding(message.layout.padding))) {
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top
+                        modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
                     ) {
 
                         val hasVisibleImage = message.image != null && !message.image.hideOnMobile
                         if (hasVisibleImage) {
                             BannerImage(
                                 message = message,
-                                modifier = Modifier.weight(0.3f), // Image gets 30% of width
+                                modifier = Modifier.weight(0.3f).align(Alignment.Top), // Image gets 30% of width
                             )
                             Spacer(modifier = Modifier.width(message.layout.spaceBetweenImageAndBody.pxToDp))
                         }
@@ -216,12 +211,9 @@ fun BannerImage(
     message.image?.url?.let { imageUrl ->
         val borderPadding = borderAdjustments(message.style)
         AsyncImage(
-            model = imageUrl,
-            contentDescription = "Banner image",
-            modifier = modifier
-                .padding(top = borderPadding, start = borderPadding, end = borderPadding),
-            contentScale = ContentScale.Fit,
-            alignment = Alignment.TopCenter
+            model = imageUrl, contentDescription = "Banner image", modifier = modifier.padding(
+                top = borderPadding, start = borderPadding, end = borderPadding
+            ), contentScale = ContentScale.Fit, alignment = Alignment.TopCenter
         )
     }
 }

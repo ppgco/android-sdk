@@ -29,6 +29,11 @@ import com.pushpushgo.inappmessages.model.FontFamily as ModelFontFamily
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
 
+
+/**
+ * Banner-style message template for:
+ * "WEBSITE_TO_HOME_SCREEN", "PAYWALL_PUBLISH"
+ */
 @Composable
 fun TemplateRichMessage(
     message: InAppMessage,

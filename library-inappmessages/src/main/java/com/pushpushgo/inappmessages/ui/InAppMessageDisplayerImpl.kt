@@ -19,6 +19,7 @@ import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.ui.composables.InAppMessageDefaultTemplate
 import com.pushpushgo.inappmessages.ui.composables.TemplateBannerMessage
+import com.pushpushgo.inappmessages.ui.composables.TemplateReviewForDiscount
 import com.pushpushgo.inappmessages.ui.composables.TemplateRichMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -143,7 +144,7 @@ internal class InAppMessageDisplayerImpl(
 
         val dialogStyle = when (message.template) {
             "WEBSITE_TO_HOME_SCREEN", "PAYWALL_PUBLISH" -> R.style.InAppMessageDialog_Modal
-            "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> R.style.InAppMessageDialog_Banner
+            "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK", "REVIEW_FOR_DISCOUNT" -> R.style.InAppMessageDialog_Banner
             else -> {
                 Log.w(tag, "Unsupported template: ${message.template}, no container style defined.")
                 null
@@ -214,8 +215,15 @@ internal class InAppMessageDisplayerImpl(
                     window?.attributes?.windowAnimations = R.style.FadeInAnimation
                 }
                 window?.setBackgroundDrawable(android.graphics.Color.TRANSPARENT.toDrawable())
+                // For banner style messages like REVIEW_FOR_DISCOUNT, use wrap content height
+                val layoutHeight = if (dialogStyleResId == R.style.InAppMessageDialog_Banner) {
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                } else {
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                }
+                
                 window?.setLayout(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+                    ViewGroup.LayoutParams.MATCH_PARENT, layoutHeight
                 )
                 setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
             }
@@ -272,6 +280,14 @@ internal class InAppMessageDisplayerImpl(
 
                     "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> {
                         TemplateBannerMessage(
+                            message = message,
+                            onDismiss = { dismissMessage(message) },
+                            onAction = onAction
+                        )
+                    }
+
+                    "REVIEW_FOR_DISCOUNT" -> {
+                        TemplateReviewForDiscount(
                             message = message,
                             onDismiss = { dismissMessage(message) },
                             onAction = onAction
