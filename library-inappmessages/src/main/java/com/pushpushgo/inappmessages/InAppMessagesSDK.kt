@@ -15,6 +15,8 @@ import com.pushpushgo.inappmessages.ui.InAppMessageDisplayer
 import com.pushpushgo.inappmessages.ui.InAppMessageDisplayerImpl
 import com.pushpushgo.inappmessages.ui.InAppUIController
 import com.pushpushgo.inappmessages.utils.AutoCleanupManager
+import com.pushpushgo.inappmessages.utils.DefaultPushNotificationSubscriber
+import com.pushpushgo.inappmessages.utils.PushNotificationSubscriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,8 +29,9 @@ class InAppMessagesSDK private constructor(
     private val application: Application,
     private val projectId: String,
     private val apiKey: String,
-    private val baseUrl: String? = null,
     private val debug: Boolean = false,
+    private val baseUrl: String? = null,
+    private var pushNotificationSubscriber: PushNotificationSubscriber = DefaultPushNotificationSubscriber(),
 ) {
     // --- Retrofit & APIs ---
     private val retrofit: Retrofit by lazy {
@@ -76,9 +79,17 @@ class InAppMessagesSDK private constructor(
             apiKey: String,
             baseUrl: String? = null,
             debug: Boolean = false,
+            pushNotificationSubscriber: PushNotificationSubscriber? = null,
         ): InAppMessagesSDK {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: InAppMessagesSDK(application, projectId, apiKey, baseUrl, debug).also { 
+                INSTANCE ?: InAppMessagesSDK(
+                    application, 
+                    projectId, 
+                    apiKey, 
+                    debug, 
+                    baseUrl,
+                    pushNotificationSubscriber ?: DefaultPushNotificationSubscriber()
+                ).also {
                     INSTANCE = it
                 }
             }
@@ -168,6 +179,53 @@ class InAppMessagesSDK private constructor(
             if (messageToShow != null) {
                 uiController.displayCustomMessage(messageToShow)
             }
+        }
+    }
+    
+    /**
+     * Sets a handler for code actions from in-app messages.
+     * When an in-app message with action type JS is clicked, the handler will be called with the given code.
+     * 
+     * @param handler Function that takes a action button code string and processes it
+     */
+    fun setJsActionHandler(handler: (jsCall: String) -> Unit) {
+        Log.d(tag, "Setting JS action handler")
+        (displayer as? InAppMessageDisplayerImpl)?.setJsActionHandler(handler)
+    }
+    
+    /**
+     * Sets a custom implementation for handling subscription requests.
+     * This will be called when an in-app message with a SUBSCRIBE action button is clicked.
+     * 
+     * By default, this SDK attempts to use reflection to find and call the PushPushGo SDK.
+     * You only need to provide a custom implementation if you're using a different push service
+     * or have special requirements.
+     * 
+     * @param subscriber The PushNotificationSubscriber implementation
+     */
+    fun setPushNotificationSubscriber(subscriber: PushNotificationSubscriber) {
+        Log.d(tag, "Setting push notification subscriber")
+        this.pushNotificationSubscriber = subscriber
+        (displayer as? InAppMessageDisplayerImpl)?.setSubscriptionHandler(subscriber)
+    }
+    
+    /**
+     * Checks if the subscription bridge to the PushPushGo SDK is available.
+     * Use this to determine if SUBSCRIBE action buttons will work automatically.
+     * 
+     * @return true if the bridge is available, false otherwise
+     */
+    fun isSubscriptionBridgeAvailable(): Boolean {
+        return try {
+            // Check if the bridge class exists
+            Class.forName("com.pushpushgo.sdk.bridge.PushPushGoSubscriptionManager")
+            true
+        } catch (e: ClassNotFoundException) {
+            Log.d(tag, "PushPushGo subscription bridge not available")
+            false
+        } catch (e: Exception) {
+            Log.e(tag, "Error checking subscription bridge availability", e)
+            false
         }
     }
 }

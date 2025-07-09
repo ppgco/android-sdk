@@ -36,11 +36,15 @@ import kotlinx.coroutines.isActive
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
 import androidx.core.graphics.drawable.toDrawable
+import com.pushpushgo.inappmessages.utils.DefaultPushNotificationSubscriber
+import com.pushpushgo.inappmessages.utils.PushNotificationSubscriber
 
 internal class InAppMessageDisplayerImpl(
     private val persistence: InAppMessagePersistence? = null,
     private val onMessageDismissed: () -> Unit,
-    private val onMessageEvent: (eventType: String, message: InAppMessage, ctaIndex: Int?) -> Unit = { _, _, _ -> }
+    private val onMessageEvent: (eventType: String, message: InAppMessage, ctaIndex: Int?) -> Unit = { _, _, _ -> },
+    private var onJsAction: ((jsCall: String) -> Unit)? = null,
+    private var subscriptionHandler: PushNotificationSubscriber = DefaultPushNotificationSubscriber()
 ) : InAppMessageDisplayer, CoroutineScope {
 
     private val tag = "InAppMsgDisplayer"
@@ -221,7 +225,7 @@ internal class InAppMessageDisplayerImpl(
                 } else {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 }
-                
+
                 window?.setLayout(
                     ViewGroup.LayoutParams.MATCH_PARENT, layoutHeight
                 )
@@ -307,6 +311,28 @@ internal class InAppMessageDisplayerImpl(
         }
     }
 
+    /**
+     * Sets a handler for code from actions.
+     * This method allows updating the code action handler after initialization.
+     *
+     * @param handler Function that takes button action code string and processes it
+     */
+    internal fun setJsActionHandler(handler: (jsCall: String) -> Unit) {
+        this.onJsAction = handler
+        Log.d(tag, "JS action handler updated")
+    }
+
+    /**
+     * Sets a handler for subscription requests.
+     * This will be called when a SUBSCRIBE action button is clicked.
+     *
+     * @param handler The PushNotificationSubscriber implementation
+     */
+    internal fun setSubscriptionHandler(handler: PushNotificationSubscriber) {
+        this.subscriptionHandler = handler
+        Log.d(tag, "Subscription handler updated")
+    }
+
     private fun handleAction(context: Context, action: InAppMessageAction) {
         try {
             when (action.actionType) {
@@ -318,9 +344,25 @@ internal class InAppMessageDisplayerImpl(
                     } ?: Log.e(tag, "URL is null or empty in REDIRECT action")
                 }
 
-                InAppActionType.SUBSCRIBE, InAppActionType.JS -> {
-                    Log.d(tag, "Action type '${action.actionType}' not yet implemented in SDK.")
-                    Toast.makeText(context, "Action not yet supported", Toast.LENGTH_SHORT).show()
+                InAppActionType.JS -> {
+                    action.call?.takeIf { it.isNotEmpty() }?.let { jsCall ->
+                        Log.d(tag, "Processing JS action with call: $jsCall")
+                        onJsAction?.invoke(jsCall) ?: run {
+                            Log.w(tag, "No JS action handler provided for call: $jsCall")
+                        }
+                    } ?: Log.e(tag, "JS call value is null or empty")
+                }
+
+                InAppActionType.SUBSCRIBE -> {
+                    Log.d(tag, "Processing SUBSCRIBE action request")
+                    val success = try {
+                        subscriptionHandler.requestSubscription(context)
+                    } catch (e: Exception) {
+                        Log.e(tag, "Error processing subscription request", e)
+                        false
+                    }
+
+                    Log.d(tag, "Subscription request result: $success")
                 }
 
                 InAppActionType.CLOSE -> {
