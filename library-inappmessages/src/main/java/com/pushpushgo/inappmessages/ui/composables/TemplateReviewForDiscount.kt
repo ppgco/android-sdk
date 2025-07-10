@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -16,8 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
@@ -31,6 +28,8 @@ import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
 import com.pushpushgo.inappmessages.model.FontFamily as ModelFontFamily
 import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.pushpushgo.inappmessages.model.FontStyle as ModelFontStyle
@@ -68,74 +67,62 @@ fun TemplateReviewForDiscount(
     val composeFontFamily = FontFamily(
         Font(googleFont = GoogleFont(name = fontName), fontProvider = provider)
     )
-
-    val alignment = when {
-        message.layout.placement.toString().startsWith("TOP") == true -> Alignment.TopCenter
-        message.layout.placement.toString().startsWith("BOTTOM") == true -> Alignment.BottomCenter
-        else -> Alignment.Center
-    }
-
+    val borderPadding = borderAdjustments(message.style)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(top = 8.dp, bottom = 8.dp),
-        contentAlignment = alignment
+            .padding(parsePadding(message.layout.margin))
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Card(
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            shape = parseBorderRadius(message.style.borderRadius),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.fromHex(message.style.backgroundColor)
+            ),
+            border = BorderStroke(
+                width = message.style.borderWidth.dp,
+                color = Color.fromHex(message.style.borderColor)
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (message.style.dropShadow) 8.dp else 0.dp
+            )
+        ) {
+
+            CloseButton(
+                style = message.style,
+                onDismiss = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .zIndex(1f)
+            )
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(
-                        start = 10.dp,
-                        end = 10.dp,
-                        top = 5.dp,
-                        bottom = 5.dp
-                    )
-                    .wrapContentHeight()
-                    .shadow(
-                        elevation = if (message.style.dropShadow) 8.dp else 0.dp,
-                        shape = parseBorderRadius(message.style.borderRadius)
-                    ),
-                shape = parseBorderRadius(message.style.borderRadius),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.fromHex(message.style.backgroundColor)
-                ),
-                border = BorderStroke(
-                    width = message.style.borderWidth.dp,
-                    color = Color.fromHex(message.style.borderColor)
-                )
+                    .padding(parsePadding(message.layout.padding))
             ) {
 
-                CloseButton(
-                    style = message.style.copy(closeIcon = true),
-                    onDismiss = onDismiss,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .zIndex(1f)
-                )
-                Box(
+
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp)
+                        .wrapContentHeight()
+                        .padding(parsePadding(message.layout.paddingBody)),
                 ) {
-
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(16.dp),
-                    ) {
+                    if (message.image?.hideOnMobile == false) {
                         Box(
                             modifier = Modifier
                                 .weight(0.20f) // Takes 20% of width
-                                .padding(end = 8.dp),
+                                .padding(
+                                    end = message.layout.spaceBetweenImageAndBody.pxToDp,
+                                    start = 8.dp,
+                                    top = 8.dp,
+                                    bottom = 8.dp
+                                ),
                         ) {
-                            // Banner image (if available)
-                            message.image?.url?.let { imageUrl ->
-                                val borderPadding = borderAdjustments(message.style)
+                            message.image.let { image ->
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -144,11 +131,10 @@ fun TemplateReviewForDiscount(
                                             top = borderPadding,
                                             end = borderPadding
                                         )
-                                        .clip(parseBorderRadius(message.style.borderRadius))
                                         .background(Color.fromHex(message.style.backgroundColor))
                                 ) {
                                     AsyncImage(
-                                        model = imageUrl,
+                                        model = image.url,
                                         contentDescription = null,
                                         contentScale = ContentScale.Fit,
                                         modifier = Modifier
@@ -158,86 +144,98 @@ fun TemplateReviewForDiscount(
                                 }
                             }
                         }
-
-                        // Second column: Text content (50% width)
-                        Column(
-                            modifier = Modifier
-                                .weight(0.50f) // Takes 50% of width
-                                .wrapContentHeight()
-                                .padding(horizontal = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            message.title.let { title ->
-                                if (title.text.isNotEmpty()) {
-                                    Text(
-                                        text = title.text,
-                                        color = Color.fromHex(title.color),
-                                        fontFamily = composeFontFamily,
-                                        fontSize = title.fontSizeSp,
-                                        fontWeight = FontWeight(title.fontWeight),
-                                        textDecoration = if (title.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
-                                        fontStyle = if (title.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            }
-
-                            message.description.let { description ->
-                                if (description.text.isNotEmpty()) {
-                                    Text(
-                                        text = description.text,
-                                        color = Color.fromHex(description.color),
-                                        fontFamily = composeFontFamily,
-                                        fontSize = description.fontSizeSp,
-                                        fontWeight = FontWeight(description.fontWeight),
-                                        textDecoration = if (description.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
-                                        fontStyle = if (description.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
+                    }
+                    // Second column: Text content (45% width)
+                    Column(
+                        modifier = Modifier
+                            .weight(0.45f)
+                            .wrapContentHeight()
+                            .padding(top = 8.dp, bottom = 8.dp, start = borderPadding),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        message.title.let { title ->
+                            if (title.text.isNotEmpty()) {
+                                Text(
+                                    text = title.text,
+                                    color = Color.fromHex(title.color),
+                                    fontFamily = composeFontFamily,
+                                    fontSize = title.fontSize.sp,
+                                    fontWeight = FontWeight(title.fontWeight),
+                                    textAlign = TextAlign.fromString(title.alignment.name),
+                                    textDecoration = if (title.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
+                                    fontStyle = if (title.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
 
-                        // Third column: Action buttons (30% width)
-                        val actionsList = message.actions.filter { it.enabled }
+                        message.description.let { description ->
+                            if (description.text.isNotEmpty()) {
+                                Text(
+                                    text = description.text,
+                                    color = Color.fromHex(description.color),
+                                    fontFamily = composeFontFamily,
+                                    fontSize = description.fontSize.sp,
+                                    fontWeight = FontWeight(description.fontWeight),
+                                    textAlign = TextAlign.fromString(description.alignment.name),
+                                    textDecoration = if (description.style == ModelFontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
+                                    fontStyle = if (description.style == ModelFontStyle.ITALIC) FontStyle.Italic else FontStyle.Normal,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
 
-                        if (actionsList.isNotEmpty()) {
-                            Column(
+                    // Third column: Action buttons (35% width)
+                    val actionsList = message.actions.filter { it.enabled }
+
+                    if (actionsList.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .weight(0.35f)
+                                .wrapContentHeight()
+                                .padding(
+                                    start = message.layout.spaceBetweenContentAndActions.pxToDp,
+                                    top = 8.dp,
+                                    end = 8.dp,
+                                    bottom = 8.dp
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // First action button
+                            Box(
                                 modifier = Modifier
-                                    .weight(0.3f) // Takes 30% of width
+                                    .fillMaxWidth()
                                     .wrapContentHeight()
-                                    .padding(start = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // First action button
+                                MessageButton(
+                                    action = actionsList[0].copy(
+                                        true,
+                                        fontSize = (actionsList[0].fontSize * 0.8).toInt()
+                                    ),
+                                    fontFamily = composeFontFamily,
+                                    onAction = onAction,
+                                    style = message.style
+                                )
+                            }
+
+                            // Second action button (if available)
+                            if (actionsList.size > 1) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .wrapContentHeight()
                                 ) {
                                     MessageButton(
-                                        action = actionsList[0],
+                                        action = actionsList[1].copy(
+                                            true,
+                                            fontSize = (actionsList[1].fontSize * 0.8).toInt()
+                                        ),
                                         fontFamily = composeFontFamily,
                                         onAction = onAction,
                                         style = message.style
                                     )
-                                }
-
-                                // Second action button (if available)
-                                if (actionsList.size > 1) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight()
-                                    ) {
-                                        MessageButton(
-                                            action = actionsList[1],
-                                            fontFamily = composeFontFamily,
-                                            onAction = onAction,
-                                            style = message.style
-                                        )
-                                    }
                                 }
                             }
                         }

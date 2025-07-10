@@ -61,9 +61,12 @@ fun InAppMessageDefaultTemplate(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                message.image?.let {
-                    MessageImage(image = it, modifier = Modifier, message.style)
-                    Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.pxToDp))
+                message.image?.let { it ->
+                    if (it.hideOnMobile == true) {
+                        MessageImage(image = it, modifier = Modifier, message.style)
+                        Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.pxToDp))
+                    }
+
                 }
                 MessageText(
                     title = message.title,

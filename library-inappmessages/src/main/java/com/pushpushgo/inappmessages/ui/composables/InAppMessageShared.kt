@@ -282,7 +282,7 @@ val Int.pxToDp: Dp
 val Float.pxToDp: Dp
     get() = (this * 1.333f).dp
 
-internal fun TextAlign.Companion.fromString(value: String): TextAlign {
+fun TextAlign.Companion.fromString(value: String): TextAlign {
     return when (value.lowercase()) {
         "left" -> Left
         "right" -> Right

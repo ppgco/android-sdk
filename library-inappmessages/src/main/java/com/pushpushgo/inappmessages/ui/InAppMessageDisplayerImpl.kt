@@ -214,21 +214,45 @@ internal class InAppMessageDisplayerImpl(
             val composeView = createComposeView(activity, message)
             val dialog = Dialog(activity, dialogStyleResId).apply {
                 setContentView(composeView)
+                
+                val isBanner = dialogStyleResId == R.style.InAppMessageDialog_Banner
+
                 setCancelable(message.dismissible)
+                setCanceledOnTouchOutside(message.dismissible)
+                
                 if (message.style.animationType == AnimationType.APPEAR) {
                     window?.attributes?.windowAnimations = R.style.FadeInAnimation
                 }
+                
+                // Handle overlay property - set window background explicitly based on overlay setting
                 window?.setBackgroundDrawable(android.graphics.Color.TRANSPARENT.toDrawable())
+                
+                // Set background dim (overlay) based on message style setting
+                window?.setDimAmount(if (message.style.overlay) 0.5f else 0f)
+                
                 // For banner style messages like REVIEW_FOR_DISCOUNT, use wrap content height
-                val layoutHeight = if (dialogStyleResId == R.style.InAppMessageDialog_Banner) {
+                val layoutHeight = if (isBanner) {
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 } else {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 }
-
-                window?.setLayout(
-                    ViewGroup.LayoutParams.MATCH_PARENT, layoutHeight
-                )
+                
+                // Get dialog window and set layout params
+                window?.apply {
+                    setLayout(ViewGroup.LayoutParams.MATCH_PARENT, layoutHeight)
+                    
+                    if (isBanner) {
+                        val windowAttributes = attributes
+                        
+                        windowAttributes.gravity = when {
+                            message.layout.placement.toString().startsWith("TOP") -> Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                            message.layout.placement.toString().startsWith("BOTTOM") -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                            else -> Gravity.CENTER
+                        }
+                        
+                        attributes = windowAttributes
+                    }
+                }
                 setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
             }
             dialog.show()
