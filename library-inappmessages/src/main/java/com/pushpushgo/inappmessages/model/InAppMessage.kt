@@ -32,7 +32,8 @@ enum class InAppMessageDisplayType { MODAL, BANNER, CARD, FULLSCREEN }
 enum class TriggerType {
     @Json(name = "ENTER") ENTER,
     @Json(name = "CUSTOM") CUSTOM,
-    @Json(name = "SCROLL") SCROLL
+    @Json(name = "SCROLL") SCROLL,
+    @Json(name = "EXIT_INTENT") EXIT_INTENT
 }
 
 // For future support of intent actions

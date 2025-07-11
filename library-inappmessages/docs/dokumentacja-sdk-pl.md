@@ -1,12 +1,5 @@
 # Dokumentacja Techniczna - Biblioteka In-App Messages SDK
 
-## Spis treści
-1. [Ogólny przegląd architektury](#1-ogólny-przegląd-architektury)
-2. [Szczegółowa dokumentacja techniczna](#2-szczegółowa-dokumentacja-techniczna)
-3. [Model danych i przepływ wiadomości](#3-model-danych-i-przepływ-wiadomości)
-4. [Najnowsze zmiany w obsłudze banerów](#4-najnowsze-zmiany-w-obsłudze-banerów)
-5. [Testowanie i debugowanie](#5-testowanie-i-debugowanie)
-
 ## 1. Ogólny przegląd architektury
 
 Biblioteka In-App Messages SDK została zaimplementowana zgodnie z zasadami Clean Architecture, SOLID oraz wzorcem MVVM. Głównym celem biblioteki jest dostarczenie kompleksowego rozwiązania do wyświetlania wiadomości w aplikacji, które są konfigurowane i zarządzane przez backend.
