@@ -11,20 +11,20 @@ import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
 import com.pushpushgo.inappmessages.repository.InAppMessageRepository
 import com.pushpushgo.inappmessages.utils.DeviceInfoProvider
 import com.pushpushgo.inappmessages.utils.PushNotificationStatusProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.time.ZonedDateTime
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlinx.coroutines.CancellationException
 
 internal class InAppMessageManagerImpl(
     private val scope: CoroutineScope,
@@ -32,22 +32,23 @@ internal class InAppMessageManagerImpl(
     private val persistence: InAppMessagePersistence,
     private val context: Context,
 ) : InAppMessageManager {
-    
+
     // Provider for accessing push notification subscription status
     private val notificationStatusProvider = PushNotificationStatusProvider(context)
-    
+
     private val tag = "InAppMessageManager"
-    
+
     // Schedule refresh configuration
     private var scheduleRefreshJob: Job? = null
     private val scheduleRefreshInterval = 60_000L // Check schedules every minute
-    
+
     // Thread-safe collections for message management
     private val _messagesFlow = MutableStateFlow<List<InAppMessage>>(emptyList())
     override val messagesFlow: Flow<List<InAppMessage>> = _messagesFlow.asStateFlow()
     private val activeMessages = CopyOnWriteArrayList<InAppMessage>()
     private val allMessages = CopyOnWriteArrayList<InAppMessage>()
     private val triggerMap = mutableMapOf<String, MutableList<InAppMessage>>()
+
     @Volatile
     private var refreshJob: Job? = null
     private var currentRoute: String? = null
@@ -55,39 +56,39 @@ internal class InAppMessageManagerImpl(
     // Mutex to ensure atomic updates to activeMessages from refresh and trigger operations
     private val messagesUpdateMutex = Mutex()
     private val refreshJobMutex = Mutex()
-    
+
     // Device info
     private val currentDeviceType by lazy { DeviceInfoProvider.getCurrentDeviceType(context) }
     private val currentOsType = DeviceInfoProvider.getCurrentOSType()
 
     override suspend fun initialize() {
-            try {
-                Log.d(tag, "Initializing InAppMessageManager")
-                
-                // Fetch messages in IO context
-                val messages = withContext(Dispatchers.IO) {
-                    Log.d(tag, "${repository.fetchMessages()}")
-                    repository.fetchMessages() 
-                }
-                
-                Log.d(tag, "Fetched ${messages.size} messages")
-                
-                // Update collections
-                allMessages.clear()
-                allMessages.addAll(messages)
-                
-                // Build trigger map and refresh active messages
-                buildTriggerMap(messages)
-                refreshActiveMessages()
+        try {
+            Log.d(tag, "Initializing InAppMessageManager")
 
-                // Start periodic schedule checks
-                startScheduleRefresh()
-                
-                Log.d(tag, "InAppMessageManager initialized successfully")
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(tag, "Error initializing InAppMessageManager: ${e.message}", e)
+            // Fetch messages in IO context
+            val messages = withContext(Dispatchers.IO) {
+                Log.d(tag, "${repository.fetchMessages()}")
+                repository.fetchMessages()
             }
+
+            Log.d(tag, "Fetched ${messages.size} messages")
+
+            // Update collections
+            allMessages.clear()
+            allMessages.addAll(messages)
+
+            // Build trigger map and refresh active messages
+            buildTriggerMap(messages)
+            refreshActiveMessages()
+
+            // Start periodic schedule checks
+            startScheduleRefresh()
+
+            Log.d(tag, "InAppMessageManager initialized successfully")
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Log.e(tag, "Error initializing InAppMessageManager: ${e.message}", e)
+        }
     }
 
     /**
@@ -97,15 +98,15 @@ internal class InAppMessageManagerImpl(
     private fun startScheduleRefresh() {
         // Cancel any existing job
         scheduleRefreshJob?.cancel()
-        
+
         // Start a new job in the current scope to leverage its lifecycle
         scheduleRefreshJob = scope.launch(Dispatchers.IO) {
             try {
                 Log.d(tag, "Starting periodic schedule refresh every ${scheduleRefreshInterval}ms")
-                
+
                 while (true) {
                     delay(scheduleRefreshInterval)
-                    
+
                     // Don't block on refresh, just log and continue if there's an error
                     try {
                         refreshActiveMessages(currentRoute)
@@ -123,13 +124,16 @@ internal class InAppMessageManagerImpl(
     /**
      * Builds a map of trigger keys to messages for fast lookup when triggers occur
      * Only messages with CUSTOM trigger type are included in the map
-     * 
+     *
      * @param messages List of all available messages
      */
     private fun buildTriggerMap(messages: List<InAppMessage>) {
         Log.d(tag, "buildTriggerMap called with ${messages.size} messages.")
         messages.forEach { msg ->
-            Log.d(tag, "buildTriggerMap: Processing message id=${msg.id}, triggerType=${msg.settings.triggerType}, triggerKey=${msg.settings.key}, triggerValue=${msg.settings.value}")
+            Log.d(
+                tag,
+                "buildTriggerMap: Processing message id=${msg.id}, triggerType=${msg.settings.triggerType}, triggerKey=${msg.settings.key}, triggerValue=${msg.settings.value}"
+            )
         }
 
         synchronized(triggerMap) {
@@ -137,7 +141,10 @@ internal class InAppMessageManagerImpl(
             val customTriggerMessages = messages
                 .filter { it.settings.triggerType == TriggerType.CUSTOM && it.settings.key != null }
 
-            Log.d(tag, "buildTriggerMap: Found ${customTriggerMessages.size} messages with CUSTOM trigger type and non-null key.")
+            Log.d(
+                tag,
+                "buildTriggerMap: Found ${customTriggerMessages.size} messages with CUSTOM trigger type and non-null key."
+            )
 
             customTriggerMessages.forEach { msg ->
                 // msg.settings.key is non-null here due to the filter
@@ -154,7 +161,7 @@ internal class InAppMessageManagerImpl(
     /**
      * Implementation of the InAppMessageManager interface method
      * Checks if a message is eligible to be shown based on cooldown state and dismissal status
-     * 
+     *
      * @param message The message to check eligibility for
      * @return true if the message is eligible to be shown, false otherwise
      */
@@ -194,7 +201,7 @@ internal class InAppMessageManagerImpl(
                     Log.d(
                         tag,
                         "Message [${message.id}] showAgain: cooldown not yet passed. " +
-                                "${elapsedSinceLastDismissal}ms of ${requiredCooldownMs}ms since last dismissal."
+                            "${elapsedSinceLastDismissal}ms of ${requiredCooldownMs}ms since last dismissal."
                     )
                     return@withContext false // Still in cooldown since last dismissal
                 }
@@ -230,26 +237,38 @@ internal class InAppMessageManagerImpl(
                     }
 
                     val displayOnRules = msg.settings.displayOn
+
                     if (displayOnRules.isEmpty()) {
-                        // No specific route rules, treat as a global message (e.g., for all pages).
-                        true
-                    } else {
-                        // Specific route rules exist. The message should only appear on these routes.
-                        if (effectiveRoute == null) {
-                            // If we're not on a specific route, don't show route-specific messages.
-                            false
-                        } else {
-                            val matchingRule = displayOnRules.find { it.path == effectiveRoute }
-                            // Show only if a rule for the current route exists and its `display` is true.
-                            matchingRule?.display == true
-                        }
+                        return@filter true
                     }
+
+                    // Specific route rules exist. The message should only appear on these routes.
+
+                    if (effectiveRoute == null) {
+                        // If we're not on a specific route, don't show route-specific messages.
+                        return@filter false
+                    }
+
+                    val (displayed, hidden) = displayOnRules.partition { it.display }
+                    val isDisplayed = displayed.any { it.path == effectiveRoute }
+                    val isHidden = hidden.any { it.path == effectiveRoute }
+
+                    if (displayed.isEmpty() && !isHidden) {
+                        return@filter true
+                    }
+
+                    if (isDisplayed && !isHidden) {
+                        return@filter true
+                    }
+
+                    false
                 }
 
                 val initiallyFiltered = eventBasedMessages.filter { msg ->
                     val enabled = msg.enabled
                     val notExpired = msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
-                    val correctDeviceType = msg.audience.device.contains(currentDeviceType) || msg.audience.device.contains(DeviceType.ALL)
+                    val correctDeviceType =
+                        msg.audience.device.contains(currentDeviceType) || msg.audience.device.contains(DeviceType.ALL)
                     val correctOsType = msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
                     enabled && notExpired && correctDeviceType && correctOsType
                 }
@@ -273,7 +292,10 @@ internal class InAppMessageManagerImpl(
                     activeMessages.addAll(newActiveMessages)
                     _messagesFlow.value = activeMessages.toList()
 
-                    Log.d(tag, "Active messages refreshed. New count: ${activeMessages.size}. Messages: ${activeMessages.joinToString { it.id }}")
+                    Log.d(
+                        tag,
+                        "Active messages refreshed. New count: ${activeMessages.size}. Messages: ${activeMessages.joinToString { it.id }}"
+                    )
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) {
@@ -317,7 +339,10 @@ internal class InAppMessageManagerImpl(
             return null
         }
 
-        Log.d(tag, "Found ${potentialMessages.size} potential messages for trigger key=$key (paramValue=${value}). Checking eligibility...")
+        Log.d(
+            tag,
+            "Found ${potentialMessages.size} potential messages for trigger key=$key (paramValue=${value}). Checking eligibility..."
+        )
 
         for (msg in potentialMessages.sortedByDescending { it.priority }) { // Check higher priority first
             if (isInScheduleWindow(msg) && isMessageEligible(msg)) {
@@ -346,7 +371,7 @@ internal class InAppMessageManagerImpl(
         if (schedule.startTime == null && schedule.endTime == null) {
             return@withContext true
         }
-        
+
         // Normalize time zones for accurate comparison
         val normalizedStartTime = schedule.startTime?.withZoneSameInstant(currentTime.zone)
         val normalizedEndTime = schedule.endTime?.withZoneSameInstant(currentTime.zone)
@@ -355,15 +380,15 @@ internal class InAppMessageManagerImpl(
         val afterStart = normalizedStartTime == null || !currentTime.isBefore(normalizedStartTime)
         val beforeEnd = normalizedEndTime == null || currentTime.isBefore(normalizedEndTime)
         val isInWindow = afterStart && beforeEnd
-        
+
         // Log the result for debugging
         Log.d(
             tag,
             "Schedule check for [${msg.id}]: " +
-            "start=${normalizedStartTime ?: "None"}, " +
-            "end=${normalizedEndTime ?: "None"}, " +
-            "current=$currentTime, " +
-            "inWindow=$isInWindow"
+                "start=${normalizedStartTime ?: "None"}, " +
+                "end=${normalizedEndTime ?: "None"}, " +
+                "current=$currentTime, " +
+                "inWindow=$isInWindow"
         )
 
         return@withContext isInWindow
@@ -373,7 +398,7 @@ internal class InAppMessageManagerImpl(
      * Get the current list of active messages
      * This method returns the cached list of active messages from the most recent refresh
      * For the most up-to-date list, call refreshActiveMessages() first
-     * 
+     *
      * @return List of active messages that are eligible to be shown
      */
     override fun getActiveMessages(): List<InAppMessage> {
