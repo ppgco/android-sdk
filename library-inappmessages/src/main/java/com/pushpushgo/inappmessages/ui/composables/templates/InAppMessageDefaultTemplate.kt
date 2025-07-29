@@ -1,4 +1,4 @@
-package com.pushpushgo.inappmessages.ui.composables
+package com.pushpushgo.inappmessages.ui.composables.templates
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +19,15 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
+import com.pushpushgo.inappmessages.ui.composables.common.CloseButton
+import com.pushpushgo.inappmessages.ui.composables.common.MessageButtons
+import com.pushpushgo.inappmessages.ui.composables.common.MessageDescription
+import com.pushpushgo.inappmessages.ui.composables.common.MessageImage
+import com.pushpushgo.inappmessages.ui.composables.common.MessageTitle
+import com.pushpushgo.inappmessages.ui.composables.common.fromHex
+import com.pushpushgo.inappmessages.ui.composables.common.parseBorderRadius
+import com.pushpushgo.inappmessages.ui.composables.common.parsePadding
+import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
 
 @Composable
 fun InAppMessageDefaultTemplate(
@@ -68,16 +77,14 @@ fun InAppMessageDefaultTemplate(
                     }
 
                 }
-                MessageText(
+                MessageTitle(
                     title = message.title,
                     fontFamily = fontFamily,
-                    message.style
                 )
                 Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp))
-                MessageText(
+                MessageDescription(
                     description = message.description,
                     fontFamily = fontFamily,
-                    message.style
                 )
                 Spacer(modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.pxToDp))
                 MessageButtons(
