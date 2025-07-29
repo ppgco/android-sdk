@@ -184,18 +184,39 @@ internal class InAppMessageDisplayerImpl(
     }
 
     override fun dismissMessage(message: InAppMessage) {
+        dismissMessageInternal(message, sendCloseEvent = true)
+    }
+
+    /**
+     * Dismisses the message without sending the "close" event.
+     * Used when the message is dismissed as a result of a button action,
+     * where we want to send "cta" event instead of "close".
+     */
+    private fun dismissMessageSilently(message: InAppMessage) {
+        dismissMessageInternal(message, sendCloseEvent = false)
+    }
+
+    /**
+     * Internal method that handles the actual dismissal logic.
+     * 
+     * @param message The message to dismiss
+     * @param sendCloseEvent Whether to send the "close" event
+     */
+    private fun dismissMessageInternal(message: InAppMessage, sendCloseEvent: Boolean) {
         if (isDismissing) return // Prevent re-entrant calls
 
         try {
             isDismissing = true
 
-            Log.d(tag, "dismissMessage: Marking message ${message.id} as dismissed.")
             launch(Dispatchers.IO) {
                 persistence?.markMessageDismissed(message.id)
             }
             hideMessage()
             onMessageDismissed()
-            onMessageEvent("close", message, null)
+            
+            if (sendCloseEvent) {
+                onMessageEvent("close", message, null)
+            }
         } finally {
             // Allow the next dismissal call after this one has fully completed
             isDismissing = false
@@ -293,8 +314,8 @@ internal class InAppMessageDisplayerImpl(
                     val ctaIndex = message.actions.indexOf(action).takeIf { it >= 0 }?.plus(1)
                     onMessageEvent("cta", message, ctaIndex)
                     handleAction(activity, action)
-                    // Every action click should dismiss the message to prevent multiple actions events
-                    dismissMessage(message)
+                    // Every action click should dismiss the message silently (without close event)
+                    dismissMessageSilently(message)
                 }
 
                 when (message.template) {
@@ -387,6 +408,19 @@ internal class InAppMessageDisplayerImpl(
                     }
 
                     Log.d(tag, "Subscription request result: $success")
+                    if (success) {
+                        Toast.makeText(
+                            context,
+                            "Successfully subscribed to notifications!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Subscription failed. Enable notifications in settings.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
 
                 InAppActionType.CLOSE -> {

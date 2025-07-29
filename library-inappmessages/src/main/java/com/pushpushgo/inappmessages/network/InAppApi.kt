@@ -18,7 +18,7 @@ internal interface InAppListGetApi {
         @Query("search") search: String = "",
         @Query("sortBy") sortBy: String = "newest",
         @Query("offset") offset: Int = 0,
-        @Query("limit") limit: Int = 20,
+        @Query("limit") limit: Int = 100,
     ): Response<InAppMessagesResponse>
 }
 

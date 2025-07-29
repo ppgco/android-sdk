@@ -69,9 +69,20 @@ internal class InAppUIController(
     override fun onActivityResumed(activity: Activity) {
         currentActivity = WeakReference(activity)
         Log.d(tag, "Activity resumed: ${activity.localClassName}")
-        // When an activity resumes, we should re-evaluate what message to show.
         launch {
             manager.refreshActiveMessages()
+            
+            // Force display of available messages after activity resume
+            // This handles the case where distinctUntilChanged() blocks emission
+            // of the same message list after permission for push notifications changes
+            val currentMessages = manager.getActiveMessages()
+            if (currentMessages.isNotEmpty()) {
+                Log.d(tag, "Force displaying messages after activity resume: ${currentMessages.size} available")
+                val highestPriorityMessage = currentMessages.first()
+                displayer.showMessage(activity, highestPriorityMessage)
+            } else {
+                Log.d(tag, "No messages available for force display after activity resume")
+            }
         }
     }
 
