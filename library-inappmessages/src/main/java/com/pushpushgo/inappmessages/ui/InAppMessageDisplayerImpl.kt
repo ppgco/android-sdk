@@ -10,41 +10,41 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.compose.ui.platform.ComposeView
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.pushpushgo.inappmessages.R
+import com.pushpushgo.inappmessages.model.AnimationType
+import com.pushpushgo.inappmessages.model.InAppActionType
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
-import com.pushpushgo.inappmessages.model.InAppActionType
 import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
-import com.pushpushgo.inappmessages.ui.composables.InAppMessageDefaultTemplate
-import com.pushpushgo.inappmessages.ui.composables.TemplateBannerMessage
-import com.pushpushgo.inappmessages.ui.composables.TemplateReviewForDiscount
-import com.pushpushgo.inappmessages.ui.composables.TemplateRichMessage
+import com.pushpushgo.inappmessages.ui.composables.templates.BannerMessageTemplate
+import com.pushpushgo.inappmessages.ui.composables.templates.InAppMessageDefaultTemplate
+import com.pushpushgo.inappmessages.ui.composables.templates.ReviewForDiscountTemplate
+import com.pushpushgo.inappmessages.ui.composables.templates.RichMessageTemplate
+import com.pushpushgo.inappmessages.utils.DefaultPushNotificationSubscriber
+import com.pushpushgo.inappmessages.utils.PushNotificationSubscriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.pushpushgo.inappmessages.model.AnimationType
-import kotlinx.coroutines.isActive
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
-import androidx.core.graphics.drawable.toDrawable
-import com.pushpushgo.inappmessages.utils.DefaultPushNotificationSubscriber
-import com.pushpushgo.inappmessages.utils.PushNotificationSubscriber
 
 internal class InAppMessageDisplayerImpl(
     private val persistence: InAppMessagePersistence? = null,
     private val onMessageDismissed: () -> Unit,
     private val onMessageEvent: (eventType: String, message: InAppMessage, ctaIndex: Int?) -> Unit = { _, _, _ -> },
     private var onJsAction: ((jsCall: String) -> Unit)? = null,
-    private var subscriptionHandler: PushNotificationSubscriber = DefaultPushNotificationSubscriber()
+    private var subscriptionHandler: PushNotificationSubscriber = DefaultPushNotificationSubscriber(),
 ) : InAppMessageDisplayer, CoroutineScope {
 
     private val tag = "InAppMsgDisplayer"
@@ -203,7 +203,7 @@ internal class InAppMessageDisplayerImpl(
     }
 
     private suspend fun displayMessageInContainer(
-        activity: Activity, message: InAppMessage, dialogStyleResId: Int
+        activity: Activity, message: InAppMessage, dialogStyleResId: Int,
     ) {
         if (shouldBeDisplayed(message).not()) return
 
@@ -214,42 +214,44 @@ internal class InAppMessageDisplayerImpl(
             val composeView = createComposeView(activity, message)
             val dialog = Dialog(activity, dialogStyleResId).apply {
                 setContentView(composeView)
-                
+
                 val isBanner = dialogStyleResId == R.style.InAppMessageDialog_Banner
 
                 setCancelable(message.dismissible)
                 setCanceledOnTouchOutside(message.dismissible)
-                
+
                 if (message.style.animationType == AnimationType.APPEAR) {
                     window?.attributes?.windowAnimations = R.style.FadeInAnimation
                 }
-                
+
                 // Handle overlay property - set window background explicitly based on overlay setting
                 window?.setBackgroundDrawable(android.graphics.Color.TRANSPARENT.toDrawable())
-                
+
                 // Set background dim (overlay) based on message style setting
                 window?.setDimAmount(if (message.style.overlay) 0.5f else 0f)
-                
+
                 // For banner style messages like REVIEW_FOR_DISCOUNT, use wrap content height
                 val layoutHeight = if (isBanner) {
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 } else {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 }
-                
+
                 // Get dialog window and set layout params
                 window?.apply {
                     setLayout(ViewGroup.LayoutParams.MATCH_PARENT, layoutHeight)
-                    
+
                     if (isBanner) {
                         val windowAttributes = attributes
-                        
+
                         windowAttributes.gravity = when {
                             message.layout.placement.toString().startsWith("TOP") -> Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                            message.layout.placement.toString().startsWith("BOTTOM") -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                            message.layout.placement.toString()
+                                .startsWith("BOTTOM") -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+
                             else -> Gravity.CENTER
                         }
-                        
+
                         attributes = windowAttributes
                     }
                 }
@@ -299,7 +301,7 @@ internal class InAppMessageDisplayerImpl(
 
                 when (message.template) {
                     "PAYWALL_PUBLISH", "WEBSITE_TO_HOME_SCREEN" -> {
-                        TemplateRichMessage(
+                        RichMessageTemplate(
                             message = message,
                             onDismiss = { dismissMessage(message) },
                             onAction = onAction
@@ -307,7 +309,7 @@ internal class InAppMessageDisplayerImpl(
                     }
 
                     "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> {
-                        TemplateBannerMessage(
+                        BannerMessageTemplate(
                             message = message,
                             onDismiss = { dismissMessage(message) },
                             onAction = onAction
@@ -315,7 +317,7 @@ internal class InAppMessageDisplayerImpl(
                     }
 
                     "REVIEW_FOR_DISCOUNT" -> {
-                        TemplateReviewForDiscount(
+                        ReviewForDiscountTemplate(
                             message = message,
                             onDismiss = { dismissMessage(message) },
                             onAction = onAction
