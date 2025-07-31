@@ -279,7 +279,7 @@ internal class PushNotificationDelegate(context: Context) {
                 setStyle(
                     NotificationCompat.BigPictureStyle()
                         .bigPicture(bigPicture)
-                        .bigLargeIcon(null)
+                        .bigLargeIcon(null as Bitmap?)
                 )
             }
 

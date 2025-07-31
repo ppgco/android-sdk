@@ -56,8 +56,8 @@ class PushNotificationStatusProvider(private val context: Context) {
     fun matchesAudienceType(audienceType: UserAudienceType): Boolean {
         return when (audienceType) {
             UserAudienceType.ALL -> true
-            UserAudienceType.SUBSCRIBER -> isSubscribed()
-            UserAudienceType.NON_SUBSCRIBER -> !isSubscribed()
+            UserAudienceType.SUBSCRIBER -> isSubscribed() && !isNotificationsBlocked()
+            UserAudienceType.NON_SUBSCRIBER -> !isSubscribed() || isNotificationsBlocked()
             UserAudienceType.NOTIFICATIONS_BLOCKED -> isNotificationsBlocked()
         }
     }

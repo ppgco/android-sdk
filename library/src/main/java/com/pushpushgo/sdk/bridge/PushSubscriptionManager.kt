@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.pushpushgo.sdk.PushPushGo
+import com.pushpushgo.sdk.push.areNotificationsEnabled
 
 /**
  * Bridge interface that allows other components (in-app messages library)
@@ -59,7 +60,10 @@ class PushPushGoSubscriptionBridgeManager : PushSubscriptionBridgeManager {
             Log.d(TAG, "Requesting push notification subscription")
             pushSdk.registerSubscriber()
             
-            return true
+            val notificationsEnabled = areNotificationsEnabled(context)
+            Log.d(TAG, "Notifications enabled after registration: $notificationsEnabled")
+            
+            return notificationsEnabled
         } catch (e: Exception) {
             Log.e(TAG, "Error requesting subscription", e)
             return false
