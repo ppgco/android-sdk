@@ -9,12 +9,13 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class InAppMessageSettings(
     @Json(name = "triggerType") val triggerType: TriggerType,
-    @Json(name = "scrollDepth") val scrollDepth: Int?,
     @Json(name = "showAfterDelay") val showAfterDelay: Long,
     @Json(name = "display") val display: DisplayType,
     @Json(name = "displayOn") val displayOn: List<DisplayOn>,
     @Json(name = "showAgain") val showAgain: ShowAgainType,
+    @Json(name = "priority") val priority: Int,
+    @Json(name = "scrollDepth") val scrollDepth: Int?,
     @Json(name = "showAfterTime") val showAfterTime: Long?,
-    @Json(name = "key") val key: String? = null,
-    @Json(name = "value") val value: String? = null
+    @Json(name = "customTriggerKey") val customTriggerKey: String? = null,
+    @Json(name = "customTriggerValue") val customTriggerValue: String? = null
 )

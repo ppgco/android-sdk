@@ -132,14 +132,14 @@ internal class InAppMessageManagerImpl(
         messages.forEach { msg ->
             Log.d(
                 tag,
-                "buildTriggerMap: Processing message id=${msg.id}, triggerType=${msg.settings.triggerType}, triggerKey=${msg.settings.key}, triggerValue=${msg.settings.value}"
+                "buildTriggerMap: Processing message id=${msg.id}, triggerType=${msg.settings.triggerType}, triggerKey=${msg.settings.customTriggerKey}, triggerValue=${msg.settings.customTriggerValue}"
             )
         }
 
         synchronized(triggerMap) {
             triggerMap.clear()
             val customTriggerMessages = messages
-                .filter { it.settings.triggerType == TriggerType.CUSTOM && it.settings.key != null }
+                .filter { it.settings.triggerType == TriggerType.CUSTOM && it.settings.customTriggerKey != null }
 
             Log.d(
                 tag,
@@ -147,8 +147,8 @@ internal class InAppMessageManagerImpl(
             )
 
             customTriggerMessages.forEach { msg ->
-                // msg.settings.key is non-null here due to the filter
-                val key = msg.settings.key!!
+                // msg.settings.customTriggerKey is non-null here due to the filter
+                val key = msg.settings.customTriggerKey!!
                 triggerMap.getOrPut(key) { mutableListOf() }.add(msg)
                 Log.d(tag, "buildTriggerMap: Added message id=${msg.id} to triggerMap for key='$key'")
             }
@@ -287,9 +287,9 @@ internal class InAppMessageManagerImpl(
 
                 messagesUpdateMutex.withLock {
                     val newActiveMessages = finalEligibleMessages.sortedWith(compareBy { message ->
-                        when (val priority = message.priority) {
-                            null, 0 -> Int.MAX_VALUE // Lowest priority
-                            else -> priority
+                        when (val priority = message.settings.priority) {
+                            0 -> Int.MAX_VALUE // Lowest priority (0 = displayed last)
+                            else -> priority // 1 = highest, 2 = second, etc.
                         }
                     })
 
@@ -333,8 +333,8 @@ internal class InAppMessageManagerImpl(
         val potentialMessages = synchronized(triggerMap) {
             triggerMap[key]?.filter { msg ->
                 val typeMatch = msg.settings.triggerType == TriggerType.CUSTOM
-                val keyMatch = msg.settings.key == key
-                val valueMatch = (value == null || msg.settings.value == value)
+                val keyMatch = msg.settings.customTriggerKey == key
+                val valueMatch = (value == null || msg.settings.customTriggerValue == value)
                 typeMatch && keyMatch && valueMatch
             } ?: emptyList()
         }
@@ -350,9 +350,9 @@ internal class InAppMessageManagerImpl(
         )
 
         for (msg in potentialMessages.sortedWith(compareBy { message ->
-            when (val priority = message.priority) {
-                null, 0 -> Int.MAX_VALUE // Lowest priority (displayed last)
-                else -> priority
+            when (val priority = message.settings.priority) {
+                0 -> Int.MAX_VALUE // Lowest priority (0 = displayed last)
+                else -> priority // 1 = highest, 2 = second, etc.
             }
         })) {
             if (isInScheduleWindow(msg) && isMessageEligible(msg)) {

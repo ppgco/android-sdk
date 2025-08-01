@@ -80,7 +80,6 @@ data class InAppMessage(
     @Json(name = "settings")
     val settings: InAppMessageSettings,
     val dismissible: Boolean = true,
-    val priority: Int?,
     val schedule: Schedule? = null,
     val expiration: ZonedDateTime? = null
 )
