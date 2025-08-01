@@ -286,7 +286,12 @@ internal class InAppMessageManagerImpl(
                 }
 
                 messagesUpdateMutex.withLock {
-                    val newActiveMessages = finalEligibleMessages.sortedByDescending { it.priority }
+                    val newActiveMessages = finalEligibleMessages.sortedWith(compareBy { message ->
+                        when (val priority = message.priority) {
+                            null, 0 -> Int.MAX_VALUE // Lowest priority
+                            else -> priority
+                        }
+                    })
 
                     activeMessages.clear()
                     activeMessages.addAll(newActiveMessages)
@@ -344,7 +349,12 @@ internal class InAppMessageManagerImpl(
             "Found ${potentialMessages.size} potential messages for trigger key=$key (paramValue=${value}). Checking eligibility..."
         )
 
-        for (msg in potentialMessages.sortedByDescending { it.priority }) { // Check higher priority first
+        for (msg in potentialMessages.sortedWith(compareBy { message ->
+            when (val priority = message.priority) {
+                null, 0 -> Int.MAX_VALUE // Lowest priority (displayed last)
+                else -> priority
+            }
+        })) {
             if (isInScheduleWindow(msg) && isMessageEligible(msg)) {
                 // If the message has a showAfterDelay and its firstEligibleAt is not set, set it now.
                 if (msg.settings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
