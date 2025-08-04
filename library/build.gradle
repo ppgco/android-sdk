@@ -5,6 +5,7 @@ plugins {
     id 'maven-publish'
     alias(libs.plugins.dokka)
     alias(libs.plugins.validator)
+    alias(libs.plugins.ktlint)
 }
 
 apply from: 'jacoco.gradle'
