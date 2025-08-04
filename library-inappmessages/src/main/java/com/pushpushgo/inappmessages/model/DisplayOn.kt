@@ -8,6 +8,6 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class DisplayOn(
-    @Json(name = "display") val display: Boolean,
-    @Json(name = "path") val path: String
+  @Json(name = "display") val display: Boolean,
+  @Json(name = "path") val path: String,
 )

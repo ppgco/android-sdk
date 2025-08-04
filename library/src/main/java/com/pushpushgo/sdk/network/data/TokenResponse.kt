@@ -5,7 +5,6 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 internal data class TokenResponse(
-
-    @Json(name = "_id")
-    val id: String
+  @Json(name = "_id")
+  val id: String,
 )

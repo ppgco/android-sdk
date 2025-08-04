@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
@@ -32,71 +33,75 @@ import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
  */
 @Composable
 fun RichMessageTemplate(
-    message: InAppMessage,
-    onDismiss: () -> Unit,
-    onAction: (InAppMessageAction) -> Unit,
+  message: InAppMessage,
+  onDismiss: () -> Unit,
+  onAction: (InAppMessageAction) -> Unit,
 ) {
-    val composeFontFamily = createFontFamily(message)
+  val composeFontFamily = createFontFamily(message)
 
-    MessageCard(message, modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.padding(if (message.style.border) message.style.borderWidth.pxToDp else 0.dp)) {
-            CloseButton(
-                style = message.style,
-                onDismiss = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-4 - message.style.borderWidth).dp, y = (2 + message.style.borderWidth).dp)
-            )
+  MessageCard(message, modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.padding(if (message.style.border) message.style.borderWidth.pxToDp else 0.dp)) {
+      CloseButton(
+        style = message.style,
+        onDismiss = onDismiss,
+        modifier =
+          Modifier
+            .align(Alignment.TopEnd)
+            .offset(x = (-4 - message.style.borderWidth).dp, y = (2 + message.style.borderWidth).dp)
+            .zIndex(1f),
+      )
 
+      Box(
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .padding(parsePadding(message.layout.padding)),
+      ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+          if (message.image != null && !message.image.hideOnMobile) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(parsePadding(message.layout.padding))
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .weight(1f),
             ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    if (message.image != null && !message.image.hideOnMobile) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) {
-                            AsyncImage(
-                                model = message.image.url,
-                                contentDescription = null,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.pxToDp))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(parsePadding(message.layout.paddingBody)),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        MessageTitle(message.title, composeFontFamily)
-
-                        Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp))
-
-                        MessageDescription(message.description, composeFontFamily)
-
-                        Spacer(modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.pxToDp))
-
-                        MessageButtons(
-                            actions = message.actions,
-                            fontFamily = composeFontFamily,
-                            onAction = onAction,
-                            message.style
-                        )
-                    }
-                }
+              AsyncImage(
+                model = message.image.url,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxWidth(),
+              )
             }
-        }
-    }
-}
+          }
 
+          Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.pxToDp))
+
+          Column(
+            modifier =
+              Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(parsePadding(message.layout.paddingBody)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+          ) {
+            MessageTitle(message.title, composeFontFamily)
+
+            Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp))
+
+            MessageDescription(message.description, composeFontFamily)
+
+            Spacer(modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.pxToDp))
+
+            MessageButtons(
+              actions = message.actions,
+              fontFamily = composeFontFamily,
+              onAction = onAction,
+              message.style,
+            )
+          }
+        }
+      }
+    }
+  }
+}

@@ -15,37 +15,50 @@ import com.pushpushgo.inappmessages.model.InAppMessageTitle
 
 @Composable
 internal fun MessageTitle(
-    title: InAppMessageTitle,
-    fontFamily: FontFamily,
+  title: InAppMessageTitle,
+  fontFamily: FontFamily,
 ) {
-    Text(
-        modifier = Modifier.fillMaxWidth(),
-        text = title.text,
-        fontFamily = fontFamily,
-        color = Color.fromHex(title.color),
-        fontSize = title.fontSizeSp,
-        fontWeight = FontWeight(title.fontWeight),
-        textAlign = TextAlign.fromString(title.alignment.name),
-        fontStyle = if (title.style == FontStyle.ITALIC) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal,
-        textDecoration = if (title.style == FontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None
-    )
+  Text(
+    modifier = Modifier.fillMaxWidth(),
+    text = title.text,
+    fontFamily = fontFamily,
+    color = Color.fromHex(title.color),
+    fontSize = title.fontSizeSp,
+    fontWeight = FontWeight(title.fontWeight),
+    textAlign = TextAlign.fromString(title.alignment.name),
+    fontStyle =
+      if (title.style ==
+        FontStyle.ITALIC
+      ) {
+        androidx.compose.ui.text.font.FontStyle.Italic
+      } else {
+        androidx.compose.ui.text.font.FontStyle.Normal
+      },
+    textDecoration = if (title.style == FontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
+  )
 }
-
 
 @Composable
 internal fun MessageDescription(
-    description: InAppMessageDescription,
-    fontFamily: FontFamily,
+  description: InAppMessageDescription,
+  fontFamily: FontFamily,
 ) {
-    Text(
-        modifier = Modifier.fillMaxWidth(),
-        text = description.text,
-        fontFamily = fontFamily,
-        color = Color.fromHex(description.color),
-        fontSize = description.fontSizeSp,
-        fontWeight = FontWeight(description.fontWeight),
-        textAlign = TextAlign.fromString(description.alignment.name),
-        fontStyle = if (description.style == FontStyle.ITALIC) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal,
-        textDecoration = if (description.style == FontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None
-    )
+  Text(
+    modifier = Modifier.fillMaxWidth(),
+    text = description.text,
+    fontFamily = fontFamily,
+    color = Color.fromHex(description.color),
+    fontSize = description.fontSizeSp,
+    fontWeight = FontWeight(description.fontWeight),
+    textAlign = TextAlign.fromString(description.alignment.name),
+    fontStyle =
+      if (description.style ==
+        FontStyle.ITALIC
+      ) {
+        androidx.compose.ui.text.font.FontStyle.Italic
+      } else {
+        androidx.compose.ui.text.font.FontStyle.Normal
+      },
+    textDecoration = if (description.style == FontStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
+  )
 }

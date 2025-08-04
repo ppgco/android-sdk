@@ -21,12 +21,12 @@ import com.pushpushgo.inappmessages.model.InAppMessageAction
 import com.pushpushgo.inappmessages.ui.composables.common.CloseButton
 import com.pushpushgo.inappmessages.ui.composables.common.MessageButton
 import com.pushpushgo.inappmessages.ui.composables.common.MessageCard
+import com.pushpushgo.inappmessages.ui.composables.common.MessageCardShadow
 import com.pushpushgo.inappmessages.ui.composables.common.MessageDescription
 import com.pushpushgo.inappmessages.ui.composables.common.MessageTitle
 import com.pushpushgo.inappmessages.ui.composables.common.createFontFamily
 import com.pushpushgo.inappmessages.ui.composables.common.parsePadding
 import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
-
 
 /**
  * Banner-style message template for:
@@ -35,99 +35,108 @@ import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
  */
 @Composable
 fun BannerMessageTemplate(
-    message: InAppMessage,
-    onDismiss: () -> Unit,
-    onAction: (InAppMessageAction) -> Unit,
+  message: InAppMessage,
+  onDismiss: () -> Unit,
+  onAction: (InAppMessageAction) -> Unit,
 ) {
-    val composeFontFamily = createFontFamily(message)
+  val composeFontFamily = createFontFamily(message)
 
+  MessageCardShadow(message, modifier = Modifier.padding(top = 10.pxToDp, bottom = 15.pxToDp)) {
     MessageCard(
-        message, modifier = Modifier
-            .padding(parsePadding(message.layout.margin))
-            .fillMaxWidth()
+      message,
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 8.pxToDp, vertical = 4.pxToDp),
     ) {
-        Box(modifier = Modifier.padding(if (message.style.border) message.style.borderWidth.pxToDp else 0.dp)) {
-            CloseButton(
-                style = message.style,
-                onDismiss = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-4 - message.style.borderWidth).dp, y = (2 + message.style.borderWidth).dp)
-            )
+      Box(modifier = Modifier.padding(if (message.style.border) message.style.borderWidth.pxToDp else 0.dp)) {
+        CloseButton(
+          style = message.style,
+          onDismiss = onDismiss,
+          modifier =
+            Modifier
+              .align(Alignment.TopEnd)
+              .offset(x = (-4 - message.style.borderWidth).dp, y = (2 + message.style.borderWidth).dp),
+        )
 
-            Box(modifier = Modifier.padding(parsePadding(message.layout.padding))) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val hasVisibleImage = message.image != null && !message.image.hideOnMobile
+        Box(modifier = Modifier.padding(parsePadding(message.layout.padding))) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            val hasVisibleImage = message.image != null && !message.image.hideOnMobile
 
-                    if (hasVisibleImage) {
-                        AsyncImage(
-                            model = message.image!!.url,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .width(72.pxToDp)
-                                .height(72.pxToDp)
-                                .align(
-                                    Alignment.Top
-                                )
-                        )
+            if (hasVisibleImage) {
+              AsyncImage(
+                model = message.image!!.url,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier =
+                  Modifier
+                    .width(72.pxToDp)
+                    .height(72.pxToDp)
+                    .align(
+                      Alignment.Top,
+                    ),
+              )
 
-                        Spacer(modifier = Modifier.width(message.layout.spaceBetweenImageAndBody.pxToDp))
-                    }
-
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        if (message.title.text.isNotEmpty()) {
-                            MessageTitle(message.title, composeFontFamily)
-                        }
-
-                        Spacer(
-                            modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp)
-                        )
-
-                        if (message.description.text.isNotEmpty()) {
-                            MessageDescription(message.description, composeFontFamily)
-                        }
-
-                        Spacer(
-                            modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.pxToDp)
-                        )
-
-                        val actionsList = message.actions
-                            .filter { it.enabled }
-                            .reversed()
-
-                        if (actionsList.isNotEmpty()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.End),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                actionsList.map {
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                    ) {
-                                        MessageButton(
-                                            action = it,
-                                            fontFamily = composeFontFamily,
-                                            onAction = onAction,
-                                            style = message.style,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+              Spacer(modifier = Modifier.width(message.layout.spaceBetweenImageAndBody.pxToDp))
             }
+
+            Column(
+              modifier = Modifier.weight(1f).padding(parsePadding(message.layout.paddingBody)),
+              horizontalAlignment = Alignment.End,
+            ) {
+              if (message.title.text.isNotEmpty()) {
+                MessageTitle(message.title, composeFontFamily)
+              }
+
+              Spacer(
+                modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp),
+              )
+
+              if (message.description.text.isNotEmpty()) {
+                MessageDescription(message.description, composeFontFamily)
+              }
+
+              Spacer(
+                modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.pxToDp),
+              )
+
+              val actionsList =
+                message.actions
+                  .filter { it.enabled }
+                  .reversed()
+
+              if (actionsList.isNotEmpty()) {
+                Row(
+                  modifier =
+                    Modifier
+                      .fillMaxWidth()
+                      .align(Alignment.End),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                  actionsList.map {
+                    Box(
+                      modifier =
+                        Modifier
+                          .weight(1f),
+                    ) {
+                      MessageButton(
+                        action = it,
+                        fontFamily = composeFontFamily,
+                        onAction = onAction,
+                        style = message.style,
+                      )
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
+      }
     }
+  }
 }

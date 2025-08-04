@@ -6,6 +6,9 @@ import com.squareup.moshi.Json
  * Enum representing the animation type for the in-app message display.
  */
 enum class AnimationType {
-    @Json(name = "none") NONE,
-    @Json(name = "appear") APPEAR
+  @Json(name = "none")
+  NONE,
+
+  @Json(name = "appear")
+  APPEAR,
 }

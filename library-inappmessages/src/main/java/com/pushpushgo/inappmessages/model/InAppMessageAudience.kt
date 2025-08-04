@@ -8,8 +8,8 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class InAppMessageAudience(
-    @Json(name = "userType") val userType: UserAudienceType,
-    @Json(name = "device") val device: List<DeviceType>,
-    @Json(name = "userAgent") val userAgent: List<String>,
-    @Json(name = "osType") val osType: List<OSType>
+  @Json(name = "userType") val userType: UserAudienceType,
+  @Json(name = "device") val device: List<DeviceType>,
+  @Json(name = "userAgent") val userAgent: List<String>,
+  @Json(name = "osType") val osType: List<OSType>,
 )

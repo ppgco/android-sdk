@@ -31,79 +31,86 @@ import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
 
 @Composable
 fun InAppMessageDefaultTemplate(
-    message: InAppMessage,
-    onDismiss: () -> Unit,
-    onAction: (InAppMessageAction) -> Unit,
+  message: InAppMessage,
+  onDismiss: () -> Unit,
+  onAction: (InAppMessageAction) -> Unit,
 ) {
-    // This template is a fallback and uses default system fonts.
-    val fontFamily = FontFamily.Default
+  // This template is a fallback and uses default system fonts.
+  val fontFamily = FontFamily.Default
 
-    val cardPadding = parsePadding(message.layout.padding)
-    val bodyPadding = parsePadding(message.layout.paddingBody)
-    val borderRadius = parseBorderRadius(message.style.borderRadius)
+  val cardPadding = parsePadding(message.layout.padding)
+  val bodyPadding = parsePadding(message.layout.paddingBody)
+  val borderRadius = parseBorderRadius(message.style.borderRadius)
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(cardPadding)
+  Box(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .padding(cardPadding),
+  ) {
+    Card(
+      modifier = Modifier.fillMaxWidth(),
+      shape = borderRadius,
+      colors =
+        CardDefaults.cardColors(
+          containerColor = Color.fromHex(message.style.backgroundColor),
+        ),
+      border =
+        if (message.style.border) {
+          BorderStroke(
+            width = message.style.borderWidth.pxToDp,
+            color = Color.fromHex(message.style.borderColor),
+          )
+        } else {
+          null
+        },
+      elevation =
+        CardDefaults.cardElevation(
+          defaultElevation = if (message.style.dropShadow) 10.dp else 0.dp,
+        ),
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = borderRadius,
-            colors = CardDefaults.cardColors(
-                containerColor = Color.fromHex(message.style.backgroundColor)
-            ),
-            border = if (message.style.border) {
-                BorderStroke(
-                    width = message.style.borderWidth.pxToDp,
-                    color = Color.fromHex(message.style.borderColor)
-                )
-            } else null,
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = if (message.style.dropShadow) 10.dp else 0.dp
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bodyPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                message.image?.let { it ->
-                    if (it.hideOnMobile == true) {
-                        MessageImage(image = it, modifier = Modifier, message.style)
-                        Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.pxToDp))
-                    }
-
-                }
-                MessageTitle(
-                    title = message.title,
-                    fontFamily = fontFamily,
-                )
-                Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp))
-                MessageDescription(
-                    description = message.description,
-                    fontFamily = fontFamily,
-                )
-                Spacer(modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.pxToDp))
-                MessageButtons(
-                    actions = message.actions,
-                    fontFamily = fontFamily,
-                    onAction = onAction,
-                    message.style
-                )
-            }
+      Column(
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .padding(bodyPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+      ) {
+        message.image?.let { it ->
+          if (it.hideOnMobile == true) {
+            MessageImage(image = it, modifier = Modifier, message.style)
+            Spacer(modifier = Modifier.height(message.layout.spaceBetweenImageAndBody.pxToDp))
+          }
         }
-
-        val closeButtonSize = message.style.closeIconWidth.pxToDp
-        val offset = (closeButtonSize / 4)
-        CloseButton(
-            style = message.style,
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = offset, y = -offset)
+        MessageTitle(
+          title = message.title,
+          fontFamily = fontFamily,
         )
+        Spacer(modifier = Modifier.height(message.layout.spaceBetweenTitleAndDescription.pxToDp))
+        MessageDescription(
+          description = message.description,
+          fontFamily = fontFamily,
+        )
+        Spacer(modifier = Modifier.height(message.layout.spaceBetweenContentAndActions.pxToDp))
+        MessageButtons(
+          actions = message.actions,
+          fontFamily = fontFamily,
+          onAction = onAction,
+          message.style,
+        )
+      }
     }
+
+    val closeButtonSize = message.style.closeIconWidth.pxToDp
+    val offset = (closeButtonSize / 4)
+    CloseButton(
+      style = message.style,
+      onDismiss = onDismiss,
+      modifier =
+        Modifier
+          .align(Alignment.TopEnd)
+          .offset(x = offset, y = -offset),
+    )
+  }
 }
