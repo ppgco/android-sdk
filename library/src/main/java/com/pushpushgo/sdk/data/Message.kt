@@ -6,13 +6,10 @@ import java.io.Serializable
 
 @JsonClass(generateAdapter = true)
 internal data class Message(
-
-    @Json(name = "from")
-    val from: String?,
-
-    @Json(name = "payload")
-    val payload: Map<String, String>,
-
-    @Json(name = "body")
-    val body: String?
+  @Json(name = "from")
+  val from: String?,
+  @Json(name = "payload")
+  val payload: Map<String, String>,
+  @Json(name = "body")
+  val body: String?,
 ) : Serializable

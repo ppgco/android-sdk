@@ -10,26 +10,33 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 internal class ZonedDateTimeAdapter : JsonAdapter<ZonedDateTime>() {
-
-    companion object {
-        val FACTORY = object : Factory {
-            override fun create(type: Type, annotations: Set<Annotation>, moshi: Moshi): JsonAdapter<*>? {
-                if (type == ZonedDateTime::class.java) {
-                    return ZonedDateTimeAdapter().nullSafe()
-                }
-                return null
-            }
+  companion object {
+    val FACTORY =
+      object : Factory {
+        override fun create(
+          type: Type,
+          annotations: Set<Annotation>,
+          moshi: Moshi,
+        ): JsonAdapter<*>? {
+          if (type == ZonedDateTime::class.java) {
+            return ZonedDateTimeAdapter().nullSafe()
+          }
+          return null
         }
-    }
+      }
+  }
 
-    @Throws(IOException::class)
-    override fun fromJson(reader: JsonReader): ZonedDateTime? {
-        val dateString = reader.nextString()
-        return ZonedDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-    }
+  @Throws(IOException::class)
+  override fun fromJson(reader: JsonReader): ZonedDateTime? {
+    val dateString = reader.nextString()
+    return ZonedDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+  }
 
-    @Throws(IOException::class)
-    override fun toJson(writer: JsonWriter, value: ZonedDateTime?) {
-        writer.value(value?.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
-    }
+  @Throws(IOException::class)
+  override fun toJson(
+    writer: JsonWriter,
+    value: ZonedDateTime?,
+  ) {
+    writer.value(value?.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+  }
 }

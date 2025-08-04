@@ -13,19 +13,20 @@ import com.pushpushgo.inappmessages.model.InAppMessageStyle
 
 @Composable
 internal fun MessageImage(
-    image: InAppMessageImage,
-    modifier: Modifier,
-    templateStyle: InAppMessageStyle,
+  image: InAppMessageImage,
+  modifier: Modifier,
+  templateStyle: InAppMessageStyle,
 ) {
-    val borderPadding = borderAdjustments(templateStyle)
-    AsyncImage(
-        model = image.url,
-        contentDescription = "In-app message image",
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.5f)
-            .padding(top = borderPadding, start = borderPadding, end = borderPadding),
-        contentScale = ContentScale.Fit,
-        alignment = Alignment.TopCenter
-    )
+  val borderPadding = borderAdjustments(templateStyle)
+  AsyncImage(
+    model = image.url,
+    contentDescription = "In-app message image",
+    modifier =
+      modifier
+        .fillMaxWidth()
+        .fillMaxHeight(0.5f)
+        .padding(top = borderPadding, start = borderPadding, end = borderPadding),
+    contentScale = ContentScale.Fit,
+    alignment = Alignment.TopCenter,
+  )
 }

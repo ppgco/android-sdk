@@ -7,7 +7,12 @@ import com.squareup.moshi.Json
  * 'NORMAL' corresponds to 'unstyled'.
  */
 enum class FontStyle {
-    @Json(name = "normal") NORMAL,
-    @Json(name = "italic") ITALIC,
-    @Json(name = "underline") UNDERLINE
+  @Json(name = "normal")
+  NORMAL,
+
+  @Json(name = "italic")
+  ITALIC,
+
+  @Json(name = "underline")
+  UNDERLINE,
 }

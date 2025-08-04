@@ -8,6 +8,6 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class InAppMessageImage(
-    @Json(name = "url") val url: String,
-    @Json(name = "hideOnMobile") val hideOnMobile: Boolean
+  @Json(name = "url") val url: String,
+  @Json(name = "hideOnMobile") val hideOnMobile: Boolean,
 )

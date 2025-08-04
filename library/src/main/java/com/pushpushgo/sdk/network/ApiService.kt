@@ -18,65 +18,72 @@ import retrofit2.create
 import retrofit2.http.*
 
 internal interface ApiService {
+  @POST("{projectId}/subscriber")
+  suspend fun registerSubscriber(
+    @Header("X-Token") token: String,
+    @Path("projectId") projectId: String,
+    @Body body: TokenRequest,
+  ): TokenResponse
 
-    @POST("{projectId}/subscriber")
-    suspend fun registerSubscriber(
-        @Header("X-Token") token: String,
-        @Path("projectId") projectId: String,
-        @Body body: TokenRequest,
-    ): TokenResponse
+  @DELETE("{projectId}/subscriber/{subscriberId}")
+  suspend fun unregisterSubscriber(
+    @Header("X-Token") token: String,
+    @Path("projectId") projectId: String,
+    @Path("subscriberId") subscriberId: String,
+  ): Response<Void>
 
-    @DELETE("{projectId}/subscriber/{subscriberId}")
-    suspend fun unregisterSubscriber(
-        @Header("X-Token") token: String,
-        @Path("projectId") projectId: String,
-        @Path("subscriberId") subscriberId: String,
-    ): Response<Void>
+  @POST("{projectId}/subscriber/{subscriberId}/beacon")
+  suspend fun sendBeacon(
+    @Header("X-Token") token: String,
+    @Path("projectId") projectId: String,
+    @Path("subscriberId") subscriberId: String,
+    @Body beacon: RequestBody,
+  ): Response<Void>
 
-    @POST("{projectId}/subscriber/{subscriberId}/beacon")
-    suspend fun sendBeacon(
-        @Header("X-Token") token: String,
-        @Path("projectId") projectId: String,
-        @Path("subscriberId") subscriberId: String,
-        @Body beacon: RequestBody,
-    ): Response<Void>
+  @POST("{projectId}/event/")
+  suspend fun sendEvent(
+    @Header("X-Token") token: String,
+    @Path("projectId") projectId: String,
+    @Body event: Event,
+  ): Response<Void>
 
-    @POST("{projectId}/event/")
-    suspend fun sendEvent(
-        @Header("X-Token") token: String,
-        @Path("projectId") projectId: String,
-        @Body event: Event,
-    ): Response<Void>
+  @GET
+  suspend fun getRawResponse(
+    @Url url: String,
+  ): ResponseBody
 
-    @GET
-    suspend fun getRawResponse(@Url url: String): ResponseBody
+  companion object {
+    operator fun invoke(
+      requestInterceptor: RequestInterceptor,
+      responseInterceptor: ResponseInterceptor,
+      platformType: PlatformType,
+      baseUrl: String,
+      isNetworkDebug: Boolean,
+    ): ApiService {
+      val okHttpClient =
+        OkHttpClient
+          .Builder()
+          .addInterceptor(requestInterceptor)
+          .addInterceptor(responseInterceptor)
+          .addNetworkInterceptor(
+            HttpLoggingInterceptor {
+              logDebug(it)
+            }.setLevel(
+              if (isNetworkDebug) {
+                HttpLoggingInterceptor.Level.BODY
+              } else {
+                HttpLoggingInterceptor.Level.BASIC
+              },
+            ),
+          ).build()
 
-    companion object {
-        operator fun invoke(
-            requestInterceptor: RequestInterceptor,
-            responseInterceptor: ResponseInterceptor,
-            platformType: PlatformType,
-            baseUrl: String,
-            isNetworkDebug: Boolean,
-        ): ApiService {
-            val okHttpClient = OkHttpClient.Builder()
-                .addInterceptor(requestInterceptor)
-                .addInterceptor(responseInterceptor)
-                .addNetworkInterceptor(
-                    HttpLoggingInterceptor {
-                        logDebug(it)
-                    }.setLevel(
-                        if (isNetworkDebug) HttpLoggingInterceptor.Level.BODY
-                        else HttpLoggingInterceptor.Level.BASIC
-                    )
-                )
-                .build()
-
-            return Retrofit.Builder()
-                .client(okHttpClient)
-                .baseUrl("$baseUrl/v1/${platformType.apiName}/")
-                .addConverterFactory(MoshiConverterFactory.create())
-                .build().create()
-        }
+      return Retrofit
+        .Builder()
+        .client(okHttpClient)
+        .baseUrl("$baseUrl/v1/${platformType.apiName}/")
+        .addConverterFactory(MoshiConverterFactory.create())
+        .build()
+        .create()
     }
+  }
 }

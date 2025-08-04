@@ -8,10 +8,10 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class InAppMessageDescription(
-    @Json(name = "text") val text: String,
-    @Json(name = "fontSize") val fontSize: Int,
-    @Json(name = "color") val color: String,
-    @Json(name = "fontWeight") val fontWeight: Int,
-    @Json(name = "alignment") val alignment: Alignment,
-    @Json(name = "style") val style: FontStyle
+  @Json(name = "text") val text: String,
+  @Json(name = "fontSize") val fontSize: Int,
+  @Json(name = "color") val color: String,
+  @Json(name = "fontWeight") val fontWeight: Int,
+  @Json(name = "alignment") val alignment: Alignment,
+  @Json(name = "style") val style: FontStyle,
 )

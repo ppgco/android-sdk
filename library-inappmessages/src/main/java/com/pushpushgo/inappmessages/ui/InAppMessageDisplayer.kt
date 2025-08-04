@@ -4,7 +4,12 @@ import android.app.Activity
 import com.pushpushgo.inappmessages.model.InAppMessage
 
 interface InAppMessageDisplayer {
-    fun showMessage(activity: Activity, message: InAppMessage)
-    fun dismissMessage(message: InAppMessage)
-    fun cancelPendingMessages(isActivityPaused: Boolean = false)
+  fun showMessage(
+    activity: Activity,
+    message: InAppMessage,
+  )
+
+  fun dismissMessage(message: InAppMessage)
+
+  fun cancelPendingMessages(isActivityPaused: Boolean = false)
 }
