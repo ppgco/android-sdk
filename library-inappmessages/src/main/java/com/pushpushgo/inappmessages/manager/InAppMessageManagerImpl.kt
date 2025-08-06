@@ -124,7 +124,7 @@ internal class InAppMessageManagerImpl(
 
   /**
    * Builds a map of trigger keys to messages for fast lookup when triggers occur
-   * Only messages with CUSTOM trigger type are included in the map
+   * Only messages with CUSTOM_TRIGGER trigger type are included in the map
    *
    * @param messages List of all available messages
    */
@@ -141,11 +141,11 @@ internal class InAppMessageManagerImpl(
       triggerMap.clear()
       val customTriggerMessages =
         messages
-          .filter { it.settings.triggerType == TriggerType.CUSTOM && it.settings.customTriggerKey != null }
+          .filter { it.settings.triggerType == TriggerType.CUSTOM_TRIGGER && it.settings.customTriggerKey != null }
 
       Log.d(
         tag,
-        "buildTriggerMap: Found ${customTriggerMessages.size} messages with CUSTOM trigger type and non-null key.",
+        "buildTriggerMap: Found ${customTriggerMessages.size} messages with CUSTOM_TRIGGER trigger type and non-null key.",
       )
 
       customTriggerMessages.forEach { msg ->
@@ -169,6 +169,12 @@ internal class InAppMessageManagerImpl(
    */
   override suspend fun isMessageEligible(message: InAppMessage): Boolean =
     withContext(Dispatchers.IO) {
+      // 0. Check if message is enabled
+      if (!message.enabled) {
+        Log.d(tag, "Message [${message.id}] is disabled and will not be shown.")
+        return@withContext false
+      }
+
       // 1. Check permanent dismissal (for one-time messages)
       if (message.settings.showAgain == ShowAgainType.NEVER && persistence.isMessageDismissed(message.id)) {
         Log.d(tag, "Message [${message.id}] is a one-time message and has been permanently dismissed.")
@@ -236,8 +242,8 @@ internal class InAppMessageManagerImpl(
 
           val eventBasedMessages =
             allMessages.filter { msg ->
-              // CUSTOM triggers are handled by the `trigger` method, not by general refresh.
-              if (msg.settings.triggerType == TriggerType.CUSTOM) {
+              // CUSTOM_TRIGGER triggers are handled by the `trigger` method, not by general refresh.
+              if (msg.settings.triggerType == TriggerType.CUSTOM_TRIGGER) {
                 return@filter false
               }
 
@@ -345,7 +351,7 @@ internal class InAppMessageManagerImpl(
     val potentialMessages =
       synchronized(triggerMap) {
         triggerMap[key]?.filter { msg ->
-          val typeMatch = msg.settings.triggerType == TriggerType.CUSTOM
+          val typeMatch = msg.settings.triggerType == TriggerType.CUSTOM_TRIGGER
           val keyMatch = msg.settings.customTriggerKey == key
           val valueMatch = (value == null || msg.settings.customTriggerValue == value)
           typeMatch && keyMatch && valueMatch

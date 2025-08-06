@@ -171,12 +171,12 @@ class InAppMessagesSDK private constructor(
 
   /**
    * Shows in-app messages for a custom trigger.
-   * Only messages with trigger.type == CUSTOM and matching key (and value, if provided) will be shown.
+   * Only messages with trigger.type == CUSTOM_TRIGGER and matching key and value will be shown.
    * Also doesn't cancel pending messages for APP_OPEN trigger.
    */
   fun showMessagesOnTrigger(
     key: String,
-    value: String? = null,
+    value: String,
   ) {
     Log.d(tag, "Request to show messages for custom trigger: $key")
     sdkScope.launch {

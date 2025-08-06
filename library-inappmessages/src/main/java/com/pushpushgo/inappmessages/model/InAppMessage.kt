@@ -65,8 +65,8 @@ enum class TriggerType {
   @Json(name = "ENTER")
   ENTER,
 
-  @Json(name = "CUSTOM")
-  CUSTOM,
+  @Json(name = "CUSTOM_TRIGGER")
+  CUSTOM_TRIGGER,
 
   @Json(name = "SCROLL")
   SCROLL,

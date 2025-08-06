@@ -63,4 +63,5 @@ dependencies {
 
     implementation libs.hms.agconnect
     implementation libs.hms.push
+    implementation libs.hms.update
 }

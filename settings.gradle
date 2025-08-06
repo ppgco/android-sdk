@@ -21,7 +21,7 @@ dependencyResolutionManagement {
             version("work", "2.9.0")
 
             plugin('dokka', 'org.jetbrains.dokka').version("1.9.20")
-            plugin('validator', 'org.jetbrains.kotlinx.binary-compatibility-validator').version('0.14.0')
+            plugin('validator', 'org.jetbrains.kotlinx.binary-compatibility-validator').version('0.16.3')
             plugin('ksp', 'com.google.devtools.ksp').versionRef('ksp')
             plugin('ktlint', 'org.jlleitschuh.gradle.ktlint').version("13.0.0")
 
@@ -31,6 +31,7 @@ dependencyResolutionManagement {
             library('coroutines-android', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-android').versionRef('coroutines')
             library('coroutines-guava', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-guava').versionRef('coroutines')
             library('coroutines-test', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-test').versionRef('coroutines')
+            library('kotlinx-metadata-jvm', 'org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.10.0')
 
             library('kodein', 'org.kodein.di', 'kodein-di').versionRef('kodein')
 
@@ -38,16 +39,19 @@ dependencyResolutionManagement {
             library('retrofit-moshi', 'com.squareup.retrofit2', 'converter-moshi').versionRef('retrofit')
 
             library('moshi', 'com.squareup.moshi', 'moshi').versionRef('moshi')
+            library('moshi-kotlin', 'com.squareup.moshi', 'moshi-kotlin').versionRef('moshi')
             library('moshi-codegen', 'com.squareup.moshi', 'moshi-kotlin-codegen').versionRef('moshi')
             library('moshi-adapters', 'com.squareup.moshi', 'moshi-adapters').versionRef('moshi')
 
             library('okhttp-bom', 'com.squareup.okhttp3:okhttp-bom:4.12.0')
 
-            library('firebase-bom', 'com.google.firebase:firebase-bom:33.1.0')
+            library('firebase-bom', 'com.google.firebase:firebase-bom:33.14.0')
 
             library('hms-push', 'com.huawei.hms:push:6.13.0.300')
             library('hms-agconnect', 'com.huawei.agconnect:agconnect-core:1.9.1.304')
+            library('hms-update', 'com.huawei.hms:update:5.0.2.300')
 
+            library('androidx-core-ktx', 'androidx.core:core-ktx:1.12.0')
             library('androidx-preference', 'androidx.preference:preference-ktx:1.2.1')
             library('androidx-work-runtime', 'androidx.work', 'work-runtime-ktx').versionRef("work")
             library('androidx-work-gcm', 'androidx.work', 'work-gcm').versionRef("work")

@@ -26,6 +26,18 @@
 -keep class com.huawei.hianalytics.**{*;}
 -keep class com.huawei.updatesdk.**{*;}
 -keep class com.huawei.hms.**{*;}
+-keep class com.huawei.hms.availableupdate.**{*;}
+
+# Dontwarn for Huawei internal APIs not available in public Maven repositories
+-dontwarn com.huawei.hms.availableupdate.**
+-dontwarn com.huawei.android.app.**
+-dontwarn com.huawei.android.content.pm.**
+-dontwarn com.huawei.appgallery.log.**
+-dontwarn com.huawei.appgallery.markethomecountrysdk.**
+-dontwarn com.huawei.appgallery.serviceverifykit.**
+-dontwarn com.huawei.ohos.localability.**
+-dontwarn com.huawei.system.**
+-dontwarn com.huawei.updatesdk.**UpdateAdapterMgr*
 
 -dontwarn android.telephony.HwTelephonyManager
 -dontwarn com.huawei.android.os.BuildEx$VERSION
