@@ -156,7 +156,7 @@ internal fun createFontFamily(message: InAppMessage): FontFamily {
       com.pushpushgo.inappmessages.model.FontFamily.LATO -> "Lato"
       com.pushpushgo.inappmessages.model.FontFamily.PLAYFAIR_DISPLAY -> "Playfair Display"
       com.pushpushgo.inappmessages.model.FontFamily.FIRA_SANS -> "Fira Sans"
-      com.pushpushgo.inappmessages.model.FontFamily.ARIAL -> "Arimo"
+      com.pushpushgo.inappmessages.model.FontFamily.ARIAL -> "Roboto"
       com.pushpushgo.inappmessages.model.FontFamily.GEORGIA -> "Gelasio"
     }
 
