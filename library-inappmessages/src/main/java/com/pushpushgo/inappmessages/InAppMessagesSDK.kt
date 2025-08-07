@@ -101,8 +101,8 @@ class InAppMessagesSDK private constructor(
   }
 
   init {
-    val repository = InAppMessageRepositoryImpl(api, projectId, apiKey)
     val persistence = InAppMessagePersistenceImpl(application)
+    val repository = InAppMessageRepositoryImpl(api, projectId, apiKey, persistence)
     manager = InAppMessageManagerImpl(sdkScope, repository, persistence, application)
     displayer =
       InAppMessageDisplayerImpl(

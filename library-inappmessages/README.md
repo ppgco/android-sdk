@@ -179,7 +179,7 @@ Messages can be triggered based on custom events in your application:
 fun onPurchaseCompleted(productId: String) {
     InAppMessagesSDK.getInstance().showMessagesOnTrigger(
         key = "purchase_completed",
-        value = productId // Optional
+        value = productId // value has to be a string
     )
 }
 

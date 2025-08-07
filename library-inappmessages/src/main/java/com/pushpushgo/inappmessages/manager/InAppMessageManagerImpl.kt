@@ -130,23 +130,11 @@ internal class InAppMessageManagerImpl(
    */
   private fun buildTriggerMap(messages: List<InAppMessage>) {
     Log.d(tag, "buildTriggerMap called with ${messages.size} messages.")
-    messages.forEach { msg ->
-      Log.d(
-        tag,
-        "buildTriggerMap: Processing message id=${msg.id}, triggerType=${msg.settings.triggerType}, triggerKey=${msg.settings.customTriggerKey}, triggerValue=${msg.settings.customTriggerValue}",
-      )
-    }
-
     synchronized(triggerMap) {
       triggerMap.clear()
       val customTriggerMessages =
         messages
           .filter { it.settings.triggerType == TriggerType.CUSTOM_TRIGGER && it.settings.customTriggerKey != null }
-
-      Log.d(
-        tag,
-        "buildTriggerMap: Found ${customTriggerMessages.size} messages with CUSTOM_TRIGGER trigger type and non-null key.",
-      )
 
       customTriggerMessages.forEach { msg ->
         // msg.settings.customTriggerKey is non-null here due to the filter

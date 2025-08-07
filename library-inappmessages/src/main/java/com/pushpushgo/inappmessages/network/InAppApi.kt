@@ -11,10 +11,11 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 internal interface InAppListGetApi {
-  @GET("/wi/projects/{projectId}/popups")
+  @GET("/wi/v1/android/projects/{projectId}/popups")
   suspend fun getInAppMessages(
     @Path("projectId") projectId: String,
     @Header("X-Token") apiKey: String,
+    @Header("If-None-Match") ifNoneMatch: String? = null,
     @Query("search") search: String = "",
     @Query("sortBy") sortBy: String = "newest",
     @Query("offset") offset: Int = 0,

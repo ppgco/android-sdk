@@ -1,5 +1,7 @@
 package com.pushpushgo.inappmessages.persistence
 
+import com.pushpushgo.inappmessages.model.InAppMessage
+
 interface InAppMessagePersistence {
   fun isMessageDismissed(messageId: String): Boolean
 
@@ -24,4 +26,13 @@ interface InAppMessagePersistence {
   )
 
   fun resetFirstEligibleAt(messageId: String)
+  
+  // ETag caching for HTTP cache optimization
+  fun getStoredETag(): String?
+  
+  fun saveCache(etag: String, messages: List<InAppMessage>)
+  
+  fun getCachedMessages(): List<InAppMessage>?
+  
+  fun clearCache()
 }
