@@ -14,9 +14,10 @@
 ## Preparation
 **Before proceeding the installlation make sure you have completed the steps listed below:**
 
-1. **Connect App with Firebase / Huawei project**
-2. **(GMS only) From Firebase console download google-services.json and place it in app root folder**
-3. **Add dependencies based on configuration build you use - Groovy/Kotlin**
+1. **Remove all previous implementations from other providers or custom Firebase / Huawei implementation**
+2. **Connect App with Firebase / Huawei project**
+3. **(GMS only) From Firebase console download google-services.json and place it in app root folder**
+4. **Add dependencies based on configuration build you use - Groovy/Kotlin**
 
 Groovy DSL
 ```groovy
