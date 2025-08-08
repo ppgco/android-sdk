@@ -31,6 +31,7 @@ internal class InAppMessageManagerImpl(
   private val repository: InAppMessageRepository,
   private val persistence: InAppMessagePersistence,
   private val context: Context,
+  private val debug: Boolean = false,
 ) : InAppMessageManager {
   // Provider for accessing push notification subscription status
   private val notificationStatusProvider = PushNotificationStatusProvider(context)
@@ -62,16 +63,19 @@ internal class InAppMessageManagerImpl(
 
   override suspend fun initialize() {
     try {
-      Log.d(tag, "Initializing InAppMessageManager")
+      if (debug) {
+        Log.d(tag, "Initializing InAppMessageManager...")
+      }
 
       // Fetch messages in IO context
       val messages =
         withContext(Dispatchers.IO) {
-          Log.d(tag, "${repository.fetchMessages()}")
           repository.fetchMessages()
         }
 
-      Log.d(tag, "Fetched ${messages.size} messages")
+      if (debug) {
+        Log.d(tag, "Fetched ${messages.size} messages from API")
+      }
 
       // Update collections
       allMessages.clear()
@@ -84,7 +88,9 @@ internal class InAppMessageManagerImpl(
       // Start periodic schedule checks
       startScheduleRefresh()
 
-      Log.d(tag, "InAppMessageManager initialized successfully")
+      if (debug) {
+        Log.d(tag, "InAppMessageManager initialized successfully")
+      }
     } catch (e: Exception) {
       if (e is CancellationException) throw e
       Log.e(tag, "Error initializing InAppMessageManager: ${e.message}", e)
@@ -103,7 +109,6 @@ internal class InAppMessageManagerImpl(
     scheduleRefreshJob =
       scope.launch(Dispatchers.IO) {
         try {
-          Log.d(tag, "Starting periodic schedule refresh every ${scheduleRefreshInterval}ms")
 
           while (true) {
             delay(scheduleRefreshInterval)
@@ -111,7 +116,6 @@ internal class InAppMessageManagerImpl(
             // Don't block on refresh, just log and continue if there's an error
             try {
               refreshActiveMessages(currentRoute)
-              Log.d(tag, "Performed periodic schedule check for route: $currentRoute")
             } catch (e: Exception) {
               Log.e(tag, "Error during periodic schedule refresh: ${e.message}")
             }
@@ -129,7 +133,6 @@ internal class InAppMessageManagerImpl(
    * @param messages List of all available messages
    */
   private fun buildTriggerMap(messages: List<InAppMessage>) {
-    Log.d(tag, "buildTriggerMap called with ${messages.size} messages.")
     synchronized(triggerMap) {
       triggerMap.clear()
       val customTriggerMessages =
@@ -140,11 +143,7 @@ internal class InAppMessageManagerImpl(
         // msg.settings.customTriggerKey is non-null here due to the filter
         val key = msg.settings.customTriggerKey!!
         triggerMap.getOrPut(key) { mutableListOf() }.add(msg)
-        Log.d(tag, "buildTriggerMap: Added message id=${msg.id} to triggerMap for key='$key'")
       }
-
-      val finalMapLog = triggerMap.entries.joinToString { "'${it.key}': ${it.value.map { m -> m.id }.size} msg(s)" }
-      Log.d(tag, "Built trigger map. Size: ${triggerMap.size}. Contents: {$finalMapLog}")
     }
   }
 
@@ -159,25 +158,39 @@ internal class InAppMessageManagerImpl(
     withContext(Dispatchers.IO) {
       // 0. Check if message is enabled
       if (!message.enabled) {
-        Log.d(tag, "Message [${message.id}] is disabled and will not be shown.")
+        if (debug) {
+          Log.d(tag, "Message [${message.id}] is disabled - not eligible")
+        }
         return@withContext false
       }
 
       // 1. Check permanent dismissal (for one-time messages)
-      if (message.settings.showAgain == ShowAgainType.NEVER && persistence.isMessageDismissed(message.id)) {
-        Log.d(tag, "Message [${message.id}] is a one-time message and has been permanently dismissed.")
+      if (message.settings.showAgain == ShowAgainType.NEVER && persistence.isMessageDismissed(
+          message.id
+        )
+      ) {
+        if (debug) {
+          Log.d(tag, "Message [${message.id}] permanently dismissed - not eligible")
+        }
         return@withContext false
       }
 
       // 2. Check schedule window (absolute check)
       if (!isInScheduleWindow(message)) {
-        Log.d(tag, "Message [${message.id}] is outside its schedule window.")
+        if (debug) {
+          Log.d(tag, "Message [${message.id}] outside schedule window - not eligible")
+        }
         return@withContext false
       }
 
       // 3. Check user audience type
       if (!notificationStatusProvider.matchesAudienceType(message.audience.userType)) {
-        Log.d(tag, "Message [${message.id}] does not match user audience type: ${message.audience.userType}")
+        if (debug) {
+          Log.d(
+            tag,
+            "Message [${message.id}] audience mismatch (${message.audience.userType}) - not eligible"
+          )
+        }
         return@withContext false
       }
 
@@ -195,17 +208,17 @@ internal class InAppMessageManagerImpl(
           val requiredCooldownMs = requiredCooldownSec * 1000L
 
           if (elapsedSinceLastDismissal < requiredCooldownMs) {
-            Log.d(
-              tag,
-              "Message [${message.id}] showAgain: cooldown not yet passed. " +
-                "${elapsedSinceLastDismissal}ms of ${requiredCooldownMs}ms since last dismissal.",
-            )
+            if (debug) {
+              Log.d(
+                tag,
+                "Message [${message.id}] in cooldown: ${elapsedSinceLastDismissal}ms/${requiredCooldownMs}ms"
+              )
+            }
             return@withContext false // Still in cooldown since last dismissal
           }
         }
       }
 
-      Log.d(tag, "Message [${message.id}] is eligible for display.")
       return@withContext true
     }
 
@@ -226,7 +239,9 @@ internal class InAppMessageManagerImpl(
     val newJob =
       scope.launch(Dispatchers.IO) {
         try {
-          Log.d(tag, "Refreshing active messages for effective route: ${effectiveRoute ?: "ENTER"}")
+          if (debug) {
+            Log.d(tag, "Refreshing active messages for route: ${effectiveRoute ?: "ENTER"}")
+          }
 
           val eventBasedMessages =
             allMessages.filter { msg ->
@@ -266,17 +281,20 @@ internal class InAppMessageManagerImpl(
           val initiallyFiltered =
             eventBasedMessages.filter { msg ->
               val enabled = msg.enabled
-              val notExpired = msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
+              val notExpired =
+                msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
               val correctDeviceType =
-                msg.audience.device.contains(currentDeviceType) || msg.audience.device.contains(DeviceType.ALL)
-              val correctOsType = msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
+                msg.audience.device.contains(currentDeviceType) || msg.audience.device.contains(
+                  DeviceType.ALL
+                )
+              val correctOsType =
+                msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
               enabled && notExpired && correctDeviceType && correctOsType
             }
 
           val finalEligibleMessages = mutableListOf<InAppMessage>()
           for (msg in initiallyFiltered) {
             if (msg.settings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
-              Log.d(tag, "Message [${msg.id}] with showAfterDelay. Setting firstEligibleAt during refresh.")
               persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
             }
 
@@ -300,17 +318,12 @@ internal class InAppMessageManagerImpl(
             activeMessages.addAll(newActiveMessages)
             _messagesFlow.value = activeMessages.toList()
 
-            Log.d(
-              tag,
-              "Active messages refreshed. New count: ${activeMessages.size}. Messages: ${activeMessages.joinToString { it.id }}",
-            )
+            if (debug) {
+              Log.d(tag, "Active messages refreshed: ${newActiveMessages.size} eligible messages")
+            }
           }
         } catch (e: Exception) {
-          if (e is CancellationException) {
-            Log.d(tag, "Refresh for route '${effectiveRoute ?: "ENTER"}' was cancelled.")
-          } else {
-            Log.e(tag, "Error refreshing active messages for route: ${effectiveRoute ?: "ENTER"}", e)
-          }
+          Log.e(tag, "Error refreshing active messages for route: ${effectiveRoute ?: "ENTER"}", e)
         }
       }
 
@@ -334,7 +347,9 @@ internal class InAppMessageManagerImpl(
     val jobToWaitFor = refreshJobMutex.withLock { refreshJob }
     jobToWaitFor?.join()
 
-    Log.d(tag, "Attempting to trigger custom message with key=$key, paramValue=$value")
+    if (debug) {
+      Log.d(tag, "Triggering custom message: key='$key', value='$value'")
+    }
 
     val potentialMessages =
       synchronized(triggerMap) {
@@ -347,14 +362,11 @@ internal class InAppMessageManagerImpl(
       }
 
     if (potentialMessages.isEmpty()) {
-      Log.d(tag, "No messages found for trigger key=$key (paramValue=$value).")
+      if (debug) {
+        Log.d(tag, "No messages found for trigger key='$key', value='$value'")
+      }
       return null
     }
-
-    Log.d(
-      tag,
-      "Found ${potentialMessages.size} potential messages for trigger key=$key (paramValue=$value). Checking eligibility...",
-    )
 
     for (msg in potentialMessages.sortedWith(
       compareBy { message ->
@@ -367,15 +379,15 @@ internal class InAppMessageManagerImpl(
       if (isInScheduleWindow(msg) && isMessageEligible(msg)) {
         // If the message has a showAfterDelay and its firstEligibleAt is not set, set it now.
         if (msg.settings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
-          Log.d(tag, "Trigger for message [${msg.id}] with showAfterDelay. Setting firstEligibleAt.")
           persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
         }
-        Log.d(tag, "Message [${msg.id}] is eligible for custom trigger '$key'. Returning for display.")
+        if (debug) {
+          Log.d(tag, "Found eligible message [${msg.id}] for trigger '$key'")
+        }
         return msg
       }
     }
 
-    Log.d(tag, "No eligible message found for custom trigger '$key' with value '$value' after checking all candidates.")
     return null
   }
 
@@ -399,16 +411,6 @@ internal class InAppMessageManagerImpl(
       val afterStart = normalizedStartTime == null || !currentTime.isBefore(normalizedStartTime)
       val beforeEnd = normalizedEndTime == null || currentTime.isBefore(normalizedEndTime)
       val isInWindow = afterStart && beforeEnd
-
-      // Log the result for debugging
-      Log.d(
-        tag,
-        "Schedule check for [${msg.id}]: " +
-          "start=${normalizedStartTime ?: "None"}, " +
-          "end=${normalizedEndTime ?: "None"}, " +
-          "current=$currentTime, " +
-          "inWindow=$isInWindow",
-      )
 
       return@withContext isInWindow
     }

@@ -5,7 +5,6 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 
 /**
  * Utility class that manages automatic cleanup of SDK resources
@@ -20,8 +19,6 @@ class AutoCleanupManager(
   private val backgroundTimeoutMs: Long = DEFAULT_BACKGROUND_TIMEOUT_MS,
 ) {
   companion object {
-    private const val TAG = "AutoCleanupManager"
-
     // Default timeout after which we perform cleanup when app is in background (5 minutes)
     const val DEFAULT_BACKGROUND_TIMEOUT_MS = 5 * 60 * 1000L
   }
@@ -35,7 +32,6 @@ class AutoCleanupManager(
    */
   fun start() {
     application.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
-    Log.d(TAG, "AutoCleanupManager started")
   }
 
   /**
@@ -44,20 +40,17 @@ class AutoCleanupManager(
   fun stop() {
     application.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
     cancelScheduledCleanup()
-    Log.d(TAG, "AutoCleanupManager stopped")
   }
 
   /**
    * Schedule cleanup after app has been in background for the specified time
    */
   private fun scheduleCleanup() {
-    Log.d(TAG, "Scheduling background cleanup in ${backgroundTimeoutMs / 1000} seconds")
     cancelScheduledCleanup() // Cancel any existing scheduled cleanup
 
     cleanupRunnable =
       Runnable {
         if (isInBackground) {
-          Log.d(TAG, "Performing automatic background cleanup")
           cleanupCallback.invoke()
         }
       }
@@ -71,7 +64,6 @@ class AutoCleanupManager(
   private fun cancelScheduledCleanup() {
     cleanupRunnable?.let {
       cleanupHandler.removeCallbacks(it)
-      Log.d(TAG, "Canceled scheduled background cleanup")
     }
   }
 
@@ -89,10 +81,8 @@ class AutoCleanupManager(
 
       override fun onActivityStarted(activity: Activity) {
         if (activeActivities == 0) {
-          // App is coming to foreground
           isInBackground = false
           cancelScheduledCleanup()
-          Log.d(TAG, "App returned to foreground")
         }
         activeActivities++
       }
@@ -107,7 +97,6 @@ class AutoCleanupManager(
           // App is going to background
           isInBackground = true
           scheduleCleanup()
-          Log.d(TAG, "App moved to background")
         }
       }
 

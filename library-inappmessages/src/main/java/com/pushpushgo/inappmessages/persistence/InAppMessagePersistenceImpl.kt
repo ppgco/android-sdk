@@ -2,6 +2,7 @@ package com.pushpushgo.inappmessages.persistence
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.core.content.edit
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.squareup.moshi.JsonAdapter
@@ -12,6 +13,7 @@ import com.pushpushgo.inappmessages.utils.ZonedDateTimeAdapter
 
 class InAppMessagePersistenceImpl(
   context: Context,
+  private val debug: Boolean = false,
   private val moshi: Moshi = Moshi.Builder()
     .add(ZonedDateTimeAdapter.FACTORY)
     .addLast(KotlinJsonAdapterFactory())
@@ -24,6 +26,7 @@ class InAppMessagePersistenceImpl(
   private val messagesAdapter: JsonAdapter<List<InAppMessage>> = moshi.adapter(listType)
   
   companion object {
+    private const val TAG = "InAppMsgPersistence"
     private const val KEY_ETAG = "etag"
     private const val KEY_CACHED_MESSAGES = "cached_messages"
     private const val KEY_CACHE_TIMESTAMP = "cache_timestamp"
@@ -35,6 +38,9 @@ class InAppMessagePersistenceImpl(
   override fun isMessageDismissed(messageId: String): Boolean = prefs.getBoolean("dismissed_$messageId", false)
 
   override fun markMessageDismissed(messageId: String) {
+    if (debug) {
+      Log.d(TAG, "Marking message [$messageId] as dismissed")
+    }
     prefs.edit { putBoolean("dismissed_$messageId", true) }
     setLastDismissedAt(messageId, System.currentTimeMillis())
   }
@@ -78,15 +84,25 @@ class InAppMessagePersistenceImpl(
     
     return if (isExpired) {
       // Cache expired - clear and return null to force fresh fetch
+      if (debug) {
+        Log.d(TAG, "Cache expired, clearing and forcing fresh fetch")
+      }
       clearCache()
       null
     } else {
-      prefs.getString(KEY_ETAG, null)
+      val etag = prefs.getString(KEY_ETAG, null)
+      if (debug) {
+        Log.d(TAG, "Retrieved stored ETag: ${etag ?: "none"}")
+      }
+      etag
     }
   }
   
   override fun saveCache(etag: String, messages: List<InAppMessage>) {
     val messagesJson = messagesAdapter.toJson(messages)
+    if (debug) {
+      Log.d(TAG, "Saving cache: ETag=$etag, ${messages.size} messages")
+    }
     
     prefs.edit {
       putString(KEY_ETAG, etag)
@@ -99,15 +115,25 @@ class InAppMessagePersistenceImpl(
     val messagesJson = prefs.getString(KEY_CACHED_MESSAGES, null) ?: return null
     
     return try {
-      messagesAdapter.fromJson(messagesJson) ?: emptyList()
-    } catch (e: Exception) {
+      val messages = messagesAdapter.fromJson(messagesJson) ?: emptyList()
+      if (debug) {
+        Log.d(TAG, "Retrieved ${messages.size} cached messages")
+      }
+      messages
+    } catch (_: Exception) {
       // JSON parsing failed - clear cache and return null
+      if (debug) {
+        Log.d(TAG, "Failed to parse cached messages, clearing cache")
+      }
       clearCache()
       null
     }
   }
   
   override fun clearCache() {
+    if (debug) {
+      Log.d(TAG, "Clearing cache")
+    }
     prefs.edit {
       remove(KEY_ETAG)
       remove(KEY_CACHED_MESSAGES)

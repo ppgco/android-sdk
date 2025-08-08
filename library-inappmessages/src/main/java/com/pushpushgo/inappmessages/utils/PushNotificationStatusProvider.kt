@@ -2,7 +2,6 @@ package com.pushpushgo.inappmessages.utils
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.preference.PreferenceManager
 import com.pushpushgo.inappmessages.model.UserAudienceType
 
@@ -16,7 +15,6 @@ class PushNotificationStatusProvider(
   private val context: Context,
 ) {
   companion object {
-    private const val TAG = "PushNotificationStatusProvider"
 
     // These constants match the ones in PushPushGo SDK's SharedPreferencesHelper
     private const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"
@@ -35,7 +33,6 @@ class PushNotificationStatusProvider(
    */
   fun isSubscribed(): Boolean {
     val result = sharedPreferences.getBoolean(IS_SUBSCRIBED, false)
-    Log.d(TAG, "Checking subscription status: $result")
     return result
   }
 

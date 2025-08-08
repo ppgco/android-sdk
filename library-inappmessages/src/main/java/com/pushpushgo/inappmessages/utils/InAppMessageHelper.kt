@@ -1,6 +1,5 @@
 package com.pushpushgo.inappmessages.utils
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.fragment.app.Fragment
@@ -15,15 +14,12 @@ import com.pushpushgo.inappmessages.InAppMessagesSDK
  * and when using navigation components.
  */
 object InAppMessageHelper {
-  private const val TAG = "InAppMessageHelper"
-
   /**
    * Shows in-app messages for a specific screen/route
    *
    * @param screenName The name of the current screen/route
    */
   fun showMessagesForScreen(screenName: String) {
-    Log.d(TAG, "Showing messages for screen: $screenName")
     InAppMessagesSDK.getInstance().showActiveMessages(screenName)
   }
 

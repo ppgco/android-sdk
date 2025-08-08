@@ -12,6 +12,7 @@ internal class InAppMessageRepositoryImpl(
   private val projectId: String,
   private val apiKey: String,
   private val persistence: InAppMessagePersistence,
+  private val debug: Boolean = false,
 ) : InAppMessageRepository {
   
   companion object {
@@ -23,8 +24,6 @@ internal class InAppMessageRepositoryImpl(
       withContext(Dispatchers.IO) {
         val storedETag = persistence.getStoredETag()
         
-        Log.d(TAG, "Fetching messages with ETag: $storedETag")
-        
         val response = inAppApi.getInAppMessages(
           projectId = projectId,
           apiKey = apiKey,
@@ -34,13 +33,17 @@ internal class InAppMessageRepositoryImpl(
         when (response.code()) {
           200 -> {
             // Fresh data received
-            Log.d(TAG, "Received fresh data (200)")
             val messages = response.body()?.data ?: emptyList()
+            if (debug) {
+              Log.d(TAG, "Received fresh data: ${messages.size} messages")
+            }
             
             // Save ETag and cache the payload
             val newETag = response.headers()["ETag"]
             if (newETag != null) {
-              Log.d(TAG, "Saving new ETag: $newETag")
+              if (debug) {
+                Log.d(TAG, "Saving cache with ETag: $newETag")
+              }
               persistence.saveCache(newETag, messages)
             } else {
               Log.w(TAG, "No ETag header in response")
@@ -50,12 +53,13 @@ internal class InAppMessageRepositoryImpl(
           }
           
           304 -> {
-            // Not Modified - use cached data
-            Log.d(TAG, "Data not modified (304) - using cached messages")
+            // Data not modified - use cached messages
+            if (debug) {
+              Log.d(TAG, "Received 304 Not Modified, using cached messages")
+            }
             val cachedMessages = persistence.getCachedMessages()
             
             if (cachedMessages != null) {
-              Log.d(TAG, "Returning ${cachedMessages.size} cached messages")
               cachedMessages
             } else {
               Log.w(TAG, "304 response but no cached messages found - clearing cache")
@@ -69,12 +73,10 @@ internal class InAppMessageRepositoryImpl(
             
             // On error, try to return cached messages if available
             val cachedMessages = persistence.getCachedMessages()
-            if (cachedMessages != null) {
-              Log.d(TAG, "API error - falling back to cached messages")
-              cachedMessages
-            } else {
-              emptyList()
+            if (debug && cachedMessages != null) {
+              Log.d(TAG, "API error, falling back to ${cachedMessages.size} cached messages")
             }
+            cachedMessages ?: emptyList()
           }
         }
       }
@@ -83,11 +85,6 @@ internal class InAppMessageRepositoryImpl(
       
       // On network error, try to return cached messages if available
       val cachedMessages = persistence.getCachedMessages()
-      if (cachedMessages != null) {
-        Log.d(TAG, "Network error - falling back to cached messages")
-        cachedMessages
-      } else {
-        emptyList()
-      }
+      cachedMessages ?: emptyList()
     }
 }

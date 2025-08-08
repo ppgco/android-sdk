@@ -41,6 +41,7 @@ import kotlin.coroutines.CoroutineContext
 
 internal class InAppMessageDisplayerImpl(
   private val persistence: InAppMessagePersistence? = null,
+  private val debug: Boolean = false,
   private val onMessageDismissed: () -> Unit,
   private val onMessageEvent: (eventType: String, message: InAppMessage, ctaIndex: Int?) -> Unit = { _, _, _ -> },
   private var onJsAction: ((jsCall: String) -> Unit)? = null,
@@ -74,60 +75,39 @@ internal class InAppMessageDisplayerImpl(
     val delaySec = message.settings.showAfterDelay
     if (delaySec > 0) {
       val delayMs = delaySec * 1000L
-      Log.d(
-        tag,
-        "Scheduling message ${message.id} (delay: ${delayMs}ms) for activity: ${activity.localClassName}",
-      )
+      if (debug) {
+        Log.d(tag, "Scheduling message [${message.id}] with ${delayMs}ms delay")
+      }
       val activityRef = WeakReference(activity)
 
       val newJob =
         launch {
-          // This is a CoroutineScope.launch
           try {
-            Log.d(
-              tag,
-              "Job for ${message.id} [${this.coroutineContext[Job]}]: Starting delay of $delayMs ms.",
-            )
             delay(delayMs)
-            Log.d(
-              tag,
-              "Job for ${message.id} [${this.coroutineContext[Job]}]: Delay finished.",
-            )
 
             val currentActivity = activityRef.get()
             if (currentActivity == null || currentActivity.isFinishing) {
-              Log.d(
-                tag,
-                "Job for ${message.id} [${this.coroutineContext[Job]}]: Activity ${activity.localClassName} no longer available or finishing.",
-              )
               return@launch
             }
 
             if (!isActive) { // Check if job was cancelled during delay
-              Log.d(
-                tag,
-                "Job for ${message.id} [${this.coroutineContext[Job]}]: Job was cancelled during delay (isActive=false).",
-              )
               return@launch
             }
 
-            Log.d(
-              tag,
-              "Job for ${message.id} [${this.coroutineContext[Job]}]: Showing message on activity ${currentActivity.localClassName}.",
-            )
             withContext(Dispatchers.Main) {
               // Ensure UI ops on Main
               if (shouldBeDisplayed(message)) {
                 showMessageByTemplate(currentActivity, message)
               }
             }
-          } catch (e: CancellationException) {
-            Log.d(
-              tag,
-              "Job for ${message.id} [${this.coroutineContext[Job]}] was cancelled: ${e.message}",
-            )
           } catch (t: Throwable) {
-            Log.e(tag, "Job for ${message.id} [${this.coroutineContext[Job]}] failed", t)
+            if (t is CancellationException) {
+              if (debug) {
+                Log.d(tag, "Message [${message.id}] display cancelled")
+              }
+              throw t
+            }
+            Log.e(tag, "Failed to display message ${message.id}", t)
           } finally {
             // Always remove the job from the map when it's done.
             // This check prevents a race condition where a new job for the same ID is added
@@ -137,9 +117,11 @@ internal class InAppMessageDisplayerImpl(
             }
           }
         }
-      Log.d(tag, "showMessage: Stored new job for ${message.id}. Job: $newJob")
       pendingMessageJobs[message.id] = message to newJob
     } else {
+      if (debug) {
+        Log.d(tag, "Showing message [${message.id}] immediately")
+      }
       launch {
         if (shouldBeDisplayed(message)) {
           showMessageByTemplate(activity, message)
@@ -184,7 +166,9 @@ internal class InAppMessageDisplayerImpl(
     if (pendingMessageJobs.isEmpty()) {
       return
     }
-    Log.d(tag, "Cancelling all ${pendingMessageJobs.size} pending message jobs.")
+    if (debug) {
+      Log.d(tag, "Cancelling ${pendingMessageJobs.size} pending message jobs (activity paused: $isActivityPaused)")
+    }
 
     // Create a copy of the values to avoid ConcurrentModificationException
     val jobsToCancel = ArrayList(pendingMessageJobs.values)
@@ -204,6 +188,9 @@ internal class InAppMessageDisplayerImpl(
   }
 
   override fun dismissMessage(message: InAppMessage) {
+    if (debug) {
+      Log.d(tag, "Dismissing message [${message.id}]")
+    }
     dismissMessageInternal(message, sendCloseEvent = true)
   }
 
@@ -324,11 +311,7 @@ internal class InAppMessageDisplayerImpl(
       withContext(Dispatchers.IO) {
         persistence?.isMessageDismissed(message.id)
       }
-    if (isDismissed == true && message.settings.showAgain != ShowAgainType.AFTER_TIME) {
-      Log.d(tag, "Message ${message.id} is already dismissed and not set to show again.")
-      return false
-    }
-    return true
+    return !(isDismissed == true && message.settings.showAgain != ShowAgainType.AFTER_TIME)
   }
 
   private fun createComposeView(
@@ -410,7 +393,6 @@ internal class InAppMessageDisplayerImpl(
    */
   internal fun setJsActionHandler(handler: (jsCall: String) -> Unit) {
     this.onJsAction = handler
-    Log.d(tag, "JS action handler updated")
   }
 
   /**
@@ -421,7 +403,6 @@ internal class InAppMessageDisplayerImpl(
    */
   internal fun setSubscriptionHandler(handler: PushNotificationSubscriber) {
     this.subscriptionHandler = handler
-    Log.d(tag, "Subscription handler updated")
   }
 
   private fun handleAction(
@@ -442,7 +423,6 @@ internal class InAppMessageDisplayerImpl(
 
         InAppActionType.JS -> {
           action.call?.takeIf { it.isNotEmpty() }?.let { jsCall ->
-            Log.d(tag, "Processing JS action with call: $jsCall")
             onJsAction?.invoke(jsCall) ?: run {
               Log.w(tag, "No JS action handler provided for call: $jsCall")
             }
@@ -450,7 +430,6 @@ internal class InAppMessageDisplayerImpl(
         }
 
         InAppActionType.SUBSCRIBE -> {
-          Log.d(tag, "Processing SUBSCRIBE action request")
           val success =
             try {
               subscriptionHandler.requestSubscription(context)
@@ -459,7 +438,6 @@ internal class InAppMessageDisplayerImpl(
               false
             }
 
-          Log.d(tag, "Subscription request result: $success")
           if (success) {
             Toast
               .makeText(

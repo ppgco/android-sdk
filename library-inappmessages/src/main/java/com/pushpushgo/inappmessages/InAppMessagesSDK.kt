@@ -101,12 +101,13 @@ class InAppMessagesSDK private constructor(
   }
 
   init {
-    val persistence = InAppMessagePersistenceImpl(application)
-    val repository = InAppMessageRepositoryImpl(api, projectId, apiKey, persistence)
-    manager = InAppMessageManagerImpl(sdkScope, repository, persistence, application)
+    val persistence = InAppMessagePersistenceImpl(application, debug)
+    val repository = InAppMessageRepositoryImpl(api, projectId, apiKey, persistence, debug)
+    manager = InAppMessageManagerImpl(sdkScope, repository, persistence, application, debug)
     displayer =
       InAppMessageDisplayerImpl(
         persistence,
+        debug,
         onMessageDismissed = { showActiveMessages() },
         onMessageEvent = { eventType, message, ctaIndex ->
           sdkScope.launch {
@@ -118,7 +119,7 @@ class InAppMessagesSDK private constructor(
           }
         },
       )
-    uiController = InAppUIController(application, manager, displayer)
+    uiController = InAppUIController(application, manager, displayer, debug)
 
     sdkScope.launch {
       manager.initialize()
@@ -131,8 +132,6 @@ class InAppMessagesSDK private constructor(
         cleanupCallback = { cleanup() },
       )
     autoCleanupManager?.start()
-
-    Log.d(tag, "InAppMessagesSDK initialized with automatic background cleanup")
   }
 
   /**
@@ -141,8 +140,6 @@ class InAppMessagesSDK private constructor(
    * but can also be called manually from app's onDestroy()
    */
   private fun cleanup() {
-    Log.d(tag, "Cleaning up InAppMessagesSDK resources")
-
     // Stop the auto-cleanup manager
     autoCleanupManager?.stop()
     autoCleanupManager = null
@@ -150,8 +147,6 @@ class InAppMessagesSDK private constructor(
     uiController.stop()
     displayer.cancelPendingMessages()
     sdkScope.cancel()
-
-    Log.d(tag, "InAppMessagesSDK resources cleaned up")
   }
 
   /**
@@ -163,7 +158,6 @@ class InAppMessagesSDK private constructor(
    * and on route/view change (with currentRoute = route name).
    */
   fun showActiveMessages(currentRoute: String? = null) {
-    Log.d(tag, "Request to show active messages for route: ${currentRoute ?: "APP_OPEN"}")
     sdkScope.launch {
       manager.refreshActiveMessages(currentRoute)
     }
@@ -178,7 +172,6 @@ class InAppMessagesSDK private constructor(
     key: String,
     value: String,
   ) {
-    Log.d(tag, "Request to show messages for custom trigger: $key")
     sdkScope.launch {
       val messageToShow = manager.trigger(key, value)
       if (messageToShow != null) {
@@ -194,7 +187,6 @@ class InAppMessagesSDK private constructor(
    * @param handler Function that takes a action button code string and processes it
    */
   fun setJsActionHandler(handler: (jsCall: String) -> Unit) {
-    Log.d(tag, "Setting JS action handler")
     (displayer as? InAppMessageDisplayerImpl)?.setJsActionHandler(handler)
   }
 
@@ -209,27 +201,7 @@ class InAppMessagesSDK private constructor(
    * @param subscriber The PushNotificationSubscriber implementation
    */
   fun setPushNotificationSubscriber(subscriber: PushNotificationSubscriber) {
-    Log.d(tag, "Setting push notification subscriber")
     this.pushNotificationSubscriber = subscriber
     (displayer as? InAppMessageDisplayerImpl)?.setSubscriptionHandler(subscriber)
   }
-
-  /**
-   * Checks if the subscription bridge to the PushPushGo SDK is available.
-   * Use this to determine if SUBSCRIBE action buttons will work automatically.
-   *
-   * @return true if the bridge is available, false otherwise
-   */
-  fun isSubscriptionBridgeAvailable(): Boolean =
-    try {
-      // Check if the bridge class exists
-      Class.forName("com.pushpushgo.sdk.bridge.PushPushGoSubscriptionManager")
-      true
-    } catch (e: ClassNotFoundException) {
-      Log.d(tag, "PushPushGo subscription bridge not available")
-      false
-    } catch (e: Exception) {
-      Log.e(tag, "Error checking subscription bridge availability", e)
-      false
-    }
 }

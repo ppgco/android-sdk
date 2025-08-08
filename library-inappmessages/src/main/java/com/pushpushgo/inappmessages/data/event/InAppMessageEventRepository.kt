@@ -17,17 +17,12 @@ class InAppMessageEventRepository(
     projectId: String,
     event: InAppMessageEvent,
   ) = withContext(ioDispatcher) {
-    if (debug) {
-      Log.d("InAppEventRepo", "Sending in-app event: $event for project: $projectId")
-    }
     val response = api.sendInAppEvent(token, projectId, event)
     if (!response.isSuccessful) {
       if (debug) {
         Log.e("InAppEventRepo", "Failed to send event: ${response.code()} ${response.message()}")
       }
       throw HttpException(response)
-    } else if (debug) {
-      Log.d("InAppEventRepo", "Event sent successfully: $event")
     }
   }
 }

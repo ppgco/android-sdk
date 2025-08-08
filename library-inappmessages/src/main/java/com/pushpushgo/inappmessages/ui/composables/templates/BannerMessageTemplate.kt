@@ -68,7 +68,7 @@ fun BannerMessageTemplate(
 
             if (hasVisibleImage) {
               AsyncImage(
-                model = message.image!!.url,
+                model = message.image.url,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier =
