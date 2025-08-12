@@ -42,6 +42,12 @@ android {
   buildFeatures {
     compose = true
   }
+
+  publishing {
+    singleVariant("release") {
+      withSourcesJar()
+    }
+  }
 }
 
 dependencies {
@@ -89,7 +95,11 @@ dependencies {
 
 tasks.register<Jar>("androidSourcesJar") {
   archiveClassifier.set("sources")
-  from(android.sourceSets.getByName("main").java.srcDirs)
+  from(
+    android.sourceSets
+      .getByName("main")
+      .java.srcDirs,
+  )
 }
 
 publishing {
