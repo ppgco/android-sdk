@@ -8,6 +8,7 @@ plugins {
   id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0"
   id("org.jetbrains.kotlin.plugin.compose") version "2.2.0"
   id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
+  id("maven-publish")
 }
 
 android {
@@ -84,4 +85,23 @@ dependencies {
   testImplementation(libs.coroutines.test)
   androidTestImplementation("androidx.test.ext:junit:1.3.0")
   androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+}
+
+tasks.register<Jar>("androidSourcesJar") {
+  archiveClassifier.set("sources")
+  from(android.sourceSets.getByName("main").java.srcDirs)
+}
+
+publishing {
+  publications {
+    create<MavenPublication>("release") {
+      groupId = "com.pushpushgo"
+      artifactId = "inappmessages"
+      version = libs.versions.sdk.get()
+
+      afterEvaluate {
+        from(components["release"])
+      }
+    }
+  }
 }
