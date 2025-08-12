@@ -8,39 +8,43 @@ import com.pushpushgo.sdk.push.PushNotification
 import com.pushpushgo.sdk.push.PushNotificationDelegate
 import com.pushpushgo.sdk.utils.logDebug
 
-class HmsMessagingServiceDelegate(private val context: Context) {
+class HmsMessagingServiceDelegate(
+  private val context: Context,
+) {
+  private val preferencesHelper by lazy { SharedPreferencesHelper(context) }
 
-    private val preferencesHelper by lazy { SharedPreferencesHelper(context) }
+  private val delegate by lazy { PushNotificationDelegate(context) }
 
-    private val delegate by lazy { PushNotificationDelegate(context) }
+  fun onMessageReceived(remoteMessage: RemoteMessage) {
+    logDebug("onMessageReceived(${remoteMessage.data})")
+    delegate.onMessageReceived(
+      pushMessage = remoteMessage.toPushMessage(),
+      context = context,
+    )
+  }
 
-    fun onMessageReceived(remoteMessage: RemoteMessage) {
-        logDebug("onMessageReceived(${remoteMessage.data})")
-        delegate.onMessageReceived(
-            pushMessage = remoteMessage.toPushMessage(),
-            context = context,
-        )
-    }
+  fun onNewToken(token: String) {
+    preferencesHelper.lastHCMToken = token
+    delegate.onNewToken(token)
+  }
 
-    fun onNewToken(token: String) {
-        preferencesHelper.lastHCMToken = token
-        delegate.onNewToken(token)
-    }
-
-    private fun RemoteMessage.toPushMessage() = PushMessage(
-        from = from,
-        data = dataOfMap,
-        notification = notification?.let {
+  private fun RemoteMessage.toPushMessage() =
+    PushMessage(
+      from = from,
+      data = dataOfMap,
+      notification =
+        notification
+          ?.let {
             PushNotification(
-                title = it.title,
-                body = it.body,
-                priority = -1
+              title = it.title,
+              body = it.body,
+              priority = -1,
             )
-        }.takeIf { !it?.title.isNullOrEmpty() || !it?.body.isNullOrEmpty() }
+          }.takeIf { !it?.title.isNullOrEmpty() || !it?.body.isNullOrEmpty() },
     )
 
-    fun onDestroy() {
-        logDebug("onDestroy(${this::class.java})")
+  fun onDestroy() {
+    logDebug("onDestroy(${this::class.java})")
 //        helper.onDestroy() // on non-EMUI android killed immediately after receive message
-    }
+  }
 }

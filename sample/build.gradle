@@ -3,13 +3,13 @@ apply plugin: 'kotlin-android'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdk 34
+    compileSdk 35
 
     namespace 'com.pushpushgo.sample'
     defaultConfig {
         applicationId "com.pushpushgo.sample"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdkVersion 23
+        targetSdkVersion 35
         versionCode 10
         versionName "1.0"
 
@@ -62,7 +62,7 @@ dependencies {
     implementation libs.androidx.lifecycle
 
     implementation platform(libs.firebase.bom)
-    implementation 'com.google.firebase:firebase-messaging-ktx'
+    implementation 'com.google.firebase:firebase-messaging'
 
     implementation "com.google.guava:guava:32.1.3-android"
 }

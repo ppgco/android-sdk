@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdk 34
+    compileSdk 35
 
     namespace 'com.pushpushgo.samplejava'
     defaultConfig {
         applicationId "com.pushpushgo.samplejava"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdkVersion 23
+        targetSdkVersion 35
         versionCode 1
         versionName "1.0"
 
@@ -58,5 +58,5 @@ dependencies {
     implementation libs.androidx.lifecycle
 
     implementation platform(libs.firebase.bom)
-    implementation 'com.google.firebase:firebase-messaging-ktx'
+    implementation 'com.google.firebase:firebase-messaging'
 }

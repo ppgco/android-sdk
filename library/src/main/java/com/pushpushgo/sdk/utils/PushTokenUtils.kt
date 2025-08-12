@@ -9,28 +9,31 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-internal suspend fun getPlatformPushToken(context: Context) = withContext(Dispatchers.IO) {
+internal suspend fun getPlatformPushToken(context: Context) =
+  withContext(Dispatchers.IO) {
     when (getPlatformType()) {
-        PlatformType.FCM -> getFcmPushToken()
-        PlatformType.HCM -> getHcmPushToken(context)
+      PlatformType.FCM -> getFcmPushToken()
+      PlatformType.HCM -> getHcmPushToken(context)
     }
-}
+  }
 
-private suspend fun getFcmPushToken() = suspendCoroutine { cont ->
+private suspend fun getFcmPushToken() =
+  suspendCoroutine { cont ->
     FirebaseMessaging.getInstance().token.addOnCompleteListener {
-        if (!it.isSuccessful) {
-            val exception = it.exception ?: IllegalArgumentException("Fetching FCM registration token failed")
-            cont.resumeWithException(exception)
-        } else {
-            val token = it.result.orEmpty()
-            logDebug("FCM token length: ${token.length}")
-            cont.resumeWith(Result.success(token))
-        }
+      if (!it.isSuccessful) {
+        val exception = it.exception ?: IllegalArgumentException("Fetching FCM registration token failed")
+        cont.resumeWithException(exception)
+      } else {
+        val token = it.result.orEmpty()
+        logDebug("FCM token length: ${token.length}")
+        cont.resumeWith(Result.success(token))
+      }
     }
-}
+  }
 
-private suspend fun getHcmPushToken(context: Context) = withContext(Dispatchers.IO) {
+private suspend fun getHcmPushToken(context: Context) =
+  withContext(Dispatchers.IO) {
     val appId = AGConnectOptionsBuilder().build(context).getString("client/app_id")
 
     HmsInstanceId.getInstance(context).getToken(appId, "HCM")
-}
+  }

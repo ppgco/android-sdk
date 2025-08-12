@@ -6,9 +6,18 @@
 ![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/ppgco/android-sdk/test.yml?branch=master&style=flat-square)    
 ![GitHub tag (latest)](https://img.shields.io/github/v/tag/ppgco/android-sdk?style=flat-square)
 
+> [!IMPORTANT]
+> **Version 3.0.0**
+>
+> Introducing new **In-app messages SDK (library-inappmessages)**.
+> To know more about it visit [library-inappmessages](library-inappmessages/README.md)
+> 
+> Push notifications SDK: We recommend updating your project firebase dependencies to latest version (check below).
+> 
+
 ## Requirements
 
-- minSdkVersion: 21
+- minSdkVersion: 23
 - configured GMS or HMS in project  app
 
 ## Preparation
@@ -24,7 +33,7 @@ Groovy DSL
 // /app/build.gradle
 dependencies {
     // GMS
-    implementation platform('com.google.firebase:firebase-bom:33.1.2')
+    implementation platform('com.google.firebase:firebase-bom:34.1.0')
     implementation 'com.google.firebase:firebase-messaging'
     // HMS
     implementation 'com.huawei.agconnect:agconnect-core:1.9.1.303'
@@ -37,9 +46,9 @@ Kotlin DSL
 // /libs.versions.toml
 [versions]
 // GMS
-firebaseBom = "33.1.2"
-firebaseMessaging = "24.0.0"
-googleGmsGoogleServices = "4.4.2"
+firebaseBom = "34.1.0"
+firebaseMessaging = "25.0.0"
+googleGmsGoogleServices = "4.4.3"
 
 //HMS
 agconnectCore = "1.9.1.303"
@@ -146,7 +155,7 @@ dependencyResolutionManagement {
 
 // /libs.versions.toml
 [versions]
-ppgSdk = "2.2.2"
+ppgSdk = "3.0.0-beta.1"
 
 [libraries]
 ppg-sdk = { module = "com.github.ppgco.android-sdk:sdk", version.ref = "ppgSdk" }

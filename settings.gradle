@@ -1,25 +1,43 @@
-include ':library', ":library-no-op"
-if (!System.env.JITPACK) include ':sample', ':samplehms', ':samplejava'
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+include ':library', ":library-no-op", ":library-inappmessages"
+if (!System.env.JITPACK) include ':sample', ':samplehms', ':samplejava', ':sample-inapp'
 
 dependencyResolutionManagement {
     versionCatalogs {
         libs {
-            version('sdk', '2.1.1-SNAPSHOT')
-            version('kotlin', '1.9.24')
-            version('coroutines', '1.8.0')
+            version('sdk', '3.0.0-beta.1')
+            version('kotlin', '2.2.0')
+            version('ksp', '2.2.0-2.0.2')
+            version('coroutines', '1.10.1')
             version('kodein', '7.21.2')
             version('retrofit', '2.11.0')
-            version('moshi', '1.15.1')
-            version("work", "2.9.0")
+            version('moshi', '1.15.2')
+            version('work', "2.10.3")
+            version('compose-bom', '2025.07.00')
+            version('lifecycle', '2.9.2')
+            version('navigation', '2.9.3')
+            version('material', '1.12.0')
+            version('coil', '2.6.0')
+            version('serialization', '1.7.3')
 
             plugin('dokka', 'org.jetbrains.dokka').version("1.9.20")
-            plugin('validator', 'org.jetbrains.kotlinx.binary-compatibility-validator').version('0.14.0')
+            plugin('validator', 'org.jetbrains.kotlinx.binary-compatibility-validator').version('0.16.3')
+            plugin('ksp', 'com.google.devtools.ksp').versionRef('ksp')
+            plugin('ktlint', 'org.jlleitschuh.gradle.ktlint').version("13.0.0")
 
             library('timber', 'com.jakewharton.timber:timber:5.0.1')
 
             library('coroutines-core', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-core').versionRef('coroutines')
             library('coroutines-android', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-android').versionRef('coroutines')
             library('coroutines-guava', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-guava').versionRef('coroutines')
+            library('coroutines-test', 'org.jetbrains.kotlinx', 'kotlinx-coroutines-test').versionRef('coroutines')
+            library('kotlinx-metadata-jvm', 'org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.10.0')
 
             library('kodein', 'org.kodein.di', 'kodein-di').versionRef('kodein')
 
@@ -27,22 +45,42 @@ dependencyResolutionManagement {
             library('retrofit-moshi', 'com.squareup.retrofit2', 'converter-moshi').versionRef('retrofit')
 
             library('moshi', 'com.squareup.moshi', 'moshi').versionRef('moshi')
+            library('moshi-kotlin', 'com.squareup.moshi', 'moshi-kotlin').versionRef('moshi')
             library('moshi-codegen', 'com.squareup.moshi', 'moshi-kotlin-codegen').versionRef('moshi')
             library('moshi-adapters', 'com.squareup.moshi', 'moshi-adapters').versionRef('moshi')
 
             library('okhttp-bom', 'com.squareup.okhttp3:okhttp-bom:4.12.0')
 
-            library('firebase-bom', 'com.google.firebase:firebase-bom:33.1.0')
+            library('firebase-bom', 'com.google.firebase:firebase-bom:34.1.0')
 
             library('hms-push', 'com.huawei.hms:push:6.13.0.300')
             library('hms-agconnect', 'com.huawei.agconnect:agconnect-core:1.9.1.304')
+            library('hms-update', 'com.huawei.hms:update:5.0.2.300')
 
+            library('androidx-core-ktx', 'androidx.core:core-ktx:1.16.0')
             library('androidx-preference', 'androidx.preference:preference-ktx:1.2.1')
             library('androidx-work-runtime', 'androidx.work', 'work-runtime-ktx').versionRef("work")
             library('androidx-work-gcm', 'androidx.work', 'work-gcm').versionRef("work")
-            library('androidx-appcompat', 'androidx.appcompat:appcompat:1.6.1')
+            library('androidx-appcompat', 'androidx.appcompat:appcompat:1.7.1')
             library('androidx-constraintlayout', 'androidx.constraintlayout:constraintlayout:2.1.4')
             library('androidx-lifecycle', 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0')
+            library('androidx-lifecycle-runtime', 'androidx.lifecycle', 'lifecycle-runtime-ktx').versionRef('lifecycle')
+            library('androidx-navigation-runtime', 'androidx.navigation', 'navigation-runtime-ktx').versionRef('navigation')
+            library('androidx-navigation-common', 'androidx.navigation', 'navigation-common-ktx').versionRef('navigation')
+            
+            library('material', 'com.google.android.material', 'material').versionRef('material')
+            
+            library('compose-bom', 'androidx.compose', 'compose-bom').versionRef('compose-bom')
+            library('compose-activity', 'androidx.activity:activity-compose:1.10.1')
+            library('compose-ui', 'androidx.compose.ui', 'ui').withoutVersion()
+            library('compose-ui-tooling-preview', 'androidx.compose.ui', 'ui-tooling-preview').withoutVersion()
+            library('compose-material3', 'androidx.compose.material3', 'material3').withoutVersion()
+            library('compose-runtime', 'androidx.compose.runtime', 'runtime').withoutVersion()
+            library('compose-ui-text-fonts', 'androidx.compose.ui:ui-text-google-fonts:1.8.3')
+            
+            library('coil-compose', 'io.coil-kt', 'coil-compose').versionRef('coil')
+            
+            library('kotlinx-serialization', 'org.jetbrains.kotlinx', 'kotlinx-serialization-json').versionRef('serialization')
         }
     }
 }
