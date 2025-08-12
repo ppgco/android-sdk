@@ -109,7 +109,6 @@ internal class InAppMessageManagerImpl(
     scheduleRefreshJob =
       scope.launch(Dispatchers.IO) {
         try {
-
           while (true) {
             delay(scheduleRefreshInterval)
 
@@ -165,8 +164,9 @@ internal class InAppMessageManagerImpl(
       }
 
       // 1. Check permanent dismissal (for one-time messages)
-      if (message.settings.showAgain == ShowAgainType.NEVER && persistence.isMessageDismissed(
-          message.id
+      if (message.settings.showAgain == ShowAgainType.NEVER &&
+        persistence.isMessageDismissed(
+          message.id,
         )
       ) {
         if (debug) {
@@ -188,7 +188,7 @@ internal class InAppMessageManagerImpl(
         if (debug) {
           Log.d(
             tag,
-            "Message [${message.id}] audience mismatch (${message.audience.userType}) - not eligible"
+            "Message [${message.id}] audience mismatch (${message.audience.userType}) - not eligible",
           )
         }
         return@withContext false
@@ -211,7 +211,7 @@ internal class InAppMessageManagerImpl(
             if (debug) {
               Log.d(
                 tag,
-                "Message [${message.id}] in cooldown: ${elapsedSinceLastDismissal}ms/${requiredCooldownMs}ms"
+                "Message [${message.id}] in cooldown: ${elapsedSinceLastDismissal}ms/${requiredCooldownMs}ms",
               )
             }
             return@withContext false // Still in cooldown since last dismissal
@@ -284,9 +284,10 @@ internal class InAppMessageManagerImpl(
               val notExpired =
                 msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
               val correctDeviceType =
-                msg.audience.device.contains(currentDeviceType) || msg.audience.device.contains(
-                  DeviceType.ALL
-                )
+                msg.audience.device.contains(currentDeviceType) ||
+                  msg.audience.device.contains(
+                    DeviceType.ALL,
+                  )
               val correctOsType =
                 msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
               enabled && notExpired && correctDeviceType && correctOsType

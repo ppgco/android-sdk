@@ -1,9 +1,12 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 plugins {
   id("com.android.library")
   id("org.jetbrains.kotlin.android")
-  id("com.google.devtools.ksp") version "2.1.21-2.0.1"
-  id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21"
-  id("org.jetbrains.kotlin.plugin.compose") version "2.1.21"
+  id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+  id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0"
+  id("org.jetbrains.kotlin.plugin.compose") version "2.2.0"
   id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
 }
 
@@ -25,13 +28,15 @@ android {
     }
   }
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
   }
-  kotlinOptions {
-    jvmTarget = "11"
-    languageVersion = "2.1"
-    apiVersion = "2.1"
+  kotlin {
+    compilerOptions {
+      jvmTarget = JvmTarget.fromTarget("17")
+      languageVersion = KotlinVersion.fromVersion("2.1")
+      apiVersion = KotlinVersion.fromVersion("2.1")
+    }
   }
   buildFeatures {
     compose = true
@@ -40,43 +45,43 @@ android {
 
 dependencies {
   // Core & Appcompat
-  implementation("androidx.core:core-ktx:1.16.0")
-  implementation("androidx.appcompat:appcompat:1.7.1")
-  implementation("com.google.android.material:material:1.12.0")
-  implementation("androidx.preference:preference-ktx:1.2.1")
+  implementation(libs.androidx.core.ktx)
+  implementation(libs.androidx.appcompat)
+  implementation(libs.material)
+  implementation(libs.androidx.preference)
 
   // Lifecycle & Navigation
-  implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.2")
-  implementation("androidx.navigation:navigation-runtime-ktx:2.9.3")
-  implementation("androidx.navigation:navigation-common-ktx:2.9.3")
+  implementation(libs.androidx.lifecycle.runtime)
+  implementation(libs.androidx.navigation.runtime)
+  implementation(libs.androidx.navigation.common)
 
   // Compose
-  implementation(platform("androidx.compose:compose-bom:2025.07.00"))
-  implementation("androidx.activity:activity-compose:1.10.1")
-  implementation("androidx.compose.ui:ui")
-  implementation("androidx.compose.ui:ui-tooling-preview")
-  implementation("androidx.compose.material3:material3")
-  implementation("androidx.compose.runtime:runtime")
-  implementation("androidx.compose.ui:ui-text-google-fonts:1.8.3") // For Google Fonts
+  implementation(platform(libs.compose.bom))
+  implementation(libs.compose.activity)
+  implementation(libs.compose.ui)
+  implementation(libs.compose.ui.tooling.preview)
+  implementation(libs.compose.material3)
+  implementation(libs.compose.runtime)
+  implementation(libs.compose.ui.text.fonts) // Google Fonts
 
   // Image Loading
-  implementation("io.coil-kt:coil-compose:2.6.0")
+  implementation(libs.coil.compose)
 
   // Serialization
-  implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
-  ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+  implementation(libs.moshi.kotlin)
+  ksp(libs.moshi.codegen)
+  implementation(libs.kotlinx.serialization)
 
   // Networking
-  implementation("com.squareup.retrofit2:retrofit:2.11.0")
-  implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-  implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+  implementation(libs.retrofit)
+  implementation(libs.retrofit.moshi)
+  implementation(platform(libs.okhttp.bom))
   implementation("com.squareup.okhttp3:logging-interceptor")
 
   // Testing
   testImplementation("junit:junit:4.13.2")
-  testImplementation("io.mockk:mockk:1.13.10")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+  testImplementation("io.mockk:mockk:1.13.16")
+  testImplementation(libs.coroutines.test)
   androidTestImplementation("androidx.test.ext:junit:1.3.0")
   androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 }

@@ -15,7 +15,6 @@ class PushNotificationStatusProvider(
   private val context: Context,
 ) {
   companion object {
-
     // These constants match the ones in PushPushGo SDK's SharedPreferencesHelper
     private const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"
     private const val ARE_NOTIFICATIONS_BLOCKED = "_PushPushGoSDK_notifications_blocked_"

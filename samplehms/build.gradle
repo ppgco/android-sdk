@@ -3,13 +3,13 @@ apply plugin: 'kotlin-android'
 apply plugin: 'com.huawei.agconnect'
 
 android {
-    compileSdk 34
+    compileSdk 35
 
     namespace 'com.pushpushgo.sample'
     defaultConfig {
         applicationId "co.stppg.huawei"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdkVersion 23
+        targetSdkVersion 35
         versionCode 1
         versionName "1.0"
 

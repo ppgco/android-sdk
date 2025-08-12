@@ -13,6 +13,8 @@ Android SDK for integrating in-app messages into your applications. Provides adv
 
 ## Installation
 
+To enable Pop-ups or In-app messages in your PushPushGo project, contact our support or you account manager. 
+
 ### Gradle
 
 Add the Jitpack repository to your project's `settings.gradle` file:
@@ -30,12 +32,12 @@ Then add the dependency in your app module's `build.gradle` file:
 
 ```groovy
 dependencies {
-    implementation 'com.github.ppgco:android-sdk:3.0.0'
+    implementation 'com.github.ppgco:android-sdk:3.0.0-beta.1'
 }
 ```
 
 ### Requirements
-- Android API 21+ (Android 5.0+)
+- Android API 23+ (Android 6.0+)
 - Kotlin 1.6+
 - Jetpack Compose (the library uses Compose for UI rendering)
 
