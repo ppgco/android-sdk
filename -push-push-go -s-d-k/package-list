@@ -1,5 +1,12 @@
 $dokka.format:html-v1
 $dokka.linkExtension:html
+$dokka.location:com.pushpushgo.sdk.bridge////PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.bridge/index.html
+$dokka.location:com.pushpushgo.sdk.bridge/PushPushGoSubscriptionBridgeManager.Companion///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.bridge/-push-push-go-subscription-bridge-manager/-companion/index.html
+$dokka.location:com.pushpushgo.sdk.bridge/PushPushGoSubscriptionBridgeManager///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.bridge/-push-push-go-subscription-bridge-manager/index.html
+$dokka.location:com.pushpushgo.sdk.bridge/PushPushGoSubscriptionBridgeManager/PushPushGoSubscriptionBridgeManager/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.bridge/-push-push-go-subscription-bridge-manager/-push-push-go-subscription-bridge-manager.html
+$dokka.location:com.pushpushgo.sdk.bridge/PushPushGoSubscriptionBridgeManager/requestSubscription/#android.content.Context/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.bridge/-push-push-go-subscription-bridge-manager/request-subscription.html
+$dokka.location:com.pushpushgo.sdk.bridge/PushSubscriptionBridgeManager///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.bridge/-push-subscription-bridge-manager/index.html
+$dokka.location:com.pushpushgo.sdk.bridge/PushSubscriptionBridgeManager/requestSubscription/#android.content.Context/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.bridge/-push-subscription-bridge-manager/request-subscription.html
 $dokka.location:com.pushpushgo.sdk.dto////PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/index.html
 $dokka.location:com.pushpushgo.sdk.dto/PPGoNotification///PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/index.html
 $dokka.location:com.pushpushgo.sdk.dto/PPGoNotification/PPGoNotification/#kotlin.String?#kotlin.String?#kotlin.Int#kotlin.String#kotlin.String?/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk.dto/-p-p-go-notification/-p-p-go-notification.html
@@ -64,6 +71,7 @@ $dokka.location:com.pushpushgo.sdk/PushPushGo/setCustomClickIntentFlags/#kotlin.
 $dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
 $dokka.location:com.pushpushgo.sdk/PushPushGo/unregisterSubscriber/#kotlin.String#kotlin.String#kotlin.String/PointingToDeclaration/-push-push-go -s-d-k/com.pushpushgo.sdk/-push-push-go/unregister-subscriber.html
 com.pushpushgo.sdk
+com.pushpushgo.sdk.bridge
 com.pushpushgo.sdk.dto
 com.pushpushgo.sdk.exception
 com.pushpushgo.sdk.push.service
