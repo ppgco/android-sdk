@@ -35,7 +35,7 @@ import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
  * "REVIEW_FOR_DISCOUNT"
  */
 @Composable
-fun ReviewForDiscountTemplate(
+internal fun TemplateReviewForDiscount(
   message: InAppMessage,
   onAction: (InAppMessageAction) -> Unit,
   onDismiss: () -> Unit,

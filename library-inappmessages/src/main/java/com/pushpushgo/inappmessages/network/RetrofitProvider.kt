@@ -8,7 +8,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
-object RetrofitProvider {
+internal object RetrofitProvider {
   fun buildRetrofit(baseUrl: String): Retrofit {
     val okHttpClient =
       OkHttpClient

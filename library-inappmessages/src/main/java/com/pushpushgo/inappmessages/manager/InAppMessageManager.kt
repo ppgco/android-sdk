@@ -3,7 +3,7 @@ package com.pushpushgo.inappmessages.manager
 import com.pushpushgo.inappmessages.model.InAppMessage
 import kotlinx.coroutines.flow.Flow
 
-interface InAppMessageManager {
+internal interface InAppMessageManager {
   val messagesFlow: Flow<List<InAppMessage>>
 
   suspend fun initialize()

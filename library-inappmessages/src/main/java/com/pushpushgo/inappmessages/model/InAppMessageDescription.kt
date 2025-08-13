@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
  * Data class representing the description properties of an in-app message.
  */
 @JsonClass(generateAdapter = true)
-data class InAppMessageDescription(
+internal data class InAppMessageDescription(
   @Json(name = "text") val text: String,
   @Json(name = "fontSize") val fontSize: Int,
   @Json(name = "color") val color: String,

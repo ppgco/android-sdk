@@ -2,7 +2,7 @@ package com.pushpushgo.inappmessages.persistence
 
 import com.pushpushgo.inappmessages.model.InAppMessage
 
-interface InAppMessagePersistence {
+internal interface InAppMessagePersistence {
   fun isMessageDismissed(messageId: String): Boolean
 
   fun markMessageDismissed(messageId: String)

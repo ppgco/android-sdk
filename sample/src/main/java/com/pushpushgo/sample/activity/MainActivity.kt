@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.register).setOnClickListener {
             Futures.addCallback(ppg.createSubscriber(), object : FutureCallback<String> {
-                override fun onSuccess(result: String?) {
+                override fun onSuccess(result: String) {
                     Toast.makeText(this@MainActivity, "Subscribed! $result", Toast.LENGTH_SHORT).show()
                 }
 
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.content).text = "Status: " + (if (PushPushGo.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
 
             Futures.addCallback(ppg.getPushToken(), object : FutureCallback<String> {
-                override fun onSuccess(result: String?) {
+                override fun onSuccess(result: String) {
                     findViewById<TextView>(R.id.token).text = result
                 }
 

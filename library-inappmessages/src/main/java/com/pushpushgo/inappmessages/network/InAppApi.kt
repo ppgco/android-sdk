@@ -23,7 +23,7 @@ internal interface InAppListGetApi {
   ): Response<InAppMessagesResponse>
 }
 
-interface InAppEventApi {
+internal interface InAppEventApi {
   @POST("/v1/android/{projectId}/inapp/event")
   suspend fun sendInAppEvent(
     @Header("X-Token") token: String,

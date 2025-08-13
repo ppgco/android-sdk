@@ -11,7 +11,7 @@ import com.pushpushgo.inappmessages.model.UserAudienceType
  *
  * This provides a bridge to the push notification SDK without creating a direct dependency.
  */
-class PushNotificationStatusProvider(
+internal class PushNotificationStatusProvider(
   private val context: Context,
 ) {
   companion object {

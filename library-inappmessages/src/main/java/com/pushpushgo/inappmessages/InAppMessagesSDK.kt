@@ -79,8 +79,8 @@ class InAppMessagesSDK private constructor(
       application: Application,
       projectId: String,
       apiKey: String,
-      baseUrl: String? = null,
       debug: Boolean = false,
+      baseUrl: String? = null,
       pushNotificationSubscriber: PushNotificationSubscriber? = null,
     ): InAppMessagesSDK =
       INSTANCE ?: synchronized(this) {

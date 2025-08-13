@@ -6,7 +6,7 @@ import com.squareup.moshi.Json
  * Enum representing the font style for message components.
  * 'NORMAL' corresponds to 'unstyled'.
  */
-enum class FontStyle {
+internal enum class FontStyle {
   @Json(name = "normal")
   NORMAL,
 

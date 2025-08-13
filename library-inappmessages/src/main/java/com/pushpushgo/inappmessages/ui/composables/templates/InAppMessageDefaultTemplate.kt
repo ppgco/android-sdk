@@ -30,7 +30,7 @@ import com.pushpushgo.inappmessages.ui.composables.common.parsePadding
 import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
 
 @Composable
-fun InAppMessageDefaultTemplate(
+internal fun InAppMessageDefaultTemplate(
   message: InAppMessage,
   onDismiss: () -> Unit,
   onAction: (InAppMessageAction) -> Unit,

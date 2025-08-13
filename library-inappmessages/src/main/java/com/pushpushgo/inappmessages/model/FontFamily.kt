@@ -5,7 +5,7 @@ import com.squareup.moshi.Json
 /**
  * Enum representing the font families that can be received from the backend.
  */
-enum class FontFamily {
+internal enum class FontFamily {
   @Json(name = "Roboto")
   ROBOTO,
 

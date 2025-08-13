@@ -21,10 +21,10 @@ import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
 import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
-import com.pushpushgo.inappmessages.ui.composables.templates.BannerMessageTemplate
 import com.pushpushgo.inappmessages.ui.composables.templates.InAppMessageDefaultTemplate
-import com.pushpushgo.inappmessages.ui.composables.templates.ReviewForDiscountTemplate
-import com.pushpushgo.inappmessages.ui.composables.templates.RichMessageTemplate
+import com.pushpushgo.inappmessages.ui.composables.templates.TemplateBannerMessage
+import com.pushpushgo.inappmessages.ui.composables.templates.TemplateReviewForDiscount
+import com.pushpushgo.inappmessages.ui.composables.templates.TemplateRichMessage
 import com.pushpushgo.inappmessages.utils.DefaultPushNotificationSubscriber
 import com.pushpushgo.inappmessages.utils.PushNotificationSubscriber
 import kotlinx.coroutines.CoroutineScope
@@ -350,7 +350,7 @@ internal class InAppMessageDisplayerImpl(
 
         when (message.template) {
           "PAYWALL_PUBLISH", "WEBSITE_TO_HOME_SCREEN" -> {
-            RichMessageTemplate(
+            TemplateRichMessage(
               message = message,
               onDismiss = { dismissMessage(message) },
               onAction = onAction,
@@ -358,7 +358,7 @@ internal class InAppMessageDisplayerImpl(
           }
 
           "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> {
-            BannerMessageTemplate(
+            TemplateBannerMessage(
               message = message,
               onDismiss = { dismissMessage(message) },
               onAction = onAction,
@@ -366,7 +366,7 @@ internal class InAppMessageDisplayerImpl(
           }
 
           "REVIEW_FOR_DISCOUNT" -> {
-            ReviewForDiscountTemplate(
+            TemplateReviewForDiscount(
               message = message,
               onDismiss = { dismissMessage(message) },
               onAction = onAction,

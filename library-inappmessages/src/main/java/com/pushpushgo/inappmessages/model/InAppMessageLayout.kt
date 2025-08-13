@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
  * Data class representing the layout properties of an in-app message.
  */
 @JsonClass(generateAdapter = true)
-data class InAppMessageLayout(
+internal data class InAppMessageLayout(
   @Json(name = "placement")
   val placement: Placement,
   @Json(name = "margin")

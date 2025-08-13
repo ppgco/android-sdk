@@ -5,7 +5,7 @@ import com.squareup.moshi.Json
 /**
  * Enum representing the target for a redirect action.
  */
-enum class TargetType {
+internal enum class TargetType {
   @Json(name = "_self")
   SELF,
 

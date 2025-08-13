@@ -34,7 +34,7 @@ import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
  * "UNBLOCK_NOTIFICATIONS", "LOW_STOCK"
  */
 @Composable
-fun BannerMessageTemplate(
+internal fun TemplateBannerMessage(
   message: InAppMessage,
   onDismiss: () -> Unit,
   onAction: (InAppMessageAction) -> Unit,

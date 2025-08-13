@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
  * Data class representing the audience targeting rules for an in-app message.
  */
 @JsonClass(generateAdapter = true)
-data class InAppMessageAudience(
+internal data class InAppMessageAudience(
   @Json(name = "userType") val userType: UserAudienceType,
   @Json(name = "device") val device: List<DeviceType>,
   @Json(name = "userAgent") val userAgent: List<String>,

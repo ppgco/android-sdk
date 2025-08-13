@@ -1,15 +1,17 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'com.huawei.agconnect'
 
 android {
-    compileSdk 35
+    compileSdk 36
 
     namespace 'com.pushpushgo.sample'
     defaultConfig {
         applicationId "co.stppg.huawei"
         minSdkVersion 23
-        targetSdkVersion 35
+        targetSdkVersion 36
         versionCode 1
         versionName "1.0"
 
@@ -35,9 +37,11 @@ android {
         sourceCompatibility JavaLanguageVersion.of(17)
         targetCompatibility JavaLanguageVersion.of(17)
     }
-    kotlinOptions {
-        jvmTarget = JavaLanguageVersion.of(17)
+  kotlin {
+    compilerOptions {
+      jvmTarget = JvmTarget.fromTarget("17")
     }
+  }
 
     buildTypes {
         release {

@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
  * Data class representing a single action (button) in an in-app message.
  */
 @JsonClass(generateAdapter = true)
-data class InAppMessageAction(
+internal data class InAppMessageAction(
   @Json(name = "enabled") val enabled: Boolean,
   @Json(name = "actionType") val actionType: InAppActionType,
   @Json(name = "url") val url: String?,

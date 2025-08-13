@@ -5,7 +5,7 @@ import com.squareup.moshi.JsonClass
 import java.time.ZonedDateTime
 
 // --- Enums ---
-enum class UserAudienceType {
+internal enum class UserAudienceType {
   @Json(name = "ALL")
   ALL,
 
@@ -19,7 +19,7 @@ enum class UserAudienceType {
   NOTIFICATIONS_BLOCKED,
 }
 
-enum class DeviceType {
+internal enum class DeviceType {
   @Json(name = "ALL")
   ALL,
 
@@ -36,7 +36,7 @@ enum class DeviceType {
   OTHER,
 }
 
-enum class OSType {
+internal enum class OSType {
   @Json(name = "ALL")
   ALL,
 
@@ -59,9 +59,9 @@ enum class OSType {
   OTHER,
 }
 
-enum class InAppMessageDisplayType { MODAL, BANNER, CARD, FULLSCREEN }
+internal enum class InAppMessageDisplayType { MODAL, BANNER, CARD, FULLSCREEN }
 
-enum class TriggerType {
+internal enum class TriggerType {
   @Json(name = "ENTER")
   ENTER,
 
@@ -80,13 +80,13 @@ enum class TriggerType {
 
 // --- Data classes ---
 
-data class Schedule(
+internal data class Schedule(
   val startTime: ZonedDateTime? = null,
   val endTime: ZonedDateTime? = null,
 )
 
 @JsonClass(generateAdapter = true)
-data class InAppMessage(
+internal data class InAppMessage(
   @Json(name = "id")
   val id: String,
   @Json(name = "name")

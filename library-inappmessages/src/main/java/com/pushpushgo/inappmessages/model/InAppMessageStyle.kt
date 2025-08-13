@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
  * Data class representing the style properties of an in-app message.
  */
 @JsonClass(generateAdapter = true)
-data class InAppMessageStyle(
+internal data class InAppMessageStyle(
   @Json(name = "backgroundColor") val backgroundColor: String,
   @Json(name = "borderRadius") val borderRadius: String,
   @Json(name = "border") val border: Boolean,

@@ -19,11 +19,11 @@ tasks.named("dokkaHtml") {
 
 android {
     namespace 'com.pushpushgo.sdk'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         minSdk 23
-        targetSdk 35
+        targetSdk 36
 
         consumerProguardFiles("ppgo-sdk.pro")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -90,10 +90,10 @@ dependencies {
 
     // testing
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'io.mockk:mockk:1.13.16'
-    testImplementation 'org.json:json:20240303'
+    testImplementation 'io.mockk:mockk:1.14.5'
+    testImplementation 'org.json:json:20250517'
     testImplementation 'androidx.test.ext:junit-ktx:1.3.0'
-    testImplementation 'org.robolectric:robolectric:4.12.2'
+    testImplementation 'org.robolectric:robolectric:4.15.1'
 
     testImplementation platform(libs.firebase.bom)
     testImplementation 'com.google.firebase:firebase-messaging'

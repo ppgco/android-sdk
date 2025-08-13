@@ -5,7 +5,7 @@ import android.content.res.Configuration
 import com.pushpushgo.inappmessages.model.DeviceType
 import com.pushpushgo.inappmessages.model.OSType
 
-object DeviceInfoProvider {
+internal object DeviceInfoProvider {
   fun getCurrentDeviceType(context: Context): DeviceType {
     val screenLayout = context.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
     return when (screenLayout) {

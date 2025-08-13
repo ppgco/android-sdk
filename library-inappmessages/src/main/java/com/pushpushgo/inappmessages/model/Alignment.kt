@@ -5,7 +5,7 @@ import com.squareup.moshi.Json
 /**
  * Enum representing the text alignment for message components.
  */
-enum class Alignment {
+internal enum class Alignment {
   @Json(name = "left")
   LEFT,
 

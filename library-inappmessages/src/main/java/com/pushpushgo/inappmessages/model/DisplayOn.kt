@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
  * Data class representing a specific path/route where a message can be displayed.
  */
 @JsonClass(generateAdapter = true)
-data class DisplayOn(
+internal data class DisplayOn(
   @Json(name = "display") val display: Boolean,
   @Json(name = "path") val path: String,
 )

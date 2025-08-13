@@ -5,7 +5,7 @@ import com.squareup.moshi.Json
 /**
  * Enum representing the type of action to be performed by an in-app message button.
  */
-enum class InAppActionType {
+internal enum class InAppActionType {
   @Json(name = "SUBSCRIBE")
   SUBSCRIBE,
 

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
@@ -6,12 +8,12 @@ plugins {
 }
 
 android {
-    compileSdk 34
+    compileSdk 36
 
     namespace 'com.pushpushgo.sdk'
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 36
     }
 
     buildTypes {
@@ -28,9 +30,12 @@ android {
         targetCompatibility JavaLanguageVersion.of(17)
     }
 
-    kotlinOptions {
-        jvmTarget = JavaLanguageVersion.of(17)
+  kotlin {
+    compilerOptions {
+      jvmTarget = JvmTarget.fromTarget("17")
     }
+  }
+
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -44,7 +49,7 @@ dependencies {
     compileOnly platform(libs.firebase.bom)
     compileOnly 'com.google.firebase:firebase-messaging'
 
-    api "com.google.guava:guava:32.1.3-android"
+    api "com.google.guava:guava:33.4.8-android"
 }
 
 tasks.register('androidSourcesJar', Jar) {

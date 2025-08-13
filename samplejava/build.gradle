@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdk 35
+    compileSdk 36
 
     namespace 'com.pushpushgo.samplejava'
     defaultConfig {
         applicationId "com.pushpushgo.samplejava"
         minSdkVersion 23
-        targetSdkVersion 35
+        targetSdkVersion 36
         versionCode 1
         versionName "1.0"
 

@@ -32,7 +32,7 @@ Then add the dependency in your app module's `build.gradle` file:
 
 ```groovy
 dependencies {
-    implementation 'com.github.ppgco:android-sdk:3.0.0-beta.1'
+    implementation 'com.github.ppgco.android-sdk:inappmessages:3.0.0'
 }
 ```
 

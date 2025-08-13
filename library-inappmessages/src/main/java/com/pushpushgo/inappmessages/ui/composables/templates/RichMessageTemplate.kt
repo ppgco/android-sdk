@@ -32,7 +32,7 @@ import com.pushpushgo.inappmessages.ui.composables.common.pxToDp
  * "WEBSITE_TO_HOME_SCREEN", "PAYWALL_PUBLISH"
  */
 @Composable
-fun RichMessageTemplate(
+internal fun TemplateRichMessage(
   message: InAppMessage,
   onDismiss: () -> Unit,
   onAction: (InAppMessageAction) -> Unit,

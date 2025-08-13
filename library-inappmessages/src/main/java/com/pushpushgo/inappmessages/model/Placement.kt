@@ -5,7 +5,7 @@ import com.squareup.moshi.Json
 /**
  * Enum representing the placement of the in-app message on the screen.
  */
-enum class Placement {
+internal enum class Placement {
   @Json(name = "TOP")
   TOP,
 

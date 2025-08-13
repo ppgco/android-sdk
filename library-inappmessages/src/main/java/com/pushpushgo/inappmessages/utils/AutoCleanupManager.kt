@@ -13,7 +13,7 @@ import android.os.Looper
  * This follows the Single Responsibility Principle by extracting
  * the lifecycle management logic from the main SDK class.
  */
-class AutoCleanupManager(
+internal class AutoCleanupManager(
   private val application: Application,
   private val cleanupCallback: () -> Unit,
   private val backgroundTimeoutMs: Long = DEFAULT_BACKGROUND_TIMEOUT_MS,

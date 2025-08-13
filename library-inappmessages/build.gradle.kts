@@ -13,7 +13,7 @@ plugins {
 
 android {
   namespace = "com.pushpushgo.inappmessages"
-  compileSdk = 35
+  compileSdk = 36
 
   defaultConfig {
     minSdk = 26
@@ -87,7 +87,7 @@ dependencies {
 
   // Testing
   testImplementation("junit:junit:4.13.2")
-  testImplementation("io.mockk:mockk:1.13.16")
+  testImplementation("io.mockk:mockk:1.14.5")
   testImplementation(libs.coroutines.test)
   androidTestImplementation("androidx.test.ext:junit:1.3.0")
   androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")

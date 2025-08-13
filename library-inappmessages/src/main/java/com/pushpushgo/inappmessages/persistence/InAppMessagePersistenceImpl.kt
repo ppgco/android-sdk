@@ -11,7 +11,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
-class InAppMessagePersistenceImpl(
+internal class InAppMessagePersistenceImpl(
   context: Context,
   private val debug: Boolean = false,
   private val moshi: Moshi =

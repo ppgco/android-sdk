@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
-class InAppMessageEventRepository(
+internal class InAppMessageEventRepository(
   private val api: InAppEventApi,
   private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
   private val debug: Boolean = false,
