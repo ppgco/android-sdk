@@ -67,7 +67,7 @@ internal enum class PlatformType {
   WEB,
 
   @Json(name = "MOBILE")
-  MOBILE
+  MOBILE,
 }
 
 internal enum class InAppMessageDisplayType { MODAL, BANNER, CARD, FULLSCREEN }
