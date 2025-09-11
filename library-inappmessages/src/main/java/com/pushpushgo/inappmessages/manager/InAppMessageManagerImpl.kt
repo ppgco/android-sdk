@@ -5,6 +5,7 @@ import android.util.Log
 import com.pushpushgo.inappmessages.model.DeviceType
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.OSType
+import com.pushpushgo.inappmessages.model.PlatformType
 import com.pushpushgo.inappmessages.model.ShowAgainType
 import com.pushpushgo.inappmessages.model.TriggerType
 import com.pushpushgo.inappmessages.persistence.InAppMessagePersistence
@@ -290,7 +291,8 @@ internal class InAppMessageManagerImpl(
                   )
               val correctOsType =
                 msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
-              enabled && notExpired && correctDeviceType && correctOsType
+              val correctPlatform = msg.audience.platform == PlatformType.MOBILE || msg.audience.platform == PlatformType.ALL
+              enabled && notExpired && correctDeviceType && correctOsType && correctPlatform
             }
 
           val finalEligibleMessages = mutableListOf<InAppMessage>()

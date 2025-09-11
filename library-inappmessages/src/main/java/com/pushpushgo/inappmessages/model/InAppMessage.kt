@@ -59,6 +59,17 @@ internal enum class OSType {
   OTHER,
 }
 
+internal enum class PlatformType {
+  @Json(name = "ALL")
+  ALL,
+
+  @Json(name = "WEB")
+  WEB,
+
+  @Json(name = "MOBILE")
+  MOBILE
+}
+
 internal enum class InAppMessageDisplayType { MODAL, BANNER, CARD, FULLSCREEN }
 
 internal enum class TriggerType {

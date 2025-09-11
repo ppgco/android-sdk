@@ -12,4 +12,5 @@ internal data class InAppMessageAudience(
   @Json(name = "device") val device: List<DeviceType>,
   @Json(name = "userAgent") val userAgent: List<String>,
   @Json(name = "osType") val osType: List<OSType>,
+  @Json(name = "platform") val platform: PlatformType
 )
