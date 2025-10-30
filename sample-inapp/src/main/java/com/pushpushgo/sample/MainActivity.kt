@@ -22,6 +22,7 @@ class MainActivity : ComponentActivity() {
       projectId = BuildConfig.PPG_PROJECT_ID,
       apiKey = BuildConfig.PPG_API_KEY,
       debug = true,
+      baseUrl = "https://api.master1.qappg.co",
     )
 
     enableEdgeToEdge()

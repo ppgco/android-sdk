@@ -11,7 +11,7 @@ if (!System.env.JITPACK) include ':sample', ':samplehms', ':samplejava', ':sampl
 dependencyResolutionManagement {
     versionCatalogs {
         libs {
-            version('sdk', '3.0.1')
+            version('sdk', '3.0.2')
             version('kotlin', '2.2.0')
             version('ksp', '2.2.0-2.0.2')
             version('coroutines', '1.10.1')
@@ -75,6 +75,7 @@ dependencyResolutionManagement {
             library('compose-ui', 'androidx.compose.ui', 'ui').withoutVersion()
             library('compose-ui-tooling-preview', 'androidx.compose.ui', 'ui-tooling-preview').withoutVersion()
             library('compose-material3', 'androidx.compose.material3', 'material3').withoutVersion()
+            library('compose-material-icons', 'androidx.compose.material', 'material-icons-core').withoutVersion()
             library('compose-runtime', 'androidx.compose.runtime', 'runtime').withoutVersion()
             library('compose-ui-text-fonts', 'androidx.compose.ui:ui-text-google-fonts:1.8.3')
             

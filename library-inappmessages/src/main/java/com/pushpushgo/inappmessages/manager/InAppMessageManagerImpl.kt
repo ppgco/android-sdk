@@ -68,22 +68,11 @@ internal class InAppMessageManagerImpl(
         Log.d(tag, "Initializing InAppMessageManager...")
       }
 
-      // Fetch messages in IO context
-      val messages =
-        withContext(Dispatchers.IO) {
-          repository.fetchMessages()
-        }
-
-      if (debug) {
-        Log.d(tag, "Fetched ${messages.size} messages from API")
-      }
-
-      // Update collections
-      allMessages.clear()
-      allMessages.addAll(messages)
+      // Fetch messages from API (with cache support)
+      refreshMessagesFromApi()
 
       // Build trigger map and refresh active messages
-      buildTriggerMap(messages)
+      buildTriggerMap(allMessages)
       refreshActiveMessages()
 
       // Start periodic schedule checks
@@ -99,8 +88,36 @@ internal class InAppMessageManagerImpl(
   }
 
   /**
-   * Start a periodic job to refresh message schedules
+   * Refreshes messages from API and updates internal collections
+   * Uses If-None-Match header for caching optimization
+   */
+  private suspend fun refreshMessagesFromApi() {
+    try {
+      val messages =
+        withContext(Dispatchers.IO) {
+          repository.fetchMessages()
+        }
+
+      if (debug) {
+        Log.d(tag, "Fetched ${messages.size} messages from API")
+      }
+
+      // Update collections
+      allMessages.clear()
+      allMessages.addAll(messages)
+
+      // Rebuild trigger map with new messages
+      buildTriggerMap(messages)
+    } catch (e: Exception) {
+      if (e is CancellationException) throw e
+      Log.e(tag, "Error refreshing messages from API: ${e.message}", e)
+    }
+  }
+
+  /**
+   * Start a periodic job to refresh messages from API and update active message schedules
    * This runs on a background thread to avoid blocking the main thread
+   * Uses If-None-Match caching to minimize network overhead
    */
   private fun startScheduleRefresh() {
     // Cancel any existing job
@@ -115,6 +132,14 @@ internal class InAppMessageManagerImpl(
 
             // Don't block on refresh, just log and continue if there's an error
             try {
+              if (debug) {
+                Log.d(tag, "Periodic refresh: fetching messages from API...")
+              }
+
+              // Refresh messages from API (with cache support via If-None-Match)
+              refreshMessagesFromApi()
+
+              // Then refresh active messages based on updated data
               refreshActiveMessages(currentRoute)
             } catch (e: Exception) {
               Log.e(tag, "Error during periodic schedule refresh: ${e.message}")
