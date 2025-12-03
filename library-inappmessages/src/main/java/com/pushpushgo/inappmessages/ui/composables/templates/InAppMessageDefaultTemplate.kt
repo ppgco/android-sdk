@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -17,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
 import com.pushpushgo.inappmessages.ui.composables.common.CloseButton
@@ -102,15 +102,11 @@ internal fun InAppMessageDefaultTemplate(
       }
     }
 
-    val closeButtonSize = message.style.closeIconWidth.pxToDp
-    val offset = (closeButtonSize / 4)
-    CloseButton(
-      style = message.style,
-      onDismiss = onDismiss,
-      modifier =
-        Modifier
-          .align(Alignment.TopEnd)
-          .offset(x = offset, y = -offset),
-    )
+    Box(modifier = Modifier.align(Alignment.TopEnd).zIndex(1f)) {
+      CloseButton(
+        style = message.style,
+        onDismiss = onDismiss,
+      )
+    }
   }
 }

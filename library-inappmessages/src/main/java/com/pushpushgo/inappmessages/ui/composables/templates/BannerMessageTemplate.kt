@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -15,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.pushpushgo.inappmessages.model.InAppMessage
 import com.pushpushgo.inappmessages.model.InAppMessageAction
@@ -50,14 +50,12 @@ internal fun TemplateBannerMessage(
           .padding(horizontal = 8.pxToDp, vertical = 4.pxToDp),
     ) {
       Box(modifier = Modifier.padding(if (message.style.border) message.style.borderWidth.pxToDp else 0.dp)) {
-        CloseButton(
-          style = message.style,
-          onDismiss = onDismiss,
-          modifier =
-            Modifier
-              .align(Alignment.TopEnd)
-              .offset(x = (-4 - message.style.borderWidth).dp, y = (2 + message.style.borderWidth).dp),
-        )
+        Box(modifier = Modifier.align(Alignment.TopEnd).zIndex(1f)) {
+          CloseButton(
+            style = message.style,
+            onDismiss = onDismiss,
+          )
+        }
 
         Box(modifier = Modifier.padding(parsePadding(message.layout.padding))) {
           Row(

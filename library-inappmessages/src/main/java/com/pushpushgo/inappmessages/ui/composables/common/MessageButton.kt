@@ -2,10 +2,13 @@ package com.pushpushgo.inappmessages.ui.composables.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -16,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -112,17 +116,20 @@ internal fun CloseButton(
 ) {
   if (!style.closeIcon) return
 
-  IconButton(
-    onClick = onDismiss,
-    modifier =
-      modifier
-        .size(style.closeIconWidth.pxToDp),
-  ) {
-    Icon(
-      imageVector = Icons.Default.Close,
-      contentDescription = "Close",
-      tint = Color.fromHex(style.closeIconColor),
-      modifier = Modifier.size(style.closeIconWidth.pxToDp),
-    )
+  Box(modifier = Modifier.width(30.pxToDp).height(30.pxToDp).clipToBounds()) {
+    IconButton(
+      modifier =
+        modifier
+          .size(style.closeIconWidth.pxToDp)
+          .align(Alignment.Center),
+      onClick = onDismiss,
+    ) {
+      Icon(
+        imageVector = Icons.Default.Close,
+        contentDescription = "Close",
+        tint = Color.fromHex(style.closeIconColor),
+        modifier = Modifier.size(style.closeIconWidth.pxToDp),
+      )
+    }
   }
 }
