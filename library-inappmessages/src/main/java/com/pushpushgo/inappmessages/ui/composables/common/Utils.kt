@@ -180,10 +180,10 @@ internal fun createFontFamily(message: InAppMessage): FontFamily {
           fontProvider = provider,
           weight = FontWeight(weight),
           style =
-            if (style == com.pushpushgo.inappmessages.model.FontStyle.NORMAL) {
-              FontStyle.Normal
-            } else {
+            if (style == com.pushpushgo.inappmessages.model.FontStyle.ITALIC) {
               FontStyle.Italic
+            } else {
+              FontStyle.Normal
             },
         )
       }
