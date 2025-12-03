@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,15 +40,12 @@ internal fun TemplateRichMessage(
 
   MessageCard(message, modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.padding(if (message.style.border) message.style.borderWidth.pxToDp else 0.dp)) {
-      CloseButton(
-        style = message.style,
-        onDismiss = onDismiss,
-        modifier =
-          Modifier
-            .align(Alignment.TopEnd)
-            .offset(x = (-4 - message.style.borderWidth).dp, y = (2 + message.style.borderWidth).dp)
-            .zIndex(1f),
-      )
+      Box(modifier = Modifier.align(Alignment.TopEnd).zIndex(1f)) {
+        CloseButton(
+          style = message.style,
+          onDismiss = onDismiss,
+        )
+      }
 
       Box(
         modifier =
