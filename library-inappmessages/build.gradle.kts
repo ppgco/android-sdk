@@ -71,6 +71,8 @@ dependencies {
   implementation(libs.compose.material.icons)
   implementation(libs.compose.runtime)
   implementation(libs.compose.ui.text.fonts) // Google Fonts
+  implementation("androidx.emoji2:emoji2:1.6.0")
+  implementation("androidx.emoji2:emoji2-bundled:1.6.0")
 
   // Image Loading
   implementation(libs.coil.compose)
