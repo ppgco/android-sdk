@@ -1,0 +1,111 @@
+public final class com/pushpushgo/sdk/push/BeaconBuilder {
+	public final fun appendTag (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public static synthetic fun appendTag$default (Lcom/pushpushgo/sdk/push/BeaconBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun getTags ()Ljava/util/List;
+	public final fun getTagsToDelete ()Ljava/util/List;
+	public final fun removeTag ([Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun removeTags (Ljava/util/Map;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun send ()V
+	public final fun set (Ljava/lang/String;Ljava/lang/Object;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun setCustomId (Ljava/lang/Integer;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun setCustomId (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+}
+
+public final class com/pushpushgo/sdk/push/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class com/pushpushgo/sdk/push/PushNotifications {
+	public static final field Companion Lcom/pushpushgo/sdk/push/PushNotifications$Companion;
+	public static final field VERSION Ljava/lang/String;
+	public synthetic fun <init> (Landroid/app/Application;Lcom/pushpushgo/sdk/core/config/Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun areNotificationsEnabled ()Z
+	public final fun createBeacon ()Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun createSubscriber ()Lcom/google/common/util/concurrent/ListenableFuture;
+	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getCustomClickIntentFlags ()I
+	public final fun getDefaultIsSubscribed ()Z
+	public static final fun getInstance ()Lcom/pushpushgo/sdk/push/PushNotifications;
+	public final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/push/dto/PPGoNotification;
+	public final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/push/dto/PPGoNotification;
+	public final fun getNotificationHandler ()Lkotlin/jvm/functions/Function3;
+	public final fun getOnInvalidProjectIdHandler ()Lkotlin/jvm/functions/Function3;
+	public final fun getProjectId ()Ljava/lang/String;
+	public final fun getPushSubscriptionProvider ()Lcom/pushpushgo/sdk/core/push/PushSubscriptionProvider;
+	public final fun getPushToken ()Lcom/google/common/util/concurrent/ListenableFuture;
+	public final fun getSubscriberId ()Ljava/lang/String;
+	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
+	public static synthetic fun handleBackgroundNotificationClick$default (Lcom/pushpushgo/sdk/push/PushNotifications;Landroid/content/Intent;IILjava/lang/Object;)V
+	public static final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/push/PushNotifications;
+	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/config/Config;)Lcom/pushpushgo/sdk/push/PushNotifications;
+	public final fun isPPGoPush (Landroid/content/Intent;)Z
+	public final fun isPPGoPush (Ljava/util/Map;)Z
+	public final fun isSubscribed ()Z
+	public final fun migrateToNewProject (Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
+	public final fun registerSubscriber ()V
+	public final fun setCustomClickIntentFlags (I)V
+	public final fun setDefaultIsSubscribed (Z)V
+	public final fun setNotificationHandler (Lkotlin/jvm/functions/Function3;)V
+	public final fun setOnInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
+	public final fun unregisterSubscriber ()V
+	public final fun unregisterSubscriber (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
+}
+
+public final class com/pushpushgo/sdk/push/PushNotifications$Companion {
+	public final fun getInstance ()Lcom/pushpushgo/sdk/push/PushNotifications;
+	public final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/push/PushNotifications;
+	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/config/Config;)Lcom/pushpushgo/sdk/push/PushNotifications;
+	public final fun isInitialized ()Z
+}
+
+public final class com/pushpushgo/sdk/push/dto/PPGoNotification {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/dto/PPGoNotification;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/dto/PPGoNotification;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/dto/PPGoNotification;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getCampaignId ()Ljava/lang/String;
+	public final fun getPriority ()I
+	public final fun getRedirectLink ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/exception/PushPushException : java/io/IOException {
+}
+
+public final class com/pushpushgo/sdk/push/push/service/FcmMessagingServiceDelegate {
+	public fun <init> (Landroid/content/Context;)V
+	public final fun onDestroy ()V
+	public final fun onMessageReceived (Lcom/google/firebase/messaging/RemoteMessage;)V
+	public final fun onNewToken (Ljava/lang/String;)V
+}
+
+public final class com/pushpushgo/sdk/push/push/service/HmsMessagingServiceDelegate {
+	public fun <init> (Landroid/content/Context;)V
+	public final fun onDestroy ()V
+	public final fun onMessageReceived (Lcom/huawei/hms/push/RemoteMessage;)V
+	public final fun onNewToken (Ljava/lang/String;)V
+}
+
+public final class com/pushpushgo/sdk/push/subscription/DefaultPushSubscriptionProvider : com/pushpushgo/sdk/core/push/PushSubscriptionProvider {
+	public fun getSubscriberId ()Ljava/lang/String;
+	public fun isNotificationChannelEnabled ()Z
+	public fun isSubscribed ()Z
+	public fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

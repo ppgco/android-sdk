@@ -1,0 +1,41 @@
+package com.pushpushgo.sdk.sample.inapp.ui.screens
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import com.pushpushgo.sdk.inapp.InAppMessages
+import com.pushpushgo.sdk.inapp.ui.Route
+import com.pushpushgo.sdk.sample.inapp.ui.Screen
+
+@Composable
+internal fun InfoScreen(navController: NavHostController) {
+  LaunchedEffect(Screen.Info.route) {
+    InAppMessages.getInstance().showMessagesOnRoute(Route(Screen.Info.route))
+  }
+
+  Column(
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.spacedBy(36.dp, Alignment.CenterVertically),
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Text(text = "Info screen", style = MaterialTheme.typography.headlineLarge)
+
+    Button(modifier = Modifier.padding(4.dp), onClick = {
+      if (navController.previousBackStackEntry != null) {
+        navController.popBackStack()
+      }
+    }) {
+      Text(text = "Go back", style = MaterialTheme.typography.bodyLarge)
+    }
+  }
+}

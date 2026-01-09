@@ -1,0 +1,19 @@
+name: API Check
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  api-check:
+    name: Check public API compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup-ci
+
+      - name: Check API compatibility
+        run: ./gradlew apiCheck --no-daemon --build-cache
