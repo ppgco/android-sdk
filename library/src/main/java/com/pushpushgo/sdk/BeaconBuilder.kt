@@ -13,7 +13,7 @@ class BeaconBuilder internal constructor(
 
   private val tags = mutableListOf<BeaconTag>()
 
-  private val tagsToDelete = mutableMapOf<String, String>()
+  private val tagsToDelete = mutableListOf<Pair<String, String>>()
 
   private var customId = ""
 
@@ -61,7 +61,7 @@ class BeaconBuilder internal constructor(
    * @return instance of builder
    */
   fun removeTag(vararg name: String): BeaconBuilder {
-    tagsToDelete.putAll(name.map { it to "default" })
+    tagsToDelete.addAll(name.map { it to "default" })
 
     return this
   }
@@ -75,12 +75,23 @@ class BeaconBuilder internal constructor(
    * @return instance of builder
    */
   fun removeTags(tags: Map<String, String>): BeaconBuilder {
-    tagsToDelete.putAll(tags)
+    tagsToDelete.addAll(tags.map { it.key to it.value })
 
     return this
   }
 
-  fun getTagsToDelete(): List<String> = tagsToDelete.keys.toList()
+  /**
+   * @param tags List of tag-label pairs to remove
+   *
+   * @return instance of builder
+   */
+  fun removeTags(tags: List<Pair<String, String>>): BeaconBuilder {
+    tagsToDelete.addAll(tags)
+
+    return this
+  }
+
+  fun getTagsToDelete(): List<String> = tagsToDelete.map { it.first }
 
   /**
    * Set custom beacon ID
@@ -153,9 +164,9 @@ class BeaconBuilder internal constructor(
     put(
       "tagsToDelete",
       JSONArray().apply {
-        if (tagsToDelete.all { it.value == "default" }) {
+        if (tagsToDelete.all { it.second == "default" }) {
           tagsToDelete.forEach {
-            put(it.key)
+            put(it.first)
           }
         } else {
           tagsToDelete.forEach { (tag, label) ->

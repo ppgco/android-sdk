@@ -41,7 +41,7 @@ class PushPushGo private constructor(
   private val customBaseUrl: String?,
 ) {
   companion object {
-    const val VERSION = "2.2.4-20250303~1"
+    const val VERSION = "3.0.3"
 
     internal const val TAG = "PPGo"
 
