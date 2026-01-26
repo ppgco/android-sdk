@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push.work
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import kotlinx.coroutines.coroutineScope
@@ -19,7 +20,7 @@ internal class UploadWorker(
     const val UNREGISTER = "unregister"
   }
 
-  private val delegate by lazy { UploadDelegate() }
+  private val delegate = PushNotifications.getInstance().uploadDelegate
 
   override suspend fun doWork(): Result =
     coroutineScope {

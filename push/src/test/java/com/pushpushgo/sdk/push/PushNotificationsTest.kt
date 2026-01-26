@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.push
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.pushpushgo.sdk.push.dto.PPGoNotification
+import com.pushpushgo.sdk.push.dto.PushPushGoNotification
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
-class PushPushGoTest {
+class PushNotificationsTest {
   private lateinit var systemUnderTest: PushNotifications
 
   @Before
@@ -32,14 +32,14 @@ class PushPushGoTest {
 
   @Test
   fun `check is intent PPGo notification`() {
-    assertFalse(systemUnderTest.isPPGoPush(Intent()))
-    assertTrue(systemUnderTest.isPPGoPush(Intent().putExtra("project", "")))
+    assertFalse(systemUnderTest.isPushPushGoNotification(Intent()))
+    assertTrue(systemUnderTest.isPushPushGoNotification(Intent().putExtra("project", "")))
   }
 
   @Test
   fun `check is extras map PPGo notification`() {
-    assertFalse(systemUnderTest.isPPGoPush(mapOf()))
-    assertTrue(systemUnderTest.isPPGoPush(mapOf("project" to "")))
+    assertFalse(systemUnderTest.isPushPushGoNotification(mapOf()))
+    assertTrue(systemUnderTest.isPushPushGoNotification(mapOf("project" to "")))
   }
 
   @Test
@@ -50,7 +50,7 @@ class PushPushGoTest {
   @Test
   fun `get notification data mapping from intent`() {
     val dto =
-      PPGoNotification(
+      PushPushGoNotification(
         title = "Notification title",
         body = "Notification body",
         campaignId = "campaign ID",
@@ -74,7 +74,7 @@ class PushPushGoTest {
   @Test
   fun `get notification data mapping from map`() {
     val dto =
-      PPGoNotification(
+      PushPushGoNotification(
         title = "Notification title",
         body = "Notification body",
         campaignId = "campaign ID",
@@ -97,7 +97,7 @@ class PushPushGoTest {
   @Test
   fun `get notification data mapping with some nulls from map`() {
     val dto =
-      PPGoNotification(
+      PushPushGoNotification(
         title = "Notification title",
         body = "Notification body",
         campaignId = "campaign ID",

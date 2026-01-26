@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.push.work
 
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.EventType
+import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -11,7 +12,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-internal class UploadDelegate {
+internal class UploadDelegate(
+  private val apiRepository: ApiRepository,
+) {
   private val uploadScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
   private val errorHandler = CoroutineExceptionHandler { _, e -> logError(e) }
@@ -20,16 +23,14 @@ internal class UploadDelegate {
     type: String?,
     data: String?,
   ) {
-    if (PushNotifications.getInstance().getSubscriberId().isBlank() && type != UploadWorker.REGISTER) {
+    if (PushNotifications.getInstance().getSubscriberId() == null && type != UploadWorker.REGISTER) {
       return logDebug("UploadWorker: skipped. Reason: not subscribed")
     }
 
-    with(PushNotifications.getInstance().getNetwork()) {
-      when (type) {
-        UploadWorker.REGISTER -> registerToken(data)
-        UploadWorker.UNREGISTER -> unregisterSubscriber()
-        else -> logDebug("Unknown upload data type")
-      }
+    when (type) {
+      UploadWorker.REGISTER -> apiRepository.registerToken(data)
+      UploadWorker.UNREGISTER -> apiRepository.unregisterSubscriber()
+      else -> logDebug("Unknown upload data type")
     }
   }
 
@@ -41,7 +42,7 @@ internal class UploadDelegate {
     subscriberId: String?,
   ) {
     uploadScope.launch(errorHandler) {
-      PushNotifications.getInstance().getNetwork().sendEvent(
+      apiRepository.sendEvent(
         type = type,
         buttonId = buttonId,
         campaign = campaign,
@@ -52,13 +53,13 @@ internal class UploadDelegate {
   }
 
   fun sendBeacon(beacon: JSONObject) {
-    if (PushNotifications.getInstance().getSubscriberId().isBlank()) {
+    if (PushNotifications.getInstance().getSubscriberId() == null) {
       logDebug("Beacon not sent. Reason: not subscribed")
       return
     }
 
     uploadScope.launch(errorHandler) {
-      PushNotifications.getInstance().getNetwork().sendBeacon(beacon.toString())
+      apiRepository.sendBeacon(beacon.toString())
     }
   }
 }

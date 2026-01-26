@@ -7,7 +7,7 @@ interface PushSubscriptionProvider {
 
   fun isSubscribed(): Boolean
 
-  fun getSubscriberId(): String?
+  fun getPushToken(): String?
 
   fun isNotificationChannelEnabled(): Boolean
 }

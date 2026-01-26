@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push.network
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.pushpushgo.sdk.core.config.Config
 import com.pushpushgo.sdk.push.data.Event
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.Payload
@@ -15,22 +16,18 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
 internal class ApiRepository(
-  private val apiService: ApiService,
   private val context: Context,
+  private val apiService: ApiService,
   private val sharedPref: SharedPreferencesHelper,
-  private val projectId: String,
-  private val apiKey: String,
+  private val config: Config,
 ) {
   suspend fun registerToken(
     token: String?,
-    apiKey: String = this.apiKey,
-    projectId: String = this.projectId,
+    apiKey: String = config.apiKey,
+    projectId: String = config.projectId,
   ) {
     logDebug("registerToken invoked: $token")
-    val tokenToRegister =
-      token
-        ?: sharedPref.lastToken.takeIf { it.isNotEmpty() }
-        ?: getPlatformPushToken(context)
+    val tokenToRegister = token ?: sharedPref.lastToken ?: getPlatformPushToken(context)
 
     logDebug("Token to register: $tokenToRegister")
 
@@ -49,15 +46,22 @@ internal class ApiRepository(
   suspend fun unregisterSubscriber() {
     logDebug("unregisterSubscriber() invoked")
 
+    val subscriberId = sharedPref.subscriberId
+
+    if (subscriberId == null) {
+      logError("Cannot unregister - empty subscriberId")
+      return
+    }
+
     apiService.unregisterSubscriber(
-      token = apiKey,
-      projectId = projectId,
-      subscriberId = sharedPref.subscriberId,
+      token = config.apiKey,
+      projectId = config.projectId,
+      subscriberId = subscriberId,
     )
     sharedPref.subscriberId = ""
   }
 
-  suspend fun unregisterSubscriber(
+  private suspend fun unregisterSubscriber(
     projectId: String,
     token: String,
     subscriberId: String,
@@ -91,14 +95,19 @@ internal class ApiRepository(
       return logDebug("Empty new project info!")
     }
 
-    // unregister current
+    val subscriberId = sharedPref.subscriberId
+
+    if (subscriberId == null) {
+      logError("Cannot migrate - empty subscriberId")
+      return
+    }
+
     unregisterSubscriber(
-      token = apiKey,
-      projectId = projectId,
-      subscriberId = sharedPref.subscriberId,
+      token = config.apiKey,
+      projectId = config.projectId,
+      subscriberId = subscriberId,
     )
 
-    // register new
     registerToken(
       token = null,
       apiKey = newToken,
@@ -107,10 +116,16 @@ internal class ApiRepository(
   }
 
   suspend fun sendBeacon(beacon: String) {
+    val subscriberId = sharedPref.subscriberId
+
+    if (subscriberId == null) {
+      logError("Cannot send beacon - empty subscriberId")
+      return
+    }
     apiService.sendBeacon(
-      token = apiKey,
-      projectId = projectId,
-      subscriberId = sharedPref.subscriberId,
+      token = config.apiKey,
+      projectId = config.projectId,
+      subscriberId = subscriberId,
       beacon = beacon.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()),
     )
   }
@@ -122,9 +137,16 @@ internal class ApiRepository(
     project: String?,
     subscriber: String?,
   ) {
+    val subscriberId = subscriber ?: sharedPref.subscriberId
+
+    if (subscriberId == null) {
+      logError("Cannot send event - empty subscriberId")
+      return
+    }
+
     apiService.sendEvent(
-      token = apiKey,
-      projectId = project ?: projectId,
+      token = config.apiKey,
+      projectId = project ?: config.projectId,
       event =
         Event(
           type = type.value,
@@ -132,7 +154,7 @@ internal class ApiRepository(
             Payload(
               button = buttonId,
               campaign = campaign,
-              subscriber = subscriber ?: sharedPref.subscriberId,
+              subscriber = subscriberId,
             ),
         ),
     )

@@ -12,11 +12,11 @@ internal class SharedPreferencesHelper(
   prefsName: String? = null,
 ) {
   companion object {
-    internal const val SUBSCRIBER_ID = "_PushPushGoSDK_sub_id_"
-    internal const val LAST_FCM_TOKEN = "_PushPushGoSDK_curr_token_"
-    internal const val LAST_HCM_TOKEN = "_PushPushGoSDK_curr_hms_token_"
-    internal const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"
-    internal const val CUSTOM_INTENT_FLAGS = "_PushPushGoSDK_custom_intent_flags_"
+    private const val SUBSCRIBER_ID = "_PushPushGoSDK_sub_id_"
+    private const val LAST_FCM_TOKEN = "_PushPushGoSDK_curr_token_"
+    private const val LAST_HCM_TOKEN = "_PushPushGoSDK_curr_hms_token_"
+    private const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"
+    private const val CUSTOM_INTENT_FLAGS = "_PushPushGoSDK_custom_intent_flags_"
     private const val MAX_KEYS = 1000
   }
 
@@ -48,29 +48,35 @@ internal class SharedPreferencesHelper(
     }
 
   var subscriberId
-    get() = sharedPreferences.getString(SUBSCRIBER_ID, "").orEmpty()
+    get() = sharedPreferences.getString(SUBSCRIBER_ID, null)?.ifBlank { null }
     set(value) {
       sharedPreferences.edit { putString(SUBSCRIBER_ID, value) }
     }
 
-  var lastFCMToken
-    get() = sharedPreferences.getString(LAST_FCM_TOKEN, "").orEmpty()
+  private var lastFCMToken
+    get() = sharedPreferences.getString(LAST_FCM_TOKEN, null)?.ifBlank { null }
     set(value) {
       sharedPreferences.edit { putString(LAST_FCM_TOKEN, value) }
     }
 
-  var lastHCMToken
-    get() = sharedPreferences.getString(LAST_HCM_TOKEN, "").orEmpty()
+  private var lastHCMToken
+    get() = sharedPreferences.getString(LAST_HCM_TOKEN, null)?.ifBlank { null }
     set(value) {
       sharedPreferences.edit { putString(LAST_HCM_TOKEN, value) }
     }
 
-  val lastToken
+  var lastToken
     get() =
       when (getPlatformType()) {
         PlatformType.FCM -> lastFCMToken
         PlatformType.HCM -> lastHCMToken
       }
+    set(value) {
+      when (getPlatformType()) {
+        PlatformType.FCM -> lastFCMToken = value
+        PlatformType.HCM -> lastHCMToken = value
+      }
+    }
 
   fun getNotificationId(key: String): Int = sharedPreferences.getInt(key, -1)
 

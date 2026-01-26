@@ -2,18 +2,16 @@ package com.pushpushgo.sdk.push.push.service
 
 import android.content.Context
 import com.huawei.hms.push.RemoteMessage
-import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.push.PushMessage
 import com.pushpushgo.sdk.push.push.PushNotification
-import com.pushpushgo.sdk.push.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.utils.logDebug
 
 class HmsMessagingServiceDelegate(
   private val context: Context,
 ) {
-  private val preferencesHelper by lazy { SharedPreferencesHelper(context) }
-
-  private val delegate by lazy { PushNotificationDelegate(context) }
+  private val delegate = PushNotifications.getInstance().pushNotificationsDelegate
+  private val preferencesHelper = PushNotifications.getInstance().sharedPreferencesHelper
 
   fun onMessageReceived(remoteMessage: RemoteMessage) {
     logDebug("onMessageReceived(${remoteMessage.data})")
@@ -24,8 +22,8 @@ class HmsMessagingServiceDelegate(
   }
 
   fun onNewToken(token: String) {
-    preferencesHelper.lastHCMToken = token
     delegate.onNewToken(token)
+    preferencesHelper.lastToken = token
   }
 
   private fun RemoteMessage.toPushMessage() =

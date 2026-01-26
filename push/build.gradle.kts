@@ -17,7 +17,6 @@ android {
   defaultConfig {
     minSdk = 23
 
-    consumerProguardFiles("ppgo-sdk.pro")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
@@ -65,11 +64,8 @@ dependencies {
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.preference)
 
-  implementation(libs.kodein)
-
   implementation(libs.coroutines.core)
   implementation(libs.coroutines.android)
-  implementation(libs.coroutines.guava)
 
   implementation(libs.retrofit)
   implementation(libs.retrofit.moshi)

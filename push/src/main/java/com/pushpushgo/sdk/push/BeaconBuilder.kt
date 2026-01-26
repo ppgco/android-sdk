@@ -17,11 +17,18 @@ class BeaconBuilder internal constructor(
   private var customId = ""
 
   /**
-   * Add beacon selector
+   * @param key Selector key.
+   * @param value Selector value.
    *
-   * @param key
-   * @param value Selector value. Supported types: boolean, string, char, number
-   * @return instance of builder
+   * Supported value types:
+   * - Boolean
+   * - String
+   * - Char
+   * - Number
+   *
+   * @throws IllegalArgumentException if the value type is not supported.
+   *
+   * @return This builder instance.
    */
   fun set(
     key: String,
@@ -33,12 +40,14 @@ class BeaconBuilder internal constructor(
   }
 
   /**
-   * @param tag Tag name
-   * @param label Tag label
-   * @param strategy Determining whether the tags assigned to the given label should be accumulated (append) or overwritten (rewrite) (then the subscriber may have only one, most up-to-date tag at a time)
-   * @param ttl Time to Live (TTL) is a parameter that specifies the time (in days or hours) after which a given tag is going to be removed. If you don't want to remove tags, type 0.
+   * @param tag Tag name.
+   * @param label Tag label. Defaults to `"default"`.
+   * @param strategy Tag assignment strategy.
+   * Use `"append"` to accumulate tags or `"rewrite"` to overwrite existing ones.
+   * @param ttl Time to live for the tag.
+   * Use `0` to keep the tag indefinitely.
    *
-   * @return instance of builder
+   * @return This builder instance.
    */
   @JvmOverloads
   fun appendTag(
@@ -55,9 +64,11 @@ class BeaconBuilder internal constructor(
   fun getTags(): MutableList<Pair<String, String>> = tags.map { it.tag to it.label }.toMutableList()
 
   /**
-   * @param name Tag name
+   * Removes tags using the default label.
+   * Only tags with label `"default"` will be removed.
    *
-   * @return instance of builder
+   * @param name One or more tag names.
+   * @return This builder instance.
    */
   fun removeTag(vararg name: String): BeaconBuilder {
     tagsToDelete.putAll(name.map { it to "default" })
@@ -66,12 +77,14 @@ class BeaconBuilder internal constructor(
   }
 
   /**
-   * @param tags Map of tags to remove
+   * Removes tags using explicit tag–label mapping.
+   * Only tags matching both the name and label will be removed.
    *
-   * key: tag name
-   * value: tag label
+   * @param tags Map where:
+   * - key: tag name
+   * - value: tag label
    *
-   * @return instance of builder
+   * @return This builder instance.
    */
   fun removeTags(tags: Map<String, String>): BeaconBuilder {
     tagsToDelete.putAll(tags)
@@ -82,11 +95,12 @@ class BeaconBuilder internal constructor(
   fun getTagsToDelete(): List<String> = tagsToDelete.keys.toList()
 
   /**
-   * Set custom beacon ID
+   * Sets a custom beacon identifier.
    *
-   * @param id Custom ID
+   * Passing `null` clears the custom ID.
    *
-   * @return instance of builder
+   * @param id Custom identifier.
+   * @return This builder instance.
    */
   fun setCustomId(id: String?): BeaconBuilder {
     customId = id.orEmpty()
@@ -94,12 +108,23 @@ class BeaconBuilder internal constructor(
     return this
   }
 
+  /**
+   * Sets a custom beacon identifier from an integer value.
+   *
+   * Passing `null` or `0` clears the custom ID.
+   *
+   * @param id Custom identifier.
+   * @return This builder instance.
+   */
   fun setCustomId(id: Int?): BeaconBuilder {
     customId = (id ?: 0).toString().takeIf { it != "0" }.orEmpty()
 
     return this
   }
 
+  /**
+   * Dispatches the configured beacon.
+   */
   fun send() {
     uploadDelegate.sendBeacon(
       JSONObject().apply {

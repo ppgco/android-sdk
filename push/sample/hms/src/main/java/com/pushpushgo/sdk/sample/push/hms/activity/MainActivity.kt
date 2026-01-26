@@ -10,10 +10,13 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.sample.push.hms.R
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
   private val ppg by lazy { PushNotifications.getInstance() }
@@ -27,15 +30,27 @@ class MainActivity : AppCompatActivity() {
     findViewById<TextView>(R.id.version).text = PushNotifications.VERSION
 
     findViewById<Button>(R.id.register).setOnClickListener {
-      ppg.registerSubscriber()
+      lifecycleScope.launch {
+        try {
+          ppg.subscribeNow()
+          Toast.makeText(this@MainActivity, "Subscribed!", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+          Toast.makeText(this@MainActivity, "Can't subscribe! ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+      }
     }
+
     findViewById<Button>(R.id.unregister).setOnClickListener {
-      ppg.unregisterSubscriber()
+      lifecycleScope.launch {
+        ppg.unsubscribeNow()
+      }
     }
+
     findViewById<Button>(R.id.check).setOnClickListener {
       findViewById<TextView>(R.id.content).text =
         "Status: " + (if (PushNotifications.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
     }
+
     findViewById<Button>(R.id.beacons).setOnClickListener {
       startActivity(Intent(baseContext, BeaconActivity::class.java))
     }

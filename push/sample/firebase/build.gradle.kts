@@ -67,7 +67,6 @@ dependencies {
   implementation(project(":push"))
 
   implementation(libs.timber)
-  implementation(libs.guava)
 
   implementation(libs.androidx.appcompat)
   implementation(libs.androidx.constraintlayout)

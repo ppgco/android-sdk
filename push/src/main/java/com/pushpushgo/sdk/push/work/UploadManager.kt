@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.push.work
 
+import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -17,13 +18,15 @@ import com.pushpushgo.sdk.push.work.UploadWorker.Companion.UNREGISTER
 import java.util.concurrent.TimeUnit
 
 internal class UploadManager(
-  private val workManager: WorkManager,
+  context: Context,
   private val sharedPref: SharedPreferencesHelper,
 ) {
   companion object {
-    const val UPLOAD_DELAY = 10L
-    const val UPLOAD_RETRY_DELAY = 30L
+    private const val UPLOAD_DELAY = 10L
+    private const val UPLOAD_RETRY_DELAY = 30L
   }
+
+  private val workManager = WorkManager.getInstance(context)
 
   fun sendRegister(token: String?) {
     logDebug("Register enqueued")
@@ -46,6 +49,11 @@ internal class UploadManager(
     listOf(REGISTER).forEach {
       workManager.cancelAllWorkByTag(it)
     }
+  }
+
+  fun cancelAllJobs() {
+    workManager.cancelUniqueWork(REGISTER)
+    workManager.cancelUniqueWork(UNREGISTER)
   }
 
   private fun enqueueJob(

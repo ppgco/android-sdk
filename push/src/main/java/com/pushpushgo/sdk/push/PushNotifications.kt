@@ -4,46 +4,64 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
-import com.google.common.util.concurrent.ListenableFuture
+import androidx.work.Configuration
+import androidx.work.WorkManager
 import com.pushpushgo.sdk.core.config.Config
 import com.pushpushgo.sdk.core.config.ManifestConfigProvider
 import com.pushpushgo.sdk.core.push.PushSubscriptionProvider
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.mapToDto
-import com.pushpushgo.sdk.push.di.NetworkModule
-import com.pushpushgo.sdk.push.di.WorkModule
-import com.pushpushgo.sdk.push.dto.PPGoNotification
+import com.pushpushgo.sdk.push.dto.PushPushGoNotification
+import com.pushpushgo.sdk.push.network.ApiRepository
+import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.push.areNotificationsEnabled
 import com.pushpushgo.sdk.push.push.createNotificationChannel
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.push.subscription.DefaultPushSubscriptionProvider
-import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.mapToBundle
 import com.pushpushgo.sdk.push.work.UploadDelegate
+import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.future.future
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 
 class PushNotifications private constructor(
   private val application: Application,
   internal val config: Config,
 ) {
   companion object {
-    const val VERSION = "2.2.4-20250303~1"
+    const val VERSION = "4.0.0"
 
     internal const val TAG = "[PushPushGo:PushNotifications]"
 
-    /**
-     * an instance of PushPushGo library
-     */
     @Volatile
     private var INSTANCE: PushNotifications? = null
+
+    val defaultInvalidProjectIdHandler: InvalidProjectIdHandler = { pushProjectId, _, currentProjectId ->
+      logDebug("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
+    }
+
+    val defaultNotificationClickHandler: NotificationHandler = { context, url, overrideFlags ->
+      handleNotificationLinkClick(
+        context,
+        url,
+        overrideFlags,
+      )
+    }
 
     fun isInitialized(): Boolean = INSTANCE != null
 
@@ -51,9 +69,11 @@ class PushNotifications private constructor(
     fun getInstance(): PushNotifications = checkNotNull(INSTANCE) { "PushNotifications SDK is not initialized" }
 
     /**
-     * function to create an instance of PushPushGo object to handle push notifications
-     * @param application - an application to get apiKey from META DATA stored in Your Manifest.xml file
-     * @return PushPushGo instance
+     * Initializes the PushNotifications SDK using configuration defined in AndroidManifest.xml.
+     *
+     * Subsequent calls return the same instance.
+     *
+     * @throws IllegalStateException if required manifest values are missing.
      */
     @JvmStatic
     fun initialize(application: Application): PushNotifications =
@@ -62,22 +82,18 @@ class PushNotifications private constructor(
       }
 
     /**
-     * function to create an instance of PushPushGo object to handle push notifications
-     * @param application - an application to handle DI
-     * @param config - application config
-     * @return PushPushGo instance
+     * Initializes the PushNotifications SDK using an explicit [Config] instance.
+     *
+     * Subsequent calls return the same instance.
      */
     @JvmStatic
     fun initialize(
       application: Application,
       config: Config,
-    ): PushNotifications {
-      if (INSTANCE == null) {
-        INSTANCE = PushNotifications(application, config)
+    ): PushNotifications =
+      INSTANCE ?: synchronized(this) {
+        INSTANCE ?: PushNotifications(application, config).also { INSTANCE = it }
       }
-
-      return INSTANCE as PushNotifications
-    }
 
     @JvmStatic
     private fun reinitialize(
@@ -91,101 +107,308 @@ class PushNotifications private constructor(
   }
 
   init {
+    if (!WorkManager.isInitialized()) {
+      WorkManager.initialize(application, Configuration.Builder().build())
+    }
+  }
+
+  private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  private val subscriptionMutex = Mutex()
+
+  internal val isMigrating: AtomicBoolean = AtomicBoolean(false)
+
+  internal val sharedPreferencesHelper = SharedPreferencesHelper(application)
+  private val apiService = ApiService.fromConfig(config)
+  internal val apiRepository = ApiRepository(application, apiService, sharedPreferencesHelper, config)
+  internal val uploadDelegate = UploadDelegate(apiRepository)
+  internal val uploadManager = UploadManager(application, sharedPreferencesHelper)
+  internal val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager)
+
+  init {
     val platformType = getPlatformType()
     val startupMessage = "PushNotifications SDK $VERSION initialized (project id: ${config.projectId}, platform: $platformType)"
     println(startupMessage)
 
     createNotificationChannel(application)
-    NotificationStatusChecker.start(application)
   }
 
-  private val networkModule by lazy {
-    NetworkModule(
+  init {
+    NotificationStatusChecker(
       context = application,
-      config = config,
-    )
-  }
-
-  private val workModule by lazy { WorkModule(application) }
-
-  private val uploadDelegate by lazy { UploadDelegate() }
-
-  internal fun getNetwork() = networkModule.apiRepository
-
-  internal fun getUploadManager() = workModule.uploadManager
-
-  var onInvalidProjectIdHandler: InvalidProjectIdHandler = { pushProjectId, _, currentProjectId ->
-    logDebug("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
+      sdkScope = sdkScope,
+      sharedPreferencesHelper = sharedPreferencesHelper,
+    ).start()
   }
 
   /**
-   * Settings used for migration to support switch user before start first time app after upgrade/switch
-   * defaultIsSubscribed  default is false
+   * Handler invoked when a notification is clicked.
+   */
+  var notificationClickHandler: NotificationHandler = defaultNotificationClickHandler
+    private set
+
+  /**
+   * Handler invoked when a push notification contains a project ID
+   * that does not match the currently configured SDK project.
+   */
+  var invalidProjectIdHandler: InvalidProjectIdHandler = defaultInvalidProjectIdHandler
+    private set
+
+  /**
+   * Intent flags applied when launching the application from
+   * a notification click.
+   */
+  var customClickIntentFlags: Int = sharedPreferencesHelper.customIntentFlags
+    get() = sharedPreferencesHelper.customIntentFlags
+    private set
+
+  /**
+   * Indicates whether the user should be treated as subscribed by default
    */
   var defaultIsSubscribed: Boolean = false
+    private set
 
-  var notificationHandler: NotificationHandler = { context, url, overrideFlags ->
-    handleNotificationLinkClick(
-      context,
-      url,
-      overrideFlags,
-    )
+  fun setCustomClickIntentFlags(flags: Int) {
+    sharedPreferencesHelper.customIntentFlags = flags
+  }
+
+  fun setDefaultIsSubscribed(isSubscribed: Boolean) {
+    defaultIsSubscribed = isSubscribed
+  }
+
+  fun setNotificationClickHandler(handler: NotificationHandler) {
+    notificationClickHandler = handler
+  }
+
+  fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler) {
+    invalidProjectIdHandler = handler
+  }
+
+  fun getProjectId(): String = config.projectId
+
+  fun getApiKey(): String = config.apiKey
+
+  fun isSubscribed(): Boolean = sharedPreferencesHelper.isSubscribed
+
+  fun getSubscriberId(): String? = sharedPreferencesHelper.subscriberId
+
+  fun getPushToken(): String? = sharedPreferencesHelper.lastToken
+
+  /**
+   * Subscribes the device to notifications.
+   *
+   * This method enqueues the subscription request and returns immediately.
+   *
+   * If notifications are disabled or migration is in progress, the request is ignored.
+   */
+  fun subscribe() {
+    if (!areNotificationsEnabled()) {
+      return logError("Notifications disabled! Subscriber registration canceled")
+    }
+
+    sdkScope.launch {
+      subscriptionMutex.withLock {
+        if (isMigrating.get()) {
+          return@withLock logError("Migration in progress")
+        }
+        sharedPreferencesHelper.isSubscribed = true
+        uploadManager.sendRegister(null)
+      }
+    }
   }
 
   /**
-   * function to check whether the given notification data belongs to the PPGo sender
+   * Unsubscribes the device from notifications.
    *
-   * @param notificationIntent - pending intent of clicked notification
+   * This method enqueues the unsubscription request and returns immediately.
    *
-   * @return boolean
+   * If migration is in progress, the request is ignored.
    */
-  fun isPPGoPush(notificationIntent: Intent?): Boolean = notificationIntent?.hasExtra("project") == true
+  fun unsubscribe() {
+    sdkScope.launch {
+      subscriptionMutex.withLock {
+        if (isMigrating.get()) {
+          return@withLock logError("Migration in progress")
+        }
+
+        uploadManager.sendUnregister()
+        sharedPreferencesHelper.isSubscribed = false
+      }
+    }
+  }
 
   /**
-   * function to check whether the given notification data belongs to the PPGo sender
+   * Subscribes the device to notifications immediately.
    *
-   * @param notificationData - data field of received notification
+   * If notifications are disabled or migration is in progress, an [IllegalStateException] is thrown.
    *
-   * @return boolean
+   * @throws IllegalStateException
    */
-  fun isPPGoPush(notificationData: Map<String, String>): Boolean = notificationData.containsKey("project")
+  suspend fun subscribeNow() {
+    check(areNotificationsEnabled()) {
+      "Notifications disabled! Subscriber registration canceled"
+    }
+
+    withContext(Dispatchers.IO) {
+      subscriptionMutex.withLock {
+        check(!isMigrating.get()) {
+          "Migration in progress"
+        }
+
+        apiRepository.registerToken(null)
+        sharedPreferencesHelper.isSubscribed = true
+      }
+    }
+  }
 
   /**
-   * function to retrieve PPGo notification details
+   * Unsubscribes the device from notifications immediately.
    *
-   * @param notificationIntent - pending intent of clicked notification
-   *
-   * @return Notification
+   * If migration is in progress, an [IllegalStateException] is thrown.
    */
-  fun getNotificationDetails(notificationIntent: Intent?): PPGoNotification? =
+  suspend fun unsubscribeNow() {
+    withContext(Dispatchers.IO) {
+      subscriptionMutex.withLock {
+        check(!isMigrating.get()) {
+          "Migration in progress"
+        }
+
+        apiRepository.unregisterSubscriber()
+        sharedPreferencesHelper.isSubscribed = false
+      }
+    }
+  }
+
+  /**
+   * Subscribes the device to notifications immediately.
+   *
+   * Java-friendly wrapper for [subscribeNow].
+   *
+   * @returns [CompletableFuture]
+   */
+  fun subscribeNowFuture(): CompletableFuture<Unit> =
+    sdkScope.future {
+      subscribeNow()
+    }
+
+  /**
+   * Unsubscribes the device from notifications immediately.
+   *
+   * Java-friendly wrapper for [unsubscribeNow].
+   *
+   * @returns [CompletableFuture]
+   */
+  fun unsubscribeNowFuture(): CompletableFuture<Unit> =
+    sdkScope.future {
+      unsubscribeNow()
+    }
+
+  /**
+   * Migrates the current subscriber to a different project.
+   *
+   * This method:
+   * - unregisters the subscriber in the old project
+   * - registers the subscriber in the new project
+   * - initializes the SDK with the new project
+   *
+   * During migration, subscription operations are blocked.
+   *
+   * @throws IllegalStateException if notifications are disabled or migration is in progress.
+   */
+  suspend fun migrateToNewProjectNow(
+    newProjectId: String,
+    newProjectToken: String,
+  ) {
+    check(areNotificationsEnabled()) {
+      "Notifications disabled! Subscriber registration canceled"
+    }
+
+    check(isMigrating.compareAndSet(false, true)) {
+      "Migration is already in progress"
+    }
+
+    try {
+      withContext(Dispatchers.IO) {
+        subscriptionMutex.withLock {
+          uploadManager.cancelAllJobs()
+
+          apiRepository.migrateSubscriber(
+            newProjectId = newProjectId,
+            newToken = newProjectToken,
+          )
+
+          reinitialize(
+            application = application,
+            config =
+              Config(
+                projectId = newProjectId,
+                apiKey = newProjectToken,
+                isDebug = config.isDebug,
+                apiUrl = config.apiUrl,
+              ),
+          ).apply {
+            notificationClickHandler = this@PushNotifications.notificationClickHandler
+            invalidProjectIdHandler = this@PushNotifications.invalidProjectIdHandler
+            defaultIsSubscribed = this@PushNotifications.defaultIsSubscribed
+          }
+
+          sdkScope.cancel()
+        }
+      }
+    } finally {
+      isMigrating.set(false)
+    }
+  }
+
+  /**
+   * Checks whether the given notification intent belongs to PushPushGo.
+   *
+   * @param notificationIntent Intent associated with the clicked notification.
+   *
+   * @return `true` if the notification was sent by PushPushGo, `false` otherwise.
+   */
+  fun isPushPushGoNotification(notificationIntent: Intent?): Boolean = notificationIntent?.hasExtra("project") == true
+
+  /**
+   * Checks whether the given notification intent belongs to PushPushGo.
+   *
+   * @param notificationData Data payload of the received notification.
+   *
+   * @return `true` if the notification was sent by PushPushGo, `false` otherwise.
+   */
+  fun isPushPushGoNotification(notificationData: Map<String, String>): Boolean = notificationData.containsKey("project")
+
+  /**
+   * Retrieves PushPushGo notification details from the given intent.
+   *
+   * @param notificationIntent Intent associated with the clicked notification.
+   *
+   * @return [PushPushGoNotification] instance if the intent contains valid
+   * PushPushGo notification data, or `null` otherwise.
+   */
+  fun getNotificationDetails(notificationIntent: Intent?): PushPushGoNotification? =
     deserializeNotificationData(notificationIntent?.extras)?.mapToDto()
 
   /**
-   * function to retrieve PPGo notification details
+   * Retrieves PushPushGo notification details from the given intent.
    *
-   * @param notificationData - data field of received notification
+   * @param notificationData Data payload of the received notification.
    *
-   * @return Notification
+   * @return [PushPushGoNotification] instance if the intent contains valid
+   * PushPushGo notification data, or `null` otherwise.
    */
-  fun getNotificationDetails(notificationData: Map<String, String>): PPGoNotification? =
+  fun getNotificationDetails(notificationData: Map<String, String>): PushPushGoNotification? =
     deserializeNotificationData(notificationData.mapToBundle())?.mapToDto()
 
   /**
-   * function set custom intent flags to shared preferences
-   * when push receives then check for this flags and add
-   * them in PendingIntent launcherActivity as flags
-   */
-  fun setCustomClickIntentFlags(flags: Int) {
-    networkModule.sharedPref.customIntentFlags = flags
-  }
-
-  /**
-   * function returns custom flags from shared contexts for click intent
-   */
-  fun getCustomClickIntentFlags(): Int = networkModule.sharedPref.customIntentFlags
-
-  /**
-   * helper function to handle click on notification from background
+   * Handles a PushPushGo notification click when the application is launched
+   * or resumed from the background.
+   *
+   * This method should be called from:
+   * - `Activity.onCreate()`
+   * - `Activity.onNewIntent()`
+   *
+   * @param intent Intent received from the notification click.
+   * @param overrideFlags Optional intent flags used when launching the target activity
    */
   fun handleBackgroundNotificationClick(
     intent: Intent?,
@@ -201,14 +424,14 @@ class PushNotifications private constructor(
     val intentNotificationId = intent.getIntExtra(PushNotificationDelegate.NOTIFICATION_ID_EXTRA, 0)
 
     if (intentProjectId != config.projectId) {
-      return onInvalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, config.projectId)
+      return invalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, config.projectId)
     }
 
     NotificationManagerCompat.from(application).cancel(intentNotificationId)
 
     // TODO Remove duplicated code
     val notify = deserializeNotificationData(intent.extras)
-    notificationHandler(application, notify?.redirectLink ?: intentLink, overrideFlags)
+    notificationClickHandler(application, notify?.redirectLink ?: intentLink, overrideFlags)
     intent.removeExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
 
     uploadDelegate.sendEvent(
@@ -220,128 +443,8 @@ class PushNotifications private constructor(
     )
   }
 
-  /**
-   * function to read Your API Key from an PushPushGo library instance
-   * @return API Key String
-   */
-  fun getProjectId(): String = config.projectId
-
-  /**
-   * function to read Your API Key from an PushPushGo library instance
-   * @return API Key String
-   */
-  fun getApiKey(): String = config.apiKey
-
-  /**
-   * function to read Your subscriber id from an PushPushGo library instance
-   * @return subscriber id String
-   */
-  fun getSubscriberId(): String = networkModule.sharedPref.subscriberId
-
-  /**
-   * function to check if user subscribed to notifications
-   * @return boolean true if subscribed
-   */
-  fun isSubscribed(): Boolean = networkModule.sharedPref.isSubscribed
-
-  /**
-   * function to retrieve last push token used to subscribe that
-   */
-  fun getPushToken(): ListenableFuture<String> =
-    CoroutineScope(Job() + Dispatchers.IO).future {
-      networkModule.sharedPref.lastToken.takeIf { it.isNotEmpty() } ?: getPlatformPushToken(application)
-    }
-
-  /**
-   * function to register subscriber
-   */
-  fun registerSubscriber() {
-    if (!areNotificationsEnabled()) {
-      return logError("Notifications disabled! Subscriber registration canceled")
-    }
-
-    networkModule.sharedPref.isSubscribed = true
-    getUploadManager().sendRegister(null)
-  }
-
-  /**
-   * function to register subscriber and returns future with subscriber id
-   *
-   * @return string subscriber ID
-   */
-  fun createSubscriber(): ListenableFuture<String> =
-    CoroutineScope(Job() + Dispatchers.IO).future {
-      check(areNotificationsEnabled()) {
-        "Notifications disabled! Subscriber registration canceled"
-      }
-
-      getNetwork().registerToken(null)
-      networkModule.sharedPref.isSubscribed = true
-      getSubscriberId()
-    }
-
-  /**
-   * function to unregister subscriber
-   */
-  fun unregisterSubscriber() {
-    getUploadManager().sendUnregister()
-    networkModule.sharedPref.isSubscribed = false
-  }
-
-  fun unregisterSubscriber(
-    projectId: String,
-    projectToken: String,
-    subscriberId: String,
-  ): ListenableFuture<Unit> =
-    CoroutineScope(Job() + Dispatchers.IO).future {
-      getInstance().getNetwork().unregisterSubscriber(
-        projectId = projectId,
-        token = projectToken,
-        subscriberId = subscriberId,
-      )
-      networkModule.sharedPref.isSubscribed = false
-    }
-
-  /**
-   * function to re-subscribe to different project (previously unsubscribe from current project)
-   * WARNING: after resubscribe use object returned by this function instead of previous one
-   *
-   * @param newProjectId - project id to which we are switching
-   * @param newProjectToken - project token
-   */
-  fun migrateToNewProject(
-    newProjectId: String,
-    newProjectToken: String,
-  ): ListenableFuture<PushNotifications> =
-    CoroutineScope(Job() + Dispatchers.IO).future {
-      check(areNotificationsEnabled()) {
-        "Notifications disabled! Subscriber registration canceled"
-      }
-
-      getInstance().getNetwork().migrateSubscriber(
-        newProjectId = newProjectId,
-        newToken = newProjectToken,
-      )
-      reinitialize(
-        application = application,
-        config =
-          Config(
-            projectId = newProjectId,
-            apiKey = newProjectToken,
-            isDebug = config.isDebug,
-            apiUrl = config.apiUrl,
-          ),
-      ).apply {
-        notificationHandler = this@PushNotifications.notificationHandler
-        onInvalidProjectIdHandler = this@PushNotifications.onInvalidProjectIdHandler
-      }
-    }
-
   fun areNotificationsEnabled(): Boolean = areNotificationsEnabled(application)
 
-  /**
-   * function to construct and send beacon
-   */
   fun createBeacon(): BeaconBuilder = BeaconBuilder(uploadDelegate)
 
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = DefaultPushSubscriptionProvider(application)

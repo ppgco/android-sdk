@@ -1,11 +1,13 @@
 package com.pushpushgo.sdk.push.network
 
+import com.pushpushgo.sdk.core.config.Config
 import com.pushpushgo.sdk.push.data.Event
 import com.pushpushgo.sdk.push.network.data.TokenRequest
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.push.network.interceptor.ResponseInterceptor
 import com.pushpushgo.sdk.push.utils.PlatformType
+import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
@@ -59,23 +61,17 @@ internal interface ApiService {
   ): ResponseBody
 
   companion object {
-    operator fun invoke(
-      requestInterceptor: RequestInterceptor,
-      responseInterceptor: ResponseInterceptor,
-      platformType: PlatformType,
-      baseUrl: String,
-      isNetworkDebug: Boolean,
-    ): ApiService {
-      val okHttpClient =
+    fun fromConfig(config: Config): ApiService {
+      val client =
         OkHttpClient
           .Builder()
-          .addInterceptor(requestInterceptor)
-          .addInterceptor(responseInterceptor)
+          .addInterceptor(RequestInterceptor())
+          .addInterceptor(ResponseInterceptor())
           .addNetworkInterceptor(
             HttpLoggingInterceptor {
               logDebug(it)
             }.setLevel(
-              if (isNetworkDebug) {
+              if (config.isDebug) {
                 HttpLoggingInterceptor.Level.BODY
               } else {
                 HttpLoggingInterceptor.Level.BASIC
@@ -83,10 +79,12 @@ internal interface ApiService {
             ),
           ).build()
 
+      val platformType = getPlatformType()
+
       return Retrofit
         .Builder()
-        .client(okHttpClient)
-        .baseUrl("$baseUrl/v1/${platformType.apiName}/")
+        .client(client)
+        .baseUrl("${config.apiUrl}/v1/${platformType.apiName}/")
         .addConverterFactory(MoshiConverterFactory.create())
         .build()
         .create()

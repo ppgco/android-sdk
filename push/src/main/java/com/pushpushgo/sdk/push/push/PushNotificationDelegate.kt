@@ -15,13 +15,14 @@ import com.pushpushgo.sdk.push.R
 import com.pushpushgo.sdk.push.data.Action
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.PushPushNotification
+import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.utils.PendingIntentCompat
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.logWarning
 import com.pushpushgo.sdk.push.utils.mapToBundle
-import com.pushpushgo.sdk.push.work.UploadDelegate
+import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,12 +34,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.random.Random
 
 internal class PushNotificationDelegate(
-  context: Context,
+  private val sharedPreferencesHelper: SharedPreferencesHelper,
+  private val apiRepository: ApiRepository,
+  private val uploadManager: UploadManager,
 ) {
-  private val preferencesHelper = SharedPreferencesHelper(context, "notification_prefs")
-
-  private val uploadDelegate by lazy { UploadDelegate() }
-
   private val errorHandler = CoroutineExceptionHandler { _, throwable -> logError(throwable) }
 
   private val job = SupervisorJob()
@@ -50,7 +49,7 @@ internal class PushNotificationDelegate(
   ) {
     logDebug("From: ${pushMessage.from}")
 
-    if (!PushNotifications.getInstance().isPPGoPush(pushMessage.data)) {
+    if (!PushNotifications.getInstance().isPushPushGoNotification(pushMessage.data)) {
       return logWarning("Push is not from PPGo")
     }
 
@@ -58,7 +57,7 @@ internal class PushNotificationDelegate(
     val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
     val initializedProjectId = PushNotifications.getInstance().getProjectId()
     if (pushProjectId != initializedProjectId) {
-      PushNotifications.getInstance().onInvalidProjectIdHandler(pushProjectId, pushSubscriberId, initializedProjectId)
+      PushNotifications.getInstance().invalidProjectIdHandler(pushProjectId, pushSubscriberId, initializedProjectId)
     } else {
       processPushMessage(pushMessage, context)
     }
@@ -108,7 +107,7 @@ internal class PushNotificationDelegate(
     if (!PushNotifications.isInitialized()) return
     if (!PushNotifications.getInstance().areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
 
-    PushNotifications.getInstance().getUploadManager().sendRegister(token)
+    uploadManager.sendRegister(token)
   }
 
   fun onDestroy() {
@@ -118,12 +117,12 @@ internal class PushNotificationDelegate(
   private fun getUniqueNotificationId() = Random.nextInt(0, Int.MAX_VALUE)
 
   private fun getNotificationId(data: String): Int {
-    val existingId = preferencesHelper.getNotificationId(data)
+    val existingId = sharedPreferencesHelper.getNotificationId(data)
     return if (existingId != -1) {
       existingId
     } else {
       val randomId = getUniqueNotificationId()
-      preferencesHelper.setNotificationId(data, randomId)
+      sharedPreferencesHelper.setNotificationId(data, randomId)
       randomId
     }
   }
@@ -167,8 +166,8 @@ internal class PushNotificationDelegate(
     }
 
   private fun sendDeliveredEvent(notification: PushPushNotification) {
-    if (PushNotifications.isInitialized() && PushNotifications.getInstance().getSubscriberId().isNotBlank()) {
-      uploadDelegate.sendEvent(
+    if (PushNotifications.isInitialized() && PushNotifications.getInstance().getSubscriberId() != null) {
+      PushNotifications.getInstance().uploadDelegate.sendEvent(
         type = EventType.DELIVERED,
         buttonId = 0,
         projectId = notification.project,
@@ -198,7 +197,7 @@ internal class PushNotificationDelegate(
     try {
       return withTimeoutOrNull(5000) {
         withContext(Dispatchers.IO) {
-          PushNotifications.getInstance().getNetwork().getBitmapFromUrl(url)
+          apiRepository.getBitmapFromUrl(url)
         }
       }
     } catch (e: Throwable) {
@@ -352,7 +351,7 @@ internal class PushNotificationDelegate(
       logDebug("launcher intenet flags before override: $flags")
 
       if (PushNotifications.isInitialized()) {
-        val customFlags = PushNotifications.getInstance().getCustomClickIntentFlags()
+        val customFlags = PushNotifications.getInstance().customClickIntentFlags
         logDebug("launcher intent flags restored: $customFlags")
         if (customFlags > 0) {
           flags = customFlags
