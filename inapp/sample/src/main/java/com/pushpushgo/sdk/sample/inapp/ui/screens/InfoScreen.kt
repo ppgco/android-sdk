@@ -14,13 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.pushpushgo.sdk.inapp.InAppMessages
-import com.pushpushgo.sdk.inapp.ui.Route
 import com.pushpushgo.sdk.sample.inapp.ui.Screen
 
 @Composable
 internal fun InfoScreen(navController: NavHostController) {
   LaunchedEffect(Screen.Info.route) {
-    InAppMessages.getInstance().showMessagesOnRoute(Route(Screen.Info.route))
+    InAppMessages.getInstance().showMessagesOnRoute(Screen.Info.route)
   }
 
   Column(

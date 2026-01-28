@@ -38,12 +38,6 @@ internal class InAppUIController(
     observeMessages()
   }
 
-  fun stop() {
-    application.unregisterActivityLifecycleCallbacks(this)
-    job.cancel()
-    messageSubscription?.cancel()
-  }
-
   private fun observeMessages() {
     if (debug) {
       Log.d(InAppMessages.TAG, "[UIController] Starting to observe messages flow")
@@ -83,6 +77,7 @@ internal class InAppUIController(
     if (debug) {
       Log.d(InAppMessages.TAG, "[UIController] Activity resumed: ${activity.javaClass.simpleName}")
     }
+
     currentActivity = WeakReference(activity)
 
     launch {
@@ -103,8 +98,10 @@ internal class InAppUIController(
       if (debug) {
         Log.d(InAppMessages.TAG, "[UIController] Activity paused, cancelling pending messages")
       }
+
       currentActivity.clear()
     }
+
     displayer.cancelPendingMessages(isActivityPaused = true)
   }
 
@@ -127,6 +124,7 @@ internal class InAppUIController(
   fun displayCustomMessage(message: InAppMessage) {
     launch {
       val activity = currentActivity.get()
+
       if (activity == null || activity.isFinishing) {
         return@launch
       }

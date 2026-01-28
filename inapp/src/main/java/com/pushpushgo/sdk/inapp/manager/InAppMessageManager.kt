@@ -1,7 +1,6 @@
 package com.pushpushgo.sdk.inapp.manager
 
 import com.pushpushgo.sdk.inapp.model.InAppMessage
-import com.pushpushgo.sdk.inapp.ui.Route
 import kotlinx.coroutines.flow.Flow
 
 internal interface InAppMessageManager {
@@ -16,9 +15,9 @@ internal interface InAppMessageManager {
 
   fun getActiveMessages(): List<InAppMessage>
 
-  fun getRoute(): Route?
+  fun getRoute(): String?
 
-  suspend fun refreshActiveMessages(route: Route?)
+  suspend fun refreshActiveMessages(route: String?)
 
   suspend fun isMessageEligible(message: InAppMessage): Boolean
 }

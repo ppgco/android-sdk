@@ -37,7 +37,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import java.util.concurrent.CancellationException
@@ -143,7 +142,9 @@ internal class InAppMessageDisplayerImpl(
       when (message.template) {
         "WEBSITE_TO_HOME_SCREEN",
         "PAYWALL_PUBLISH",
-        -> R.style.InAppMessageDialog_Modal
+        -> {
+          R.style.InAppMessageDialog_Modal
+        }
 
         "EXIT_INTENT_ECOMM",
         "PUSH_NOTIFICATION_OPT_IN",
@@ -151,7 +152,9 @@ internal class InAppMessageDisplayerImpl(
         "UNBLOCK_NOTIFICATIONS",
         "LOW_STOCK",
         "REVIEW_FOR_DISCOUNT",
-        -> R.style.InAppMessageDialog_Banner
+        -> {
+          R.style.InAppMessageDialog_Banner
+        }
 
         else -> {
           Log.w(InAppMessages.TAG, "[Displayer] Unsupported template: ${message.template}, no container style defined.")
@@ -292,6 +295,7 @@ internal class InAppMessageDisplayerImpl(
                   message.layout.placement
                     .toString()
                     .startsWith("TOP") -> Gravity.TOP or Gravity.CENTER_HORIZONTAL
+
                   message.layout.placement
                     .toString()
                     .startsWith("BOTTOM") -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
@@ -413,31 +417,28 @@ internal class InAppMessageDisplayerImpl(
         }
 
         InAppActionType.SUBSCRIBE -> {
-          try {
-            runBlocking {
-              pushSubscriptionProvider?.subscribe()
+          launch {
+            if (pushSubscriptionProvider == null) {
+              Log.e(InAppMessages.TAG, "[Displayer] No PushSubscriptionProvider configured - cannot subscribe to notifications")
+              return@launch
             }
-          } catch (e: Exception) {
-            Log.e(InAppMessages.TAG, "[Displayer] Error processing subscription request", e)
-            false
-          }
 
-          val success = pushSubscriptionProvider?.isSubscribed() ?: false
+            if (pushSubscriptionProvider.isSubscribed()) {
+              Log.i(InAppMessages.TAG, "[Displayer] Already subscribed to notifications, skipping")
+              return@launch
+            }
 
-          if (success) {
-            Toast
-              .makeText(
-                context,
-                "Successfully subscribed to notifications!",
-                Toast.LENGTH_SHORT,
-              ).show()
-          } else {
-            Toast
-              .makeText(
-                context,
-                "Subscription failed. Enable notifications in settings.",
-                Toast.LENGTH_LONG,
-              ).show()
+            try {
+              pushSubscriptionProvider.subscribe()
+            } catch (e: Exception) {
+              Log.e(InAppMessages.TAG, "[Displayer] Error subscribing to notifications", e)
+            }
+
+            if (pushSubscriptionProvider.isSubscribed()) {
+              Toast.makeText(context, "Successfully subscribed to notifications!", Toast.LENGTH_SHORT).show()
+            } else {
+              Toast.makeText(context, "Subscription failed. Enable notifications in settings.", Toast.LENGTH_LONG).show()
+            }
           }
         }
 

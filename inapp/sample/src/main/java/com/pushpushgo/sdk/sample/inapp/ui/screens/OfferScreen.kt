@@ -14,13 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.pushpushgo.sdk.inapp.InAppMessages
-import com.pushpushgo.sdk.inapp.ui.Route
 import com.pushpushgo.sdk.sample.inapp.ui.Screen
 
 @Composable
 internal fun OfferScreen(navController: NavHostController) {
   LaunchedEffect(Screen.Offer.route) {
-    InAppMessages.getInstance().showMessagesOnRoute(Route(Screen.Offer.route))
+    InAppMessages.getInstance().showMessagesOnRoute(Screen.Offer.route)
   }
 
   Column(

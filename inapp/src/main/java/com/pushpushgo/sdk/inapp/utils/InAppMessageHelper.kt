@@ -8,7 +8,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import com.pushpushgo.sdk.inapp.InAppMessages
-import com.pushpushgo.sdk.inapp.ui.Route
 
 /**
  * Helper class that simplifies in-app message integration across different UI frameworks.
@@ -22,7 +21,7 @@ object InAppMessageHelper {
    * @param screenName The name of the current screen/route
    */
   fun showMessagesForScreen(screenName: String) {
-    InAppMessages.getInstance().showMessagesOnRoute(Route(screenName))
+    InAppMessages.getInstance().showMessagesOnRoute(screenName)
   }
 
   /**

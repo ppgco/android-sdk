@@ -14,9 +14,9 @@ import com.pushpushgo.sdk.inapp.model.TriggerType
 import com.pushpushgo.sdk.inapp.model.UserAudienceType
 import com.pushpushgo.sdk.inapp.persistence.InAppMessagePersistence
 import com.pushpushgo.sdk.inapp.repository.InAppMessageRepository
-import com.pushpushgo.sdk.inapp.ui.Route
 import com.pushpushgo.sdk.inapp.utils.DeviceInfoProvider
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,11 +52,13 @@ internal class InAppMessageManagerImpl(
 
   @Volatile
   private var refreshJob: Job? = null
-  private var currentRoute: Route? = null
+  private var currentRoute: String? = null
 
   // Mutex to ensure atomic updates to activeMessages from refresh and trigger operations
   private val messagesUpdateMutex = Mutex()
   private val refreshJobMutex = Mutex()
+
+  private val hasInitialized = CompletableDeferred<Unit>()
 
   // Device info
   private val currentDeviceType by lazy { DeviceInfoProvider.getCurrentDeviceType(context) }
@@ -73,6 +75,8 @@ internal class InAppMessageManagerImpl(
 
       // Start periodic schedule checks
       startScheduleRefresh()
+
+      hasInitialized.complete(Unit)
 
       if (debug) {
         Log.d(InAppMessages.TAG, "[Manager] initialized successfully")
@@ -106,7 +110,7 @@ internal class InAppMessageManagerImpl(
       buildTriggerMap(messages)
     } catch (e: Exception) {
       if (e is CancellationException) throw e
-      Log.e(InAppMessages.TAG, "[Manager] śError refreshing messages from API: ${e.message}", e)
+      Log.e(InAppMessages.TAG, "[Manager] Error refreshing messages from API: ${e.message}", e)
     }
   }
 
@@ -121,7 +125,7 @@ internal class InAppMessageManagerImpl(
 
     // Start a new job in the current scope to leverage its lifecycle
     scheduleRefreshJob =
-      scope.launch(Dispatchers.IO) {
+      scope.launch {
         try {
           while (true) {
             delay(scheduleRefreshInterval)
@@ -244,15 +248,17 @@ internal class InAppMessageManagerImpl(
       return@withContext true
     }
 
-  override suspend fun refreshActiveMessages(route: Route?) {
+  override suspend fun refreshActiveMessages(route: String?) {
+    hasInitialized.await()
+
     // If a new route is explicitly provided (on navigation), update the manager's internal state.
     this.currentRoute = route
 
     val newJob =
-      scope.launch(Dispatchers.IO) {
+      scope.launch {
         try {
           if (debug) {
-            Log.d(InAppMessages.TAG, "[Manager] Refreshing active messages for route: ${route?.name}")
+            Log.d(InAppMessages.TAG, "[Manager] Refreshing active messages for route: $route")
           }
 
           val eventBasedMessages =
@@ -270,8 +276,8 @@ internal class InAppMessageManagerImpl(
                 }
 
                 val (displayed, hidden) = displayOnRules.partition { it.display }
-                val isDisplayed = displayed.any { it.path == route.name }
-                val isHidden = hidden.any { it.path == route.name }
+                val isDisplayed = displayed.any { it.path == route }
+                val isHidden = hidden.any { it.path == route }
 
                 if (displayed.isEmpty() && !isHidden) {
                   return@filter true
@@ -319,7 +325,9 @@ internal class InAppMessageManagerImpl(
               finalEligibleMessages.sortedWith(
                 compareBy { message ->
                   when (val priority = message.settings.priority) {
-                    0 -> Int.MAX_VALUE // Lowest priority (0 = displayed last)
+                    0 -> Int.MAX_VALUE
+
+                    // Lowest priority (0 = displayed last)
                     else -> priority // 1 = highest, 2 = second, etc.
                   }
                 },
@@ -334,7 +342,7 @@ internal class InAppMessageManagerImpl(
             }
           }
         } catch (e: Exception) {
-          Log.e(InAppMessages.TAG, "[Manager] Error refreshing active messages for route: ${route?.name}", e)
+          Log.e(InAppMessages.TAG, "[Manager] Error refreshing active messages for route: $route", e)
         }
       }
 
@@ -382,7 +390,9 @@ internal class InAppMessageManagerImpl(
     for (msg in potentialMessages.sortedWith(
       compareBy { message ->
         when (val priority = message.settings.priority) {
-          0 -> Int.MAX_VALUE // Lowest priority (0 = displayed last)
+          0 -> Int.MAX_VALUE
+
+          // Lowest priority (0 = displayed last)
           else -> priority // 1 = highest, 2 = second, etc.
         }
       },
@@ -402,29 +412,28 @@ internal class InAppMessageManagerImpl(
     return null
   }
 
-  private suspend fun isInScheduleWindow(msg: InAppMessage): Boolean =
-    withContext(Dispatchers.Default) {
-      val schedule = msg.schedule ?: return@withContext true // No schedule means always in window
+  private fun isInScheduleWindow(msg: InAppMessage): Boolean {
+    val schedule = msg.schedule ?: return true // No schedule means always in window
 
-      // Get current time in system default zone
-      val currentTime = ZonedDateTime.now()
+    // Get current time in system default zone
+    val currentTime = ZonedDateTime.now()
 
-      // If there's no schedule constraints, message is always in window
-      if (schedule.startTime == null && schedule.endTime == null) {
-        return@withContext true
-      }
-
-      // Normalize time zones for accurate comparison
-      val normalizedStartTime = schedule.startTime?.withZoneSameInstant(currentTime.zone)
-      val normalizedEndTime = schedule.endTime?.withZoneSameInstant(currentTime.zone)
-
-      // Check if current time is within schedule bounds
-      val afterStart = normalizedStartTime == null || !currentTime.isBefore(normalizedStartTime)
-      val beforeEnd = normalizedEndTime == null || currentTime.isBefore(normalizedEndTime)
-      val isInWindow = afterStart && beforeEnd
-
-      return@withContext isInWindow
+    // If there's no schedule constraints, message is always in window
+    if (schedule.startTime == null && schedule.endTime == null) {
+      return true
     }
+
+    // Normalize time zones for accurate comparison
+    val normalizedStartTime = schedule.startTime?.withZoneSameInstant(currentTime.zone)
+    val normalizedEndTime = schedule.endTime?.withZoneSameInstant(currentTime.zone)
+
+    // Check if current time is within schedule bounds
+    val afterStart = normalizedStartTime == null || !currentTime.isBefore(normalizedStartTime)
+    val beforeEnd = normalizedEndTime == null || currentTime.isBefore(normalizedEndTime)
+    val isInWindow = afterStart && beforeEnd
+
+    return isInWindow
+  }
 
   private fun userMatchesAudienceType(audienceType: UserAudienceType): Boolean {
     val isSubscribed = pushSubscriptionProvider?.isSubscribed() ?: false
@@ -448,5 +457,5 @@ internal class InAppMessageManagerImpl(
    */
   override fun getActiveMessages(): List<InAppMessage> = activeMessages.toList()
 
-  override fun getRoute(): Route? = currentRoute
+  override fun getRoute(): String? = currentRoute
 }

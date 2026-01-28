@@ -18,13 +18,10 @@ import com.pushpushgo.sdk.inapp.ui.CustomCodeHandler
 import com.pushpushgo.sdk.inapp.ui.InAppMessageDisplayer
 import com.pushpushgo.sdk.inapp.ui.InAppMessageDisplayerImpl
 import com.pushpushgo.sdk.inapp.ui.InAppUIController
-import com.pushpushgo.sdk.inapp.ui.Route
 import com.pushpushgo.sdk.inapp.ui.Trigger
-import com.pushpushgo.sdk.inapp.utils.AutoCleanupManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 
@@ -68,7 +65,6 @@ class InAppMessages private constructor(
   private val manager: InAppMessageManager
   private val displayer: InAppMessageDisplayer
   private val uiController: InAppUIController
-  private var autoCleanupManager: AutoCleanupManager? = null
 
   companion object {
     internal const val TAG = "[PushPushGo:InAppMessages]"
@@ -76,6 +72,13 @@ class InAppMessages private constructor(
     @Volatile
     private var INSTANCE: InAppMessages? = null
 
+    /**
+     * Initializes the InAppMessages SDK using configuration defined in AndroidManifest.xml.
+     *
+     * Subsequent calls return the same instance.
+     *
+     * @throws IllegalStateException if required manifest values are missing.
+     */
     @JvmStatic
     fun initialize(
       application: Application,
@@ -89,6 +92,11 @@ class InAppMessages private constructor(
         ).also { INSTANCE = it }
       }
 
+    /**
+     * Initializes the InAppMessages SDK using an explicit [Config].
+     *
+     * Subsequent calls return the same instance.
+     */
     @JvmStatic
     fun initialize(
       application: Application,
@@ -148,48 +156,38 @@ class InAppMessages private constructor(
       manager.initialize()
     }
     uiController.start()
-
-    autoCleanupManager =
-      AutoCleanupManager(
-        application = application,
-        cleanupCallback = { cleanup() },
-      )
-    autoCleanupManager?.start()
   }
 
   /**
-   * Cleans up resources used by the SDK
-   * This is called automatically after app is in background for a prolonged period,
-   * but can also be called manually from app's onDestroy()
-   */
-  private fun cleanup() {
-    // Stop the auto-cleanup manager
-    autoCleanupManager?.stop()
-    autoCleanupManager = null
-
-    uiController.stop()
-    displayer.cancelPendingMessages()
-    sdkScope.cancel()
-  }
-
-  /**
-   * Shows all in-app messages that should be displayed automatically:
-   * - If currentRoute is null: shows all messages with trigger.type == APP_OPEN
-   * - If currentRoute is not null: shows all messages with trigger.type == ROUTE and trigger.route == currentRoute, and all with trigger.type == APP_OPEN
+   * Displays in-app messages applicable to the given route.
    *
-   * Call this once on app start (with currentRoute = null),
-   * and on route/view change (with currentRoute = route name).
+   * Messages will be shown if they:
+   * - Are configured to display on all pages
+   * - Have a route filter that matches the provided route
+   *
+   * This method should be called:
+   * - Once when the app starts
+   * - Whenever the active route changes
+   *
+   * @param route Non-blank route identifier.
+   *
+   * @throws IllegalArgumentException if route is blank.
    */
-  fun showMessagesOnRoute(route: Route) {
+  fun showMessagesOnRoute(route: String) {
+    require(route.isNotBlank()) {
+      "Route name must not me blank"
+    }
+
     sdkScope.launch {
       manager.refreshActiveMessages(route)
     }
   }
 
   /**
-   * Shows in-app messages for a custom trigger.
-   * Only messages with trigger.type == CUSTOM_TRIGGER and matching key and value will be shown.
-   * Also doesn't cancel pending messages for APP_OPEN trigger.
+   * Displays in-app messages associated with a custom trigger.
+   *
+   * Only messages whose trigger conditions match the provided trigger
+   * will be displayed.
    */
   fun showMessagesOnTrigger(trigger: Trigger) {
     sdkScope.launch {

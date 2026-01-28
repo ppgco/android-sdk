@@ -28,6 +28,6 @@ if (!isJitPack) {
     ":push:sample:firebase",
     ":push:sample:hms",
     ":push:sample:java",
-    ":inapp:sample"
+    ":inapp:sample",
   )
 }
