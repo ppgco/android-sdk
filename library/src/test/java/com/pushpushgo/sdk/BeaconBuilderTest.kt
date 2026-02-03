@@ -274,4 +274,88 @@ internal class BeaconBuilderTest {
       )
     }
   }
+
+  @Test
+  fun `assign to group`() {
+    every { uploadDelegate.sendBeacon(any()) } just Runs
+
+    beaconBuilder = BeaconBuilder(uploadDelegate)
+
+    beaconBuilder.assignToGroup("my-segment-123")
+
+    beaconBuilder.send()
+
+    verify {
+      uploadDelegate.sendBeacon(
+        match {
+          it["assignToGroup"] == "my-segment-123"
+        },
+      )
+    }
+  }
+
+  @Test
+  fun `unassign from group`() {
+    every { uploadDelegate.sendBeacon(any()) } just Runs
+
+    beaconBuilder = BeaconBuilder(uploadDelegate)
+
+    beaconBuilder.unassignFromGroup("my-segment-333")
+
+    beaconBuilder.send()
+
+    verify {
+      uploadDelegate.sendBeacon(
+        match {
+          it["unassignFromGroup"] == "my-segment-333"
+        },
+      )
+    }
+  }
+
+  @Test
+  fun `assign and unassign from groups simultaneously`() {
+    every { uploadDelegate.sendBeacon(any()) } just Runs
+
+    beaconBuilder = BeaconBuilder(uploadDelegate)
+
+    beaconBuilder
+      .assignToGroup("my-segment-123")
+      .unassignFromGroup("my-segment-333")
+
+    beaconBuilder.send()
+
+    verify {
+      uploadDelegate.sendBeacon(
+        match {
+          it["assignToGroup"] == "my-segment-123" &&
+            it["unassignFromGroup"] == "my-segment-333"
+        },
+      )
+    }
+  }
+
+  @Test
+  fun `assign to group with other beacon data`() {
+    every { uploadDelegate.sendBeacon(any()) } just Runs
+
+    beaconBuilder = BeaconBuilder(uploadDelegate)
+
+    beaconBuilder
+      .setCustomId("xxsampleId")
+      .assignToGroup("my-segment-123")
+      .appendTag("tag1", "label1")
+
+    beaconBuilder.send()
+
+    verify {
+      uploadDelegate.sendBeacon(
+        match {
+          it["customId"] == "xxsampleId" &&
+            it["assignToGroup"] == "my-segment-123" &&
+            it.has("tags")
+        },
+      )
+    }
+  }
 }

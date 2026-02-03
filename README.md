@@ -155,7 +155,7 @@ dependencyResolutionManagement {
 
 // /libs.versions.toml
 [versions]
-ppgSdk = "3.0.2"
+ppgSdk = "3.1.0"
 
 [libraries]
 ppg-sdk = { module = "com.github.ppgco.android-sdk:sdk", version.ref = "ppgSdk" }
@@ -239,6 +239,20 @@ PushPushGo.getInstance().createBeacon()
 .setCustomId("SEEI")
 .appendTag("demo")
 .appendTag("mobile", "platform")
+.send();
+```
+
+- Assign subscriber to dynamic group:
+```java
+PushPushGo.getInstance().createBeacon()
+.assignToGroup("my-group-name")
+.send();
+```
+
+- Unassign subscriber from dynamic group:
+```java
+PushPushGo.getInstance().createBeacon()
+.unassignFromGroup("my-group-name")
 .send();
 ```
 

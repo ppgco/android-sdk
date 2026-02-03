@@ -17,6 +17,10 @@ class BeaconBuilder internal constructor(
 
   private var customId = ""
 
+  private var assignToGroup: String? = null
+
+  private var unassignFromGroup: String? = null
+
   /**
    * Add beacon selector
    *
@@ -113,6 +117,32 @@ class BeaconBuilder internal constructor(
   }
 
   /**
+   * Assign subscriber to a dynamic group
+   *
+   * @param groupId ID of the dynamic group to assign to
+   *
+   * @return instance of builder
+   */
+  fun assignToGroup(groupId: String): BeaconBuilder {
+    assignToGroup = groupId
+
+    return this
+  }
+
+  /**
+   * Unassign subscriber from a dynamic group
+   *
+   * @param groupId ID of the dynamic group to unassign from
+   *
+   * @return instance of builder
+   */
+  fun unassignFromGroup(groupId: String): BeaconBuilder {
+    unassignFromGroup = groupId
+
+    return this
+  }
+
+  /**
    * @throws PushPushException on unsupported selector value type
    */
   fun send() {
@@ -122,6 +152,8 @@ class BeaconBuilder internal constructor(
         addTags()
         addTagsToDelete()
         if (customId.isNotEmpty()) put("customId", customId)
+        assignToGroup?.let { put("assignToGroup", it) }
+        unassignFromGroup?.let { put("unassignFromGroup", it) }
       },
     )
   }
