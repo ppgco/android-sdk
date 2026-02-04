@@ -1,4 +1,4 @@
-# PushPushGo In-App Messages SDK
+# PushPushGo InAppMessages SDK
 
 Android SDK for integrating in-app messages into your applications. Provides advanced message management, display functionality, and user interaction based on configuration parameters provided from the backend.
 
@@ -9,11 +9,10 @@ Android SDK for integrating in-app messages into your applications. Provides adv
 - [Navigation Integration](#navigation-integration)
 - [Triggering Messages](#triggering-messages)
 - [Action Handling](#action-handling)
-- [Advanced Features](#advanced-features)
 
 ## Installation
 
-To enable Pop-ups or In-app messages in your PushPushGo project, contact our support or you account manager. 
+To enable in-app messages in your PushPushGo project, contact our support or your account manager. 
 
 ### Gradle
 
@@ -50,12 +49,24 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // Initialize the SDK
-        InAppMessagesSDK.initialize(
-            application = this,
+        // Initialize the SDK using configuration from AndroidManifest.xml
+        InAppMessages.initialize(
+          application = this,
+          // pushSubscriptionProvider = ...,  optional, see [Action Handling] section
+          // customCodeHandler = ..., optional, see [Action Handling] section
+        )
+      
+        // or
+      
+        // Initialize manually
+        InAppMessages.initialize(
+          application = this,
+          config = Config(
             projectId = "your-project-id",
             apiKey = "your-api-key",
-            debug = BuildConfig.DEBUG // Optional: enable diagnostic logging
+          ),
+          // pushSubscriptionProvider = ...,  optional, see [Action Handling] section
+          // customCodeHandler = ..., optional, see [Action Handling] section
         )
     }
 }
@@ -73,13 +84,17 @@ Don't forget to add your application class to your AndroidManifest.xml:
 
 ## Basic Usage
 
-### Displaying Automatic Messages
+### Message Evaluation
 
-Messages with the `APP_OPEN` trigger type will be displayed automatically when the app starts.
+In-app messages are not displayed automatically.
 
-### Displaying Messages on Screens/Routes
+Messages are evaluated and displayed only after the application explicitly sets the current route. When a route is set, the SDK displays messages that:
+- Are configured to display on all routes, or 
+- Have a route filter matching the provided route
 
-To show messages configured for specific app screens:
+### Displaying messages on the current route
+
+Call `showMessagesOnRoute` whenever the active screen or route changes.
 
 ```kotlin
 class MainActivity : AppCompatActivity() {
@@ -91,7 +106,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Display messages for main screen, example: screen nav route name is "main_screen"
-        InAppMessagesSDK.getInstance().showActiveMessages("main_screen")
+        InAppMessages.getInstance().showMessagesOnRoute("main_screen")
     }
 }
 ```
@@ -179,16 +194,16 @@ Messages can be triggered based on custom events in your application:
 ```kotlin
 // Trigger messages after purchase completion
 fun onPurchaseCompleted(productId: String) {
-    InAppMessagesSDK.getInstance().showMessagesOnTrigger(
+    InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue(
         key = "purchase_completed",
         value = productId // value has to be a string
-    )
+    ))
 }
 
 // Trigger review request after 3 feature uses
 fun checkAndShowReviewRequest(usageCount: Int) {
     if (usageCount >= 3) {
-        InAppMessagesSDK.getInstance().showMessagesOnTrigger("review_request")
+        InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("review_request"))
     }
 }
 ```
@@ -197,61 +212,58 @@ fun checkAndShowReviewRequest(usageCount: Int) {
 
 ### URL Redirections
 
-By default, redirection actions open the URL in an external browser. No additional configuration is required.
+By default, URL redirection actions open the target address in an external browser.  
+No additional configuration is required.
 
-### JavaScript Actions
+---
 
-To handle JavaScript actions from messages:
+### Push Subscription Actions
+
+In-app message buttons can be configured to **subscribe users to push notifications**.
+
+The InAppMessages SDK does not handle push subscription logic on its own. Instead, these actions are delegated to a `PushSubscriptionProvider`, if supplied during SDK initialization.
+
+A default implementation is provided by the PushPushGo PushNotifications SDK:
 
 ```kotlin
-InAppMessagesSDK.getInstance().setJsActionHandler { jsCode ->
-    // Process JavaScript code
-    when {
-        jsCode.contains("addToCart") -> {
-            // Handle add to cart
-            val productId = parseProductId(jsCode)
-            addToCart(productId)
-        }
-        jsCode.contains("applyDiscount") -> {
-            // Handle discount application
-            val discountCode = parseDiscountCode(jsCode)
-            applyDiscount(discountCode)
-        }
-        // Other JS actions
-    }
+PushNotifications.getInstance().getPushSubscriptionProvider()
+```
+
+A custom implementation may also be supplied.
+
+---
+
+### Custom Code Actions
+
+In-app message buttons can be configured to contain **custom code**.
+
+When such a button is clicked, the configured code is passed to a `CustomCodeHandler`, if supplied during SDK initialization.
+
+```kotlin
+interface CustomCodeHandler {
+  fun handle(code: String)
 }
 ```
 
-## Advanced Features
+---
 
-### Resource Cleanup
 
-When logging out users or handling other state changes, you can clean up SDK resources:
-
-```kotlin
-fun onUserLogout() {
-    InAppMessagesSDK.getInstance().cleanup()
-    // Re-initialize SDK if needed after cleanup
-}
-```
-
-### Debugging
+## Debugging
 
 To facilitate debugging, enable debug mode during initialization:
 
 ```kotlin
-InAppMessagesSDK.initialize(
+InAppMessages.initialize(
     application = this,
-    projectId = "your-project-id",
-    apiKey = "your-api-key",
-    debug = true
+    config = Config(
+      projectId = "your-project-id",
+      apiKey = "your-api-key",
+      isDebug = true
+    )
 )
 ```
 
-Diagnostic messages will be visible in Logcat with these tags:
-- `InAppMessageManager`
-- `InAppUIController`
-- `InAppMessageDisplayer`
+Diagnostic messages will be visible in Logcat with the `[PushPushGo:InAppMessages]` tag.
 
 ## Trigger Examples
 
@@ -260,37 +272,37 @@ Below are examples of typical message triggers that you can implement in your ap
 ### E-commerce
 ```kotlin
 // Abandoned cart
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("cart_abandoned")
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("cart_abandoned"))
 
 // Product added to cart
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("product_added", productId)
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("product_added", productId))
 
 // Order completed
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("order_completed", orderId)
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("order_completed", orderId))
 ```
 
 ### Content Applications
 ```kotlin
 // Article read
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("article_read", articleId)
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("article_read", articleId))
 
 // Subscription expiring
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("subscription_expiring")
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("subscription_expiring"))
 
 // Free content limit reached
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("free_limit_reached")
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("free_limit_reached"))
 ```
 
 ### Games
 ```kotlin
 // Level completed
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("level_completed", levelId)
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("level_completed", levelId))
 
 // Achievement unlocked
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("achievement_unlocked", achievementId)
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("achievement_unlocked", achievementId))
 
 // Game session ended
-InAppMessagesSDK.getInstance().showMessagesOnTrigger("game_session_ended")
+InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("game_session_ended"))
 ```
 
 ## Troubleshooting

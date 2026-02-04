@@ -83,12 +83,14 @@ class InAppMessages private constructor(
     fun initialize(
       application: Application,
       pushSubscriptionProvider: PushSubscriptionProvider? = null,
+      customCodeHandler: CustomCodeHandler? = null,
     ): InAppMessages =
       INSTANCE ?: synchronized(this) {
         INSTANCE ?: InAppMessages(
           application = application,
           config = ManifestConfigProvider(application).provide(),
           pushSubscriptionProvider = pushSubscriptionProvider,
+          customCodeHandler = customCodeHandler,
         ).also { INSTANCE = it }
       }
 
@@ -102,12 +104,14 @@ class InAppMessages private constructor(
       application: Application,
       config: Config,
       pushSubscriptionProvider: PushSubscriptionProvider? = null,
+      customCodeHandler: CustomCodeHandler? = null,
     ): InAppMessages =
       INSTANCE ?: synchronized(this) {
         INSTANCE ?: InAppMessages(
           application = application,
           config = config,
           pushSubscriptionProvider = pushSubscriptionProvider,
+          customCodeHandler = customCodeHandler,
         ).also {
           INSTANCE = it
         }
