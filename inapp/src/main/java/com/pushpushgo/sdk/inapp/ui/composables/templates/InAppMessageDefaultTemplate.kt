@@ -53,7 +53,7 @@ internal fun InAppMessageDefaultTemplate(
       shape = borderRadius,
       colors =
         CardDefaults.cardColors(
-          containerColor = Color.Companion.fromHex(message.style.backgroundColor),
+          containerColor = Color.fromHex(message.style.backgroundColor),
         ),
       border =
         if (message.style.border) {

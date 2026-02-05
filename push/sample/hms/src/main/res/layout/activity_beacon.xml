@@ -50,6 +50,24 @@
                 android:layout_height="wrap_content"
                 android:text="custom_id=TEST1" />
 
+            <Button
+              android:id="@+id/beacon7"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="assignToGroup(test-group-123)" />
+
+            <Button
+              android:id="@+id/beacon8"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="unassignFromGroup(test-group-123)" />
+
+            <Button
+              android:id="@+id/beacon9"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="assign + unassign (different groups)" />
+
         </LinearLayout>
 
     </ScrollView>

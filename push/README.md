@@ -242,6 +242,20 @@ PushPushGo.getInstance().createBeacon()
 .send();
 ```
 
+- Assign subscriber to dynamic group:
+```java
+PushPushGo.getInstance().createBeacon()
+.assignToGroup("my-group-name")
+.send();
+```
+
+- Unassign subscriber from dynamic group:
+```java
+PushPushGo.getInstance().createBeacon()
+.unassignFromGroup("my-group-name")
+.send();
+```
+
 ## Publishing
 
 To maven local repository:

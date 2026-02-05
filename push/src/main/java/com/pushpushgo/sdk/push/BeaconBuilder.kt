@@ -12,9 +12,13 @@ class BeaconBuilder internal constructor(
 
   private val tags = mutableListOf<BeaconTag>()
 
-  private val tagsToDelete = mutableMapOf<String, String>()
+  private val tagsToDelete = mutableListOf<Pair<String, String>>()
 
   private var customId = ""
+
+  private var assignToGroup: String? = null
+
+  private var unassignFromGroup: String? = null
 
   /**
    * @param key Selector key.
@@ -71,7 +75,7 @@ class BeaconBuilder internal constructor(
    * @return This builder instance.
    */
   fun removeTag(vararg name: String): BeaconBuilder {
-    tagsToDelete.putAll(name.map { it to "default" })
+    tagsToDelete.addAll(name.map { it to "default" })
 
     return this
   }
@@ -87,12 +91,23 @@ class BeaconBuilder internal constructor(
    * @return This builder instance.
    */
   fun removeTags(tags: Map<String, String>): BeaconBuilder {
-    tagsToDelete.putAll(tags)
+    tagsToDelete.addAll(tags.map { it.key to it.value })
 
     return this
   }
 
-  fun getTagsToDelete(): List<String> = tagsToDelete.keys.toList()
+  /**
+   * @param tags List of tag-label pairs to remove
+   *
+   * @return instance of builder
+   */
+  fun removeTags(tags: List<Pair<String, String>>): BeaconBuilder {
+    tagsToDelete.addAll(tags)
+
+    return this
+  }
+
+  fun getTagsToDelete(): List<String> = tagsToDelete.map { it.first }
 
   /**
    * Sets a custom beacon identifier.
@@ -123,6 +138,32 @@ class BeaconBuilder internal constructor(
   }
 
   /**
+   * Assign subscriber to a dynamic group
+   *
+   * @param groupId ID of the dynamic group to assign to
+   *
+   * @return instance of builder
+   */
+  fun assignToGroup(groupId: String): BeaconBuilder {
+    assignToGroup = groupId
+
+    return this
+  }
+
+  /**
+   * Unassign subscriber from a dynamic group
+   *
+   * @param groupId ID of the dynamic group to unassign from
+   *
+   * @return instance of builder
+   */
+  fun unassignFromGroup(groupId: String): BeaconBuilder {
+    unassignFromGroup = groupId
+
+    return this
+  }
+
+  /**
    * Dispatches the configured beacon.
    */
   fun send() {
@@ -132,6 +173,8 @@ class BeaconBuilder internal constructor(
         addTags()
         addTagsToDelete()
         if (customId.isNotEmpty()) put("customId", customId)
+        assignToGroup?.let { put("assignToGroup", it) }
+        unassignFromGroup?.let { put("unassignFromGroup", it) }
       },
     )
   }
@@ -174,9 +217,9 @@ class BeaconBuilder internal constructor(
     put(
       "tagsToDelete",
       JSONArray().apply {
-        if (tagsToDelete.all { it.value == "default" }) {
+        if (tagsToDelete.all { it.second == "default" }) {
           tagsToDelete.forEach {
-            put(it.key)
+            put(it.first)
           }
         } else {
           tagsToDelete.forEach { (tag, label) ->

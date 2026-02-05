@@ -84,5 +84,28 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
         .setCustomId("TEST1")
         .send()
     }
+
+    findViewById<Button>(R.id.beacon7).setOnClickListener {
+      ppg
+        .createBeacon()
+        .assignToGroup("test-group-123")
+        .send()
+    }
+
+    findViewById<Button>(R.id.beacon8).setOnClickListener {
+      ppg
+        .createBeacon()
+        .unassignFromGroup("test-group-123")
+        .send()
+    }
+
+    findViewById<Button>(R.id.beacon9).setOnClickListener {
+      ppg
+        .createBeacon()
+        .assignToGroup("group-to-join")
+        .unassignFromGroup("group-to-leave")
+        .setCustomId("GROUPS_TEST")
+        .send()
+    }
   }
 }

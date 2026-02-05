@@ -45,32 +45,40 @@ internal fun parseBorderRadius(borderRadius: String?): Shape {
   val parts = removePxFromString(borderRadius)
 
   return when (parts.size) {
-    1 -> RoundedCornerShape(parts[0].pxToDp)
-    2 ->
+    1 -> {
+      RoundedCornerShape(parts[0].pxToDp)
+    }
+
+    2 -> {
       RoundedCornerShape(
         topStart = parts[0].pxToDp,
         topEnd = parts[0].pxToDp,
         bottomStart = parts[1].pxToDp,
         bottomEnd = parts[1].pxToDp,
       )
+    }
 
-    3 ->
+    3 -> {
       RoundedCornerShape(
         topStart = parts[0].pxToDp,
         topEnd = parts[1].pxToDp,
         bottomStart = parts[2].pxToDp,
         bottomEnd = parts[1].pxToDp,
       )
+    }
 
-    4 ->
+    4 -> {
       RoundedCornerShape(
         topStart = parts[0].pxToDp,
         topEnd = parts[1].pxToDp,
         bottomStart = parts[3].pxToDp,
         bottomEnd = parts[2].pxToDp,
       )
+    }
 
-    else -> RoundedCornerShape(0.pxToDp)
+    else -> {
+      RoundedCornerShape(0.pxToDp)
+    }
   }
 }
 
@@ -80,25 +88,35 @@ internal fun parsePadding(padding: String?): PaddingValues {
   val parts = removePxFromString(padding)
 
   return when (parts.size) {
-    1 -> PaddingValues(parts[0].pxToDp)
-    2 -> PaddingValues(vertical = parts[0].pxToDp, horizontal = parts[1].pxToDp)
-    3 ->
+    1 -> {
+      PaddingValues(parts[0].pxToDp)
+    }
+
+    2 -> {
+      PaddingValues(vertical = parts[0].pxToDp, horizontal = parts[1].pxToDp)
+    }
+
+    3 -> {
       PaddingValues(
         top = parts[0].pxToDp,
         start = parts[1].pxToDp,
         end = parts[1].pxToDp,
         bottom = parts[2].pxToDp,
       )
+    }
 
-    4 ->
+    4 -> {
       PaddingValues(
         top = parts[0].pxToDp,
         end = parts[1].pxToDp,
         bottom = parts[2].pxToDp,
         start = parts[3].pxToDp,
       )
+    }
 
-    else -> PaddingValues(0.pxToDp)
+    else -> {
+      PaddingValues(0.pxToDp)
+    }
   }
 }
 
