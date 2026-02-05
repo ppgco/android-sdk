@@ -18,22 +18,6 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
-  signingConfigs {
-    create("release") {
-      storeFile = file("../../../keystore.jks")
-      storePassword = "demo123"
-      keyAlias = "key0"
-      keyPassword = "demo123"
-    }
-
-    getByName("debug") {
-      storeFile = file("../../../keystore.jks")
-      storePassword = "demo123"
-      keyAlias = "key0"
-      keyPassword = "demo123"
-    }
-  }
-
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -49,12 +33,6 @@ android {
         getDefaultProguardFile("proguard-android-optimize.txt"),
         "proguard-rules.pro",
       )
-
-      signingConfig = signingConfigs.getByName("release")
-    }
-
-    debug {
-      signingConfig = signingConfigs.getByName("debug")
     }
   }
 }
