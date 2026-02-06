@@ -6,7 +6,6 @@ import com.pushpushgo.sdk.push.network.data.TokenRequest
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.push.network.interceptor.ResponseInterceptor
-import com.pushpushgo.sdk.push.utils.PlatformType
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
 import okhttp3.OkHttpClient

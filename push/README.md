@@ -1,278 +1,344 @@
+# PushPushGo PushNotifications SDK
 
+Android SDK for integrating push notifications into your application. Supports both **FCM (Firebase Cloud Messaging)** and **HMS (Huawei Push Kit)**.
 
-# PushPushGo Android SDK
+---
 
-[![JitPack](https://img.shields.io/jitpack/v/github/ppgco/android-sdk?style=flat-square)](https://jitpack.io/#ppgco/android-sdk)    
-![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/ppgco/android-sdk/test.yml?branch=master&style=flat-square)    
-![GitHub tag (latest)](https://img.shields.io/github/v/tag/ppgco/android-sdk?style=flat-square)
+## Table of Contents
 
-> [!IMPORTANT]
-> **Version 3.0.0**
->
-> Introducing new **In-app messages SDK (library-inappmessages)**.
-> To know more about it visit [library-inappmessages](library-inappmessages/README.md)
-> 
-> Push notifications SDK: We recommend updating your project firebase dependencies to latest version (check below).
-> 
+- [Preparation](#preparation)
+- [Installation](#installation)
+  - [FCM (Firebase Cloud Messaging)](#fcm-firebase-cloud-messaging)
+  - [HMS (Huawei Push Kit)](#hms-huawei-push-kit)
+- [Configuration](#configuration)
+  - [AndroidManifest.xml](#androidmanifestxml)
+  - [Application initialization](#application-initialization)
+  - [Notification UI customization](#notification-ui-customization)
+- [Handling notification clicks](#handling-notification-clicks)
+- [Basic usage](#basic-usage)
+  - [Push subscription](#push-subscription)
+  - [Beacons, tags, and dynamic groups](#beacons-tags-and-dynamic-groups)
 
-## Requirements
-
-- minSdkVersion: 23
-- configured GMS or HMS in project  app
+---
 
 ## Preparation
-**Before proceeding the installlation make sure you have completed the steps listed below:**
 
-1. **Remove all previous implementations from other providers or custom Firebase / Huawei implementation**
-2. **Connect App with Firebase / Huawei project**
-3. **(GMS only) From Firebase console download google-services.json and place it in app root folder**
-4. **Add dependencies based on configuration build you use - Groovy/Kotlin**
+1. Remove other push SDKs or custom FCM/HMS implementations.
+2. Connect your app to a push provider.
+3. Prepare provider configuration files:
+   - FCM: `google-services.json`
+   - HMS: `agconnect-services.json`
+4. Integrate the provider in the PushPushGo app:
+   - Project → Settings → Integration
+   - See [FCM](#fcm-firebase-cloud-messaging) or [HMS](#hms-huawei-push-kit) for details
+5. Collect your PushPushGo Project ID and API Key.
 
-Groovy DSL
-```groovy
-// /app/build.gradle
-dependencies {
-    // GMS
-    implementation platform('com.google.firebase:firebase-bom:34.1.0')
-    implementation 'com.google.firebase:firebase-messaging'
-    // HMS
-    implementation 'com.huawei.agconnect:agconnect-core:1.9.1.303'
-    implementation 'com.huawei.hms:push:6.11.0.300'
-}
+---
+
+## Installation
+
+Choose installation path depending on your provider.
+
+---
+
+## FCM (Firebase Cloud Messaging)
+
+### Provider credentials
+
+1. Open **Firebase Console**.
+2. Navigate to **Project settings** → **Cloud Messaging**.
+3. Click **Manage service accounts**.
+4. Select your service account email.
+5. Open the **Keys** tab.
+6. Click **Add key** → **Create new key**.
+7. Choose **JSON** format and download the file.
+8. Upload the JSON file in the PushPushGo **FCM** integration section.
+
+### FCM configuration
+
+Place `google-services.json` in the app module root:
+
+```
+app/google-services.json
 ```
 
-Kotlin DSL
-```kotlin    
-// /libs.versions.toml
-[versions]
-// GMS
-firebaseBom = "34.1.0"
-firebaseMessaging = "25.0.0"
-googleGmsGoogleServices = "4.4.3"
+### Gradle setup
 
-//HMS
-agconnectCore = "1.9.1.303"
-hmsPush = "6.11.0.300"
+```toml
+# libs.versions.toml
+
+[versions]
+firebase-bom = "34.1.0"
+firebase-messaging = "25.0.0"
+google-gms-google-services = "4.4.3"
+pushpushgo-sdk-push = "4.0.0"
 
 [libraries]
-// GMS
-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
-
-// HMS
-agconnect-core = { module = "com.huawei.agconnect:agconnect-core", version.ref = "agconnectCore" }
-hms-push = { module = "com.huawei.hms:push", version.ref = "hmsPush" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebase-messaging" }
+pushpushgo-sdk-push = { module = "com.pushpushgo:sdk-push", version.ref = "pushpushgo-sdk-push" }
 
 [plugins]
-// GMS
-google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "google-gms-google-services" }
+```
 
-
-
-// /app/build.gradle.kts
-plugins { 
-    alias(libs.plugins.google.gms.google.services)
-}  
-
-dependencies {
-    // GMS
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging)
-    // HMS
-    implementation(libs.agconnect.core)
-    implementation(libs.hms.push)
-}
-
-
-
-// /build.gradle.kts
+```kotlin
+// app/build.gradle.kts
 plugins {
-    alias(libs.plugins.google.gms.google.services) apply false
-}
-```  
-4. **Provide GMS / HMS credentials in PushPushGo application (/project/providers)**
-
-**GMS**
-> * Go to your Firebase console and navigate to project settings
-> * Open Cloud Messaging tab
-> * Click Manage Service Accounts
-> * Click on your service account email
-> * Navigate to KEYS tab
-> * Click ADD KEY
-> * Click CREATE NEW KEY
-> * Pick JSON type and click create
-> * Download file and upload it in PushPushGo Application (/project/providers) in FCM v1 credentials section
-
-**HMS**
-> * Go to your Huawei developers console
-> * Navigate to your project
-> * Open project settings
-> * Collect required info (appId, authUrl, pushUrl, appSecret)
-> * Provide credentials in PushPushGo Application (/project/providers) in HMS Provider section
-
-5. **In PushPushGo application collect your project ID and generate API KEY in access manager (/user/access-manager/keys) as u will need them later**
-
-
-## Instalation
-
-1. **Add SDK dependency to Your project**
-
-Groovy DSL
-```groovy
-// /build.gradle
-allprojects {
-    repositories {
-    // local repo
-    mavenLocal()
-    // or
-    // jitpack
-    maven { url 'https://jitpack.io' }
-    }
+  alias(libs.plugins.google.gms.google.services)
 }
 
-
-// /app/build.gradle
 dependencies {
-    // local repo
-    implementation 'com.pushpushgo:sdk:<version>'
-    // or
-    // jitpack
-    implementation "com.github.ppgco.android-sdk:sdk:<version>"
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.messaging)
+  implementation(libs.pushpushgo.sdk.push)
 }
 ```
-Kotlin DSL
+
 ```kotlin
-// /settings.gradle.kts
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven ( "https://jitpack.io" )
-    }
+// build.gradle.kts
+plugins {
+  alias(libs.plugins.google.gms.google.services) apply false
 }
+```
 
+---
 
+## HMS (Huawei Push Kit)
 
-// /libs.versions.toml
+### Provider credentials
+
+1. Open **Huawei Developers Console**.
+2. Navigate to your project.
+3. Open **Project settings**.
+4. Collect the required values:
+   - `appId`
+   - `authUrl`
+   - `pushUrl`
+   - `appSecret`
+5. Provide these credentials in the PushPushGo **HMS** integration section.
+
+### HMS configuration
+
+Place `agconnect-services.json` in the app module root:
+
+```
+app/agconnect-services.json
+```
+
+### Gradle setup
+
+```toml
+# libs.versions.toml
+
 [versions]
-ppgSdk = "3.0.2"
+hms-agconnect = "1.9.1.304"
+hms-push = "6.13.0.300"
+hms-update = "5.0.2.300"
+pushpushgo-sdk-push = "4.0.0"
 
 [libraries]
-ppg-sdk = { module = "com.github.ppgco.android-sdk:sdk", version.ref = "ppgSdk" }
+hms-agconnect = { module = "com.huawei.agconnect:agconnect-core", version.ref = "hms-agconnect" }
+hms-push = { module = "com.huawei.hms:push", version.ref = "hms-push" }
+hms-update = { module = "com.huawei.hms:update", version.ref = "hms-update" }
 
+pushpushgo-sdk-push = { module = "com.pushpushgo:sdk-push", version.ref = "pushpushgo-sdk-push" }
 
+```
 
-// /app/build.gradle.kts
-dependencies {
-    implementation(libs.ppg.sdk)
+```kotlin
+// app/build.gradle.kts
+plugins {
+  id("com.huawei.agconnect")
 }
 
+dependencies {
+  implementation(libs.hms.agconnect)
+  implementation(libs.hms.push)
+  implementation(libs.hms.update)
+  implementation(libs.pushpushgo.sdk.push)
+}
 ```
 
-2. **Add to Your AndroidManifest.xml:**
+```kotlin
+// build.gradle.kts
+plugins {
+  id("com.huawei.agconnect") apply false
+}
+```
 
-In application tag:
-*Here you should pass your PPG project id and api key you have generated for that project*
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+  repositories {
+    maven(url = "https://developer.huawei.com/repo/")
+  }
+
+  resolutionStrategy {
+    eachPlugin {
+      if (requested.id.id == "com.huawei.agconnect") {
+        useModule("com.huawei.agconnect:agcp:1.9.1.304")
+      }
+    }
+  }
+}
+```
+
+---
+
+## Configuration
+
+### AndroidManifest.xml
+
+Add your Project ID and API Key inside `<application>`:
+
 ```xml
 <meta-data
-	android:name="com.pushpushgo.apikey"
-	android:value="{apiKey}" />
+  android:name="com.pushpushgo.projectId"
+  android:value="{projectId}" />
+
 <meta-data
-	android:name="com.pushpushgo.projectId"
-	android:value="{projectId}" />
+  android:name="com.pushpushgo.apiKey"
+  android:value="{apiKey}" />
 ```
 
-In your main activity tag:
+---
+
+### Application initialization
+
+Initialize the SDK in your `Application` class.
+
+#### Automatic (from AndroidManifest.xml)
+
+```kotlin
+class MyApplication : Application() {
+  override fun onCreate() {
+    super.onCreate()
+
+    PushNotifications.initialize(this)
+  }
+}
+```
+
+#### Manual
+
+```kotlin
+class MyApplication : Application() {
+  override fun onCreate() {
+    super.onCreate()
+
+    PushNotifications.initialize(
+      application = this,
+      config = Config(
+        projectId = "your-project-id",
+        apiKey = "your-api-key",
+        isDebug = true
+      )
+    )
+  }
+}
+```
+
+---
+
+### Notification UI customization
+
+You may override the following resources in your app:
+
+- Default notification color  
+  `@color/pushpushgo_notification_color_default`
+- Default notification channel ID  
+  `@string/pushpushgo_notification_default_channel_id`
+- Default notification channel name  
+  `@string/pushpushgo_notification_default_channel_name`
+- Small notification icon (per density):
+  - `res/drawable-mdpi/ic_stat_pushpushgo_default`
+  - `res/drawable-xhdpi/ic_stat_pushpushgo_default`
+  - `res/drawable-xxhdpi/ic_stat_pushpushgo_default`
+
+---
+
+## Handling notification clicks
+
+To ensure correct handling of notification taps:
+
+1. Set your launcher activity to `singleTop`.
+2. Forward the intent to the SDK in `onCreate` and `onNewIntent`.
+
 ```xml
 <activity
-    android:launchMode="singleTop"
+  android:name=".MainActivity"
+  android:launchMode="singleTop" />
 ```
-```xml
-<intent-filter>
-    <action android:name="APP_PUSH_CLICK" />
-    <category android:name="android.intent.category.DEFAULT" />
-</intent-filter>
-```
-3. **Add to your MainActivity**:
 
-in onCreate():
-```java
-if (savedInstanceState == null) {
-    PushPushGo.getInstance().handleBackgroundNotificationClick(intent);
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+  super.onCreate(savedInstanceState)
+
+  if (savedInstanceState == null) {
+    PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+  }
+}
+
+override fun onNewIntent(intent: Intent) {
+  super.onNewIntent(intent)
+
+  PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
 }
 ```
-in onNewIntent():
-```java
-PushPushGo.getInstance().handleBackgroundNotificationClick(intent);
-```
-4. **Add to Your Application.onCreate():**
-```java
-PushPushGo.getInstance(this);
-```
 
-5. **Configuration**
-- Change default notification color: override `@color/pushpushgo_notification_color_default`
-- Change default notification channel id: override `@string/pushpushgo_notification_default_channel_id`
-- Change default notification channel name: override `@string/pushpushgo_notification_default_channel_name`
-- Change default notification icon: override
-    - `res/drawable-hdpi/ic_stat_pushpushgo_default`
-    - `res/drawable-mdpi/ic_stat_pushpushgo_default`
-    - `res/drawable-xhdpi/ic_stat_pushpushgo_default`
-    - `res/drawable-xxhdpi/ic_stat_pushpushgo_default`
+This ensures notification data is processed both when the app is cold-started and when it is already running.
 
-## Usage
+---
 
-- Register subscriber:
-```java
-PushPushGo.getInstance().registerSubscriber();
+## Basic usage
+
+### Push subscription
+
+```kotlin
+PushNotifications.getInstance().isSubscribed()
+
+PushNotifications.getInstance().subscribe()
+PushNotifications.getInstance().unsubscribe()
+
+PushNotifications.getInstance().subscribeNow()
+PushNotifications.getInstance().unsubscribeNow()
 ```
 
-- Unregister:
-```java
-PushPushGo.getInstance().unregisterSubscriber();
+#### Notification permission required
+
+On Android 13 (API 33) and newer, push subscription requires the
+`POST_NOTIFICATIONS` permission to be granted by the user.
+
+If the permission is not granted:
+- asynchronous methods (`subscribe`, `unsubscribe`) **log an error and fail**
+- synchronous methods (`subscribeNow`, `unsubscribeNow`) **throw an exception**
+
+The application is responsible for requesting the permission before calling
+any subscription methods.
+
+#### Permission monitoring
+
+The SDK periodically checks whether the notification permission is still granted.
+If the permission is revoked while the user is subscribed, the SDK automatically
+unsubscribes the user.
+
+### Beacons, tags, and dynamic groups
+
+```kotlin
+PushNotifications.getInstance().createBeacon()
+  .set("see_invoice", true)
+  .setCustomId("CID")
+  .appendTag("demo")
+  .appendTag("mobile", "platform")
+  .send()
+
+PushNotifications.getInstance().createBeacon()
+  .assignToGroup("my-group-name")
+  .send()
+
+PushNotifications.getInstance().createBeacon()
+  .unassignFromGroup("my-group-name")
+  .send()
 ```
 
-- Send beacon:
-```java
-PushPushGo.getInstance().createBeacon()
-.set("see_invoice", true)
-.setCustomId("SEEI")
-.appendTag("demo")
-.appendTag("mobile", "platform")
-.send();
-```
-
-- Assign subscriber to dynamic group:
-```java
-PushPushGo.getInstance().createBeacon()
-.assignToGroup("my-group-name")
-.send();
-```
-
-- Unassign subscriber from dynamic group:
-```java
-PushPushGo.getInstance().createBeacon()
-.unassignFromGroup("my-group-name")
-.send();
-```
-
-## Publishing
-
-To maven local repository:
-```sh
-$ ./gradlew :library:publishToMavenLocal
-```
-
-## Tests
-Run tests in `library` module:
-```sh
-$ ./gradlew :library:testDebug
-```
-
-Generate coverage report:    
-```sh
-$ ./gradlew :library:jacocoTestReport
-```
-
-HTML coverage report path:
-`library/build/reports/jacocoTestReport/html/`

@@ -33,7 +33,6 @@ hms-agconnect = "1.9.1.304"
 hms-push = "6.13.0.300"
 hms-update = "5.0.2.300"
 
-guava = "33.5.0-android"
 timber = "5.0.1"
 json = "20251224"
 

@@ -44,7 +44,7 @@
 
 ### Migration guide
 
-- This release **requires code changes** and is not source-compatible with `3.0.3`.
+- This release **requires code changes** and is not source-compatible with `3.x`.
 - Migrate:
   - `InAppMessagesSDK` → `InAppMessages`
   - Legacy push subscription handling → `PushSubscriptionProvider`
