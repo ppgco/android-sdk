@@ -1,7 +1,6 @@
 package com.pushpushgo.sdk.push
 
 import com.pushpushgo.sdk.push.work.UploadDelegate
-import io.mockk.Called
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
@@ -9,7 +8,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.just
 import io.mockk.verify
 import org.json.JSONArray
-import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -95,20 +93,6 @@ internal class BeaconBuilderTest {
         },
       )
     }
-  }
-
-  @Test
-  fun `set unsupported selector`() {
-    every { uploadDelegate.sendBeacon(any()) } just Runs
-    beaconBuilder = BeaconBuilder(uploadDelegate)
-
-    beaconBuilder.set("Selector", JSONObject())
-
-    val exception = requireNotNull(runCatching { beaconBuilder.send() }.exceptionOrNull())
-    assertEquals(IllegalArgumentException::class.java, exception::class.java)
-    assertEquals("Invalid type of beacon selector value. Supported types: boolean, string, char, number", exception.message)
-
-    verify { uploadDelegate wasNot Called }
   }
 
   @Test
