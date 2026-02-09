@@ -1,9 +1,9 @@
 public final class com/pushpushgo/sdk/push/BeaconBuilder {
 	public final fun appendTag (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
-	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
-	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Lcom/pushpushgo/sdk/push/BeaconBuilder;
-	public static synthetic fun appendTag$default (Lcom/pushpushgo/sdk/push/BeaconBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/BeaconTagStrategy;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/BeaconTagStrategy;I)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public static synthetic fun appendTag$default (Lcom/pushpushgo/sdk/push/BeaconBuilder;Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/BeaconTagStrategy;IILjava/lang/Object;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun assignToGroup (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun getTags ()Ljava/util/List;
 	public final fun getTagsToDelete ()Ljava/util/List;
@@ -11,10 +11,20 @@ public final class com/pushpushgo/sdk/push/BeaconBuilder {
 	public final fun removeTags (Ljava/util/List;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun removeTags (Ljava/util/Map;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun send ()V
-	public final fun set (Ljava/lang/String;Ljava/lang/Object;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
-	public final fun setCustomId (Ljava/lang/Integer;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun set (Ljava/lang/String;C)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun set (Ljava/lang/String;Ljava/lang/Number;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun set (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun set (Ljava/lang/String;Z)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun setCustomId (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun unassignFromGroup (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+}
+
+public final class com/pushpushgo/sdk/push/BeaconTagStrategy : java/lang/Enum {
+	public static final field APPEND Lcom/pushpushgo/sdk/push/BeaconTagStrategy;
+	public static final field REWRITE Lcom/pushpushgo/sdk/push/BeaconTagStrategy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconTagStrategy;
+	public static fun values ()[Lcom/pushpushgo/sdk/push/BeaconTagStrategy;
 }
 
 public final class com/pushpushgo/sdk/push/BuildConfig {

@@ -39,6 +39,15 @@
 - Replaced `migrateToNewProject(...)` with `migrateToNewProjectNow(...)`
 - Migration now happens in-place and no longer returns a new SDK instance.
 
+#### Beacon
+- Selector assignment is now explicit and type-specific:
+  - `set(key, String)`
+  - `set(key, Number)`
+  - `set(key, Boolean)`
+  - `set(key, Char)`
+- Introduced `BeaconTagStrategy` enum (`APPEND`, `REWRITE`); string-based strategies are no longer supported.
+- Removed `setCustomId(Int?)` method; custom IDs must now be provided using `setCustomId(String?)`.
+
 #### Public configuration API
 - The following configuration properties are no longer publicly mutable and must be set via explicit setter methods:
   - `notificationClickHandler`
@@ -59,3 +68,5 @@
   - `PushPushGo` → `PushNotifications`
   - `ListenableFuture` → `CompletableFuture`
   - Legacy subscription calls → new unified subscription API
+  - String-based tag strategies (e.g. `"append"`, `"rewrite"`) → `BeaconTagStrategy.APPEND` / `BeaconTagStrategy.REWRITE`
+  - Integer-based custom IDs → string-based custom IDs

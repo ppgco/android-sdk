@@ -5,6 +5,11 @@ import com.pushpushgo.sdk.push.work.UploadDelegate
 import org.json.JSONArray
 import org.json.JSONObject
 
+enum class BeaconTagStrategy {
+  APPEND,
+  REWRITE,
+}
+
 class BeaconBuilder internal constructor(
   private val uploadDelegate: UploadDelegate,
 ) {
@@ -23,32 +28,58 @@ class BeaconBuilder internal constructor(
   /**
    * @param key Selector key.
    * @param value Selector value.
-   *
-   * Supported value types:
-   * - Boolean
-   * - String
-   * - Char
-   * - Number
-   *
-   * @throws IllegalArgumentException if the value type is not supported.
-   *
-   * @return This builder instance.
    */
   fun set(
     key: String,
-    value: Any,
-  ): BeaconBuilder {
+    value: String,
+  ) = apply {
     selectors[key] = value
-
-    return this
   }
+
+  /**
+   * @param key Selector key.
+   * @param value Selector value.
+   */
+  fun set(
+    key: String,
+    value: Number,
+  ) = apply {
+    selectors[key] = value
+  }
+
+  /**
+   * @param key Selector key.
+   * @param value Selector value.
+   */
+  fun set(
+    key: String,
+    value: Boolean,
+  ) = apply {
+    selectors[key] = value
+  }
+
+  /**
+   * @param key Selector key.
+   * @param value Selector value.
+   */
+  fun set(
+    key: String,
+    value: Char,
+  ) = apply {
+    selectors[key] = value
+  }
+
+  fun getTags(): List<Pair<String, String>> = tags.map { it.tag to it.label }.toList()
+
+  fun getTagsToDelete(): List<String> = tagsToDelete.map { it.first }
 
   /**
    * @param tag Tag name.
    * @param label Tag label. Defaults to `"default"`.
-   * @param strategy Tag assignment strategy.
-   * Use `"append"` to accumulate tags or `"rewrite"` to overwrite existing ones.
-   * @param ttl Time to live for the tag.
+   * @param strategy Tag assignment strategy:
+   * - [BeaconTagStrategy.APPEND] to accumulate values
+   * - [BeaconTagStrategy.REWRITE] to overwrite existing values
+   * @param ttl Time to live for the tag in seconds.
    * Use `0` to keep the tag indefinitely.
    *
    * @return This builder instance.
@@ -57,15 +88,13 @@ class BeaconBuilder internal constructor(
   fun appendTag(
     tag: String,
     label: String = "default",
-    strategy: String = "append",
+    strategy: BeaconTagStrategy = BeaconTagStrategy.APPEND,
     ttl: Int = 0,
   ): BeaconBuilder {
     tags.add(BeaconTag(tag = tag, label = label, strategy = strategy, ttl = ttl))
 
     return this
   }
-
-  fun getTags(): MutableList<Pair<String, String>> = tags.map { it.tag to it.label }.toMutableList()
 
   /**
    * Removes tags using the default label.
@@ -107,8 +136,6 @@ class BeaconBuilder internal constructor(
     return this
   }
 
-  fun getTagsToDelete(): List<String> = tagsToDelete.map { it.first }
-
   /**
    * Sets a custom beacon identifier.
    *
@@ -119,20 +146,6 @@ class BeaconBuilder internal constructor(
    */
   fun setCustomId(id: String?): BeaconBuilder {
     customId = id.orEmpty()
-
-    return this
-  }
-
-  /**
-   * Sets a custom beacon identifier from an integer value.
-   *
-   * Passing `null` or `0` clears the custom ID.
-   *
-   * @param id Custom identifier.
-   * @return This builder instance.
-   */
-  fun setCustomId(id: Int?): BeaconBuilder {
-    customId = (id ?: 0).toString().takeIf { it != "0" }.orEmpty()
 
     return this
   }
@@ -202,7 +215,7 @@ class BeaconBuilder internal constructor(
             JSONObject().apply {
               put("tag", tag)
               put("label", label)
-              put("strategy", strategy)
+              put("strategy", if (strategy == BeaconTagStrategy.APPEND) "append" else "rewrite")
               put("ttl", ttl)
             },
           )
