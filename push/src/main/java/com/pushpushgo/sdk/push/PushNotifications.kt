@@ -55,7 +55,7 @@ class PushNotifications private constructor(
       logDebug("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
     }
 
-    val defaultNotificationClickHandler: NotificationHandler = { context, url, overrideFlags ->
+    val defaultNotificationClickHandler: NotificationClickHandler = { context, url, overrideFlags ->
       handleNotificationLinkClick(
         context,
         url,
@@ -143,7 +143,7 @@ class PushNotifications private constructor(
   /**
    * Handler invoked when a notification is clicked.
    */
-  var notificationClickHandler: NotificationHandler = defaultNotificationClickHandler
+  var notificationClickHandler: NotificationClickHandler = defaultNotificationClickHandler
     private set
 
   /**
@@ -175,7 +175,7 @@ class PushNotifications private constructor(
     defaultIsSubscribed = isSubscribed
   }
 
-  fun setNotificationClickHandler(handler: NotificationHandler) {
+  fun setNotificationClickHandler(handler: NotificationClickHandler) {
     notificationClickHandler = handler
   }
 
@@ -450,6 +450,6 @@ class PushNotifications private constructor(
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = DefaultPushSubscriptionProvider(application)
 }
 
-typealias NotificationHandler = (context: Context, url: String, overrideFlags: Int) -> Unit
+typealias NotificationClickHandler = (context: Context, url: String, overrideFlags: Int) -> Unit
 
 typealias InvalidProjectIdHandler = (pushProjectId: String, pushSubscriberId: String, currentProjectId: String) -> Unit
