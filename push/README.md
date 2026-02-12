@@ -2,8 +2,6 @@
 
 Android SDK for integrating push notifications into your application. Supports both **FCM (Firebase Cloud Messaging)** and **HMS (Huawei Push Kit)**.
 
----
-
 ## Table of Contents
 
 - [Preparation](#preparation)
@@ -19,8 +17,6 @@ Android SDK for integrating push notifications into your application. Supports b
   - [Push subscription](#push-subscription)
   - [Beacons, tags, and dynamic groups](#beacons-tags-and-dynamic-groups)
 
----
-
 ## Preparation
 
 1. Remove other push SDKs or custom FCM/HMS implementations.
@@ -33,13 +29,9 @@ Android SDK for integrating push notifications into your application. Supports b
    - See [FCM](#fcm-firebase-cloud-messaging) or [HMS](#hms-huawei-push-kit) for details
 5. Collect your PushPushGo Project ID and API Key.
 
----
-
 ## Installation
 
 Choose installation path depending on your provider.
-
----
 
 ## FCM (Firebase Cloud Messaging)
 
@@ -101,8 +93,6 @@ plugins {
   alias(libs.plugins.google.gms.google.services) apply false
 }
 ```
-
----
 
 ## HMS (Huawei Push Kit)
 
@@ -184,8 +174,6 @@ pluginManagement {
 }
 ```
 
----
-
 ## Configuration
 
 ### AndroidManifest.xml
@@ -201,8 +189,6 @@ Add your Project ID and API Key inside `<application>`:
   android:name="com.pushpushgo.apiKey"
   android:value="{apiKey}" />
 ```
-
----
 
 ### Application initialization
 
@@ -239,8 +225,6 @@ class MyApplication : Application() {
 }
 ```
 
----
-
 ### Notification UI customization
 
 You may override the following resources in your app:
@@ -256,40 +240,45 @@ You may override the following resources in your app:
   - `res/drawable-xhdpi/ic_stat_pushpushgo_default`
   - `res/drawable-xxhdpi/ic_stat_pushpushgo_default`
 
----
-
 ## Handling notification clicks
 
 To ensure correct handling of notification taps:
 
 1. Set your launcher activity to `singleTop`.
-2. Forward the intent to the SDK in `onCreate` and `onNewIntent`.
+2. Add the following `intent-filter`.
 
-```xml
-<activity
-  android:name=".MainActivity"
-  android:launchMode="singleTop" />
-```
+   ```xml
+   <activity android:launchMode="singleTop">
+     <intent-filter>
+       <action android:name="APP_PUSH_CLICK" />
+       <category android:name="android.intent.category.DEFAULT" />
+     </intent-filter>
+   </activity>
+   ```
 
-```kotlin
-override fun onCreate(savedInstanceState: Bundle?) {
-  super.onCreate(savedInstanceState)
+3. Forward the intent to the SDK in `onCreate` and `onNewIntent`.
 
-  if (savedInstanceState == null) {
-    PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
-  }
-}
+   ```kotlin
+   override fun onCreate(savedInstanceState: Bundle?) {
+     super.onCreate(savedInstanceState)
 
-override fun onNewIntent(intent: Intent) {
-  super.onNewIntent(intent)
+     if (savedInstanceState == null) {
+       PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+     }
+   }
 
-  PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
-}
-```
+   override fun onNewIntent(intent: Intent) {
+   super.onNewIntent(intent)
+
+   PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+   }
+   ```
 
 This ensures notification data is processed both when the app is cold-started and when it is already running.
 
----
+## Additional integration info
+
+- https://pushpushgo.productfruits.help/en/article/web-mobile-push-integration
 
 ## Basic usage
 
@@ -311,6 +300,7 @@ On Android 13 (API 33) and newer, push subscription requires the
 `POST_NOTIFICATIONS` permission to be granted by the user.
 
 If the permission is not granted:
+
 - asynchronous methods (`subscribe`, `unsubscribe`) **log an error and fail**
 - synchronous methods (`subscribeNow`, `unsubscribeNow`) **throw an exception**
 
@@ -341,4 +331,3 @@ PushNotifications.getInstance().createBeacon()
   .unassignFromGroup("my-group-name")
   .send()
 ```
-
