@@ -5,6 +5,7 @@ ksp = "2.2.0-2.0.2"
 ktlint = "14.0.1"
 binary-validator = "0.18.1"
 google-services = "4.4.4"
+maven-publish = "0.36.0"
 
 androidx-core = "1.17.0"
 androidx-preference = "1.2.1"
@@ -46,6 +47,7 @@ robolectric = "4.16"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
 
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

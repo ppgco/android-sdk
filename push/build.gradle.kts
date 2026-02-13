@@ -1,3 +1,6 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SourcesJar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -7,8 +10,14 @@ plugins {
   alias(libs.plugins.ksp)
   alias(libs.plugins.binary.validator)
   alias(libs.plugins.ktlint)
-  id("maven-publish")
+  alias(libs.plugins.maven.publish)
 }
+
+group = "com.pushpushgo"
+version =
+  requireNotNull(property("VERSION")) {
+    "VERSION property must be defined"
+  }.toString()
 
 android {
   namespace = "com.pushpushgo.sdk.push"
@@ -46,12 +55,6 @@ android {
   testOptions {
     unitTests {
       isIncludeAndroidResources = true
-    }
-  }
-
-  publishing {
-    singleVariant("release") {
-      withSourcesJar()
     }
   }
 }
@@ -97,4 +100,20 @@ dependencies {
 
 apiValidation {
   ignoredProjects.addAll(listOf("firebase", "hms", "java"))
+}
+
+mavenPublishing {
+  coordinates(group.toString(), "sdk-push", version.toString())
+
+  pom {
+    name.set("PushPushGo PushNotifications SDK")
+  }
+
+  configure(
+    AndroidSingleVariantLibrary(
+      javadocJar = JavadocJar.Empty(),
+      sourcesJar = SourcesJar.Sources(),
+      variant = "release",
+    ),
+  )
 }

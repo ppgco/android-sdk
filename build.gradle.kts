@@ -1,3 +1,5 @@
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
+
 plugins {
   alias(libs.plugins.android.library) apply false
   alias(libs.plugins.android.application) apply false
@@ -7,6 +9,7 @@ plugins {
   alias(libs.plugins.binary.validator) apply false
   alias(libs.plugins.ktlint) apply false
   alias(libs.plugins.google.services) apply false
+  alias(libs.plugins.maven.publish) apply false
   id("com.huawei.agconnect") apply false
 }
 
@@ -21,8 +24,43 @@ allprojects {
   repositories {
     google()
     mavenCentral()
-    maven(url = "https://jitpack.io")
-    maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
     maven(url = "https://developer.huawei.com/repo/")
+  }
+}
+
+subprojects {
+  plugins.withId("com.vanniktech.maven.publish") {
+    extensions.configure<MavenPublishBaseExtension>("mavenPublishing") {
+      pom {
+        url.set("https://github.com/ppgco/android-sdk")
+        description.set("PushPushGo Android SDK")
+        inceptionYear.set("2019")
+
+        licenses {
+          license {
+            name.set("MIT")
+            url.set("https://github.com/ppgco/android-sdk/blob/master/LICENSE")
+          }
+        }
+
+        developers {
+          developer {
+            name.set("PushPushGo")
+            email.set("mobile-dev@pushpushgo.com")
+          }
+        }
+
+        scm {
+          url.set("https://github.com/ppgco/android-sdk")
+          connection.set("scm:git:git://github.com/ppgco/android-sdk.git")
+          developerConnection.set("scm:git:ssh://github.com/ppgco/android-sdk.git")
+        }
+      }
+
+      if (hasProperty("RELEASE")) {
+        publishToMavenCentral()
+        signAllPublications()
+      }
+    }
   }
 }

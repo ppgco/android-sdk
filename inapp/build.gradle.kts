@@ -1,3 +1,6 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SourcesJar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -9,8 +12,14 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.ktlint)
   alias(libs.plugins.binary.validator)
-  id("maven-publish")
+  alias(libs.plugins.maven.publish)
 }
+
+group = "com.pushpushgo"
+version =
+  requireNotNull(property("VERSION")) {
+    "VERSION property must be defined"
+  }.toString()
 
 android {
   namespace = "com.pushpushgo.sdk.inapp"
@@ -43,12 +52,6 @@ android {
       jvmTarget.set(JvmTarget.JVM_17)
       languageVersion.set(KotlinVersion.KOTLIN_2_1)
       apiVersion.set(KotlinVersion.KOTLIN_2_1)
-    }
-  }
-
-  publishing {
-    singleVariant("release") {
-      withSourcesJar()
     }
   }
 }
@@ -105,4 +108,20 @@ dependencies {
 
 apiValidation {
   ignoredProjects.add("sample")
+}
+
+mavenPublishing {
+  coordinates(group.toString(), "sdk-inapp", version.toString())
+
+  pom {
+    name.set("PushPushGo InAppMessages SDK")
+  }
+
+  configure(
+    AndroidSingleVariantLibrary(
+      javadocJar = JavadocJar.Empty(),
+      sourcesJar = SourcesJar.Sources(),
+      variant = "release",
+    ),
+  )
 }
