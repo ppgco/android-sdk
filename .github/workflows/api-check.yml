@@ -12,10 +12,16 @@ jobs:
   api-check:
     name: Check public API compatibility
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/setup-ci
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup CI
+        uses: ./.github/actions/setup-ci
 
       - name: Check API compatibility
         run: ./gradlew apiCheck --no-daemon --build-cache
