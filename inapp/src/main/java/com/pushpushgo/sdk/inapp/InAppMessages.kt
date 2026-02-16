@@ -80,6 +80,7 @@ class InAppMessages private constructor(
      * @throws IllegalStateException if required manifest values are missing.
      */
     @JvmStatic
+    @JvmOverloads
     fun initialize(
       application: Application,
       pushSubscriptionProvider: PushSubscriptionProvider? = null,
@@ -100,6 +101,7 @@ class InAppMessages private constructor(
      * Subsequent calls return the same instance.
      */
     @JvmStatic
+    @JvmOverloads
     fun initialize(
       application: Application,
       config: Config,

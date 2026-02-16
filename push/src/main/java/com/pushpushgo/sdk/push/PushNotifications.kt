@@ -285,9 +285,10 @@ class PushNotifications private constructor(
    *
    * @returns [CompletableFuture]
    */
-  fun subscribeNowFuture(): CompletableFuture<Unit> =
+  fun subscribeNowFuture(): CompletableFuture<Void?> =
     sdkScope.future {
       subscribeNow()
+      null
     }
 
   /**
@@ -297,9 +298,10 @@ class PushNotifications private constructor(
    *
    * @returns [CompletableFuture]
    */
-  fun unsubscribeNowFuture(): CompletableFuture<Unit> =
+  fun unsubscribeNowFuture(): CompletableFuture<Void?> =
     sdkScope.future {
       unsubscribeNow()
+      null
     }
 
   /**

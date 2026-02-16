@@ -25,3 +25,11 @@ public abstract interface class com/pushpushgo/sdk/core/api/PushSubscriptionProv
 	public abstract fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public abstract class com/pushpushgo/sdk/core/api/PushSubscriptionProviderJavaAdapter : com/pushpushgo/sdk/core/api/PushSubscriptionProvider {
+	public fun <init> ()V
+	public fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun subscribeFuture ()Ljava/util/concurrent/CompletableFuture;
+	public fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun unsubscribeFuture ()Ljava/util/concurrent/CompletableFuture;
+}
+

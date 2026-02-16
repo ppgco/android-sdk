@@ -10,7 +10,11 @@ public final class com/pushpushgo/sdk/inapp/InAppMessages {
 	public static final field Companion Lcom/pushpushgo/sdk/inapp/InAppMessages$Companion;
 	public synthetic fun <init> (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun getInstance ()Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public static final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public final fun showMessagesOnRoute (Ljava/lang/String;)V
 	public final fun showMessagesOnTrigger (Lcom/pushpushgo/sdk/inapp/ui/Trigger;)V
@@ -18,7 +22,11 @@ public final class com/pushpushgo/sdk/inapp/InAppMessages {
 
 public final class com/pushpushgo/sdk/inapp/InAppMessages$Companion {
 	public final fun getInstance ()Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
+	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public static synthetic fun initialize$default (Lcom/pushpushgo/sdk/inapp/InAppMessages$Companion;Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;ILjava/lang/Object;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public static synthetic fun initialize$default (Lcom/pushpushgo/sdk/inapp/InAppMessages$Companion;Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;ILjava/lang/Object;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
