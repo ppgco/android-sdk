@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+#### Min SDK Version
+- Minimum Android SDK version increased from 26 to 28.
+
 #### SDK entry point & initialization
 - **Replaced `InAppMessagesSDK` with `InAppMessages`** as the main public API.
 - Initialization is now explicit and standardized:

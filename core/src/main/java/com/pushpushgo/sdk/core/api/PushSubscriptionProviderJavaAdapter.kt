@@ -1,13 +1,10 @@
 package com.pushpushgo.sdk.core.api
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-@RequiresApi(Build.VERSION_CODES.N)
 abstract class PushSubscriptionProviderJavaAdapter : PushSubscriptionProvider {
   /**
    * Subscribes to the underlying push provider.
@@ -30,7 +27,6 @@ abstract class PushSubscriptionProviderJavaAdapter : PushSubscriptionProvider {
   }
 }
 
-@RequiresApi(Build.VERSION_CODES.N)
 private suspend fun <T> CompletableFuture<T>.await(): T =
   suspendCancellableCoroutine { cont ->
     whenComplete { result, throwable ->

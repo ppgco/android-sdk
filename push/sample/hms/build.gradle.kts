@@ -13,7 +13,7 @@ android {
 
   defaultConfig {
     applicationId = "com.pushpushgo.sdk.sample.push.hms"
-    minSdk = 23
+    minSdk = 28
     targetSdk = 36
     versionCode = 10
     versionName = "1.0"
