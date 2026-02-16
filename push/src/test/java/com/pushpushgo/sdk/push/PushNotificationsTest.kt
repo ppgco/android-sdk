@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -10,10 +11,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [33])
+@org.robolectric.annotation.Config(sdk = [33])
 class PushNotificationsTest {
   private lateinit var systemUnderTest: PushNotifications
 
@@ -23,7 +23,7 @@ class PushNotificationsTest {
       PushNotifications.initialize(
         application = getApplicationContext(),
         config =
-          com.pushpushgo.sdk.core.config.Config(
+          Config(
             projectId = "hm93nzyt5bmczmtjeghy2aph",
             apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
           ),

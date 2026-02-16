@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.push.network
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.pushpushgo.sdk.core.config.Config
+import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.data.Event
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.Payload

@@ -60,9 +60,7 @@ android {
 }
 
 dependencies {
-  if (System.getenv("JITPACK") == null) {
-    api(project(":core"))
-  }
+  api(project(":core"))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.preference)

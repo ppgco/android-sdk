@@ -1,4 +1,4 @@
-package com.pushpushgo.sdk.core.push
+package com.pushpushgo.sdk.core.api
 
 interface PushSubscriptionProvider {
   suspend fun subscribe()

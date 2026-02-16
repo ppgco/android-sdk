@@ -1,0 +1,21 @@
+public final class com/pushpushgo/sdk/core/api/Config {
+	public static final field Companion Lcom/pushpushgo/sdk/core/api/Config$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getApiUrl ()Ljava/lang/String;
+	public final fun getProjectId ()Ljava/lang/String;
+	public final fun isDebug ()Z
+}
+
+public final class com/pushpushgo/sdk/core/api/Config$Companion {
+}
+
+public abstract interface class com/pushpushgo/sdk/core/api/PushSubscriptionProvider {
+	public abstract fun getPushToken ()Ljava/lang/String;
+	public abstract fun isNotificationChannelEnabled ()Z
+	public abstract fun isSubscribed ()Z
+	public abstract fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

@@ -1,6 +1,6 @@
 package com.pushpushgo.sdk.push.network
 
-import com.pushpushgo.sdk.core.config.Config
+import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.data.Event
 import com.pushpushgo.sdk.push.network.data.TokenRequest
 import com.pushpushgo.sdk.push.network.data.TokenResponse

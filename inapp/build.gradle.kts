@@ -57,9 +57,7 @@ android {
 }
 
 dependencies {
-  if (System.getenv("JITPACK") == null) {
-    api(project(":core"))
-  }
+  api(project(":core"))
 
   // Core & Appcompat
   implementation(libs.androidx.core.ktx)

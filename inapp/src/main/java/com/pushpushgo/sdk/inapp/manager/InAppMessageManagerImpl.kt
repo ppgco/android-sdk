@@ -2,8 +2,8 @@ package com.pushpushgo.sdk.inapp.manager
 
 import android.content.Context
 import android.util.Log
-import com.pushpushgo.sdk.core.push.NotificationPermissionProvider
-import com.pushpushgo.sdk.core.push.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.internal.NotificationPermissionProvider
 import com.pushpushgo.sdk.inapp.InAppMessages
 import com.pushpushgo.sdk.inapp.model.DeviceType
 import com.pushpushgo.sdk.inapp.model.InAppMessage

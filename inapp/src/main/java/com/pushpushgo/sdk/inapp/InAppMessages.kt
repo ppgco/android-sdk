@@ -2,9 +2,9 @@ package com.pushpushgo.sdk.inapp
 
 import android.app.Application
 import android.util.Log
-import com.pushpushgo.sdk.core.config.Config
-import com.pushpushgo.sdk.core.config.ManifestConfigProvider
-import com.pushpushgo.sdk.core.push.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.api.Config
+import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
 import com.pushpushgo.sdk.inapp.event.InAppMessageEvent
 import com.pushpushgo.sdk.inapp.event.InAppMessageEventRepository
 import com.pushpushgo.sdk.inapp.manager.InAppMessageManager

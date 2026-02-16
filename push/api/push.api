@@ -37,7 +37,7 @@ public final class com/pushpushgo/sdk/push/BuildConfig {
 public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final field Companion Lcom/pushpushgo/sdk/push/PushNotifications$Companion;
 	public static final field VERSION Ljava/lang/String;
-	public synthetic fun <init> (Landroid/app/Application;Lcom/pushpushgo/sdk/core/config/Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun areNotificationsEnabled ()Z
 	public final fun createBeacon ()Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun getApiKey ()Ljava/lang/String;
@@ -49,13 +49,13 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/push/dto/PushPushGoNotification;
 	public final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/push/dto/PushPushGoNotification;
 	public final fun getProjectId ()Ljava/lang/String;
-	public final fun getPushSubscriptionProvider ()Lcom/pushpushgo/sdk/core/push/PushSubscriptionProvider;
+	public final fun getPushSubscriptionProvider ()Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;
 	public final fun getPushToken ()Ljava/lang/String;
 	public final fun getSubscriberId ()Ljava/lang/String;
 	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
 	public static synthetic fun handleBackgroundNotificationClick$default (Lcom/pushpushgo/sdk/push/PushNotifications;Landroid/content/Intent;IILjava/lang/Object;)V
 	public static final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/push/PushNotifications;
-	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/config/Config;)Lcom/pushpushgo/sdk/push/PushNotifications;
+	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;)Lcom/pushpushgo/sdk/push/PushNotifications;
 	public final fun isPushPushGoNotification (Landroid/content/Intent;)Z
 	public final fun isPushPushGoNotification (Ljava/util/Map;)Z
 	public final fun isSubscribed ()Z
@@ -77,7 +77,7 @@ public final class com/pushpushgo/sdk/push/PushNotifications$Companion {
 	public final fun getDefaultNotificationClickHandler ()Lkotlin/jvm/functions/Function3;
 	public final fun getInstance ()Lcom/pushpushgo/sdk/push/PushNotifications;
 	public final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/push/PushNotifications;
-	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/config/Config;)Lcom/pushpushgo/sdk/push/PushNotifications;
+	public final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;)Lcom/pushpushgo/sdk/push/PushNotifications;
 	public final fun isInitialized ()Z
 }
 
@@ -118,7 +118,7 @@ public final class com/pushpushgo/sdk/push/push/service/HmsMessagingServiceDeleg
 	public final fun onNewToken (Ljava/lang/String;)V
 }
 
-public final class com/pushpushgo/sdk/push/subscription/DefaultPushSubscriptionProvider : com/pushpushgo/sdk/core/push/PushSubscriptionProvider {
+public final class com/pushpushgo/sdk/push/subscription/DefaultPushSubscriptionProvider : com/pushpushgo/sdk/core/api/PushSubscriptionProvider {
 	public fun getPushToken ()Ljava/lang/String;
 	public fun isNotificationChannelEnabled ()Z
 	public fun isSubscribed ()Z

@@ -17,7 +17,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.pushpushgo.sdk.core.push.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
 import com.pushpushgo.sdk.inapp.InAppMessages
 import com.pushpushgo.sdk.inapp.R
 import com.pushpushgo.sdk.inapp.model.AnimationType

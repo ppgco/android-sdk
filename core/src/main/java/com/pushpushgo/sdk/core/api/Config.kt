@@ -1,4 +1,4 @@
-package com.pushpushgo.sdk.core.config
+package com.pushpushgo.sdk.core.api
 
 class Config(
   val projectId: String,

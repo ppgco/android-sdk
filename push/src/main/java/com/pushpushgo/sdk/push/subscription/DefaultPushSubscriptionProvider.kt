@@ -1,7 +1,7 @@
 package com.pushpushgo.sdk.push.subscription
 
 import android.app.Application
-import com.pushpushgo.sdk.core.push.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
 import com.pushpushgo.sdk.push.PushNotifications
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

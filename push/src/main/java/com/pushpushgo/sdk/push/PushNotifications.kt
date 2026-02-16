@@ -6,9 +6,9 @@ import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.Configuration
 import androidx.work.WorkManager
-import com.pushpushgo.sdk.core.config.Config
-import com.pushpushgo.sdk.core.config.ManifestConfigProvider
-import com.pushpushgo.sdk.core.push.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.api.Config
+import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
+import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.mapToDto
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification

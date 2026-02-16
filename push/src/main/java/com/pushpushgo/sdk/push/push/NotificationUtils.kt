@@ -9,7 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
-import com.pushpushgo.sdk.core.push.NotificationPermissionProvider
+import com.pushpushgo.sdk.core.internal.NotificationPermissionProvider
 import com.pushpushgo.sdk.push.R
 import com.pushpushgo.sdk.push.data.Action
 import com.pushpushgo.sdk.push.data.NotificationJsonAdapter

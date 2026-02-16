@@ -1,12 +1,15 @@
-package com.pushpushgo.sdk.core.config
+package com.pushpushgo.sdk.core.internal
 
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.annotation.RestrictTo
+import com.pushpushgo.sdk.core.api.Config
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class ManifestConfigProvider(
   private val context: Context,
-) : ConfigProvider {
-  override fun provide(): Config {
+) {
+  fun provide(): Config {
     val packageManager = context.packageManager
     val metadata =
       packageManager
