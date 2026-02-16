@@ -22,7 +22,7 @@ class ManifestConfigProvider(
       "Missing metadata"
     }
 
-    return Config(
+    return Config.create(
       projectId =
         metadata.getString(
           "com.pushpushgo.projectId",

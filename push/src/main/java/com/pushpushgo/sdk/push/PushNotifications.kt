@@ -316,8 +316,16 @@ class PushNotifications private constructor(
    */
   suspend fun migrateToNewProjectNow(
     newProjectId: String,
-    newProjectToken: String,
+    newApiKey: String,
   ) {
+    require(Config.isProjectIdFormatValid(newProjectId)) {
+      "Invalid project ID format"
+    }
+
+    require(Config.isApiKeyFormatValid(newApiKey)) {
+      "Invalid API key format"
+    }
+
     check(areNotificationsEnabled()) {
       "Notifications disabled! Subscriber registration canceled"
     }
@@ -333,15 +341,15 @@ class PushNotifications private constructor(
 
           apiRepository.migrateSubscriber(
             newProjectId = newProjectId,
-            newToken = newProjectToken,
+            newApiKey = newApiKey,
           )
 
           reinitialize(
             application = application,
             config =
-              Config(
+              Config.create(
                 projectId = newProjectId,
-                apiKey = newProjectToken,
+                apiKey = newApiKey,
                 isDebug = config.isDebug,
                 apiUrl = config.apiUrl,
               ),

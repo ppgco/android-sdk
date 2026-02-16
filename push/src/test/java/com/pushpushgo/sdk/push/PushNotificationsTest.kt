@@ -23,7 +23,7 @@ class PushNotificationsTest {
       PushNotifications.initialize(
         application = getApplicationContext(),
         config =
-          Config(
+          Config.create(
             projectId = "hm93nzyt5bmczmtjeghy2aph",
             apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
           ),

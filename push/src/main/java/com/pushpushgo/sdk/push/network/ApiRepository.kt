@@ -87,11 +87,11 @@ internal class ApiRepository(
 
   suspend fun migrateSubscriber(
     newProjectId: String,
-    newToken: String,
+    newApiKey: String,
   ) {
-    logDebug("migrateSubscriber($newProjectId, $newToken) invoked")
+    logDebug("migrateSubscriber($newProjectId, $newApiKey) invoked")
 
-    if (newProjectId.isBlank() || newToken.isBlank()) {
+    if (newProjectId.isBlank() || newApiKey.isBlank()) {
       return logDebug("Empty new project info!")
     }
 
@@ -110,7 +110,7 @@ internal class ApiRepository(
 
     registerToken(
       token = null,
-      apiKey = newToken,
+      apiKey = newApiKey,
       projectId = newProjectId,
     )
   }
