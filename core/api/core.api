@@ -1,6 +1,8 @@
 public final class com/pushpushgo/sdk/core/api/Config {
 	public static final field Companion Lcom/pushpushgo/sdk/core/api/Config$Companion;
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun create (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
+	public static final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
 	public static final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/pushpushgo/sdk/core/api/Config;
 	public final fun getApiKey ()Ljava/lang/String;
 	public final fun getApiUrl ()Ljava/lang/String;
@@ -11,6 +13,8 @@ public final class com/pushpushgo/sdk/core/api/Config {
 }
 
 public final class com/pushpushgo/sdk/core/api/Config$Companion {
+	public final fun create (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
+	public final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
 	public final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/pushpushgo/sdk/core/api/Config;
 	public static synthetic fun create$default (Lcom/pushpushgo/sdk/core/api/Config$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/pushpushgo/sdk/core/api/Config;
 	public final fun isApiKeyFormatValid (Ljava/lang/String;)Z
