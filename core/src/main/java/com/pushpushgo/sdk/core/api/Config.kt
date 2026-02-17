@@ -18,6 +18,7 @@ class Config private constructor(
     fun isApiKeyFormatValid(apiKey: String): Boolean = API_KEY_REGEX.matches(apiKey)
 
     @JvmStatic
+    @JvmOverloads
     fun create(
       projectId: String,
       apiKey: String,
