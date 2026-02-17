@@ -15,19 +15,12 @@ pluginManagement {
   }
 }
 
-val isJitPack = System.getenv("JITPACK") != null
-
 include(
   ":core",
   ":push",
+  ":push:sample:firebase",
+  ":push:sample:hms",
+  ":push:sample:java",
   ":inapp",
+  ":inapp:sample",
 )
-
-if (!isJitPack) {
-  include(
-    ":push:sample:firebase",
-    ":push:sample:hms",
-    ":push:sample:java",
-    ":inapp:sample",
-  )
-}

@@ -14,29 +14,27 @@ Android SDK for integrating in-app messages into your applications. Provides adv
 
 To enable in-app messages in your PushPushGo project, contact our support or your account manager. 
 
-### Gradle
+### Gradle setup
 
-Add the Jitpack repository to your project's `settings.gradle` file:
+```toml
+# libs.versions.toml
 
-```groovy
-dependencyResolutionManagement {
-    repositories {
-        // ...
-        maven { url 'https://jitpack.io' }
-    }
-}
+[versions]
+pushpushgo-sdk-inapp = "4.0.0"
+
+[libraries]
+pushpushgo-sdk-inapp = { module = "com.pushpushgo:sdk-inapp", version.ref = "pushpushgo-sdk-inapp" }
 ```
 
-Then add the dependency in your app module's `build.gradle` file:
-
-```groovy
+```kotlin
+// app/build.gradle.kts
 dependencies {
-    implementation 'com.github.ppgco.android-sdk:inappmessages:3.0.2'
+  implementation(libs.pushpushgo.sdk.inapp)
 }
 ```
 
 ### Requirements
-- Android API 23+ (Android 6.0+)
+- Android API 28+
 - Kotlin 1.6+
 - Jetpack Compose (the library uses Compose for UI rendering)
 
@@ -61,7 +59,7 @@ class MyApplication : Application() {
         // Initialize manually
         InAppMessages.initialize(
           application = this,
-          config = Config(
+          config = Config.create(
             projectId = "your-project-id",
             apiKey = "your-api-key",
           ),
@@ -255,7 +253,7 @@ To facilitate debugging, enable debug mode during initialization:
 ```kotlin
 InAppMessages.initialize(
     application = this,
-    config = Config(
+    config = Config.create(
       projectId = "your-project-id",
       apiKey = "your-api-key",
       isDebug = true

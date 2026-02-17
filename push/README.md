@@ -215,7 +215,7 @@ class MyApplication : Application() {
 
     PushNotifications.initialize(
       application = this,
-      config = Config(
+      config = Config.create(
         projectId = "your-project-id",
         apiKey = "your-api-key",
         isDebug = true
