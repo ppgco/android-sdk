@@ -168,6 +168,10 @@ internal class InAppMessageDisplayerImpl(
   }
 
   override fun cancelPendingMessages(isActivityPaused: Boolean) {
+    if (isActivityPaused) {
+      hideMessage()
+    }
+
     if (pendingMessageJobs.isEmpty()) {
       return
     }
@@ -189,7 +193,13 @@ internal class InAppMessageDisplayerImpl(
   private fun hideMessage() {
     currentDialog?.let {
       if (it.isShowing) {
-        it.dismiss()
+        try {
+          it.dismiss()
+        } catch (e: Exception) {
+          if (debug) {
+            Log.w(InAppMessages.TAG, "[Displayer] Failed to dismiss dialog: ${e.message}")
+          }
+        }
       }
     }
     currentDialog = null
@@ -308,6 +318,13 @@ internal class InAppMessageDisplayerImpl(
           }
           setOnDismissListener { if (currentDialog == this) dismissMessage(message) }
         }
+      if (activity.isFinishing || activity.isDestroyed) {
+        if (debug) {
+          Log.d(InAppMessages.TAG, "[Displayer] Activity is finishing/destroyed, skipping dialog.show()")
+        }
+        return@withContext
+      }
+
       dialog.show()
       currentDialog = dialog
       // Fire show event after dialog is visible
