@@ -314,12 +314,20 @@ class PushNotifications private constructor(
    *
    * During migration, subscription operations are blocked.
    *
+   * WARNING: after migration use the object returned by this function
+   * instead of the previous one.
+   *
+   * @param newProjectId project id to which we are switching
+   * @param newApiKey project api key
+   *
+   * @return [CompletableFuture] with the new [PushNotifications] instance
+   *
    * @throws IllegalStateException if notifications are disabled or migration is in progress.
    */
-  suspend fun migrateToNewProjectNow(
+  fun migrateToNewProject(
     newProjectId: String,
     newApiKey: String,
-  ) {
+  ): CompletableFuture<PushNotifications> {
     require(Config.isProjectIdFormatValid(newProjectId)) {
       "Invalid project ID format"
     }
@@ -336,8 +344,8 @@ class PushNotifications private constructor(
       "Migration is already in progress"
     }
 
-    try {
-      withContext(Dispatchers.IO) {
+    return sdkScope.future {
+      try {
         subscriptionMutex.withLock {
           uploadManager.cancelAllJobs()
 
@@ -360,12 +368,10 @@ class PushNotifications private constructor(
             invalidProjectIdHandler = this@PushNotifications.invalidProjectIdHandler
             defaultIsSubscribed = this@PushNotifications.defaultIsSubscribed
           }
-
-          sdkScope.cancel()
         }
+      } finally {
+        isMigrating.set(false)
       }
-    } finally {
-      isMigrating.set(false)
     }
   }
 
