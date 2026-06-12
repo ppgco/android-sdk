@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>MatchPhase</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="../../../index.html" tabindex="1">
+                    PushPushGo SDK
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true"
+                        data-filter=":library:dokkaHtml/release">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":library:dokkaHtml/release"
+                                       data-filter=":library:dokkaHtml/release"/>
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    PushPushGo SDK
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="PushPushGo SDK::com.pushpushgo.sdk.push.liveactivity.data/MatchPhase///PointingToDeclaration//-1887420133">
+  <div class="breadcrumbs"><a href="../../../index.html">PushPushGo SDK</a><span class="delimiter">/</span><a href="../index.html">com.pushpushgo.sdk.push.liveactivity.data</a><span class="delimiter">/</span><span class="current">MatchPhase</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Match</span><wbr></wbr><span><span>Phase</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">enum </span><a href="index.html">MatchPhase</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="index.html">MatchPhase</a><span class="token operator">&gt; </span></div><p class="paragraph">All possible phases of a football match. Wire values mirror the backend / iOS <code class="lang-kotlin">MatchPhase</code> exactly (including the <code class="lang-kotlin">OTHER</code> fallback bucket).</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="ENTRY">Entries</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="ENTRY">
+        <h2 class="tableheader">Entries</h2>
+        <div class="table"><a data-name="-1671443118%2FClasslikes%2F-1887420133" anchor-label="PRE_MATCH" id="-1671443118%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-p-r-e_-m-a-t-c-h/index.html">PRE_MATCH</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1671443118%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-p-r-e_-m-a-t-c-h/index.html">PRE_MATCH</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1388203871%2FClasslikes%2F-1887420133" anchor-label="FIRST_HALF" id="-1388203871%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-f-i-r-s-t_-h-a-l-f/index.html">FIRST_HALF</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1388203871%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-f-i-r-s-t_-h-a-l-f/index.html">FIRST_HALF</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="460521362%2FClasslikes%2F-1887420133" anchor-label="FIRST_HALF_ADDED_TIME" id="460521362%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-f-i-r-s-t_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">FIRST_HALF_ADDED_TIME</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="460521362%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-f-i-r-s-t_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">FIRST_HALF_ADDED_TIME</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1368805086%2FClasslikes%2F-1887420133" anchor-label="HALF_TIME_BREAK" id="-1368805086%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-h-a-l-f_-t-i-m-e_-b-r-e-a-k/index.html">HALF_TIME_BREAK</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1368805086%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-h-a-l-f_-t-i-m-e_-b-r-e-a-k/index.html">HALF_TIME_BREAK</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1063176583%2FClasslikes%2F-1887420133" anchor-label="SECOND_HALF" id="1063176583%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-e-c-o-n-d_-h-a-l-f/index.html">SECOND_HALF</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1063176583%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-s-e-c-o-n-d_-h-a-l-f/index.html">SECOND_HALF</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1773045012%2FClasslikes%2F-1887420133" anchor-label="SECOND_HALF_ADDED_TIME" id="-1773045012%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-e-c-o-n-d_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">SECOND_HALF_ADDED_TIME</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1773045012%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-s-e-c-o-n-d_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">SECOND_HALF_ADDED_TIME</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1669218330%2FClasslikes%2F-1887420133" anchor-label="FULL_TIME" id="-1669218330%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-f-u-l-l_-t-i-m-e/index.html">FULL_TIME</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1669218330%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-f-u-l-l_-t-i-m-e/index.html">FULL_TIME</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-381415685%2FClasslikes%2F-1887420133" anchor-label="EXTRA_TIME_BREAK" id="-381415685%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-x-t-r-a_-t-i-m-e_-b-r-e-a-k/index.html">EXTRA_TIME_BREAK</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-381415685%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-e-x-t-r-a_-t-i-m-e_-b-r-e-a-k/index.html">EXTRA_TIME_BREAK</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1050858190%2FClasslikes%2F-1887420133" anchor-label="EXTRA_TIME_FIRST_HALF" id="1050858190%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-x-t-r-a_-t-i-m-e_-f-i-r-s-t_-h-a-l-f/index.html">EXTRA_TIME_FIRST_HALF</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1050858190%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-e-x-t-r-a_-t-i-m-e_-f-i-r-s-t_-h-a-l-f/index.html">EXTRA_TIME_FIRST_HALF</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2052935867%2FClasslikes%2F-1887420133" anchor-label="EXTRA_TIME_FIRST_HALF_ADDED_TIME" id="-2052935867%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-x-t-r-a_-t-i-m-e_-f-i-r-s-t_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">EXTRA_TIME_FIRST_HALF_ADDED_TIME</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2052935867%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-e-x-t-r-a_-t-i-m-e_-f-i-r-s-t_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">EXTRA_TIME_FIRST_HALF_ADDED_TIME</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="590865173%2FClasslikes%2F-1887420133" anchor-label="EXTRA_TIME_HALF_TIME_BREAK" id="590865173%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-x-t-r-a_-t-i-m-e_-h-a-l-f_-t-i-m-e_-b-r-e-a-k/index.html">EXTRA_TIME_HALF_TIME_BREAK</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="590865173%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-e-x-t-r-a_-t-i-m-e_-h-a-l-f_-t-i-m-e_-b-r-e-a-k/index.html">EXTRA_TIME_HALF_TIME_BREAK</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-635310854%2FClasslikes%2F-1887420133" anchor-label="EXTRA_TIME_SECOND_HALF" id="-635310854%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-x-t-r-a_-t-i-m-e_-s-e-c-o-n-d_-h-a-l-f/index.html">EXTRA_TIME_SECOND_HALF</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-635310854%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-e-x-t-r-a_-t-i-m-e_-s-e-c-o-n-d_-h-a-l-f/index.html">EXTRA_TIME_SECOND_HALF</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1914159513%2FClasslikes%2F-1887420133" anchor-label="EXTRA_TIME_SECOND_HALF_ADDED_TIME" id="1914159513%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-x-t-r-a_-t-i-m-e_-s-e-c-o-n-d_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">EXTRA_TIME_SECOND_HALF_ADDED_TIME</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1914159513%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-e-x-t-r-a_-t-i-m-e_-s-e-c-o-n-d_-h-a-l-f_-a-d-d-e-d_-t-i-m-e/index.html">EXTRA_TIME_SECOND_HALF_ADDED_TIME</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1336582524%2FClasslikes%2F-1887420133" anchor-label="PENALTY_SHOOTOUT" id="-1336582524%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-p-e-n-a-l-t-y_-s-h-o-o-t-o-u-t/index.html">PENALTY_SHOOTOUT</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1336582524%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-p-e-n-a-l-t-y_-s-h-o-o-t-o-u-t/index.html">PENALTY_SHOOTOUT</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1916403607%2FClasslikes%2F-1887420133" anchor-label="MATCH_ENDED" id="-1916403607%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-m-a-t-c-h_-e-n-d-e-d/index.html">MATCH_ENDED</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1916403607%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-m-a-t-c-h_-e-n-d-e-d/index.html">MATCH_ENDED</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="576126873%2FClasslikes%2F-1887420133" anchor-label="OTHER" id="576126873%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-o-t-h-e-r/index.html">OTHER</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="576126873%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><div class="block"><a href="-o-t-h-e-r/index.html">OTHER</a></div></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="504775952%2FClasslikes%2F-1887420133" anchor-label="Companion" id="504775952%2FClasslikes%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="504775952%2FClasslikes%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="-2056141684%2FProperties%2F-1887420133" anchor-label="baseMinute" id="-2056141684%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="base-minute.html"><span>base</span><wbr></wbr><span><span>Minute</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2056141684%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="base-minute.html">baseMinute</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Fallback match minute used to position the progress bar when the backend does not provide <code class="lang-kotlin">statusChangedAt</code> (i.e. when the exact minute cannot be computed client-side).</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1090912614%2FProperties%2F-1887420133" anchor-label="displayText" id="-1090912614%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="display-text.html"><span>display</span><wbr></wbr><span><span>Text</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1090912614%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="display-text.html">displayText</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Default display text used when the backend does not override it via <code class="lang-kotlin">statusLabels</code>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1910424633%2FProperties%2F-1887420133" anchor-label="entries" id="1910424633%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="entries.html"><span><span>entries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1910424633%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="entries.html">entries</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.enums/-enum-entries/index.html">EnumEntries</a><span class="token operator">&lt;</span><a href="index.html">MatchPhase</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns a representation of an immutable list of all enum entries, in the order they're declared.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1734347846%2FProperties%2F-1887420133" anchor-label="isAddedTime" id="1734347846%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-added-time.html"><span>is</span><wbr></wbr><span>Added</span><wbr></wbr><span><span>Time</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1734347846%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="is-added-time.html">isAddedTime</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Whether this is added/injury time.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="572468852%2FProperties%2F-1887420133" anchor-label="isBreak" id="572468852%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-break.html"><span>is</span><wbr></wbr><span><span>Break</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="572468852%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="is-break.html">isBreak</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Whether the match is currently in a break period.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1949673227%2FProperties%2F-1887420133" anchor-label="isFinished" id="-1949673227%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-finished.html"><span>is</span><wbr></wbr><span><span>Finished</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1949673227%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="is-finished.html">isFinished</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Whether the match has concluded.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2114223269%2FProperties%2F-1887420133" anchor-label="isPlaying" id="2114223269%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-playing.html"><span>is</span><wbr></wbr><span><span>Playing</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2114223269%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="is-playing.html">isPlaying</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Whether the ball is actively in play (regular, added or extra time, penalties).</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-372974862%2FProperties%2F-1887420133" anchor-label="name" id="-372974862%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-o-t-h-e-r/index.html#-372974862%2FProperties%2F-1887420133"><span><span>name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-372974862%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-o-t-h-e-r/index.html#-372974862%2FProperties%2F-1887420133">name</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-739389684%2FProperties%2F-1887420133" anchor-label="ordinal" id="-739389684%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-o-t-h-e-r/index.html#-739389684%2FProperties%2F-1887420133"><span><span>ordinal</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-739389684%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-o-t-h-e-r/index.html#-739389684%2FProperties%2F-1887420133">ordinal</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1248749192%2FProperties%2F-1887420133" anchor-label="value" id="-1248749192%2FProperties%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="value.html"><span><span>value</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1248749192%2FProperties%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="value.html">value</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="493714947%2FFunctions%2F-1887420133" anchor-label="valueOf" id="493714947%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="value-of.html"><span>value</span><wbr></wbr><span><span>Of</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="493714947%2FFunctions%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="value-of.html"><span class="token function">valueOf</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">value<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">MatchPhase</a></div><div class="brief "><p class="paragraph">Returns the enum constant of this type with the specified name. The string must match exactly an identifier used to declare an enum constant in this type. (Extraneous whitespace characters are not permitted.)</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1509735503%2FFunctions%2F-1887420133" anchor-label="values" id="1509735503%2FFunctions%2F-1887420133" data-filterable-set=":library:dokkaHtml/release"></a>
+          <div class="table-row table-row_content" data-filterable-current=":library:dokkaHtml/release" data-filterable-set=":library:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="values.html"><span><span>values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1509735503%2FFunctions%2F-1887420133"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":library:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="values.html"><span class="token function">values</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><a href="index.html">MatchPhase</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns an array containing the constants of this enum type, in the order they're declared.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
