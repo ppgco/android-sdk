@@ -11,7 +11,6 @@ import kotlin.random.Random
 internal class LiveActivityManager(
   private val persistence: LiveActivityPersistence,
 ) {
-
   private val activeActivities = ConcurrentHashMap<String, LiveActivity>()
 
   fun restoreFromPersistence() {
@@ -51,17 +50,18 @@ internal class LiveActivityManager(
     val notificationId = if (existingNotifId != -1) existingNotifId else generateNotificationId()
     val createdAt = persistence.getCreatedAt(push.id).takeIf { it > 0L } ?: System.currentTimeMillis()
 
-    val activity = LiveActivity(
-      id = push.id,
-      projectId = push.projectId,
-      subscriberId = push.subscriberId,
-      template = push.template,
-      status = LiveActivityStatus.ACTIVE,
-      configuration = configuration,
-      liveData = liveData,
-      hotMessage = push.hotMessage,
-      createdAt = createdAt,
-    )
+    val activity =
+      LiveActivity(
+        id = push.id,
+        projectId = push.projectId,
+        subscriberId = push.subscriberId,
+        template = push.template,
+        status = LiveActivityStatus.ACTIVE,
+        configuration = configuration,
+        liveData = liveData,
+        hotMessage = push.hotMessage,
+        createdAt = createdAt,
+      )
     activeActivities[push.id] = activity
 
     persistence.addActiveId(push.id)
@@ -94,13 +94,14 @@ internal class LiveActivityManager(
       return null
     }
 
-    val updated = current.copy(
-      configuration = push.configuration ?: current.configuration,
-      liveData = push.liveData ?: current.liveData,
-      hotMessage = push.hotMessage,
-      status = LiveActivityStatus.ACTIVE,
-      updatedAt = System.currentTimeMillis(),
-    )
+    val updated =
+      current.copy(
+        configuration = push.configuration ?: current.configuration,
+        liveData = push.liveData ?: current.liveData,
+        hotMessage = push.hotMessage,
+        status = LiveActivityStatus.ACTIVE,
+        updatedAt = System.currentTimeMillis(),
+      )
     activeActivities[push.id] = updated
 
     persistence.setStatus(push.id, LiveActivityStatus.ACTIVE)
@@ -115,7 +116,11 @@ internal class LiveActivityManager(
    * Attach the pre-match countdown (from the GET document's `startPolicy`) to a
    * tracked activity and persist it for process-death rebuilds.
    */
-  fun setCountdown(liveActivityId: String, message: String?, endAtMs: Long): LiveActivity? {
+  fun setCountdown(
+    liveActivityId: String,
+    message: String?,
+    endAtMs: Long,
+  ): LiveActivity? {
     val current = activeActivities[liveActivityId] ?: persistence.rebuild(liveActivityId) ?: return null
     val updated = current.copy(countdownMessage = message, countdownEndAtMs = endAtMs)
     activeActivities[liveActivityId] = updated
@@ -131,13 +136,14 @@ internal class LiveActivityManager(
       return null
     }
 
-    val ended = current.copy(
-      configuration = push.configuration ?: current.configuration,
-      liveData = push.liveData ?: current.liveData,
-      hotMessage = push.hotMessage,
-      status = LiveActivityStatus.ENDED,
-      updatedAt = System.currentTimeMillis(),
-    )
+    val ended =
+      current.copy(
+        configuration = push.configuration ?: current.configuration,
+        liveData = push.liveData ?: current.liveData,
+        hotMessage = push.hotMessage,
+        status = LiveActivityStatus.ENDED,
+        updatedAt = System.currentTimeMillis(),
+      )
     activeActivities[push.id] = ended
 
     persistence.setStatus(push.id, LiveActivityStatus.ENDED)
@@ -163,13 +169,9 @@ internal class LiveActivityManager(
 
   fun getNotificationId(id: String): Int = persistence.getNotificationId(id)
 
-  fun getActiveActivities(): List<LiveActivity> =
-    activeActivities.values.filter { it.status != LiveActivityStatus.ENDED }
+  fun getActiveActivities(): List<LiveActivity> = activeActivities.values.filter { it.status != LiveActivityStatus.ENDED }
 
-  fun isActivityActive(id: String): Boolean =
-    activeActivities[id]?.status == LiveActivityStatus.ACTIVE
+  fun isActivityActive(id: String): Boolean = activeActivities[id]?.status == LiveActivityStatus.ACTIVE
 
-  private fun generateNotificationId(): Int =
-    Random.nextInt(100_000, Int.MAX_VALUE)
+  private fun generateNotificationId(): Int = Random.nextInt(100_000, Int.MAX_VALUE)
 }
-

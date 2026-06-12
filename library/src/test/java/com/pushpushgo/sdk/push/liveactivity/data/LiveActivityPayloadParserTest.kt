@@ -8,7 +8,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 internal class LiveActivityPayloadParserTest {
-
   @Test
   fun `isLiveActivityPush returns true for live notification push`() {
     assertTrue(LiveActivityPayloadParser.isLiveActivityPush(mapOf("type" to "live_notification")))
@@ -85,9 +84,10 @@ internal class LiveActivityPayloadParserTest {
 
   @Test
   fun `parseLiveData maps unknown status to OTHER`() {
-    val liveData = LiveActivityPayloadParser.parseLiveData(
-      """{"homeTeamScore":0,"awayTeamScore":0,"status":"WHO_KNOWS"}""",
-    )!!
+    val liveData =
+      LiveActivityPayloadParser.parseLiveData(
+        """{"homeTeamScore":0,"awayTeamScore":0,"status":"WHO_KNOWS"}""",
+      )!!
     assertEquals(MatchPhase.OTHER, liveData.status)
     assertEquals("0:0", liveData.scoreText)
     assertNull(liveData.statusChangedAt)
@@ -98,20 +98,22 @@ internal class LiveActivityPayloadParserTest {
     assertNull(LiveActivityPayloadParser.parseHotMessage("""{"id":"x"}"""))
   }
 
-  private fun buildStartEnvelope(): Map<String, String> = mapOf(
-    "type" to "live_notification",
-    "liveNotificationId" to "match-001",
-    "event" to "start",
-    "template" to "FOOTBALL_MATCH_TRACKING",
-    "project" to "proj-1",
-    "subscriber" to "sub-1",
-    "configuration" to CONFIG_JSON,
-    "liveData" to LIVE_DATA_JSON,
-    "hotMessage" to HOT_MESSAGE_JSON,
-  )
+  private fun buildStartEnvelope(): Map<String, String> =
+    mapOf(
+      "type" to "live_notification",
+      "liveNotificationId" to "match-001",
+      "event" to "start",
+      "template" to "FOOTBALL_MATCH_TRACKING",
+      "project" to "proj-1",
+      "subscriber" to "sub-1",
+      "configuration" to CONFIG_JSON,
+      "liveData" to LIVE_DATA_JSON,
+      "hotMessage" to HOT_MESSAGE_JSON,
+    )
 
   companion object {
-    private val CONFIG_JSON = """
+    private val CONFIG_JSON =
+      """
       {
         "type":"FOOTBALL_MATCH_TRACKING",
         "content":{
@@ -137,11 +139,12 @@ internal class LiveActivityPayloadParserTest {
         "timeout":{"minutes":120},
         "url":"https://match/1"
       }
-    """.trimIndent()
+      """.trimIndent()
 
-    private val LIVE_DATA_JSON = """
+    private val LIVE_DATA_JSON =
+      """
       {"type":"FOOTBALL_MATCH_TRACKING","homeTeamScore":2,"awayTeamScore":1,"status":"SECOND_HALF","statusChangedAt":"2024-03-02T15:00:00Z"}
-    """.trimIndent()
+      """.trimIndent()
 
     private val HOT_MESSAGE_JSON = """{"id":"h1","text":"GOAL!","timestamp":1709398800}"""
   }

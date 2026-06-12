@@ -8,8 +8,10 @@ import com.pushpushgo.sdk.utils.logDebug
 import com.pushpushgo.sdk.utils.logWarning
 
 class LiveActivityDismissReceiver : BroadcastReceiver() {
-
-  override fun onReceive(context: Context, intent: Intent) {
+  override fun onReceive(
+    context: Context,
+    intent: Intent,
+  ) {
     if (intent.action != LiveActivityHandler.ACTION_DISMISS) return
 
     val laId = intent.getStringExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID)
@@ -25,4 +27,3 @@ class LiveActivityDismissReceiver : BroadcastReceiver() {
     }
   }
 }
-

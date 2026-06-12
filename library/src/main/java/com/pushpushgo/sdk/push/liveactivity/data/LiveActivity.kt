@@ -22,4 +22,3 @@ data class LiveActivity(
   /** Epoch millis of `startPolicy.scheduledAt` — the moment the countdown hits zero. */
   val countdownEndAtMs: Long? = null,
 )
-

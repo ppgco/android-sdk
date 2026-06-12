@@ -218,7 +218,8 @@ internal class ApiRepository(
   }
 
   private fun isoTimestamp(): String =
-    java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
+    java.text
+      .SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
       .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
       .format(java.util.Date())
 
@@ -229,10 +230,11 @@ internal class ApiRepository(
    */
   suspend fun fetchLiveActivity(liveNotificationId: String): String? =
     runCatching {
-      apiService.getLiveActivity(
-        url = "$baseUrl/core/projects/$projectId/live-notifications/$liveNotificationId",
-        token = apiKey,
-      ).string()
+      apiService
+        .getLiveActivity(
+          url = "$baseUrl/core/projects/$projectId/live-notifications/$liveNotificationId",
+          token = apiKey,
+        ).string()
     }.onFailure { logError("fetchLiveActivity($liveNotificationId) failed", it) }.getOrNull()
 
   private fun liveActivitySubscribersUrl(liveNotificationId: String): String =

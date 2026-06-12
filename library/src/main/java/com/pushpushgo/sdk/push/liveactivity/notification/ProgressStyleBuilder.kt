@@ -26,7 +26,6 @@ import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
 internal class ProgressStyleBuilder(
   private val context: Context,
 ) {
-
   companion object {
     private const val TOTAL_MATCH_DURATION = 90
     private const val HALF_DURATION = 45
@@ -45,10 +44,11 @@ internal class ProgressStyleBuilder(
 
     private fun applyPromotedOngoing(builder: Notification.Builder) {
       try {
-        val method = Notification.Builder::class.java.getMethod(
-          "setRequestPromotedOngoing",
-          Boolean::class.javaPrimitiveType,
-        )
+        val method =
+          Notification.Builder::class.java.getMethod(
+            "setRequestPromotedOngoing",
+            Boolean::class.javaPrimitiveType,
+          )
         method.invoke(builder, true)
       } catch (_: Exception) {
         // API not available in this SDK revision
@@ -76,16 +76,18 @@ internal class ProgressStyleBuilder(
     val contentTitle = teamLine(config)
     val contentText = buildContentText(activity, elapsedSeconds, showHotMessage)
 
-    val builder = Notification.Builder(context, channelId)
-      .setSmallIcon(R.drawable.ic_stat_pushpushgo_default)
-      .setContentTitle(contentTitle)
-      .setContentText(contentText)
-      .setSubText(config.content.title)
-      .setStyle(progressStyle)
-      .setOngoing(true)
-      .setOnlyAlertOnce(true)
-      .setCategory(Notification.CATEGORY_STATUS)
-      .setVisibility(Notification.VISIBILITY_PUBLIC)
+    val builder =
+      Notification
+        .Builder(context, channelId)
+        .setSmallIcon(R.drawable.ic_stat_pushpushgo_default)
+        .setContentTitle(contentTitle)
+        .setContentText(contentText)
+        .setSubText(config.content.title)
+        .setStyle(progressStyle)
+        .setOngoing(true)
+        .setOnlyAlertOnce(true)
+        .setCategory(Notification.CATEGORY_STATUS)
+        .setVisibility(Notification.VISIBILITY_PUBLIC)
 
     applyPromotedOngoing(builder)
 
@@ -112,7 +114,8 @@ internal class ProgressStyleBuilder(
     // tracker parked at the end).
     val progressStyle = buildProgressStyle(config, liveData, computeElapsedSeconds(liveData))
 
-    return Notification.Builder(context, channelId)
+    return Notification
+      .Builder(context, channelId)
       .setSmallIcon(R.drawable.ic_stat_pushpushgo_default)
       .setContentTitle(teamLine(config))
       .setContentText("${liveData.homeTeamScore} : ${liveData.awayTeamScore} · ${config.label(liveData.status)}")
@@ -126,14 +129,16 @@ internal class ProgressStyleBuilder(
       .apply {
         if (homeTeamBitmap != null) setLargeIcon(homeTeamBitmap)
         if (contentIntent != null) setContentIntent(contentIntent)
-      }
-      .build()
+      }.build()
   }
 
   private enum class BandKind { HALF, BREAK }
 
   /** One section of the progress bar: a match half/penalty run, or a break. */
-  private data class Band(val length: Int, val kind: BandKind)
+  private data class Band(
+    val length: Int,
+    val kind: BandKind,
+  )
 
   private fun buildProgressStyle(
     config: FootballMatchConfiguration,
@@ -155,16 +160,18 @@ internal class ProgressStyleBuilder(
     // tracker instead would create tiny sub-segments, which the renderer
     // inflates to a minimum visual width — parking the tracker ahead of the
     // real position until the elapsed time caught up.
-    val progressStyle = Notification.ProgressStyle()
-      .setStyledByProgress(true)
-      .setProgress(tracker)
-      .setProgressSegments(
-        bands.map { band ->
-          Notification.ProgressStyle.Segment(band.length)
-            .setColor(if (band.kind == BandKind.BREAK) breakColor else halfColor)
-        },
-      )
-      .setProgressPoints(buildBreakPoints(bands, breakColor))
+    val progressStyle =
+      Notification
+        .ProgressStyle()
+        .setStyledByProgress(true)
+        .setProgress(tracker)
+        .setProgressSegments(
+          bands.map { band ->
+            Notification.ProgressStyle
+              .Segment(band.length)
+              .setColor(if (band.kind == BandKind.BREAK) breakColor else halfColor)
+          },
+        ).setProgressPoints(buildBreakPoints(bands, breakColor))
 
     applyTrackerIcon(progressStyle, config, halfColor)
     return progressStyle
@@ -194,18 +201,25 @@ internal class ProgressStyleBuilder(
     return renderDot(color, sizePx = 64).also { cachedDot = color to it }
   }
 
-  private fun renderDot(color: Int, sizePx: Int): Bitmap {
+  private fun renderDot(
+    color: Int,
+    sizePx: Int,
+  ): Bitmap {
     val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-      this.color = color
-      style = Paint.Style.FILL
-    }
+    val paint =
+      Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = color
+        style = Paint.Style.FILL
+      }
     canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx * 0.32f, paint)
     return bitmap
   }
 
-  private fun renderEmoji(emoji: String, sizePx: Int): Bitmap {
+  private fun renderEmoji(
+    emoji: String,
+    sizePx: Int,
+  ): Bitmap {
     val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = sizePx * 0.85f }
@@ -216,14 +230,15 @@ internal class ProgressStyleBuilder(
   }
 
   /** Phases rendered on the dedicated extra-time bar instead of the regulation one. */
-  private fun isExtraTimeBar(status: MatchPhase): Boolean = when (status) {
-    MatchPhase.EXTRA_TIME_FIRST_HALF, MatchPhase.EXTRA_TIME_FIRST_HALF_ADDED_TIME,
-    MatchPhase.EXTRA_TIME_HALF_TIME_BREAK,
-    MatchPhase.EXTRA_TIME_SECOND_HALF, MatchPhase.EXTRA_TIME_SECOND_HALF_ADDED_TIME,
-    MatchPhase.PENALTY_SHOOTOUT,
-    -> true
-    else -> false
-  }
+  private fun isExtraTimeBar(status: MatchPhase): Boolean =
+    when (status) {
+      MatchPhase.EXTRA_TIME_FIRST_HALF, MatchPhase.EXTRA_TIME_FIRST_HALF_ADDED_TIME,
+      MatchPhase.EXTRA_TIME_HALF_TIME_BREAK,
+      MatchPhase.EXTRA_TIME_SECOND_HALF, MatchPhase.EXTRA_TIME_SECOND_HALF_ADDED_TIME,
+      MatchPhase.PENALTY_SHOOTOUT,
+      -> true
+      else -> false
+    }
 
   /**
    * Ordered bands of the bar: `half | break | half`, expressed in seconds so the
@@ -233,7 +248,10 @@ internal class ProgressStyleBuilder(
    * campaign opted out of the break bar ([showBreak] false) the bar is one
    * continuous run.
    */
-  private fun bandsFor(status: MatchPhase, showBreak: Boolean): List<Band> {
+  private fun bandsFor(
+    status: MatchPhase,
+    showBreak: Boolean,
+  ): List<Band> {
     val halfSec = (if (isExtraTimeBar(status)) EXTRA_TIME_HALF else HALF_DURATION) * 60
     if (!showBreak) return listOf(Band(halfSec * 2, BandKind.HALF))
     return listOf(
@@ -249,7 +267,11 @@ internal class ProgressStyleBuilder(
    * break square / end of bar); breaks animate it from the left break square to
    * the right one over the real break duration (15' regulation, 5' in ET).
    */
-  private fun trackerPosition(status: MatchPhase, elapsedSeconds: Int, showBreak: Boolean): Int {
+  private fun trackerPosition(
+    status: MatchPhase,
+    elapsedSeconds: Int,
+    showBreak: Boolean,
+  ): Int {
     val halfSec = (if (isExtraTimeBar(status)) EXTRA_TIME_HALF else HALF_DURATION) * 60
     val breakSec = if (showBreak) BREAK_BAR * 60 else 0
     val firstHalfEnd = halfSec
@@ -270,11 +292,12 @@ internal class ProgressStyleBuilder(
         secondHalfStart + (elapsedSeconds - h1EndSec).coerceIn(0, halfSec)
       MatchPhase.SECOND_HALF_ADDED_TIME -> barEnd
       MatchPhase.FULL_TIME, MatchPhase.MATCH_ENDED, MatchPhase.EXTRA_TIME_BREAK -> barEnd
-      MatchPhase.OTHER -> when {
-        elapsedSeconds <= h1EndSec -> elapsedSeconds.coerceAtLeast(0)
-        elapsedSeconds <= ftSec -> secondHalfStart + (elapsedSeconds - h1EndSec)
-        else -> barEnd
-      }
+      MatchPhase.OTHER ->
+        when {
+          elapsedSeconds <= h1EndSec -> elapsedSeconds.coerceAtLeast(0)
+          elapsedSeconds <= ftSec -> secondHalfStart + (elapsedSeconds - h1EndSec)
+          else -> barEnd
+        }
       MatchPhase.EXTRA_TIME_FIRST_HALF ->
         (elapsedSeconds - ftSec).coerceIn(0, halfSec)
       MatchPhase.EXTRA_TIME_FIRST_HALF_ADDED_TIME -> firstHalfEnd
@@ -337,12 +360,10 @@ internal class ProgressStyleBuilder(
    * too — the clock isn't displayed for them (see [showsClock]) but the tracker
    * animates across the break bar.
    */
-  private fun clockRuns(status: MatchPhase): Boolean =
-    status.isPlaying || status == MatchPhase.OTHER || status.isBreak
+  private fun clockRuns(status: MatchPhase): Boolean = status.isPlaying || status == MatchPhase.OTHER || status.isBreak
 
   /** Whether the `mm:ss` clock is shown at all for this phase. */
-  private fun showsClock(status: MatchPhase): Boolean =
-    status.isPlaying || status == MatchPhase.OTHER || status == MatchPhase.FULL_TIME
+  private fun showsClock(status: MatchPhase): Boolean = status.isPlaying || status == MatchPhase.OTHER || status == MatchPhase.FULL_TIME
 
   private fun formatClock(totalSeconds: Int): String {
     val safe = totalSeconds.coerceAtLeast(0)
@@ -384,15 +405,20 @@ internal class ProgressStyleBuilder(
     }
   }
 
-  private fun buildChipText(liveData: FootballMatchLiveData, elapsedSeconds: Int): String? {
+  private fun buildChipText(
+    liveData: FootballMatchLiveData,
+    elapsedSeconds: Int,
+  ): String? {
     if (!liveData.status.isPlaying) return null
     return "${formatClock(elapsedSeconds)} ${liveData.scoreText}"
   }
 
-  private fun teamLine(config: FootballMatchConfiguration): String =
-    "${config.content.homeTeamName} - ${config.content.awayTeamName}"
+  private fun teamLine(config: FootballMatchConfiguration): String = "${config.content.homeTeamName} - ${config.content.awayTeamName}"
 
-  private fun resolveColor(colorSet: LiveActivityColorSet?, fallback: Int): Int {
+  private fun resolveColor(
+    colorSet: LiveActivityColorSet?,
+    fallback: Int,
+  ): Int {
     val hex = colorSet?.resolve(isDarkMode()) ?: return fallback
     return runCatching { Color.parseColor(normalizeHex(hex)) }.getOrDefault(fallback)
   }
@@ -406,4 +432,3 @@ internal class ProgressStyleBuilder(
     (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
       Configuration.UI_MODE_NIGHT_YES
 }
-

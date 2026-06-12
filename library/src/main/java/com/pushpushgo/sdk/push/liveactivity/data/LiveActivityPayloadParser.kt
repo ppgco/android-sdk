@@ -23,16 +23,15 @@ import com.squareup.moshi.Types
  * The `configuration` / `liveData` JSON mirror the iOS DTOs field-for-field.
  */
 internal object LiveActivityPayloadParser {
-
   const val ENVELOPE_TYPE = "live_notification"
 
   private val moshi: Moshi = Moshi.Builder().build()
-  private val mapAdapter = moshi.adapter<Map<String, Any?>>(
-    Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java),
-  )
+  private val mapAdapter =
+    moshi.adapter<Map<String, Any?>>(
+      Types.newParameterizedType(Map::class.java, String::class.java, Any::class.java),
+    )
 
-  fun isLiveActivityPush(data: Map<String, String>): Boolean =
-    data["type"] == ENVELOPE_TYPE
+  fun isLiveActivityPush(data: Map<String, String>): Boolean = data["type"] == ENVELOPE_TYPE
 
   /**
    * The only `lifecycle.status` (from the GET live-notification document) that is
@@ -75,8 +74,9 @@ internal object LiveActivityPayloadParser {
     if (!isLiveActivityPush(data)) return null
     val id = data["liveNotificationId"]?.takeIf { it.isNotBlank() } ?: return null
     val event = LiveActivityEvent.fromValue(data["event"].orEmpty()) ?: return null
-    val template = LiveActivityTemplate.fromValue(data["template"])
-      ?: LiveActivityTemplate.FOOTBALL_MATCH_TRACKING
+    val template =
+      LiveActivityTemplate.fromValue(data["template"])
+        ?: LiveActivityTemplate.FOOTBALL_MATCH_TRACKING
 
     val configurationJson = data["configuration"]?.takeIf { it.isNotBlank() }
     val liveDataJson = data["liveData"]?.takeIf { it.isNotBlank() }
@@ -119,21 +119,23 @@ internal object LiveActivityPayloadParser {
     val root = readJson(json) ?: return null
     val contentMap = root.map("content") ?: return null
 
-    val content = FootballMatchContent(
-      title = contentMap.str("title").orEmpty(),
-      homeTeamName = contentMap.str("homeTeamName").orEmpty(),
-      homeTeamImage = contentMap.str("homeTeamImage").nullIfBlank(),
-      awayTeamName = contentMap.str("awayTeamName").orEmpty(),
-      awayTeamImage = contentMap.str("awayTeamImage").nullIfBlank(),
-    )
-
-    val androidDesign = root.map("design")?.map("android")?.let { d ->
-      FootballMatchAndroidDesign(
-        hasTrackerIcon = (d["hasTrackerIcon"] as? Boolean) ?: false,
-        progressBarColor = parseColorSet(d["progressBarColor"]),
-        breakTimeBarColor = parseColorSet(d["breakTimeBarColor"]),
+    val content =
+      FootballMatchContent(
+        title = contentMap.str("title").orEmpty(),
+        homeTeamName = contentMap.str("homeTeamName").orEmpty(),
+        homeTeamImage = contentMap.str("homeTeamImage").nullIfBlank(),
+        awayTeamName = contentMap.str("awayTeamName").orEmpty(),
+        awayTeamImage = contentMap.str("awayTeamImage").nullIfBlank(),
       )
-    }
+
+    val androidDesign =
+      root.map("design")?.map("android")?.let { d ->
+        FootballMatchAndroidDesign(
+          hasTrackerIcon = (d["hasTrackerIcon"] as? Boolean) ?: false,
+          progressBarColor = parseColorSet(d["progressBarColor"]),
+          breakTimeBarColor = parseColorSet(d["breakTimeBarColor"]),
+        )
+      }
 
     val statusLabels = parseStatusLabels(root["statusLabels"])
 
@@ -144,8 +146,9 @@ internal object LiveActivityPayloadParser {
     val timeoutMinutes = root.map("timeout")?.get("minutes").asIntOrNull()
 
     return FootballMatchConfiguration(
-      template = LiveActivityTemplate.fromValue(root.str("type"))
-        ?: LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
+      template =
+        LiveActivityTemplate.fromValue(root.str("type"))
+          ?: LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
       content = content,
       design = androidDesign,
       statusLabels = statusLabels,
@@ -184,18 +187,20 @@ internal object LiveActivityPayloadParser {
    * to shrink the payload; the local-simulation envelope still sends a keyed
    * `{phase: label}` object. Both are supported.
    */
-  private fun parseStatusLabels(node: Any?): Map<String, String> = when (node) {
-    is List<*> ->
-      node.mapIndexedNotNull { index, label ->
-        val phase = MatchPhase.entries.getOrNull(index) ?: return@mapIndexedNotNull null
-        (label as? String)?.nullIfBlank()?.let { phase.value to it }
-      }.toMap()
-    is Map<*, *> ->
-      node.entries
-        .mapNotNull { (k, v) -> (k as? String)?.let { key -> (v as? String)?.let { key to it } } }
-        .toMap()
-    else -> emptyMap()
-  }
+  private fun parseStatusLabels(node: Any?): Map<String, String> =
+    when (node) {
+      is List<*> ->
+        node
+          .mapIndexedNotNull { index, label ->
+            val phase = MatchPhase.entries.getOrNull(index) ?: return@mapIndexedNotNull null
+            (label as? String)?.nullIfBlank()?.let { phase.value to it }
+          }.toMap()
+      is Map<*, *> ->
+        node.entries
+          .mapNotNull { (k, v) -> (k as? String)?.let { key -> (v as? String)?.let { key to it } } }
+          .toMap()
+      else -> emptyMap()
+    }
 
   private fun parseAction(node: Any?): LiveActivityAction? {
     val m = node as? Map<*, *> ?: return null
@@ -212,16 +217,17 @@ internal object LiveActivityPayloadParser {
   }
 
   /** A color is either a plain hex string, `{hex}`, or a gradient `{fromHex,...}`. */
-  private fun parseColor(node: Any?): LiveActivityColor? = when (node) {
-    is String -> node.nullIfBlank()?.let { LiveActivityColor(it) }
-    is Map<*, *> -> ((node["hex"] as? String) ?: (node["fromHex"] as? String))
-      .nullIfBlank()
-      ?.let { LiveActivityColor(it) }
-    else -> null
-  }
+  private fun parseColor(node: Any?): LiveActivityColor? =
+    when (node) {
+      is String -> node.nullIfBlank()?.let { LiveActivityColor(it) }
+      is Map<*, *> ->
+        ((node["hex"] as? String) ?: (node["fromHex"] as? String))
+          .nullIfBlank()
+          ?.let { LiveActivityColor(it) }
+      else -> null
+    }
 
-  private fun readJson(json: String): Map<String, Any?>? =
-    runCatching { mapAdapter.fromJson(json) }.getOrNull()
+  private fun readJson(json: String): Map<String, Any?>? = runCatching { mapAdapter.fromJson(json) }.getOrNull()
 
   // Map / value helpers
 
@@ -234,25 +240,37 @@ internal object LiveActivityPayloadParser {
 
   private fun String?.nullIfBlank(): String? = this?.takeIf { it.isNotBlank() }
 
-  private fun Any?.asIntOrNull(): Int? = when (this) {
-    is Number -> toInt()
-    is String -> toIntOrNull() ?: toDoubleOrNull()?.toInt()
-    else -> null
-  }
+  private fun Any?.asIntOrNull(): Int? =
+    when (this) {
+      is Number -> toInt()
+      is String -> toIntOrNull() ?: toDoubleOrNull()?.toInt()
+      else -> null
+    }
 
   /**
    * Convert a timestamp to epoch millis. Accepts ISO-8601 strings, epoch
    * seconds, or epoch millis (numeric values < 10^12 are treated as seconds).
    */
-  private fun parseEpochMillis(value: Any?): Long? = when (value) {
-    is Number -> value.toLong().let { if (it < 1_000_000_000_000L) it * 1000L else it }
-    is String -> value.nullIfBlank()?.let { s ->
-      s.toLongOrNull()?.let { if (it < 1_000_000_000_000L) it * 1000L else it }
-        ?: runCatching { java.time.OffsetDateTime.parse(s).toInstant().toEpochMilli() }.getOrNull()
-        ?: runCatching { java.time.Instant.parse(s).toEpochMilli() }.getOrNull()
+  private fun parseEpochMillis(value: Any?): Long? =
+    when (value) {
+      is Number -> value.toLong().let { if (it < 1_000_000_000_000L) it * 1000L else it }
+      is String ->
+        value.nullIfBlank()?.let { s ->
+          s.toLongOrNull()?.let { if (it < 1_000_000_000_000L) it * 1000L else it }
+            ?: runCatching {
+              java.time.OffsetDateTime
+                .parse(s)
+                .toInstant()
+                .toEpochMilli()
+            }.getOrNull()
+            ?: runCatching {
+              java.time.Instant
+                .parse(s)
+                .toEpochMilli()
+            }.getOrNull()
+        }
+      else -> null
     }
-    else -> null
-  }
 }
 
 /** Pre-match countdown extracted from a live notification's `startPolicy`. */
@@ -277,4 +295,3 @@ internal data class LiveActivityPush(
   val liveDataJson: String?,
   val hotMessage: HotMessage?,
 )
-

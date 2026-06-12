@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 internal class MatchPhaseTest {
-
   @Test
   fun `fromValue maps known and unknown values`() {
     assertEquals(MatchPhase.SECOND_HALF, MatchPhase.fromValue("SECOND_HALF"))

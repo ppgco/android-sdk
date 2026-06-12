@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
+import com.pushpushgo.sdk.network.ApiRepository
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityAction
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityActionType
@@ -17,18 +18,17 @@ import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
 import com.pushpushgo.sdk.push.liveactivity.notification.LiveActivityNotificationChannel
 import com.pushpushgo.sdk.push.liveactivity.notification.ProgressStyleBuilder
-import com.pushpushgo.sdk.network.ApiRepository
 import com.pushpushgo.sdk.utils.PendingIntentCompat
 import com.pushpushgo.sdk.utils.logDebug
 import com.pushpushgo.sdk.utils.logError
 import com.pushpushgo.sdk.utils.logWarning
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
 
@@ -38,9 +38,16 @@ internal class LiveActivityHandler(
   private val scope: CoroutineScope,
   private val manager: LiveActivityManager,
   private val apiRepository: ApiRepository,
-  private val onEvent: ((eventType: String, liveActivityId: String, projectId: String, subscriberId: String, liveDataVersion: Int) -> Unit)? = null,
+  private val onEvent: (
+    (
+      eventType: String,
+      liveActivityId: String,
+      projectId: String,
+      subscriberId: String,
+      liveDataVersion: Int,
+    ) -> Unit
+  )? = null,
 ) {
-
   companion object {
     const val ACTION_DISMISS = "com.pushpushgo.sdk.push.LIVE_ACTIVITY_DISMISS"
     const val EXTRA_LIVE_ACTIVITY_ID = "live_activity_id"
@@ -99,10 +106,11 @@ internal class LiveActivityHandler(
   private suspend fun handleStart(push: LiveActivityPush) {
     LiveActivityNotificationChannel.ensureChannel(context)
 
-    var activity = manager.startActivity(push) ?: run {
-      logError("LiveActivityHandler: failed to start live activity ${push.id}")
-      return
-    }
+    var activity =
+      manager.startActivity(push) ?: run {
+        logError("LiveActivityHandler: failed to start live activity ${push.id}")
+        return
+      }
 
     // Pushes don't carry the start policy. For campaigns with a countdown the
     // `start` push arrives `countdown.seconds` before the scheduled kick-off, so
@@ -130,17 +138,18 @@ internal class LiveActivityHandler(
 
   @SuppressLint("MissingPermission")
   private suspend fun handleUpdate(push: LiveActivityPush) {
-    val updatedActivity = manager.updateActivity(push) ?: run {
-      // Activity not tracked locally — fall back to a fresh start when the
-      // push carries a full configuration (otherwise nothing to render).
-      if (push.configuration != null && push.liveData != null) {
-        logDebug("LiveActivityHandler: activity ${push.id} not found, treating update as start")
-        handleStart(push)
-      } else {
-        logWarning("LiveActivityHandler: dropping update for untracked activity ${push.id}")
+    val updatedActivity =
+      manager.updateActivity(push) ?: run {
+        // Activity not tracked locally — fall back to a fresh start when the
+        // push carries a full configuration (otherwise nothing to render).
+        if (push.configuration != null && push.liveData != null) {
+          logDebug("LiveActivityHandler: activity ${push.id} not found, treating update as start")
+          handleStart(push)
+        } else {
+          logWarning("LiveActivityHandler: dropping update for untracked activity ${push.id}")
+        }
+        return
       }
-      return
-    }
 
     val notificationId = manager.getNotificationId(updatedActivity.id)
     if (notificationId == -1) return
@@ -158,16 +167,23 @@ internal class LiveActivityHandler(
     cancelTicker(notificationId)
 
     val bitmaps = downloadTeamBitmaps(endedActivity)
-    val notification = buildEndedNotification(
-      activity = endedActivity,
-      homeTeamBitmap = bitmaps.first,
-      awayTeamBitmap = bitmaps.second,
-    )
+    val notification =
+      buildEndedNotification(
+        activity = endedActivity,
+        homeTeamBitmap = bitmaps.first,
+        awayTeamBitmap = bitmaps.second,
+      )
 
     NotificationManagerCompat.from(context).notify(notificationId, notification)
     logDebug("LiveActivityHandler: ended notification $notificationId for ${endedActivity.id}")
 
-    onEvent?.invoke("la.ended", endedActivity.id, endedActivity.projectId, endedActivity.subscriberId, endedActivity.liveData.liveDataVersion)
+    onEvent?.invoke(
+      "la.ended",
+      endedActivity.id,
+      endedActivity.projectId,
+      endedActivity.subscriberId,
+      endedActivity.liveData.liveDataVersion,
+    )
 
     // Auto-remove after delay
     scope.launch {
@@ -184,17 +200,21 @@ internal class LiveActivityHandler(
    * score line.
    */
   @SuppressLint("MissingPermission")
-  private suspend fun notifyMatch(notificationId: Int, activity: LiveActivity) {
+  private suspend fun notifyMatch(
+    notificationId: Int,
+    activity: LiveActivity,
+  ) {
     val bitmaps = downloadTeamBitmaps(activity)
     val hotMessage = activity.hotMessage
 
-    val notification = buildNotification(
-      activity = activity,
-      homeTeamBitmap = bitmaps.first,
-      awayTeamBitmap = bitmaps.second,
-      notificationId = notificationId,
-      showHotMessage = hotMessage != null,
-    )
+    val notification =
+      buildNotification(
+        activity = activity,
+        homeTeamBitmap = bitmaps.first,
+        awayTeamBitmap = bitmaps.second,
+        notificationId = notificationId,
+        showHotMessage = hotMessage != null,
+      )
     NotificationManagerCompat.from(context).notify(notificationId, notification)
 
     if (hotMessage != null) {
@@ -238,32 +258,35 @@ internal class LiveActivityHandler(
   ) {
     cancelTicker(notificationId)
 
-    tickerJobs[notificationId] = scope.launch {
-      val startedAtMs = System.currentTimeMillis()
-      while (isActive) {
-        delay(TICK_INTERVAL_MS)
-        val latest = manager.getActivity(activityId) ?: break
-        if (latest.status.value != "active") break
+    tickerJobs[notificationId] =
+      scope.launch {
+        val startedAtMs = System.currentTimeMillis()
+        while (isActive) {
+          delay(TICK_INTERVAL_MS)
+          val latest = manager.getActivity(activityId) ?: break
+          if (latest.status.value != "active") break
 
-        val showHome =
-          ((System.currentTimeMillis() - startedAtMs) / ICON_ALTERNATION_INTERVAL_MS) % 2L == 0L
-        val largeIcon = when {
-          homeTeamBitmap != null && awayTeamBitmap != null ->
-            if (showHome) homeTeamBitmap else awayTeamBitmap
-          else -> homeTeamBitmap ?: awayTeamBitmap
+          val showHome =
+            ((System.currentTimeMillis() - startedAtMs) / ICON_ALTERNATION_INTERVAL_MS) % 2L == 0L
+          val largeIcon =
+            when {
+              homeTeamBitmap != null && awayTeamBitmap != null ->
+                if (showHome) homeTeamBitmap else awayTeamBitmap
+              else -> homeTeamBitmap ?: awayTeamBitmap
+            }
+
+          val notification =
+            buildNotification(
+              activity = latest.copy(hotMessage = null),
+              homeTeamBitmap = homeTeamBitmap,
+              awayTeamBitmap = awayTeamBitmap,
+              notificationId = notificationId,
+              showHotMessage = false,
+              largeIconBitmap = largeIcon,
+            )
+          runCatching { NotificationManagerCompat.from(context).notify(notificationId, notification) }
         }
-
-        val notification = buildNotification(
-          activity = latest.copy(hotMessage = null),
-          homeTeamBitmap = homeTeamBitmap,
-          awayTeamBitmap = awayTeamBitmap,
-          notificationId = notificationId,
-          showHotMessage = false,
-          largeIconBitmap = largeIcon,
-        )
-        runCatching { NotificationManagerCompat.from(context).notify(notificationId, notification) }
       }
-    }
   }
 
   private fun cancelTicker(notificationId: Int) {
@@ -292,13 +315,17 @@ internal class LiveActivityHandler(
    * two action buttons map to the `clicked_1` / `clicked_2` statistics events,
    * the body (and any further buttons) to `clicked`.
    */
-  fun handleClick(liveActivityId: String, actionIndex: Int) {
+  fun handleClick(
+    liveActivityId: String,
+    actionIndex: Int,
+  ) {
     val activity = manager.getActivity(liveActivityId) ?: return
-    val eventType = when (actionIndex) {
-      0 -> "la.clicked_1"
-      1 -> "la.clicked_2"
-      else -> "la.clicked"
-    }
+    val eventType =
+      when (actionIndex) {
+        0 -> "la.clicked_1"
+        1 -> "la.clicked_2"
+        else -> "la.clicked"
+      }
     onEvent?.invoke(eventType, liveActivityId, activity.projectId, activity.subscriberId, activity.liveData.liveDataVersion)
   }
 
@@ -343,22 +370,42 @@ internal class LiveActivityHandler(
   }
 
   /** Map backend [LiveActivityAction]s to notification actions with intents. */
-  private fun buildActions(activity: LiveActivity, notificationId: Int): List<android.app.Notification.Action> =
+  private fun buildActions(
+    activity: LiveActivity,
+    notificationId: Int,
+  ): List<android.app.Notification.Action> =
     activity.configuration.actions.mapIndexedNotNull { index, action ->
-      val pendingIntent = when (action.type) {
-        LiveActivityActionType.OPEN_APP ->
-          buildOpenAppIntent(activity, notificationId, action.url ?: activity.configuration.url, requestOffset = index + 1, actionIndex = index)
-        LiveActivityActionType.REDIRECT, LiveActivityActionType.URL ->
-          buildOpenAppIntent(activity, notificationId, action.url ?: activity.configuration.url, requestOffset = index + 1, actionIndex = index)
-        LiveActivityActionType.CLOSE ->
-          buildDismissActionIntent(activity, notificationId, index)
-      } ?: return@mapIndexedNotNull null
+      val pendingIntent =
+        when (action.type) {
+          LiveActivityActionType.OPEN_APP ->
+            buildOpenAppIntent(
+              activity,
+              notificationId,
+              action.url ?: activity.configuration.url,
+              requestOffset = index + 1,
+              actionIndex = index,
+            )
+          LiveActivityActionType.REDIRECT, LiveActivityActionType.URL ->
+            buildOpenAppIntent(
+              activity,
+              notificationId,
+              action.url ?: activity.configuration.url,
+              requestOffset = index + 1,
+              actionIndex = index,
+            )
+          LiveActivityActionType.CLOSE ->
+            buildDismissActionIntent(activity, notificationId, index)
+        } ?: return@mapIndexedNotNull null
 
-      android.app.Notification.Action.Builder(null, action.name, pendingIntent).build()
+      android.app.Notification.Action
+        .Builder(null, action.name, pendingIntent)
+        .build()
     }
 
-  private fun buildContentIntent(activity: LiveActivity, notificationId: Int): PendingIntent? =
-    buildOpenAppIntent(activity, notificationId, activity.configuration.url, requestOffset = 0, actionIndex = -1)
+  private fun buildContentIntent(
+    activity: LiveActivity,
+    notificationId: Int,
+  ): PendingIntent? = buildOpenAppIntent(activity, notificationId, activity.configuration.url, requestOffset = 0, actionIndex = -1)
 
   /**
    * Launch the host app, forwarding the deep link (if any) and the tapped action
@@ -394,8 +441,10 @@ internal class LiveActivityHandler(
     )
   }
 
-  private fun buildDeleteIntent(activity: LiveActivity, notificationId: Int): PendingIntent =
-    buildDismissActionIntent(activity, notificationId, requestOffset = 0, baseOffset = 10_000)
+  private fun buildDeleteIntent(
+    activity: LiveActivity,
+    notificationId: Int,
+  ): PendingIntent = buildDismissActionIntent(activity, notificationId, requestOffset = 0, baseOffset = 10_000)
 
   private fun buildDismissActionIntent(
     activity: LiveActivity,
@@ -403,12 +452,13 @@ internal class LiveActivityHandler(
     requestOffset: Int,
     baseOffset: Int = 30_000,
   ): PendingIntent {
-    val intent = Intent(ACTION_DISMISS).apply {
-      setPackage(context.packageName)
-      putExtra(EXTRA_LIVE_ACTIVITY_ID, activity.id)
-      putExtra(EXTRA_PROJECT_ID, activity.projectId)
-      putExtra(EXTRA_SUBSCRIBER_ID, activity.subscriberId)
-    }
+    val intent =
+      Intent(ACTION_DISMISS).apply {
+        setPackage(context.packageName)
+        putExtra(EXTRA_LIVE_ACTIVITY_ID, activity.id)
+        putExtra(EXTRA_PROJECT_ID, activity.projectId)
+        putExtra(EXTRA_SUBSCRIBER_ID, activity.subscriberId)
+      }
 
     return PendingIntent.getBroadcast(
       context,
@@ -442,4 +492,3 @@ internal class LiveActivityHandler(
     }
   }
 }
-

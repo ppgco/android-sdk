@@ -9,7 +9,9 @@ package com.pushpushgo.sdk.push.liveactivity.data
  *
  * `URL` is kept as a legacy alias of `REDIRECT`.
  */
-enum class LiveActivityActionType(val value: String) {
+enum class LiveActivityActionType(
+  val value: String,
+) {
   OPEN_APP("OPEN_APP"),
   REDIRECT("REDIRECT"),
   URL("URL"),
@@ -17,7 +19,6 @@ enum class LiveActivityActionType(val value: String) {
   ;
 
   companion object {
-    fun fromValue(value: String?): LiveActivityActionType? =
-      entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
+    fun fromValue(value: String?): LiveActivityActionType? = entries.firstOrNull { it.value.equals(value, ignoreCase = true) }
   }
 }

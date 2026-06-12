@@ -18,7 +18,6 @@ import org.junit.Before
 import org.junit.Test
 
 internal class LiveActivityManagerTest {
-
   @MockK(relaxed = true)
   lateinit var persistence: LiveActivityPersistence
 
@@ -54,9 +53,10 @@ internal class LiveActivityManagerTest {
   fun `updateActivity merges new live data onto existing state`() {
     manager.startActivity(startPush())
 
-    val updated = manager.updateActivity(
-      updatePush(liveData = liveData(homeScore = 3, status = MatchPhase.SECOND_HALF)),
-    )
+    val updated =
+      manager.updateActivity(
+        updatePush(liveData = liveData(homeScore = 3, status = MatchPhase.SECOND_HALF)),
+      )
 
     assertNotNull(updated)
     assertEquals(3, updated!!.liveData.homeTeamScore)
@@ -88,15 +88,16 @@ internal class LiveActivityManagerTest {
 
   // Helpers
 
-  private fun configuration() = FootballMatchConfiguration(
-    template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
-    content = FootballMatchContent("Premier League", "Arsenal", null, "Chelsea", null),
-    design = null,
-    statusLabels = mapOf("FIRST_HALF" to "1st Half"),
-    actions = emptyList(),
-    timeoutMinutes = 120,
-    url = "https://match/1",
-  )
+  private fun configuration() =
+    FootballMatchConfiguration(
+      template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
+      content = FootballMatchContent("Premier League", "Arsenal", null, "Chelsea", null),
+      design = null,
+      statusLabels = mapOf("FIRST_HALF" to "1st Half"),
+      actions = emptyList(),
+      timeoutMinutes = 120,
+      url = "https://match/1",
+    )
 
   private fun liveData(
     homeScore: Int = 2,
@@ -104,31 +105,33 @@ internal class LiveActivityManagerTest {
     status: MatchPhase = MatchPhase.FIRST_HALF,
   ) = FootballMatchLiveData(homeScore, awayScore, status, statusChangedAt = null)
 
-  private fun startPush() = LiveActivityPush(
-    id = "test-la-1",
-    projectId = "proj-1",
-    subscriberId = "sub-1",
-    template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
-    event = LiveActivityEvent.START,
-    configuration = configuration(),
-    configurationJson = "{}",
-    liveData = liveData(),
-    liveDataJson = "{}",
-    hotMessage = null,
-  )
+  private fun startPush() =
+    LiveActivityPush(
+      id = "test-la-1",
+      projectId = "proj-1",
+      subscriberId = "sub-1",
+      template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
+      event = LiveActivityEvent.START,
+      configuration = configuration(),
+      configurationJson = "{}",
+      liveData = liveData(),
+      liveDataJson = "{}",
+      hotMessage = null,
+    )
 
-  private fun updatePush(liveData: FootballMatchLiveData = liveData()) = LiveActivityPush(
-    id = "test-la-1",
-    projectId = "proj-1",
-    subscriberId = "sub-1",
-    template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
-    event = LiveActivityEvent.UPDATE,
-    configuration = null,
-    configurationJson = null,
-    liveData = liveData,
-    liveDataJson = "{}",
-    hotMessage = null,
-  )
+  private fun updatePush(liveData: FootballMatchLiveData = liveData()) =
+    LiveActivityPush(
+      id = "test-la-1",
+      projectId = "proj-1",
+      subscriberId = "sub-1",
+      template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
+      event = LiveActivityEvent.UPDATE,
+      configuration = null,
+      configurationJson = null,
+      liveData = liveData,
+      liveDataJson = "{}",
+      hotMessage = null,
+    )
 
   private fun endPush() = updatePush().copy(event = LiveActivityEvent.END)
 }

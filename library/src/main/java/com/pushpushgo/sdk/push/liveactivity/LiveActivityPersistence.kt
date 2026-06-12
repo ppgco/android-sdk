@@ -8,8 +8,9 @@ import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
 
-internal class LiveActivityPersistence(context: Context) {
-
+internal class LiveActivityPersistence(
+  context: Context,
+) {
   companion object {
     private const val PREFS_NAME = "ppg_live_activities"
     private const val KEY_ACTIVE_IDS = "active_ids"
@@ -29,8 +30,7 @@ internal class LiveActivityPersistence(context: Context) {
   private val prefs: SharedPreferences =
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-  fun getActiveIds(): Set<String> =
-    prefs.getStringSet(KEY_ACTIVE_IDS, emptySet()).orEmpty()
+  fun getActiveIds(): Set<String> = prefs.getStringSet(KEY_ACTIVE_IDS, emptySet()).orEmpty()
 
   fun addActiveId(liveActivityId: String) {
     val current = getActiveIds().toMutableSet()
@@ -44,50 +44,66 @@ internal class LiveActivityPersistence(context: Context) {
     prefs.edit { putStringSet(KEY_ACTIVE_IDS, current) }
   }
 
-  fun getNotificationId(liveActivityId: String): Int =
-    prefs.getInt("$KEY_PREFIX_NOTIFICATION_ID$liveActivityId", -1)
+  fun getNotificationId(liveActivityId: String): Int = prefs.getInt("$KEY_PREFIX_NOTIFICATION_ID$liveActivityId", -1)
 
-  fun setNotificationId(liveActivityId: String, notificationId: Int) {
+  fun setNotificationId(
+    liveActivityId: String,
+    notificationId: Int,
+  ) {
     prefs.edit { putInt("$KEY_PREFIX_NOTIFICATION_ID$liveActivityId", notificationId) }
   }
 
   fun getStatus(liveActivityId: String): LiveActivityStatus? =
-    prefs.getString("$KEY_PREFIX_STATUS$liveActivityId", null)
+    prefs
+      .getString("$KEY_PREFIX_STATUS$liveActivityId", null)
       ?.let { LiveActivityStatus.fromValue(it) }
 
-  fun setStatus(liveActivityId: String, status: LiveActivityStatus) {
+  fun setStatus(
+    liveActivityId: String,
+    status: LiveActivityStatus,
+  ) {
     prefs.edit { putString("$KEY_PREFIX_STATUS$liveActivityId", status.value) }
   }
 
   fun getTemplate(liveActivityId: String): LiveActivityTemplate? =
-    prefs.getString("$KEY_PREFIX_TEMPLATE$liveActivityId", null)
+    prefs
+      .getString("$KEY_PREFIX_TEMPLATE$liveActivityId", null)
       ?.let { LiveActivityTemplate.fromValue(it) }
 
-  fun setTemplate(liveActivityId: String, template: LiveActivityTemplate) {
+  fun setTemplate(
+    liveActivityId: String,
+    template: LiveActivityTemplate,
+  ) {
     prefs.edit { putString("$KEY_PREFIX_TEMPLATE$liveActivityId", template.value) }
   }
 
-  fun getConfigurationJson(liveActivityId: String): String? =
-    prefs.getString("$KEY_PREFIX_CONFIG_JSON$liveActivityId", null)
+  fun getConfigurationJson(liveActivityId: String): String? = prefs.getString("$KEY_PREFIX_CONFIG_JSON$liveActivityId", null)
 
-  fun setConfigurationJson(liveActivityId: String, json: String) {
+  fun setConfigurationJson(
+    liveActivityId: String,
+    json: String,
+  ) {
     prefs.edit { putString("$KEY_PREFIX_CONFIG_JSON$liveActivityId", json) }
   }
 
-  fun getLiveDataJson(liveActivityId: String): String? =
-    prefs.getString("$KEY_PREFIX_LIVE_DATA_JSON$liveActivityId", null)
+  fun getLiveDataJson(liveActivityId: String): String? = prefs.getString("$KEY_PREFIX_LIVE_DATA_JSON$liveActivityId", null)
 
-  fun setLiveDataJson(liveActivityId: String, json: String) {
+  fun setLiveDataJson(
+    liveActivityId: String,
+    json: String,
+  ) {
     prefs.edit { putString("$KEY_PREFIX_LIVE_DATA_JSON$liveActivityId", json) }
   }
 
-  fun getCountdownMessage(liveActivityId: String): String? =
-    prefs.getString("$KEY_PREFIX_COUNTDOWN_MESSAGE$liveActivityId", null)
+  fun getCountdownMessage(liveActivityId: String): String? = prefs.getString("$KEY_PREFIX_COUNTDOWN_MESSAGE$liveActivityId", null)
 
-  fun getCountdownEndAt(liveActivityId: String): Long? =
-    prefs.getLong("$KEY_PREFIX_COUNTDOWN_END_AT$liveActivityId", 0L).takeIf { it > 0L }
+  fun getCountdownEndAt(liveActivityId: String): Long? = prefs.getLong("$KEY_PREFIX_COUNTDOWN_END_AT$liveActivityId", 0L).takeIf { it > 0L }
 
-  fun setCountdown(liveActivityId: String, message: String?, endAtMs: Long) {
+  fun setCountdown(
+    liveActivityId: String,
+    message: String?,
+    endAtMs: Long,
+  ) {
     prefs.edit {
       putString("$KEY_PREFIX_COUNTDOWN_MESSAGE$liveActivityId", message)
       putLong("$KEY_PREFIX_COUNTDOWN_END_AT$liveActivityId", endAtMs)
@@ -122,31 +138,36 @@ internal class LiveActivityPersistence(context: Context) {
     )
   }
 
-  fun getCreatedAt(liveActivityId: String): Long =
-    prefs.getLong("$KEY_PREFIX_CREATED_AT$liveActivityId", 0L)
+  fun getCreatedAt(liveActivityId: String): Long = prefs.getLong("$KEY_PREFIX_CREATED_AT$liveActivityId", 0L)
 
-  fun setCreatedAt(liveActivityId: String, createdAt: Long) {
+  fun setCreatedAt(
+    liveActivityId: String,
+    createdAt: Long,
+  ) {
     prefs.edit { putLong("$KEY_PREFIX_CREATED_AT$liveActivityId", createdAt) }
   }
 
-  fun isDismissedByUser(liveActivityId: String): Boolean =
-    prefs.getBoolean("$KEY_PREFIX_DISMISSED$liveActivityId", false)
+  fun isDismissedByUser(liveActivityId: String): Boolean = prefs.getBoolean("$KEY_PREFIX_DISMISSED$liveActivityId", false)
 
   fun markDismissedByUser(liveActivityId: String) {
     prefs.edit { putBoolean("$KEY_PREFIX_DISMISSED$liveActivityId", true) }
   }
 
-  fun getProjectId(liveActivityId: String): String =
-    prefs.getString("$KEY_PREFIX_PROJECT$liveActivityId", "").orEmpty()
+  fun getProjectId(liveActivityId: String): String = prefs.getString("$KEY_PREFIX_PROJECT$liveActivityId", "").orEmpty()
 
-  fun setProjectId(liveActivityId: String, projectId: String) {
+  fun setProjectId(
+    liveActivityId: String,
+    projectId: String,
+  ) {
     prefs.edit { putString("$KEY_PREFIX_PROJECT$liveActivityId", projectId) }
   }
 
-  fun getSubscriberId(liveActivityId: String): String =
-    prefs.getString("$KEY_PREFIX_SUBSCRIBER$liveActivityId", "").orEmpty()
+  fun getSubscriberId(liveActivityId: String): String = prefs.getString("$KEY_PREFIX_SUBSCRIBER$liveActivityId", "").orEmpty()
 
-  fun setSubscriberId(liveActivityId: String, subscriberId: String) {
+  fun setSubscriberId(
+    liveActivityId: String,
+    subscriberId: String,
+  ) {
     prefs.edit { putString("$KEY_PREFIX_SUBSCRIBER$liveActivityId", subscriberId) }
   }
 
@@ -171,4 +192,3 @@ internal class LiveActivityPersistence(context: Context) {
     prefs.edit { clear() }
   }
 }
-

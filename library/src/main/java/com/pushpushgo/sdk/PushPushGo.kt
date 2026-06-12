@@ -211,14 +211,15 @@ class PushPushGo private constructor(
         // Map internal LA lifecycle events to the backend statistics enum
         // (started / closed / clicked / clicked_1 / clicked_2) and report them
         // to the dedicated live-notification events endpoint.
-        val statisticsType = when (eventType) {
-          "la.started" -> "started"
-          "la.clicked" -> "clicked"
-          "la.clicked_1" -> "clicked_1"
-          "la.clicked_2" -> "clicked_2"
-          "la.dismissed" -> "closed"
-          else -> null // la.ended not reported (no backend enum value)
-        }
+        val statisticsType =
+          when (eventType) {
+            "la.started" -> "started"
+            "la.clicked" -> "clicked"
+            "la.clicked_1" -> "clicked_1"
+            "la.clicked_2" -> "clicked_2"
+            "la.dismissed" -> "closed"
+            else -> null // la.ended not reported (no backend enum value)
+          }
         if (statisticsType != null) {
           sdkScope.launch {
             runCatching {
@@ -487,15 +488,13 @@ class PushPushGo private constructor(
    * Returns the list of currently active live activities.
    * Returns empty list on API < 36.
    */
-  fun getActiveLiveActivities(): List<LiveActivity> =
-    liveActivityManager?.getActiveActivities() ?: emptyList()
+  fun getActiveLiveActivities(): List<LiveActivity> = liveActivityManager?.getActiveActivities() ?: emptyList()
 
   /**
    * Checks whether a specific live activity is currently active.
    * Returns false on API < 36.
    */
-  fun isLiveActivityActive(id: String): Boolean =
-    liveActivityManager?.isActivityActive(id) ?: false
+  fun isLiveActivityActive(id: String): Boolean = liveActivityManager?.isActivityActive(id) ?: false
 
   /**
    * Simulates a Live Activity push for testing purposes.

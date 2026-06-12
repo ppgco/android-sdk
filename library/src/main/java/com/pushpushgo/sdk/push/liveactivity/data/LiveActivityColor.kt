@@ -19,6 +19,5 @@ data class LiveActivityColorSet(
   val darkMode: LiveActivityColor,
 ) {
   /** Resolve the hex string for the given mode. */
-  fun resolve(darkMode: Boolean): String =
-    if (darkMode) this.darkMode.hex else this.lightMode.hex
+  fun resolve(darkMode: Boolean): String = if (darkMode) this.darkMode.hex else this.lightMode.hex
 }
