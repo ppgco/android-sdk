@@ -12,17 +12,22 @@ internal class ResponseInterceptor : Interceptor {
     val response = chain.proceed(chain.request())
     if (!response.isSuccessful) {
       val responseBodyCopy = response.peekBody(java.lang.Long.MAX_VALUE).string()
-      try {
-        val reader =
-          JsonReader(StringReader(responseBodyCopy)).apply {
-            isLenient = true
+      // Only attempt to extract a `message` when the body is actually a JSON
+      // object; error responses can be HTML (e.g. a gateway 404), which would
+      // otherwise spam misleading JSON-parsing exceptions.
+      if (responseBodyCopy.trimStart().startsWith("{")) {
+        try {
+          val reader =
+            JsonReader(StringReader(responseBodyCopy)).apply {
+              isLenient = true
+            }
+          reader.beginObject()
+          if (reader.nextName() == "message") {
+            throw PushPushException(reader.nextString())
           }
-        reader.beginObject()
-        if (reader.nextName() == "message") {
-          throw PushPushException(reader.nextString())
+        } catch (e: RuntimeException) {
+          logError(e)
         }
-      } catch (e: RuntimeException) {
-        logError(e)
       }
     }
     return response

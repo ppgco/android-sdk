@@ -1,6 +1,9 @@
 package com.pushpushgo.sdk.network
 
 import com.pushpushgo.sdk.data.Event
+import com.pushpushgo.sdk.network.data.LiveActivityEventsRequest
+import com.pushpushgo.sdk.network.data.LiveActivitySubscribeRequest
+import com.pushpushgo.sdk.network.data.LiveActivitySubscribeResponse
 import com.pushpushgo.sdk.network.data.TokenRequest
 import com.pushpushgo.sdk.network.data.TokenResponse
 import com.pushpushgo.sdk.network.interceptor.RequestInterceptor
@@ -47,9 +50,49 @@ internal interface ApiService {
     @Body event: Event,
   ): Response<Void>
 
+  // Live Activity statistics live under a dedicated `/statistics/v1/{platform}/`
+  // base (different from the `/v1/{platform}/` API base), so the full URL is
+  // built by the repository.
+  @POST
+  suspend fun collectLiveActivityEvents(
+    @Url url: String,
+    @Header("X-Token") token: String,
+    @Body body: LiveActivityEventsRequest,
+  ): Response<Void>
+
   @GET
   suspend fun getRawResponse(
     @Url url: String,
+  ): ResponseBody
+
+  // Live Activity (live notification) subscriber endpoints live under
+  // `/core/projects/{project}/...`, a different base path than `/v1/{platform}/`,
+  // so they take a fully-qualified @Url built by the repository.
+
+  @POST
+  suspend fun subscribeLiveActivity(
+    @Url url: String,
+    @Header("X-Token") token: String,
+    @Body body: LiveActivitySubscribeRequest,
+  ): LiveActivitySubscribeResponse
+
+  @PUT
+  suspend fun updateLiveActivitySubscriberEndpoint(
+    @Url url: String,
+    @Header("X-Token") token: String,
+    @Body body: LiveActivitySubscribeRequest,
+  ): Response<Void>
+
+  @DELETE
+  suspend fun unsubscribeLiveActivity(
+    @Url url: String,
+    @Header("X-Token") token: String,
+  ): Response<Void>
+
+  @GET
+  suspend fun getLiveActivity(
+    @Url url: String,
+    @Header("X-Token") token: String,
   ): ResponseBody
 
   companion object {

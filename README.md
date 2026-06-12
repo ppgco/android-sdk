@@ -7,6 +7,12 @@
 ![GitHub tag (latest)](https://img.shields.io/github/v/tag/ppgco/android-sdk?style=flat-square)
 
 > [!IMPORTANT]
+> **Version 3.2.0**
+>
+> Introducing **Live Activities (Android Live Updates)** — real-time, continuously
+> updated notifications (football match tracking template) on Android 16+.
+> See the [Live Activities guide](LIVE_ACTIVITIES.md).
+>
 > **Version 3.0.0**
 >
 > Introducing new **In-app messages SDK (library-inappmessages)**.
@@ -255,6 +261,15 @@ PushPushGo.getInstance().createBeacon()
 .unassignFromGroup("my-group-name")
 .send();
 ```
+
+- Subscribe to a Live Activity (Android 16+ live-updated notification):
+```java
+PushPushGo.getInstance().subscribeToLiveActivity("liveNotificationId");
+// ...
+PushPushGo.getInstance().unsubscribeFromLiveActivity("liveNotificationId");
+```
+For the full integration guide (clicks, deep links, analytics, rendering
+features) see [LIVE_ACTIVITIES.md](LIVE_ACTIVITIES.md).
 
 ## Publishing
 
