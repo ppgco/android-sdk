@@ -15,6 +15,7 @@ import com.pushpushgo.sdk.R
 import com.pushpushgo.sdk.data.Action
 import com.pushpushgo.sdk.data.EventType
 import com.pushpushgo.sdk.data.PushPushNotification
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.utils.*
 import com.pushpushgo.sdk.work.UploadDelegate
@@ -39,6 +40,13 @@ internal class PushNotificationDelegate(
   ) {
     logDebug("From: ${pushMessage.from}")
 
+    // Live Activity pushes use a dedicated envelope (type=live_notification) and
+    // don't carry the standard `project`/`subscriber` keys, so route them before
+    // the regular PPGo-push gate (and its project-id match check).
+    if (LiveActivityPayloadParser.isLiveActivityPush(pushMessage.data)) {
+      return processPushMessage(pushMessage, context)
+    }
+
     if (!PushPushGo.getInstance().isPPGoPush(pushMessage.data)) {
       return logWarning("Push is not from PPGo")
     }
@@ -62,6 +70,13 @@ internal class PushNotificationDelegate(
 
     if (!notificationManager.areNotificationsEnabled()) {
       return logWarning("Push notifications are disabled by user")
+    }
+
+    if (LiveActivityPayloadParser.isLiveActivityPush(pushMessage.data)) {
+      logDebug("Routing push to LiveActivityHandler")
+      PushPushGo.getInstance().liveActivityHandler?.handlePush(pushMessage.data)
+        ?: logWarning("LiveActivityHandler not initialized, ignoring LA push")
+      return
     }
 
     delegateScope.launch(errorHandler) {

@@ -18,6 +18,7 @@ import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.pushpushgo.sample.R
 import com.pushpushgo.sdk.PushPushGo
+import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         ppg.handleBackgroundNotificationClick(intent)
+        handleLiveActivityDeepLink(intent)
 
         findViewById<TextView>(R.id.version).text = PushPushGo.VERSION
 
@@ -61,11 +63,22 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.beacons).setOnClickListener {
             startActivity(Intent(baseContext, BeaconActivity::class.java))
         }
+        findViewById<Button>(R.id.liveactivities).setOnClickListener {
+            startActivity(Intent(baseContext, LiveActivityDemoActivity::class.java))
+        }
+    }
+
+    private fun handleLiveActivityDeepLink(intent: Intent?) {
+        // Emits the click analytics event and opens the deep link through the
+        // SDK's notificationHandler (custom routing lives in MainApplication).
+        val deepLink = ppg.handleLiveActivityClick(intent) ?: return
+        Timber.tag("PPGO_SAMPLE").d("Live Activity click, deepLink=$deepLink")
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         PushPushGo.getInstance().handleBackgroundNotificationClick(intent)
+        handleLiveActivityDeepLink(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

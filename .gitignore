@@ -13,3 +13,5 @@ captures/
 .DS_Store
 *.iml
 local.properties
+
+sample/.idea/

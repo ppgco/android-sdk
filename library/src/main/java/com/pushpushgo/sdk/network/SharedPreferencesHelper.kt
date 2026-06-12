@@ -5,6 +5,7 @@ import androidx.preference.PreferenceManager.getDefaultSharedPreferences
 import com.pushpushgo.sdk.PushPushGo
 import com.pushpushgo.sdk.utils.PlatformType
 import com.pushpushgo.sdk.utils.getPlatformType
+import java.util.UUID
 
 internal class SharedPreferencesHelper(
   context: Context,
@@ -17,6 +18,8 @@ internal class SharedPreferencesHelper(
     internal const val IS_SUBSCRIBED = "_PushPushGoSDK_is_subscribed_"
     internal const val ARE_NOTIFICATIONS_BLOCKED = "_PushPushGoSDK_notifications_blocked_"
     internal const val CUSTOM_INTENT_FLAGS = "_PushPushGoSDK_custom_intent_flags_"
+    internal const val LA_SUBSCRIBER_PREFIX = "_PushPushGoSDK_la_sub_"
+    internal const val INSTALLATION_ID = "_PushPushGoSDK_installation_id_"
     private const val MAX_KEYS = 1000
   }
 
@@ -59,6 +62,18 @@ internal class SharedPreferencesHelper(
       sharedPreferences.edit().putString(SUBSCRIBER_ID, value).apply()
     }
 
+  /**
+   * Stable per-installation UUID, generated and persisted on first access.
+   * Used as `installationId` for Live Activity subscriber registration (backend
+   * requires a UUID, unlike the Mongo-style subscriberId).
+   */
+  val installationId: String
+    get() =
+      sharedPreferences.getString(INSTALLATION_ID, null)
+        ?: UUID.randomUUID().toString().also {
+          sharedPreferences.edit().putString(INSTALLATION_ID, it).apply()
+        }
+
   var lastFCMToken
     get() = sharedPreferences.getString(LAST_FCM_TOKEN, "").orEmpty()
     set(value) {
@@ -77,6 +92,21 @@ internal class SharedPreferencesHelper(
         PlatformType.FCM -> lastFCMToken
         PlatformType.HCM -> lastHCMToken
       }
+
+  /** LA subscriber id returned by the backend, keyed by live notification id. */
+  fun getLiveActivitySubscriberId(liveNotificationId: String): String =
+    sharedPreferences.getString(LA_SUBSCRIBER_PREFIX + liveNotificationId, "").orEmpty()
+
+  fun setLiveActivitySubscriberId(
+    liveNotificationId: String,
+    subscriberId: String,
+  ) {
+    sharedPreferences.edit().putString(LA_SUBSCRIBER_PREFIX + liveNotificationId, subscriberId).apply()
+  }
+
+  fun removeLiveActivitySubscriberId(liveNotificationId: String) {
+    sharedPreferences.edit().remove(LA_SUBSCRIBER_PREFIX + liveNotificationId).apply()
+  }
 
   fun getNotificationId(key: String): Int = sharedPreferences.getInt(key, -1)
 

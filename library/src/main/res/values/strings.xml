@@ -2,4 +2,6 @@
     <string name="app_name">PushPushGoSDK</string>
     <string name="pushpushgo_notification_default_channel_id">pushpushgo_notification_channel</string>
     <string name="pushpushgo_notification_default_channel_name">PushPushGo notifications</string>
+    <string name="pushpushgo_live_activity_channel_id">pushpushgo_live_activity</string>
+    <string name="pushpushgo_live_activity_channel_name">Live Activities</string>
 </resources>

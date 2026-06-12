@@ -23,6 +23,13 @@ internal class NetworkModule(
     const val PROJECT_ID = "project_id"
   }
 
+  private val resolvedBaseUrl =
+    when {
+      isProduction -> "https://api.pushpushgo.com"
+      customBaseUrl != null -> customBaseUrl
+      else -> "https://api.master1.qappg.co"
+    }
+
   override val di by DI.lazy {
     constant(tag = API_KEY) with apiKey
     constant(tag = PROJECT_ID) with projectId
@@ -38,12 +45,7 @@ internal class NetworkModule(
           responseInterceptor = instance(),
           platformType = instance(),
           isNetworkDebug = isDebug,
-          baseUrl =
-            when {
-              isProduction -> "https://api.pushpushgo.com"
-              customBaseUrl != null -> customBaseUrl
-              else -> "https://api.master1.qappg.co"
-            },
+          baseUrl = resolvedBaseUrl,
         )
       }
     bind<ApiRepository>() with
@@ -54,6 +56,7 @@ internal class NetworkModule(
           sharedPref = instance(),
           projectId = instance(PROJECT_ID),
           apiKey = instance(API_KEY),
+          baseUrl = resolvedBaseUrl,
         )
       }
   }

@@ -31,6 +31,7 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun areNotificationsEnabled ()Z
 	public final fun createBeacon ()Lcom/pushpushgo/sdk/BeaconBuilder;
 	public final fun createSubscriber ()Lcom/google/common/util/concurrent/ListenableFuture;
+	public final fun getActiveLiveActivities ()Ljava/util/List;
 	public final fun getApiKey ()Ljava/lang/String;
 	public final fun getCustomClickIntentFlags ()I
 	public final fun getDefaultIsSubscribed ()Z
@@ -39,6 +40,7 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public static final fun getInstance (Landroid/app/Application;Ljava/lang/String;Ljava/lang/String;Z)Lcom/pushpushgo/sdk/PushPushGo;
 	public static final fun getInstance (Landroid/app/Application;Ljava/lang/String;Ljava/lang/String;ZZ)Lcom/pushpushgo/sdk/PushPushGo;
 	public static final fun getInstance (Landroid/app/Application;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;)Lcom/pushpushgo/sdk/PushPushGo;
+	public final fun getLiveActivitySubscriberId (Ljava/lang/String;)Ljava/lang/String;
 	public final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
 	public final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/dto/PPGoNotification;
 	public final fun getNotificationHandler ()Lkotlin/jvm/functions/Function3;
@@ -48,6 +50,11 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun getSubscriberId ()Ljava/lang/String;
 	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
 	public static synthetic fun handleBackgroundNotificationClick$default (Lcom/pushpushgo/sdk/PushPushGo;Landroid/content/Intent;IILjava/lang/Object;)V
+	public final fun handleLiveActivityClick (Landroid/content/Intent;)Ljava/lang/String;
+	public final fun handleLiveActivityClick (Landroid/content/Intent;Z)Ljava/lang/String;
+	public static synthetic fun handleLiveActivityClick$default (Lcom/pushpushgo/sdk/PushPushGo;Landroid/content/Intent;ZILjava/lang/Object;)Ljava/lang/String;
+	public final fun isLiveActivitiesSupported ()Z
+	public final fun isLiveActivityActive (Ljava/lang/String;)Z
 	public final fun isPPGoPush (Landroid/content/Intent;)Z
 	public final fun isPPGoPush (Ljava/util/Map;)Z
 	public final fun isSubscribed ()Z
@@ -57,8 +64,11 @@ public final class com/pushpushgo/sdk/PushPushGo {
 	public final fun setDefaultIsSubscribed (Z)V
 	public final fun setNotificationHandler (Lkotlin/jvm/functions/Function3;)V
 	public final fun setOnInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
+	public final fun simulateLiveActivityPush (Ljava/util/Map;)V
+	public final fun subscribeToLiveActivity (Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
 	public final fun unregisterSubscriber ()V
 	public final fun unregisterSubscriber (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
+	public final fun unsubscribeFromLiveActivity (Ljava/lang/String;)Lcom/google/common/util/concurrent/ListenableFuture;
 }
 
 public final class com/pushpushgo/sdk/PushPushGo$Companion {
@@ -105,6 +115,275 @@ public final class com/pushpushgo/sdk/dto/PPGoNotification {
 }
 
 public final class com/pushpushgo/sdk/exception/PushPushException : java/io/IOException {
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/LiveActivityDismissReceiver : android/content/BroadcastReceiver {
+	public fun <init> ()V
+	public fun onReceive (Landroid/content/Context;Landroid/content/Intent;)V
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign {
+	public fun <init> (ZLcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;
+	public final fun component3 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;
+	public final fun copy (ZLcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;ZLcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBreakTimeBarColor ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;
+	public final fun getHasTrackerIcon ()Z
+	public final fun getProgressBarColor ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration {
+	public fun <init> (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;Ljava/util/Map;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+	public final fun component2 ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;
+	public final fun component3 ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/Integer;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;Ljava/util/Map;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;Ljava/util/Map;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActions ()Ljava/util/List;
+	public final fun getContent ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;
+	public final fun getDesign ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchAndroidDesign;
+	public final fun getStatusLabels ()Ljava/util/Map;
+	public final fun getTemplate ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+	public final fun getTimeoutMinutes ()Ljava/lang/Integer;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun label (Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchContent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAwayTeamImage ()Ljava/lang/String;
+	public final fun getAwayTeamName ()Ljava/lang/String;
+	public final fun getHomeTeamImage ()Ljava/lang/String;
+	public final fun getHomeTeamName ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData {
+	public fun <init> (IILcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;Ljava/lang/Long;I)V
+	public synthetic fun <init> (IILcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;Ljava/lang/Long;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public final fun component4 ()Ljava/lang/Long;
+	public final fun component5 ()I
+	public final fun copy (IILcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;Ljava/lang/Long;I)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;IILcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;Ljava/lang/Long;IILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAwayTeamScore ()I
+	public final fun getHomeTeamScore ()I
+	public final fun getLiveDataVersion ()I
+	public final fun getScoreText ()Ljava/lang/String;
+	public final fun getStatus ()Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public final fun getStatusChangedAt ()Ljava/lang/Long;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/HotMessage {
+	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage$Companion;
+	public static final field MAX_DISPLAY_MS J
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;
+	public final fun displayDurationMs (J)J
+	public static synthetic fun displayDurationMs$default (Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;JILjava/lang/Object;)J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpiresAtMs ()Ljava/lang/Long;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/HotMessage$Companion {
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivity {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;JJ)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;JJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+	public final fun component5 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+	public final fun component6 ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;
+	public final fun component7 ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;
+	public final fun component8 ()Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;
+	public final fun component9 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;JJ)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivity;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;JJILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivity;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfiguration ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchConfiguration;
+	public final fun getCreatedAt ()J
+	public final fun getHotMessage ()Lcom/pushpushgo/sdk/push/liveactivity/data/HotMessage;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getLiveData ()Lcom/pushpushgo/sdk/push/liveactivity/data/FootballMatchLiveData;
+	public final fun getProjectId ()Ljava/lang/String;
+	public final fun getStatus ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+	public final fun getSubscriberId ()Ljava/lang/String;
+	public final fun getTemplate ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+	public final fun getUpdatedAt ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityAction {
+	public fun <init> (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityAction;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityAction;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityAction;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getType ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType : java/lang/Enum {
+	public static final field CLOSE Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType$Companion;
+	public static final field OPEN_APP Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+	public static final field REDIRECT Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+	public static final field URL Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+	public static fun values ()[Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType$Companion {
+	public final fun fromValue (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityActionType;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;Ljava/lang/String;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHex ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet {
+	public fun <init> (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;)V
+	public final fun component1 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;
+	public final fun component2 ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;
+	public final fun copy (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColorSet;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDarkMode ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;
+	public final fun getLightMode ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityColor;
+	public fun hashCode ()I
+	public final fun resolve (Z)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent : java/lang/Enum {
+	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent$Companion;
+	public static final field END Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent;
+	public static final field START Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent;
+	public static final field UPDATE Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent;
+	public static fun values ()[Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent$Companion {
+	public final fun fromValue (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityEvent;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus : java/lang/Enum {
+	public static final field ACTIVE Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus$Companion;
+	public static final field ENDED Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+	public static final field PAUSED Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+	public static fun values ()[Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus$Companion {
+	public final fun fromValue (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate : java/lang/Enum {
+	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate$Companion;
+	public static final field FOOTBALL_MATCH_TRACKING Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+	public static fun values ()[Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate$Companion {
+	public final fun fromValue (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/MatchPhase : java/lang/Enum {
+	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase$Companion;
+	public static final field EXTRA_TIME_BREAK Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field EXTRA_TIME_FIRST_HALF Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field EXTRA_TIME_FIRST_HALF_ADDED_TIME Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field EXTRA_TIME_HALF_TIME_BREAK Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field EXTRA_TIME_SECOND_HALF Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field EXTRA_TIME_SECOND_HALF_ADDED_TIME Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field FIRST_HALF Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field FIRST_HALF_ADDED_TIME Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field FULL_TIME Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field HALF_TIME_BREAK Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field MATCH_ENDED Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field OTHER Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field PENALTY_SHOOTOUT Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field PRE_MATCH Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field SECOND_HALF Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static final field SECOND_HALF_ADDED_TIME Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public final fun getBaseMinute ()I
+	public final fun getDisplayText ()Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public final fun isAddedTime ()Z
+	public final fun isBreak ()Z
+	public final fun isFinished ()Z
+	public final fun isPlaying ()Z
+	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+	public static fun values ()[Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
+}
+
+public final class com/pushpushgo/sdk/push/liveactivity/data/MatchPhase$Companion {
+	public final fun fromValue (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/MatchPhase;
 }
 
 public final class com/pushpushgo/sdk/push/service/FcmMessagingServiceDelegate {
