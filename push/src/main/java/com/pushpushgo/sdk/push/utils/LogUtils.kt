@@ -18,8 +18,21 @@ internal fun logError(
   exception: Throwable? = null,
 ) {
   Log.e(PushNotifications.TAG, text, exception)
+  reportError(exception)
 }
 
 internal fun logError(exception: Throwable?) {
   Log.e(PushNotifications.TAG, exception?.message, exception)
+  reportError(exception)
+}
+
+/**
+ * Forwards an SDK error to the integrator-provided callback (if any) so swallowed
+ * failures are observable beyond Logcat. Best-effort: never throws back into the
+ * logging caller, and is a no-op before the SDK is initialized.
+ */
+private fun reportError(exception: Throwable?) {
+  val throwable = exception ?: return
+  if (!PushNotifications.isInitialized()) return
+  runCatching { PushNotifications.getInstance().errorCallback?.invoke(throwable) }
 }

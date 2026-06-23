@@ -223,6 +223,17 @@ class PushNotifications private constructor(
   var defaultIsSubscribed: Boolean = false
     private set
 
+  /**
+   * Optional callback invoked with otherwise-swallowed SDK errors (network
+   * failures during register/unregister/event upload, response parsing, etc.).
+   *
+   * Useful for integrators who want to surface delivery problems in their own
+   * telemetry instead of relying on Logcat. The callback may be invoked on
+   * background threads; keep it lightweight and thread-safe.
+   */
+  var errorCallback: ((Throwable) -> Unit)? = null
+    private set
+
   fun setCustomClickIntentFlags(flags: Int) {
     sharedPreferencesHelper.customIntentFlags = flags
   }
@@ -237,6 +248,10 @@ class PushNotifications private constructor(
 
   fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler) {
     invalidProjectIdHandler = handler
+  }
+
+  fun setErrorCallback(callback: ((Throwable) -> Unit)?) {
+    errorCallback = callback
   }
 
   fun getProjectId(): String = config.projectId
