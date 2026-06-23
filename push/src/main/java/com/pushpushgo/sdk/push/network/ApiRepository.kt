@@ -151,7 +151,7 @@ internal class ApiRepository(
     project: String?,
     subscriber: String?,
   ) {
-    val subscriberId = subscriber ?: sharedPref.subscriberId
+    val subscriberId = subscriber?.ifBlank { null } ?: sharedPref.subscriberId
 
     if (subscriberId == null) {
       logError("Cannot send event - empty subscriberId")
