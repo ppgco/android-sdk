@@ -32,8 +32,8 @@ internal class ApiRepository(
 ) {
   suspend fun registerToken(
     token: String?,
-    apiKey: String = config.apiKey,
-    projectId: String = config.projectId,
+    apiKey: String? = null,
+    projectId: String? = null,
   ) {
     logDebug("registerToken invoked: $token")
     val tokenToRegister = token ?: sharedPref.lastToken ?: getPlatformPushToken(context)
@@ -42,12 +42,17 @@ internal class ApiRepository(
 
     val data =
       apiService.registerSubscriber(
-        token = apiKey,
-        projectId = projectId,
+        token = apiKey ?: config.apiKey,
+        projectId = projectId ?: config.projectId,
         body = TokenRequest(tokenToRegister),
       )
     if (data.id.isNotBlank()) {
       sharedPref.subscriberId = data.id
+    }
+    // Persist the token we actually registered so startup reconciliation can
+    // detect drift between the stored token and a freshly rotated platform token.
+    if (tokenToRegister.isNotBlank()) {
+      sharedPref.lastToken = tokenToRegister
     }
     logDebug("RegisterSubscriber received: $data")
   }
