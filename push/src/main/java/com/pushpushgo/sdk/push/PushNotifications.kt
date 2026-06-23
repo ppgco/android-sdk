@@ -506,7 +506,7 @@ class PushNotifications private constructor(
     notificationClickHandler(application, notify?.redirectLink ?: intentLink, overrideFlags)
     intent.removeExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
 
-    uploadDelegate.sendEvent(
+    uploadManager.sendEvent(
       type = EventType.CLICKED,
       buttonId = intentButtonId,
       projectId = notify?.project ?: intentProjectId,

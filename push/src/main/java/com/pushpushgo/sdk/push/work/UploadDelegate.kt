@@ -34,22 +34,26 @@ internal class UploadDelegate(
     }
   }
 
-  fun sendEvent(
+  /**
+   * Performs the actual event upload. Invoked from [UploadWorker] (an EVENT job),
+   * so it runs durably with retry/backoff rather than as a fire-and-forget
+   * coroutine. The subscriber is resolved from the payload when present, falling
+   * back to the locally stored id inside [ApiRepository.sendEvent].
+   */
+  suspend fun sendEvent(
     type: EventType,
     buttonId: Int,
     campaign: String,
     projectId: String?,
     subscriberId: String?,
   ) {
-    uploadScope.launch(errorHandler) {
-      apiRepository.sendEvent(
-        type = type,
-        buttonId = buttonId,
-        campaign = campaign,
-        project = projectId,
-        subscriber = subscriberId,
-      )
-    }
+    apiRepository.sendEvent(
+      type = type,
+      buttonId = buttonId,
+      campaign = campaign,
+      project = projectId,
+      subscriber = subscriberId,
+    )
   }
 
   fun sendBeacon(beacon: JSONObject) {
