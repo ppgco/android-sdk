@@ -63,7 +63,9 @@ internal class UploadManager(
   ) {
     workManager.enqueueUniqueWork(
       name,
-      if (name == REGISTER || name == UNREGISTER) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.APPEND,
+      // REGISTER must REPLACE: when two registrations race (e.g. token rotation),
+      // the newest token has to win. UNREGISTER keeps the in-flight request.
+      if (name == REGISTER) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP,
       OneTimeWorkRequestBuilder<UploadWorker>()
         .setInputData(
           workDataOf(TYPE to name, DATA to data),
