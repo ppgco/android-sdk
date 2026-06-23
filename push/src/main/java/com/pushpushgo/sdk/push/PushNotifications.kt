@@ -415,35 +415,48 @@ class PushNotifications private constructor(
       "Migration is already in progress"
     }
 
-    return sdkScope.future {
-      try {
-        subscriptionMutex.withLock {
-          uploadManager.cancelAllJobs()
+    // Captured so we can tear down this (soon-to-be-abandoned) instance's
+    // background loops once migration succeeds. Cancelling from inside the
+    // future would cancel the migration coroutine itself (it runs on sdkScope).
+    val previousScope = sdkScope
 
-          apiRepository.migrateSubscriber(
-            newProjectId = newProjectId,
-            newApiKey = newApiKey,
-          )
+    return sdkScope
+      .future {
+        try {
+          subscriptionMutex.withLock {
+            uploadManager.cancelAllJobs()
 
-          reinitialize(
-            application = application,
-            config =
-              Config.create(
-                projectId = newProjectId,
-                apiKey = newApiKey,
-                isDebug = config.isDebug,
-                apiUrl = config.apiUrl,
-              ),
-          ).apply {
-            notificationClickHandler = this@PushNotifications.notificationClickHandler
-            invalidProjectIdHandler = this@PushNotifications.invalidProjectIdHandler
-            defaultIsSubscribed = this@PushNotifications.defaultIsSubscribed
+            apiRepository.migrateSubscriber(
+              newProjectId = newProjectId,
+              newApiKey = newApiKey,
+            )
+
+            reinitialize(
+              application = application,
+              config =
+                Config.create(
+                  projectId = newProjectId,
+                  apiKey = newApiKey,
+                  isDebug = config.isDebug,
+                  apiUrl = config.apiUrl,
+                ),
+            ).apply {
+              notificationClickHandler = this@PushNotifications.notificationClickHandler
+              invalidProjectIdHandler = this@PushNotifications.invalidProjectIdHandler
+              defaultIsSubscribed = this@PushNotifications.defaultIsSubscribed
+            }
           }
+        } finally {
+          isMigrating.set(false)
         }
-      } finally {
-        isMigrating.set(false)
+      }.whenComplete { _, throwable ->
+        // On success the old instance is replaced and abandoned, so cancel its
+        // NotificationStatusChecker poll loop and any Live Activity tickers.
+        // On failure the old instance stays current — leave it running.
+        if (throwable == null) {
+          previousScope.cancel()
+        }
       }
-    }
   }
 
   /**
