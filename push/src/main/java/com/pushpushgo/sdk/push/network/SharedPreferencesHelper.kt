@@ -20,7 +20,17 @@ internal class SharedPreferencesHelper(
     private const val CUSTOM_INTENT_FLAGS = "_PushPushGoSDK_custom_intent_flags_"
     private const val LA_SUBSCRIBER_PREFIX = "_PushPushGoSDK_la_sub_"
     private const val INSTALLATION_ID = "_PushPushGoSDK_installation_id_"
-    private const val MAX_KEYS = 1000
+
+    // Notification-id de-duplication cache. Kept in a DEDICATED prefs file so its
+    // bounded-size eviction can never delete subscription state (subscriberId /
+    // token / isSubscribed), which previously shared the default prefs file.
+    private const val NOTIFICATION_IDS_PREFS = "_PushPushGoSDK_notification_ids_"
+    private const val NOTIFICATION_IDS_ORDER = "_PushPushGoSDK_nid_order_"
+    private const val MAX_NOTIFICATION_IDS = 1000
+
+    // Unit-separator control char, unlikely to appear in a server-generated
+    // notification id; encodes the insertion-order list in one prefs string value.
+    private val ORDER_SEPARATOR = Char(0x1F).toString()
   }
 
   private val sharedPreferences =
@@ -29,6 +39,12 @@ internal class SharedPreferencesHelper(
     } else {
       getDefaultSharedPreferences(context)
     }
+
+  private val notificationIdsPreferences =
+    context.getSharedPreferences(
+      if (prefsName != null) "${prefsName}_notification_ids" else NOTIFICATION_IDS_PREFS,
+      Context.MODE_PRIVATE,
+    )
 
   var isSubscribed
     get() =
@@ -108,19 +124,33 @@ internal class SharedPreferencesHelper(
     sharedPreferences.edit { remove(LA_SUBSCRIBER_PREFIX + liveNotificationId) }
   }
 
-  fun getNotificationId(key: String): Int = sharedPreferences.getInt(key, -1)
+  fun getNotificationId(key: String): Int = notificationIdsPreferences.getInt(key, -1)
 
+  /**
+   * Stores a notification id under [key], evicting the oldest entries once the
+   * cache exceeds [MAX_NOTIFICATION_IDS]. Eviction is deterministic FIFO driven
+   * by an explicit insertion-order list (the previous implementation evicted an
+   * arbitrary `keys.firstOrNull()`, which on the shared default prefs file could
+   * delete the subscriber id or token).
+   */
   fun setNotificationId(
     key: String,
     id: Int,
   ) {
-    val allEntries = sharedPreferences.all
-    if (allEntries.size >= MAX_KEYS) {
-      val firstKey = allEntries.keys.firstOrNull()
-      if (firstKey != null) {
-        sharedPreferences.edit { remove(firstKey) }
+    val order = readOrder().apply { remove(key) }
+    order.addLast(key)
+
+    notificationIdsPreferences.edit {
+      while (order.size > MAX_NOTIFICATION_IDS) {
+        remove(order.removeFirst())
       }
+      putInt(key, id)
+      putString(NOTIFICATION_IDS_ORDER, order.joinToString(ORDER_SEPARATOR))
     }
-    sharedPreferences.edit { putInt(key, id) }
+  }
+
+  private fun readOrder(): ArrayDeque<String> {
+    val raw = notificationIdsPreferences.getString(NOTIFICATION_IDS_ORDER, "").orEmpty()
+    return if (raw.isEmpty()) ArrayDeque() else ArrayDeque(raw.split(ORDER_SEPARATOR))
   }
 }
