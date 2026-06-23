@@ -3,7 +3,6 @@ package com.pushpushgo.sdk.push
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.Configuration
 import androidx.work.WorkManager
@@ -13,11 +12,9 @@ import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.mapToDto
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityController
 import com.pushpushgo.sdk.push.liveactivity.LiveActivityHandler
-import com.pushpushgo.sdk.push.liveactivity.LiveActivityManager
-import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
@@ -27,9 +24,9 @@ import com.pushpushgo.sdk.push.push.createNotificationChannel
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.push.subscription.DefaultPushSubscriptionProvider
+import com.pushpushgo.sdk.push.subscription.SubscriptionController
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
-import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.mapToBundle
 import com.pushpushgo.sdk.push.work.UploadDelegate
 import com.pushpushgo.sdk.push.work.UploadManager
@@ -38,10 +35,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -130,54 +125,32 @@ class PushNotifications private constructor(
   internal val uploadManager = UploadManager(application, sharedPreferencesHelper)
   internal val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager)
 
-  private val liveActivityPersistence: LiveActivityPersistence? by lazy {
-    if (Build.VERSION.SDK_INT >= 36) LiveActivityPersistence(application) else null
-  }
-
-  private val liveActivityManager: LiveActivityManager? by lazy {
-    liveActivityPersistence?.let { LiveActivityManager(it) }
-  }
-
-  internal val liveActivityHandler: LiveActivityHandler? by lazy {
-    val manager = liveActivityManager ?: return@lazy null
-    LiveActivityHandler(
-      context = application,
+  private val subscriptionController =
+    SubscriptionController(
       scope = sdkScope,
-      manager = manager,
+      mutex = subscriptionMutex,
       apiRepository = apiRepository,
-      onEvent = { eventType, laId, _, _, liveDataVersion ->
-        // Map internal LA lifecycle events to the backend statistics enum
-        // (started / closed / clicked / clicked_1 / clicked_2) and report them
-        // to the dedicated live-notification events endpoint.
-        val statisticsType =
-          when (eventType) {
-            "la.started" -> "started"
-            "la.clicked" -> "clicked"
-            "la.clicked_1" -> "clicked_1"
-            "la.clicked_2" -> "clicked_2"
-            "la.dismissed" -> "closed"
-            else -> null // la.ended not reported (no backend enum value)
-          }
-        if (statisticsType != null) {
-          sdkScope.launch {
-            runCatching {
-              apiRepository.sendLiveActivityEvent(
-                liveNotificationId = laId,
-                eventType = statisticsType,
-                liveDataVersion = liveDataVersion,
-                subscriberId = getSubscriberId().orEmpty(),
-              )
-            }.onFailure { logError("Failed to send LA statistics event $statisticsType for $laId", it) }
-          }
-        }
-      },
+      uploadManager = uploadManager,
+      sharedPref = sharedPreferencesHelper,
+      isMigrating = isMigrating,
+      notificationsEnabled = { areNotificationsEnabled() },
     )
-  }
+
+  private val liveActivityController =
+    LiveActivityController(
+      application = application,
+      scope = sdkScope,
+      apiRepository = apiRepository,
+      sharedPref = sharedPreferencesHelper,
+      getSubscriberId = { getSubscriberId() },
+      notificationClickHandler = { notificationClickHandler },
+    )
+
+  internal val liveActivityHandler: LiveActivityHandler?
+    get() = liveActivityController.handler
 
   init {
-    if (Build.VERSION.SDK_INT >= 36) {
-      liveActivityManager?.restoreFromPersistence()
-    }
+    liveActivityController.restoreFromPersistence()
   }
 
   init {
@@ -272,19 +245,7 @@ class PushNotifications private constructor(
    * If notifications are disabled or migration is in progress, the request is ignored.
    */
   fun subscribe() {
-    if (!areNotificationsEnabled()) {
-      return logError("Notifications disabled! Subscriber registration canceled")
-    }
-
-    sdkScope.launch {
-      subscriptionMutex.withLock {
-        if (isMigrating.get()) {
-          return@withLock logError("Migration in progress")
-        }
-        sharedPreferencesHelper.isSubscribed = true
-        uploadManager.sendRegister(null)
-      }
-    }
+    subscriptionController.subscribe()
   }
 
   /**
@@ -295,16 +256,7 @@ class PushNotifications private constructor(
    * If migration is in progress, the request is ignored.
    */
   fun unsubscribe() {
-    sdkScope.launch {
-      subscriptionMutex.withLock {
-        if (isMigrating.get()) {
-          return@withLock logError("Migration in progress")
-        }
-
-        uploadManager.sendUnregister()
-        sharedPreferencesHelper.isSubscribed = false
-      }
-    }
+    subscriptionController.unsubscribe()
   }
 
   /**
@@ -315,20 +267,7 @@ class PushNotifications private constructor(
    * @throws IllegalStateException
    */
   suspend fun subscribeNow() {
-    check(areNotificationsEnabled()) {
-      "Notifications disabled! Subscriber registration canceled"
-    }
-
-    withContext(Dispatchers.IO) {
-      subscriptionMutex.withLock {
-        check(!isMigrating.get()) {
-          "Migration in progress"
-        }
-
-        apiRepository.registerToken(null)
-        sharedPreferencesHelper.isSubscribed = true
-      }
-    }
+    subscriptionController.subscribeNow()
   }
 
   /**
@@ -337,16 +276,7 @@ class PushNotifications private constructor(
    * If migration is in progress, an [IllegalStateException] is thrown.
    */
   suspend fun unsubscribeNow() {
-    withContext(Dispatchers.IO) {
-      subscriptionMutex.withLock {
-        check(!isMigrating.get()) {
-          "Migration in progress"
-        }
-
-        apiRepository.unregisterSubscriber()
-        sharedPreferencesHelper.isSubscribed = false
-      }
-    }
+    subscriptionController.unsubscribeNow()
   }
 
   /**
@@ -553,19 +483,19 @@ class PushNotifications private constructor(
    * Checks whether Live Activities are supported on this device.
    * Requires API 36+ (Android 16) for ProgressStyle notifications.
    */
-  fun isLiveActivitiesSupported(): Boolean = Build.VERSION.SDK_INT >= 36
+  fun isLiveActivitiesSupported(): Boolean = liveActivityController.isSupported()
 
   /**
    * Returns the list of currently active live activities.
    * Returns empty list on API < 36.
    */
-  fun getActiveLiveActivities(): List<LiveActivity> = liveActivityManager?.getActiveActivities() ?: emptyList()
+  fun getActiveLiveActivities(): List<LiveActivity> = liveActivityController.getActiveActivities()
 
   /**
    * Checks whether a specific live activity is currently active.
    * Returns false on API < 36.
    */
-  fun isLiveActivityActive(id: String): Boolean = liveActivityManager?.isActivityActive(id) ?: false
+  fun isLiveActivityActive(id: String): Boolean = liveActivityController.isActive(id)
 
   /**
    * Simulates a Live Activity push for testing purposes. No-op on API < 36.
@@ -573,7 +503,7 @@ class PushNotifications private constructor(
    * Pass a data map matching the Live Activity push payload format.
    */
   fun simulateLiveActivityPush(data: Map<String, String>) {
-    liveActivityHandler?.handlePush(data)
+    liveActivityController.simulatePush(data)
   }
 
   /**
@@ -590,12 +520,7 @@ class PushNotifications private constructor(
    */
   fun subscribeToLiveActivity(liveNotificationId: String): CompletableFuture<String> =
     sdkScope.future {
-      val laSubscriberId = apiRepository.subscribeToLiveActivity(liveNotificationId)
-      sharedPreferencesHelper.setLiveActivitySubscriberId(liveNotificationId, laSubscriberId)
-      // Catch up: render the current state for subscribers that joined after the
-      // `start` push was already delivered (no-op if the LA isn't live yet).
-      catchUpLiveActivity(liveNotificationId)
-      laSubscriberId
+      liveActivityController.subscribe(liveNotificationId)
     }
 
   /**
@@ -607,12 +532,7 @@ class PushNotifications private constructor(
    */
   fun unsubscribeFromLiveActivity(liveNotificationId: String): CompletableFuture<Void?> =
     sdkScope.future {
-      val laSubscriberId = sharedPreferencesHelper.getLiveActivitySubscriberId(liveNotificationId)
-      check(laSubscriberId.isNotEmpty()) {
-        "Not subscribed to live notification $liveNotificationId"
-      }
-      apiRepository.unsubscribeFromLiveActivity(liveNotificationId, laSubscriberId)
-      sharedPreferencesHelper.removeLiveActivitySubscriberId(liveNotificationId)
+      liveActivityController.unsubscribe(liveNotificationId)
       null
     }
 
@@ -620,20 +540,7 @@ class PushNotifications private constructor(
    * Returns the persisted LA subscriber id for a live notification, or empty
    * string if this device is not subscribed to it.
    */
-  fun getLiveActivitySubscriberId(liveNotificationId: String): String =
-    sharedPreferencesHelper.getLiveActivitySubscriberId(liveNotificationId)
-
-  /**
-   * Fetch the current live notification state and feed it through the render
-   * pipeline as a synthetic `start`, so a late subscriber sees the running
-   * activity without waiting for the next update push.
-   */
-  private suspend fun catchUpLiveActivity(liveNotificationId: String) {
-    val handler = liveActivityHandler ?: return
-    val json = apiRepository.fetchLiveActivity(liveNotificationId) ?: return
-    val envelope = LiveActivityPayloadParser.buildCatchUpEnvelope(json) ?: return
-    handler.handlePush(envelope)
-  }
+  fun getLiveActivitySubscriberId(liveNotificationId: String): String = liveActivityController.getSubscriberId(liveNotificationId)
 
   /**
    * Handles a Live Activity notification click when the app is launched or
@@ -650,21 +557,7 @@ class PushNotifications private constructor(
   fun handleLiveActivityClick(
     intent: Intent?,
     openDeepLink: Boolean = true,
-  ): String? {
-    val laId = intent?.getStringExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID) ?: return null
-    val deepLink = intent.getStringExtra(LiveActivityHandler.EXTRA_DEEP_LINK)
-    val actionIndex = intent.getIntExtra(LiveActivityHandler.EXTRA_ACTION_INDEX, -1)
-
-    liveActivityHandler?.handleClick(laId, actionIndex)
-    intent.removeExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID)
-    intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
-
-    if (openDeepLink && !deepLink.isNullOrBlank()) {
-      notificationClickHandler(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-
-    return deepLink
-  }
+  ): String? = liveActivityController.handleClick(application, intent, openDeepLink)
 }
 
 typealias NotificationClickHandler = (context: Context, url: String, overrideFlags: Int) -> Unit
