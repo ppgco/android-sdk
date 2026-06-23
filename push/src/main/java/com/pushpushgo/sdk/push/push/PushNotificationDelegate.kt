@@ -145,11 +145,25 @@ internal class PushNotificationDelegate(
     remoteMessage: PushMessage,
     notificationId: Int,
   ): Notification {
-    val pushPushNotification =
-      deserializeNotificationData(remoteMessage.data.mapToBundle())
-        ?: return getSimpleNotification(context, remoteMessage, notificationId)
+    val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
 
-    sendDeliveredEvent(pushPushNotification)
+    if (pushPushNotification == null) {
+      // Malformed / incomplete inner JSON: still report DELIVERED from the raw
+      // data payload (don't lose the delivery metric) and render a best-effort
+      // notification from the available fields.
+      reportDelivered(
+        project = remoteMessage.data["project"].orEmpty(),
+        subscriber = remoteMessage.data["subscriber"].orEmpty(),
+        campaign = remoteMessage.data["campaign"].orEmpty(),
+      )
+      return getSimpleNotification(context, remoteMessage, notificationId)
+    }
+
+    reportDelivered(
+      project = pushPushNotification.project,
+      subscriber = pushPushNotification.subscriber,
+      campaign = pushPushNotification.campaignId,
+    )
     return createDataNotification(context, notificationId, pushPushNotification)
   }
 
@@ -158,16 +172,18 @@ internal class PushNotificationDelegate(
     remoteMessage: PushMessage,
     notificationId: Int,
   ): Notification {
-    logDebug("Message notification title: ${remoteMessage.notification?.title}")
+    val title = remoteMessage.notification?.title ?: remoteMessage.data["title"]
+    val content = remoteMessage.notification?.body ?: remoteMessage.data["body"].orEmpty()
+    logDebug("Message notification title: $title")
 
     return createNotification(
       id = notificationId,
       context = context,
       projectId = PushNotifications.getInstance().getProjectId(),
       subscriberId = remoteMessage.data["subscriber"].orEmpty(),
-      title = remoteMessage.notification?.title!!,
-      content = remoteMessage.notification.body!!,
-      priority = translateFirebasePriority(remoteMessage.notification.priority),
+      title = title?.ifBlank { null } ?: context.getString(R.string.app_name),
+      content = content,
+      priority = translateFirebasePriority(remoteMessage.notification?.priority),
     )
   }
 
@@ -178,16 +194,24 @@ internal class PushNotificationDelegate(
       else -> NotificationCompat.PRIORITY_DEFAULT
     }
 
-  private fun sendDeliveredEvent(notification: PushPushNotification) {
-    if (PushNotifications.isInitialized() && PushNotifications.getInstance().getSubscriberId() != null) {
-      PushNotifications.getInstance().uploadDelegate.sendEvent(
-        type = EventType.DELIVERED,
-        buttonId = 0,
-        projectId = notification.project,
-        subscriberId = notification.subscriber,
-        campaign = notification.campaignId,
-      )
-    }
+  /**
+   * Reports a DELIVERED event for the push. The event is enqueued as a durable
+   * WorkManager job (survives process death / transient network loss) and is
+   * gated on the payload subscriber rather than the locally stored subscriber id,
+   * so deliveries are still reported when local state is momentarily out of sync.
+   */
+  private fun reportDelivered(
+    project: String,
+    subscriber: String,
+    campaign: String,
+  ) {
+    uploadManager.sendEvent(
+      type = EventType.DELIVERED,
+      buttonId = 0,
+      campaign = campaign,
+      projectId = project,
+      subscriberId = subscriber,
+    )
   }
 
   private suspend fun createDataNotification(
