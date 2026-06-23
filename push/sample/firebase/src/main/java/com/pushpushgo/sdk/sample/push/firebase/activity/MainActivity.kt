@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
     ppg.handleBackgroundNotificationClick(intent)
+    ppg.handleLiveActivityClick(intent)
 
     findViewById<TextView>(R.id.version).text = PushNotifications.VERSION
 
@@ -54,11 +55,16 @@ class MainActivity : AppCompatActivity() {
     findViewById<Button>(R.id.beacons).setOnClickListener {
       startActivity(Intent(baseContext, BeaconActivity::class.java))
     }
+
+    findViewById<Button>(R.id.liveactivities).setOnClickListener {
+      startActivity(Intent(baseContext, LiveActivityDemoActivity::class.java))
+    }
   }
 
   override fun onNewIntent(intent: Intent?) {
     super.onNewIntent(intent)
     PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+    PushNotifications.getInstance().handleLiveActivityClick(intent)
   }
 
   override fun onCreateOptionsMenu(menu: Menu): Boolean {

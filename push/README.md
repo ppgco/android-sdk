@@ -16,6 +16,7 @@ Android SDK for integrating push notifications into your application. Supports b
 - [Basic usage](#basic-usage)
   - [Push subscription](#push-subscription)
   - [Beacons, tags, and dynamic groups](#beacons-tags-and-dynamic-groups)
+- [Live Activities](#live-activities)
 
 ## Preparation
 
@@ -331,3 +332,17 @@ PushNotifications.getInstance().createBeacon()
   .unassignFromGroup("my-group-name")
   .send()
 ```
+
+## Live Activities
+
+Real-time, continuously updated notifications (Android 16+ Live Updates), e.g.
+live football match tracking:
+
+```kotlin
+PushNotifications.getInstance().subscribeToLiveActivity("liveNotificationId")
+// ...
+PushNotifications.getInstance().unsubscribeFromLiveActivity("liveNotificationId")
+```
+
+For the full integration guide (clicks, deep links, analytics, rendering
+features) see [LIVE_ACTIVITIES.md](LIVE_ACTIVITIES.md).

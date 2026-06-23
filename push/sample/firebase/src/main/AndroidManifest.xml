@@ -46,6 +46,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.BeaconActivity" />
+        <activity
+            android:name=".activity.LiveActivityDemoActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <meta-data
             android:name="com.pushpushgo.apikey"

@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.Configuration
 import androidx.work.WorkManager
@@ -12,6 +13,11 @@ import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.mapToDto
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityHandler
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityManager
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
@@ -123,6 +129,56 @@ class PushNotifications private constructor(
   internal val uploadDelegate = UploadDelegate(apiRepository)
   internal val uploadManager = UploadManager(application, sharedPreferencesHelper)
   internal val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager)
+
+  private val liveActivityPersistence: LiveActivityPersistence? by lazy {
+    if (Build.VERSION.SDK_INT >= 36) LiveActivityPersistence(application) else null
+  }
+
+  private val liveActivityManager: LiveActivityManager? by lazy {
+    liveActivityPersistence?.let { LiveActivityManager(it) }
+  }
+
+  internal val liveActivityHandler: LiveActivityHandler? by lazy {
+    val manager = liveActivityManager ?: return@lazy null
+    LiveActivityHandler(
+      context = application,
+      scope = sdkScope,
+      manager = manager,
+      apiRepository = apiRepository,
+      onEvent = { eventType, laId, _, _, liveDataVersion ->
+        // Map internal LA lifecycle events to the backend statistics enum
+        // (started / closed / clicked / clicked_1 / clicked_2) and report them
+        // to the dedicated live-notification events endpoint.
+        val statisticsType =
+          when (eventType) {
+            "la.started" -> "started"
+            "la.clicked" -> "clicked"
+            "la.clicked_1" -> "clicked_1"
+            "la.clicked_2" -> "clicked_2"
+            "la.dismissed" -> "closed"
+            else -> null // la.ended not reported (no backend enum value)
+          }
+        if (statisticsType != null) {
+          sdkScope.launch {
+            runCatching {
+              apiRepository.sendLiveActivityEvent(
+                liveNotificationId = laId,
+                eventType = statisticsType,
+                liveDataVersion = liveDataVersion,
+                subscriberId = getSubscriberId().orEmpty(),
+              )
+            }.onFailure { logError("Failed to send LA statistics event $statisticsType for $laId", it) }
+          }
+        }
+      },
+    )
+  }
+
+  init {
+    if (Build.VERSION.SDK_INT >= 36) {
+      liveActivityManager?.restoreFromPersistence()
+    }
+  }
 
   init {
     val platformType = getPlatformType()
@@ -464,6 +520,123 @@ class PushNotifications private constructor(
   fun createBeacon(): BeaconBuilder = BeaconBuilder(uploadDelegate)
 
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = DefaultPushSubscriptionProvider(application)
+
+  /**
+   * Checks whether Live Activities are supported on this device.
+   * Requires API 36+ (Android 16) for ProgressStyle notifications.
+   */
+  fun isLiveActivitiesSupported(): Boolean = Build.VERSION.SDK_INT >= 36
+
+  /**
+   * Returns the list of currently active live activities.
+   * Returns empty list on API < 36.
+   */
+  fun getActiveLiveActivities(): List<LiveActivity> = liveActivityManager?.getActiveActivities() ?: emptyList()
+
+  /**
+   * Checks whether a specific live activity is currently active.
+   * Returns false on API < 36.
+   */
+  fun isLiveActivityActive(id: String): Boolean = liveActivityManager?.isActivityActive(id) ?: false
+
+  /**
+   * Simulates a Live Activity push for testing purposes. No-op on API < 36.
+   *
+   * Pass a data map matching the Live Activity push payload format.
+   */
+  fun simulateLiveActivityPush(data: Map<String, String>) {
+    liveActivityHandler?.handlePush(data)
+  }
+
+  /**
+   * Subscribes this device to a backend live notification (Live Activity) so it
+   * starts receiving its push updates.
+   *
+   * The device must already be a registered push subscriber (call [subscribe]
+   * first). The returned future resolves to the backend LA subscriber id, which
+   * is also persisted so [unsubscribeFromLiveActivity] can be called later
+   * without tracking it yourself.
+   *
+   * @param liveNotificationId backend id of the live notification to follow.
+   * @return future with the assigned LA subscriber id.
+   */
+  fun subscribeToLiveActivity(liveNotificationId: String): CompletableFuture<String> =
+    sdkScope.future {
+      val laSubscriberId = apiRepository.subscribeToLiveActivity(liveNotificationId)
+      sharedPreferencesHelper.setLiveActivitySubscriberId(liveNotificationId, laSubscriberId)
+      // Catch up: render the current state for subscribers that joined after the
+      // `start` push was already delivered (no-op if the LA isn't live yet).
+      catchUpLiveActivity(liveNotificationId)
+      laSubscriberId
+    }
+
+  /**
+   * Unsubscribes this device from a backend live notification it previously
+   * subscribed to via [subscribeToLiveActivity]. Fails if the device is not
+   * subscribed to it.
+   *
+   * @param liveNotificationId backend id of the live notification to leave.
+   */
+  fun unsubscribeFromLiveActivity(liveNotificationId: String): CompletableFuture<Void?> =
+    sdkScope.future {
+      val laSubscriberId = sharedPreferencesHelper.getLiveActivitySubscriberId(liveNotificationId)
+      check(laSubscriberId.isNotEmpty()) {
+        "Not subscribed to live notification $liveNotificationId"
+      }
+      apiRepository.unsubscribeFromLiveActivity(liveNotificationId, laSubscriberId)
+      sharedPreferencesHelper.removeLiveActivitySubscriberId(liveNotificationId)
+      null
+    }
+
+  /**
+   * Returns the persisted LA subscriber id for a live notification, or empty
+   * string if this device is not subscribed to it.
+   */
+  fun getLiveActivitySubscriberId(liveNotificationId: String): String =
+    sharedPreferencesHelper.getLiveActivitySubscriberId(liveNotificationId)
+
+  /**
+   * Fetch the current live notification state and feed it through the render
+   * pipeline as a synthetic `start`, so a late subscriber sees the running
+   * activity without waiting for the next update push.
+   */
+  private suspend fun catchUpLiveActivity(liveNotificationId: String) {
+    val handler = liveActivityHandler ?: return
+    val json = apiRepository.fetchLiveActivity(liveNotificationId) ?: return
+    val envelope = LiveActivityPayloadParser.buildCatchUpEnvelope(json) ?: return
+    handler.handlePush(envelope)
+  }
+
+  /**
+   * Handles a Live Activity notification click when the app is launched or
+   * resumed from a tap. Call from `Activity.onCreate()` / `Activity.onNewIntent()`
+   * alongside [handleBackgroundNotificationClick].
+   *
+   * Reports the click analytics event and, unless [openDeepLink] is false, opens
+   * the carried deep link through [notificationClickHandler] (same routing as
+   * regular push clicks).
+   *
+   * @return the deep link if this was a Live Activity click, `null` otherwise.
+   */
+  @JvmOverloads
+  fun handleLiveActivityClick(
+    intent: Intent?,
+    openDeepLink: Boolean = true,
+  ): String? {
+    val laId = intent?.getStringExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID) ?: return null
+    val deepLink = intent.getStringExtra(LiveActivityHandler.EXTRA_DEEP_LINK)
+    val actionIndex = intent.getIntExtra(LiveActivityHandler.EXTRA_ACTION_INDEX, -1)
+
+    liveActivityHandler?.handleClick(laId, actionIndex)
+    intent.removeExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID)
+    intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
+
+    if (openDeepLink && !deepLink.isNullOrBlank()) {
+      notificationClickHandler(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    return deepLink
+  }
 }
 
 typealias NotificationClickHandler = (context: Context, url: String, overrideFlags: Int) -> Unit

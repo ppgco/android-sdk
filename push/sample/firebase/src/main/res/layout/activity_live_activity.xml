@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/la_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    tools:context=".activity.LiveActivityDemoActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/la_support"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:textStyle="bold"
+            tools:text="Live Activities supported: true" />
+
+        <EditText
+            android:id="@+id/la_id_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Live notification ID"
+            android:inputType="text"
+            android:maxLines="1"
+            android:importantForAutofill="no"
+            tools:ignore="LabelFor" />
+
+        <!-- Backend subscription: registers this device on the backend live
+             notification so it receives real pushes. Updates (score/phase/hot
+             message) are driven server-side; see LIVE_ACTIVITY_TEST_CURLS.md. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Backend subscription"
+            android:textAllCaps="true"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/la_subscribe"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="@color/colorPrimary"
+                android:text="Subscribe"
+                android:textColor="@android:color/white" />
+
+            <Button
+                android:id="@+id/la_unsubscribe"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:backgroundTint="@android:color/holo_red_dark"
+                android:text="Unsubscribe"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
+
+        <!-- Local simulation: feeds the SDK a fake push envelope (no backend),
+             using the live notification ID above. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Local simulation"
+            android:textAllCaps="true"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/la_start"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/colorPrimary"
+            android:text="Start match"
+            android:textColor="@android:color/white" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/la_home_goal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Home goal" />
+
+            <Button
+                android:id="@+id/la_away_goal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Away goal" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/la_next_phase"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Next phase" />
+
+        <Button
+            android:id="@+id/la_hot_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Send hot message" />
+
+        <Button
+            android:id="@+id/la_end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@android:color/holo_red_dark"
+            android:text="End match"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/la_refresh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Refresh status" />
+
+        <TextView
+            android:id="@+id/la_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            tools:text="No active live activities" />
+
+    </LinearLayout>
+</ScrollView>
