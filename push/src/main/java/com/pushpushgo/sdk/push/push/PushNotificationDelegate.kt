@@ -28,7 +28,9 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -218,17 +220,25 @@ internal class PushNotificationDelegate(
     context: Context,
     notificationId: Int,
     notification: PushPushNotification,
-  ) = createNotification(
-    id = notificationId,
-    context = context,
-    notify = notification,
-    playSound = true,
-    ongoing = false,
-    projectId = notification.project,
-    subscriberId = notification.subscriber,
-    bigPicture = getBitmapFromUrl(notification.image),
-    iconPicture = getBitmapFromUrl(notification.icon),
-  )
+  ): Notification =
+    coroutineScope {
+      // Fetch image and icon concurrently so a slow image download doesn't
+      // serialize behind the icon (each is independently time-boxed).
+      val bigPicture = async { getBitmapFromUrl(notification.image) }
+      val iconPicture = async { getBitmapFromUrl(notification.icon) }
+
+      createNotification(
+        id = notificationId,
+        context = context,
+        notify = notification,
+        playSound = true,
+        ongoing = false,
+        projectId = notification.project,
+        subscriberId = notification.subscriber,
+        bigPicture = bigPicture.await(),
+        iconPicture = iconPicture.await(),
+      )
+    }
 
   private suspend fun getBitmapFromUrl(url: String?): Bitmap? {
     try {
