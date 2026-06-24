@@ -32,7 +32,6 @@ import timber.log.Timber
  * pushes and the buttons only update the local status readout.
  */
 class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activity) {
-
   private val ppg by lazy { PushNotifications.getInstance() }
 
   // Local mirror of the match state so the buttons can evolve it over time.
@@ -58,7 +57,9 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
     findViewById<Button>(R.id.la_unsubscribe).setOnClickListener { unsubscribe() }
 
     findViewById<Button>(R.id.la_start).setOnClickListener {
-      homeScore = 0; awayScore = 0; phaseIndex = 0
+      homeScore = 0
+      awayScore = 0
+      phaseIndex = 0
       simulate(event = "start", includeConfiguration = true)
     }
     findViewById<Button>(R.id.la_home_goal).setOnClickListener {
@@ -87,7 +88,11 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
 
   /** Live notification id from the input field, falling back to the demo id. */
   private fun liveNotificationId(): String =
-    findViewById<EditText>(R.id.la_id_input).text.toString().trim().ifEmpty { LA_ID }
+    findViewById<EditText>(R.id.la_id_input)
+      .text
+      .toString()
+      .trim()
+      .ifEmpty { LA_ID }
 
   private fun subscribe() {
     val id = liveNotificationId()
@@ -154,20 +159,22 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
   }
 
   private fun liveDataJson(): String =
-    JSONObject().apply {
-      put("type", "FOOTBALL_MATCH_TRACKING")
-      put("homeTeamScore", homeScore)
-      put("awayTeamScore", awayScore)
-      put("status", currentPhase)
-      put("statusChangedAt", System.currentTimeMillis())
-    }.toString()
+    JSONObject()
+      .apply {
+        put("type", "FOOTBALL_MATCH_TRACKING")
+        put("homeTeamScore", homeScore)
+        put("awayTeamScore", awayScore)
+        put("status", currentPhase)
+        put("statusChangedAt", System.currentTimeMillis())
+      }.toString()
 
   private fun hotMessageJson(text: String): String =
-    JSONObject().apply {
-      put("id", "hot-${System.currentTimeMillis()}")
-      put("text", text)
-      put("timestamp", System.currentTimeMillis() / 1000 + 30) // expires in ~30s
-    }.toString()
+    JSONObject()
+      .apply {
+        put("id", "hot-${System.currentTimeMillis()}")
+        put("text", text)
+        put("timestamp", System.currentTimeMillis() / 1000 + 30) // expires in ~30s
+      }.toString()
 
   @SuppressLint("SetTextI18n")
   private fun renderStatus() {

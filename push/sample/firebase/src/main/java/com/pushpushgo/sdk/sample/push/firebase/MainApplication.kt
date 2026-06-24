@@ -26,7 +26,10 @@ class MainApplication : Application() {
       }
   }
 
-  private fun routeLink(url: String, flags: Int) {
+  private fun routeLink(
+    url: String,
+    flags: Int,
+  ) {
     Timber.tag("PPGO_SAMPLE").d("routeLink: $url")
     val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
 
