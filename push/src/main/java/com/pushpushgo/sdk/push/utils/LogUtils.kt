@@ -4,6 +4,9 @@ import android.util.Log
 import com.pushpushgo.sdk.push.PushNotifications
 
 internal fun logDebug(text: String) {
+  // Safe before initialize() completes: the SDK logs during construction (e.g.
+  // Live Activity restore on API 36+), when the singleton isn't published yet.
+  if (!PushNotifications.isInitialized()) return
   if (!PushNotifications.getInstance().config.isDebug) return
 
   Log.d(PushNotifications.TAG, text)
