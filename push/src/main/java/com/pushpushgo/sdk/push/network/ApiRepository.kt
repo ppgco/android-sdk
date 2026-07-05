@@ -44,7 +44,13 @@ internal class ApiRepository(
       apiService.registerSubscriber(
         token = apiKey ?: config.apiKey,
         projectId = projectId ?: config.projectId,
-        body = TokenRequest(tokenToRegister),
+        body =
+          TokenRequest(
+            token = tokenToRegister,
+            sdkVersion = PushNotifications.VERSION,
+            osVersion = osVersion(),
+            installationId = sharedPref.installationId,
+          ),
       )
     if (data.id.isNotBlank()) {
       sharedPref.subscriberId = data.id
@@ -249,6 +255,8 @@ internal class ApiRepository(
       .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
       .format(java.util.Date())
 
+  private fun osVersion(): String = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+
   /**
    * Fetches the current live notification document (configuration + live data +
    * lifecycle) as raw JSON, used to catch up a subscriber that joined after the
@@ -277,7 +285,7 @@ internal class ApiRepository(
       installationMetadata =
         InstallationMetadata(
           sdkVersion = PushNotifications.VERSION,
-          osVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+          osVersion = osVersion(),
         ),
       endpoint =
         LiveActivityEndpoint(
