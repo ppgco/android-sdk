@@ -14,7 +14,7 @@ progress bar with break indicators.
 
 | Requirement | Notes |
 |---|---|
-| Android 16 (API 36) device | On older devices Live Activity pushes are ignored — check `isLiveActivitiesSupported()` |
+| Android 16 (API 36) device | On older devices Live Activity pushes are ignored — check `liveActivities.isSupported()` |
 | PushNotifications SDK integrated | Push notifications must already work (see the [README](README.md)) |
 | Registered subscriber | Call `subscribe()` / `subscribeNow()` before subscribing to a Live Activity |
 | `POST_NOTIFICATIONS` granted | Standard runtime notification permission |
@@ -35,11 +35,11 @@ notification campaign        (PUT /live-data),                 │
               ▲                                               ProgressStyle notification,
               │                                               reports analytics events
    device subscribes to the live notification  ◄──────────────┘
-   (subscribeToLiveActivity — done by the SDK)
+   (`liveActivities.subscribe` — done by the SDK)
 ```
 
 1. A live notification campaign is created and submitted on the PushPushGo side.
-2. The device **subscribes** to that campaign with `subscribeToLiveActivity(id)`.
+2. The device **subscribes** to that campaign with `liveActivities.subscribe(id)`.
 3. The backend sends `start` / `update` / `end` data pushes; the SDK renders and
    updates the notification. Score and phase changes are **server-side** — the
    app never drives the match state.
@@ -53,10 +53,11 @@ notification campaign        (PUT /live-data),                 │
 
 ```kotlin
 val ppg = PushNotifications.getInstance()
+val liveActivities = ppg.liveActivities
 
 // The device must already be a registered push subscriber.
-if (ppg.isLiveActivitiesSupported()) {
-    ppg.subscribeToLiveActivity("<liveNotificationId>")
+if (liveActivities.isSupported()) {
+    liveActivities.subscribe("<liveNotificationId>")
         .whenComplete { laSubscriberId, error ->
             if (error == null) {
                 // subscribed; laSubscriberId is also persisted by the SDK
@@ -65,11 +66,11 @@ if (ppg.isLiveActivitiesSupported()) {
 }
 
 // Later:
-ppg.unsubscribeFromLiveActivity("<liveNotificationId>")
+liveActivities.unsubscribe("<liveNotificationId>")
 ```
 
-- Both methods return a `CompletableFuture` (`subscribeToLiveActivity` resolves to
-  the backend LA subscriber id; the SDK persists it, so `unsubscribeFromLiveActivity`
+- Both methods return a `CompletableFuture` (`subscribe` resolves to
+  the backend LA subscriber id; the SDK persists it, so `unsubscribe`
   only needs the live notification id).
 - Subscribing to an already running activity renders its current state at once.
 
@@ -83,17 +84,17 @@ override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     // ...
     PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
-    PushNotifications.getInstance().handleLiveActivityClick(intent)
+    PushNotifications.getInstance().liveActivities.handleClick(intent)
 }
 
 override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
-    PushNotifications.getInstance().handleLiveActivityClick(intent)
+    PushNotifications.getInstance().liveActivities.handleClick(intent)
 }
 ```
 
-`handleLiveActivityClick`:
+`liveActivities.handleClick`:
 - reports the click analytics event (notification body and action buttons are
   distinguished automatically),
 - opens the deep link carried by the notification through the SDK's
@@ -103,7 +104,7 @@ override fun onNewIntent(intent: Intent) {
 To handle the link yourself, pass `openDeepLink = false`:
 
 ```kotlin
-val deepLink = PushNotifications.getInstance().handleLiveActivityClick(intent, openDeepLink = false)
+val deepLink = PushNotifications.getInstance().liveActivities.handleClick(intent, openDeepLink = false)
 if (deepLink != null) {
     // custom navigation
 }
@@ -129,14 +130,13 @@ PushNotifications.getInstance().setNotificationClickHandler { context, url, over
 
 | Method | Description |
 |---|---|
-| `isLiveActivitiesSupported(): Boolean` | `true` on API 36+ |
-| `subscribeToLiveActivity(id): CompletableFuture<String>` | Subscribes the device to a live notification, resolves to the LA subscriber id |
-| `unsubscribeFromLiveActivity(id): CompletableFuture<Void?>` | Unsubscribes the device |
-| `getLiveActivitySubscriberId(id): String` | Persisted LA subscriber id (empty if not subscribed) |
-| `getActiveLiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities |
-| `isLiveActivityActive(id): Boolean` | Whether a given activity is currently active |
-| `handleLiveActivityClick(intent, openDeepLink = true): String?` | Click analytics + deep link handling (see above) |
-| `simulateLiveActivityPush(data: Map<String, String>)` | Feeds a push envelope into the rendering pipeline — testing only |
+| `liveActivities.isSupported(): Boolean` | `true` on API 36+ |
+| `liveActivities.subscribe(id): CompletableFuture<String>` | Subscribes the device to a live notification, resolves to the LA subscriber id |
+| `liveActivities.unsubscribe(id): CompletableFuture<Void?>` | Unsubscribes the device |
+| `liveActivities.getSubscriberId(id): String` | Persisted LA subscriber id (empty if not subscribed) |
+| `liveActivities.getActiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities |
+| `liveActivities.isActive(id): Boolean` | Whether a given activity is currently active |
+| `liveActivities.handleClick(intent, openDeepLink = true): String?` | Click analytics + deep link handling (see above) |
 
 All Live Activity APIs are safe to call on any API level; on devices below
 API 36 they degrade gracefully (no rendering).
@@ -189,27 +189,3 @@ The SDK reports Live Activity statistics automatically — no integration needed
 | `clicked` | Tap on the notification body |
 | `clicked_1` / `clicked_2` | Tap on the first / second action button |
 | `closed` | The user dismissed the notification (swipe or `CLOSE` button) |
-
-## Testing without a backend
-
-The firebase sample (`push/sample/firebase`, *Live Activities* screen)
-demonstrates the full integration, including a local simulation mode that drives
-the parse → manage → render pipeline through `simulateLiveActivityPush`:
-
-```kotlin
-PushNotifications.getInstance().simulateLiveActivityPush(
-    mapOf(
-        "type" to "live_notification",
-        "liveNotificationId" to "demo-match-1",
-        "event" to "start", // start | update | end
-        "template" to "FOOTBALL_MATCH_TRACKING",
-        "configuration" to configurationJson, // static config; required on start
-        "liveData" to liveDataJson,           // score / status / statusChangedAt
-        // "hotMessage" to hotMessageJson,    // optional transient message
-    ),
-)
-```
-
-See
-`push/sample/firebase/src/main/java/com/pushpushgo/sdk/sample/push/firebase/activity/LiveActivityDemoActivity.kt`
-for complete envelope examples.

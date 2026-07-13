@@ -11,9 +11,7 @@ import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.mapToDto
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
-import com.pushpushgo.sdk.push.liveactivity.LiveActivityController
-import com.pushpushgo.sdk.push.liveactivity.LiveActivityHandler
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.LiveActivities
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
@@ -135,22 +133,15 @@ class PushNotifications private constructor(
       notificationsEnabled = { areNotificationsEnabled() },
     )
 
-  private val liveActivityController =
-    LiveActivityController(
+  val liveActivities: LiveActivities =
+    LiveActivities(
       application = application,
       scope = sdkScope,
       apiRepository = apiRepository,
-      sharedPref = sharedPreferencesHelper,
+      sharedPreferencesHelper = sharedPreferencesHelper,
       getSubscriberId = { getSubscriberId() },
       notificationClickHandler = { notificationClickHandler },
     )
-
-  internal val liveActivityHandler: LiveActivityHandler?
-    get() = liveActivityController.handler
-
-  init {
-    liveActivityController.restoreFromPersistence()
-  }
 
   init {
     val platformType = getPlatformType()
@@ -482,86 +473,6 @@ class PushNotifications private constructor(
   fun createBeacon(): BeaconBuilder = BeaconBuilder(uploadDelegate)
 
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = DefaultPushSubscriptionProvider(application)
-
-  /**
-   * Checks whether Live Activities are supported on this device.
-   * Requires API 36+ (Android 16) for ProgressStyle notifications.
-   */
-  fun isLiveActivitiesSupported(): Boolean = liveActivityController.isSupported()
-
-  /**
-   * Returns the list of currently active live activities.
-   * Returns empty list on API < 36.
-   */
-  fun getActiveLiveActivities(): List<LiveActivity> = liveActivityController.getActiveActivities()
-
-  /**
-   * Checks whether a specific live activity is currently active.
-   * Returns false on API < 36.
-   */
-  fun isLiveActivityActive(id: String): Boolean = liveActivityController.isActive(id)
-
-  /**
-   * Simulates a Live Activity push for testing purposes. No-op on API < 36.
-   *
-   * Pass a data map matching the Live Activity push payload format.
-   */
-  fun simulateLiveActivityPush(data: Map<String, String>) {
-    liveActivityController.simulatePush(data)
-  }
-
-  /**
-   * Subscribes this device to a backend live notification (Live Activity) so it
-   * starts receiving its push updates.
-   *
-   * The device must already be a registered push subscriber (call [subscribe]
-   * first). The returned future resolves to the backend LA subscriber id, which
-   * is also persisted so [unsubscribeFromLiveActivity] can be called later
-   * without tracking it yourself.
-   *
-   * @param liveNotificationId backend id of the live notification to follow.
-   * @return future with the assigned LA subscriber id.
-   */
-  fun subscribeToLiveActivity(liveNotificationId: String): CompletableFuture<String> =
-    sdkScope.future {
-      liveActivityController.subscribe(liveNotificationId)
-    }
-
-  /**
-   * Unsubscribes this device from a backend live notification it previously
-   * subscribed to via [subscribeToLiveActivity]. Fails if the device is not
-   * subscribed to it.
-   *
-   * @param liveNotificationId backend id of the live notification to leave.
-   */
-  fun unsubscribeFromLiveActivity(liveNotificationId: String): CompletableFuture<Void?> =
-    sdkScope.future {
-      liveActivityController.unsubscribe(liveNotificationId)
-      null
-    }
-
-  /**
-   * Returns the persisted LA subscriber id for a live notification, or empty
-   * string if this device is not subscribed to it.
-   */
-  fun getLiveActivitySubscriberId(liveNotificationId: String): String = liveActivityController.getSubscriberId(liveNotificationId)
-
-  /**
-   * Handles a Live Activity notification click when the app is launched or
-   * resumed from a tap. Call from `Activity.onCreate()` / `Activity.onNewIntent()`
-   * alongside [handleBackgroundNotificationClick].
-   *
-   * Reports the click analytics event and, unless [openDeepLink] is false, opens
-   * the carried deep link through [notificationClickHandler] (same routing as
-   * regular push clicks).
-   *
-   * @return the deep link if this was a Live Activity click, `null` otherwise.
-   */
-  @JvmOverloads
-  fun handleLiveActivityClick(
-    intent: Intent?,
-    openDeepLink: Boolean = true,
-  ): String? = liveActivityController.handleClick(application, intent, openDeepLink)
 }
 
 typealias NotificationClickHandler = (context: Context, url: String, overrideFlags: Int) -> Unit

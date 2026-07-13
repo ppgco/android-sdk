@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
     ppg.handleBackgroundNotificationClick(intent)
-    ppg.handleLiveActivityClick(intent)
+    ppg.liveActivities.handleClick(intent)
 
     findViewById<TextView>(R.id.version).text = PushNotifications.VERSION
 
@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
   override fun onNewIntent(intent: Intent?) {
     super.onNewIntent(intent)
     PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
-    PushNotifications.getInstance().handleLiveActivityClick(intent)
+    PushNotifications.getInstance().liveActivities.handleClick(intent)
   }
 
   override fun onCreateOptionsMenu(menu: Menu): Boolean {

@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Owns the Live Activity subsystem (persistence + manager + push handler) and
- * the subscriber-side operations exposed through [com.pushpushgo.sdk.push.PushNotifications].
+ * the subscriber-side operations exposed through [LiveActivities].
  *
  * Everything here is a no-op on API < 36 (Live Activities require ProgressStyle
  * notifications), which is why [manager]/[handler] are nullable and lazy.

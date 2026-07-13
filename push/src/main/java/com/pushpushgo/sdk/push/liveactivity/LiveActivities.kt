@@ -1,0 +1,112 @@
+package com.pushpushgo.sdk.push.liveactivity
+
+import android.app.Application
+import android.content.Intent
+import androidx.annotation.RestrictTo
+import com.pushpushgo.sdk.push.NotificationClickHandler
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.network.ApiRepository
+import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
+import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.future.future
+
+/**
+ * Entry point for Live Activities functionality.
+ */
+class LiveActivities internal constructor(
+  private val application: Application,
+  private val scope: CoroutineScope,
+  apiRepository: ApiRepository,
+  sharedPreferencesHelper: SharedPreferencesHelper,
+  getSubscriberId: () -> String?,
+  notificationClickHandler: () -> NotificationClickHandler,
+) {
+  private val controller =
+    LiveActivityController(
+      application = application,
+      scope = scope,
+      apiRepository = apiRepository,
+      sharedPref = sharedPreferencesHelper,
+      getSubscriberId = getSubscriberId,
+      notificationClickHandler = notificationClickHandler,
+    )
+
+  internal val handler: LiveActivityHandler?
+    get() = controller.handler
+
+  init {
+    controller.restoreFromPersistence()
+  }
+
+  /** Checks whether Live Activities are supported on this device (API 36+). */
+  fun isSupported(): Boolean = controller.isSupported()
+
+  /**
+   * Returns the currently active Live Activities.
+   * Returns an empty list on API < 36.
+   */
+  fun getActiveActivities(): List<LiveActivity> = controller.getActiveActivities()
+
+  /**
+   * Checks whether a specific Live Activity is currently active.
+   * Returns `false` on API < 36.
+   */
+  fun isActive(id: String): Boolean = controller.isActive(id)
+
+  /**
+   * Simulates a Live Activity push for SDK testing. No-op on API < 36.
+   */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  fun simulatePush(data: Map<String, String>) {
+    controller.simulatePush(data)
+  }
+
+  /**
+   * Subscribes this device to a backend Live Activity.
+   *
+   * The device must already be a registered push subscriber. The returned future
+   * resolves to the backend Live Activity subscriber ID, which is persisted for
+   * later [unsubscribe] calls.
+   *
+   * @param liveNotificationId backend ID of the Live Activity to follow
+   * @return future with the assigned Live Activity subscriber ID
+   */
+  fun subscribe(liveNotificationId: String): CompletableFuture<String> =
+    scope.future {
+      controller.subscribe(liveNotificationId)
+    }
+
+  /**
+   * Unsubscribes this device from a backend Live Activity previously followed via
+   * [subscribe]. Fails if the device is not subscribed to it.
+   *
+   * @param liveNotificationId backend ID of the Live Activity to leave
+   */
+  fun unsubscribe(liveNotificationId: String): CompletableFuture<Void?> =
+    scope.future {
+      controller.unsubscribe(liveNotificationId)
+      null
+    }
+
+  /**
+   * Returns the persisted Live Activity subscriber ID, or an empty string if this
+   * device is not subscribed to it.
+   */
+  fun getSubscriberId(liveNotificationId: String): String = controller.getSubscriberId(liveNotificationId)
+
+  /**
+   * Handles a Live Activity notification click. Call from `Activity.onCreate()` or
+   * `Activity.onNewIntent()` alongside background notification click handling.
+   *
+   * Reports click analytics and, unless [openDeepLink] is `false`, opens the carried
+   * deep link through the configured notification click handler.
+   *
+   * @return the deep link, or `null` if this was not a Live Activity click
+   */
+  @JvmOverloads
+  fun handleClick(
+    intent: Intent?,
+    openDeepLink: Boolean = true,
+  ): String? = controller.handleClick(application, intent, openDeepLink)
+}

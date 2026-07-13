@@ -339,9 +339,10 @@ Real-time, continuously updated notifications (Android 16+ Live Updates), e.g.
 live football match tracking:
 
 ```kotlin
-PushNotifications.getInstance().subscribeToLiveActivity("liveNotificationId")
+val liveActivities = PushNotifications.getInstance().liveActivities
+liveActivities.subscribe("liveNotificationId")
 // ...
-PushNotifications.getInstance().unsubscribeFromLiveActivity("liveNotificationId")
+liveActivities.unsubscribe("liveNotificationId")
 ```
 
 For the full integration guide (clicks, deep links, analytics, rendering

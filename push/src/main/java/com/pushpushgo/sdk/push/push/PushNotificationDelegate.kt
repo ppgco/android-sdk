@@ -59,7 +59,10 @@ internal class PushNotificationDelegate(
       if (!areNotificationsEnabled(context)) {
         return logWarning("Push notifications are disabled by user")
       }
-      PushNotifications.getInstance().liveActivityHandler?.handlePush(pushMessage.data)
+      PushNotifications
+        .getInstance()
+        .liveActivities.handler
+        ?.handlePush(pushMessage.data)
         ?: logWarning("LiveActivityHandler not initialized, ignoring LA push")
       return
     }

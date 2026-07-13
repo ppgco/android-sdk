@@ -23,7 +23,10 @@ class LiveActivityDismissReceiver : BroadcastReceiver() {
     logDebug("LiveActivityDismissReceiver: user dismissed $laId")
 
     if (PushNotifications.isInitialized()) {
-      PushNotifications.getInstance().liveActivityHandler?.handleDismiss(laId)
+      PushNotifications
+        .getInstance()
+        .liveActivities.handler
+        ?.handleDismiss(laId)
     }
   }
 }
