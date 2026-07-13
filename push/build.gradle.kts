@@ -91,6 +91,7 @@ dependencies {
   testImplementation(libs.json)
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.robolectric)
+  testImplementation(libs.androidx.work.testing)
 
   testImplementation(platform(libs.firebase.bom))
   testImplementation(libs.firebase.messaging)

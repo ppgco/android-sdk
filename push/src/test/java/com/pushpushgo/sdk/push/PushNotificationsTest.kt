@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
 import org.junit.Assert.assertEquals
@@ -19,6 +20,7 @@ class PushNotificationsTest {
 
   @Before
   fun setUp() {
+    WorkManagerTestInitHelper.initializeTestWorkManager(getApplicationContext())
     systemUnderTest =
       PushNotifications.initialize(
         application = getApplicationContext(),

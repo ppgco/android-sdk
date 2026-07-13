@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.push.network
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.EventType
@@ -30,6 +31,7 @@ class ApiRepositoryTest {
 
   @Before
   fun setUp() {
+    WorkManagerTestInitHelper.initializeTestWorkManager(getApplicationContext())
     // logDebug() resolves config through the SDK singleton, so it must exist.
     PushNotifications.initialize(getApplicationContext(), config)
     apiService = mockk(relaxed = true)

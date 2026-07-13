@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
-import androidx.work.Configuration
 import androidx.work.WorkManager
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
@@ -108,8 +107,8 @@ class PushNotifications private constructor(
   }
 
   init {
-    if (!WorkManager.isInitialized()) {
-      WorkManager.initialize(application, Configuration.Builder().build())
+    check(WorkManager.isInitialized()) {
+      "WorkManager must be initialized before using PushNotifications SDK"
     }
   }
 

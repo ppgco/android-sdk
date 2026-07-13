@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.push.liveactivity
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchConfiguration
@@ -34,6 +35,7 @@ internal class LiveActivityManagerTest {
 
   @Before
   fun setup() {
+    WorkManagerTestInitHelper.initializeTestWorkManager(getApplicationContext())
     PushNotifications.initialize(
       application = getApplicationContext(),
       config =
