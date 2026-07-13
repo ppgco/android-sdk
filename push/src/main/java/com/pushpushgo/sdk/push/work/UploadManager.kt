@@ -8,7 +8,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.pushpushgo.sdk.push.data.EventType
@@ -21,11 +20,9 @@ import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_CAMPAIGN
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_PROJECT_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_SUBSCRIBER_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_TYPE
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.REGISTER
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_PERIODIC
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.TYPE
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.UNREGISTER
 import java.util.concurrent.TimeUnit
 
 internal class UploadManager(
@@ -33,7 +30,6 @@ internal class UploadManager(
   private val sharedPref: SharedPreferencesHelper,
 ) {
   companion object {
-    private const val UPLOAD_DELAY = 10L
     private const val UPLOAD_RETRY_DELAY = 30L
     private const val TOKEN_SYNC_PERIOD_DAYS = 14L
   }
@@ -46,33 +42,18 @@ internal class UploadManager(
       .setRequiredNetworkType(NetworkType.CONNECTED)
       .build()
 
-  fun sendRegister(token: String?) {
-    logDebug("Register enqueued")
-
-    enqueueJob(REGISTER, isMustRunImmediately = true, data = token)
-    listOf(UNREGISTER).forEach {
-      workManager.cancelUniqueWork(it)
-    }
-  }
-
-  fun sendUnregister() {
-    if (!sharedPref.isSubscribed) {
-      logDebug("Can't unregister, because device not registered. Skipping")
-      return
-    }
-
-    logDebug("Unregister enqueued")
-
-    enqueueJob(UNREGISTER, isMustRunImmediately = true)
-    listOf(REGISTER, SYNC_TOKEN).forEach {
-      workManager.cancelUniqueWork(it)
-    }
-  }
-
   fun syncToken(token: String?) {
     logDebug("Token sync enqueued")
 
-    enqueueJob(SYNC_TOKEN, isMustRunImmediately = true, data = token)
+    workManager.enqueueUniqueWork(
+      SYNC_TOKEN,
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<UploadWorker>()
+        .setInputData(workDataOf(TYPE to SYNC_TOKEN, DATA to token))
+        .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
   }
 
   fun schedulePeriodicTokenSync() {
@@ -126,8 +107,6 @@ internal class UploadManager(
   }
 
   fun cancelAllJobs() {
-    workManager.cancelUniqueWork(REGISTER)
-    workManager.cancelUniqueWork(UNREGISTER)
     workManager.cancelUniqueWork(SYNC_TOKEN)
     workManager.cancelUniqueWork(SYNC_TOKEN_PERIODIC)
   }
@@ -135,31 +114,4 @@ internal class UploadManager(
   fun cancelPeriodicTokenSync() {
     workManager.cancelUniqueWork(SYNC_TOKEN_PERIODIC)
   }
-
-  private fun enqueueJob(
-    name: String,
-    data: String? = null,
-    isMustRunImmediately: Boolean = false,
-  ) {
-    workManager.enqueueUniqueWork(
-      name,
-      if (name == REGISTER || name == SYNC_TOKEN) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP,
-      OneTimeWorkRequestBuilder<UploadWorker>()
-        .setInputData(
-          workDataOf(TYPE to name, DATA to data),
-        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
-        .setInitialDelay(if (isMustRunImmediately || isJobAlreadyEnqueued(name)) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
-        .setConstraints(networkConstraints)
-        .build(),
-    )
-  }
-
-  private fun isJobAlreadyEnqueued(name: String) =
-    try {
-      workManager.getWorkInfosForUniqueWork(name).get().any {
-        it.state == WorkInfo.State.ENQUEUED
-      }
-    } catch (e: InterruptedException) {
-      false
-    }
 }

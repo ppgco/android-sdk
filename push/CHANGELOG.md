@@ -19,9 +19,8 @@
   - `registerSubscriber()`
   - `unregisterSubscriber(...)`
 - Introduced a unified subscription API:
-  - `subscribe()` / `unsubscribe()`
-  - `subscribeNow()` / `unsubscribeNow()` (Kotlin coroutines)
-  - `subscribeNowFuture()` / `unsubscribeNowFuture()` (Java-friendly `CompletableFuture`)
+  - `subscribe()` / `unsubscribe()` (Kotlin coroutines)
+  - `subscribeAsync()` / `unsubscribeAsync()` (Java-friendly `CompletableFuture`)
 
 #### Async API changes
 - **Removed Guava `ListenableFuture` from the public API**.

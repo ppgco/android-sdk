@@ -18,8 +18,6 @@ internal class UploadWorker(
     const val TYPE = "type"
     const val DATA = "data"
 
-    const val REGISTER = "register"
-    const val UNREGISTER = "unregister"
     const val EVENT = "event"
     const val SYNC_TOKEN = "sync_token"
     const val SYNC_TOKEN_PERIODIC = "sync_token_periodic"
@@ -53,9 +51,9 @@ internal class UploadWorker(
               subscriberId = inputData.getString(EVENT_SUBSCRIBER_ID),
             )
 
-          SYNC_TOKEN_PERIODIC -> delegate.doNetworkWork(SYNC_TOKEN, null)
-
-          else -> delegate.doNetworkWork(type, inputData.getString(DATA))
+          SYNC_TOKEN -> delegate.syncToken(inputData.getString(DATA))
+          SYNC_TOKEN_PERIODIC -> delegate.syncToken(null)
+          else -> return@coroutineScope Result.failure()
         }
       } catch (e: Throwable) {
         logError("UploadWorker error", e)
@@ -64,7 +62,7 @@ internal class UploadWorker(
           "Please configure FCM keys and senderIds on your " in e.message.orEmpty() -> Result.failure()
           type == EVENT && !shouldRetry(e, MAX_EVENT_ATTEMPTS) -> Result.failure()
           type in setOf(SYNC_TOKEN, SYNC_TOKEN_PERIODIC) && !shouldRetry(e, MAX_SYNC_TOKEN_ATTEMPTS) -> Result.failure()
-          type in setOf(REGISTER, UNREGISTER, EVENT, SYNC_TOKEN, SYNC_TOKEN_PERIODIC) -> Result.retry()
+          type in setOf(EVENT, SYNC_TOKEN, SYNC_TOKEN_PERIODIC) -> Result.retry()
           else -> Result.failure()
         }
       }

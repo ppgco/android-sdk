@@ -67,12 +67,10 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public final fun setErrorCallback (Lkotlin/jvm/functions/Function1;)V
 	public final fun setInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
 	public final fun setNotificationClickHandler (Lkotlin/jvm/functions/Function3;)V
-	public final fun subscribe ()V
-	public final fun subscribeNow (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun subscribeNowFuture ()Ljava/util/concurrent/CompletableFuture;
-	public final fun unsubscribe ()V
-	public final fun unsubscribeNow (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun unsubscribeNowFuture ()Ljava/util/concurrent/CompletableFuture;
+	public final fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun subscribeAsync ()Ljava/util/concurrent/CompletableFuture;
+	public final fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun unsubscribeAsync ()Ljava/util/concurrent/CompletableFuture;
 }
 
 public final class com/pushpushgo/sdk/push/PushNotifications$Companion {
@@ -416,3 +414,4 @@ public final class com/pushpushgo/sdk/push/subscription/DefaultPushSubscriptionP
 	public fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
+

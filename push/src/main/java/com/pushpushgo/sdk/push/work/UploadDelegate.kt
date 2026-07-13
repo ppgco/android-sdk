@@ -19,20 +19,12 @@ internal class UploadDelegate(
 
   private val errorHandler = CoroutineExceptionHandler { _, e -> logError(e) }
 
-  suspend fun doNetworkWork(
-    type: String?,
-    data: String?,
-  ) {
-    if (PushNotifications.getInstance().getSubscriberId() == null && type != UploadWorker.REGISTER) {
+  suspend fun syncToken(token: String?) {
+    if (PushNotifications.getInstance().getSubscriberId() == null) {
       return logDebug("UploadWorker: skipped. Reason: not subscribed")
     }
 
-    when (type) {
-      UploadWorker.REGISTER -> apiRepository.registerToken(data)
-      UploadWorker.UNREGISTER -> apiRepository.unregisterSubscriber()
-      UploadWorker.SYNC_TOKEN -> apiRepository.updateSubscriberToken(data)
-      else -> logDebug("Unknown upload data type")
-    }
+    apiRepository.updateSubscriberToken(token)
   }
 
   /**

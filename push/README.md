@@ -290,20 +290,18 @@ PushNotifications.getInstance().isSubscribed()
 
 PushNotifications.getInstance().subscribe()
 PushNotifications.getInstance().unsubscribe()
-
-PushNotifications.getInstance().subscribeNow()
-PushNotifications.getInstance().unsubscribeNow()
 ```
+
+From Java, use `subscribeAsync()` and `unsubscribeAsync()`. Both return a
+`CompletableFuture`.
 
 #### Notification permission required
 
 On Android 13 (API 33) and newer, push subscription requires the
 `POST_NOTIFICATIONS` permission to be granted by the user.
 
-If the permission is not granted:
-
-- asynchronous methods (`subscribe`, `unsubscribe`) **log an error and fail**
-- synchronous methods (`subscribeNow`, `unsubscribeNow`) **throw an exception**
+If the permission is not granted, `subscribe()` (and its Java wrapper,
+`subscribeAsync()`) throws an exception.
 
 The application is responsible for requesting the permission before calling
 any subscription methods.

@@ -124,7 +124,6 @@ class PushNotifications private constructor(
 
   private val subscriptionController =
     SubscriptionController(
-      scope = sdkScope,
       mutex = subscriptionMutex,
       apiRepository = apiRepository,
       uploadManager = uploadManager,
@@ -235,68 +234,46 @@ class PushNotifications private constructor(
   /**
    * Subscribes the device to notifications.
    *
-   * This method enqueues the subscription request and returns immediately.
+   * If notifications are disabled or migration is in progress, an [IllegalStateException] is thrown.
    *
-   * If notifications are disabled or migration is in progress, the request is ignored.
+   * @throws IllegalStateException
    */
-  fun subscribe() {
+  suspend fun subscribe() {
     subscriptionController.subscribe()
   }
 
   /**
    * Unsubscribes the device from notifications.
    *
-   * This method enqueues the unsubscription request and returns immediately.
-   *
-   * If migration is in progress, the request is ignored.
+   * If migration is in progress, an [IllegalStateException] is thrown.
    */
-  fun unsubscribe() {
+  suspend fun unsubscribe() {
     subscriptionController.unsubscribe()
   }
 
   /**
-   * Subscribes the device to notifications immediately.
+   * Subscribes the device to notifications asynchronously.
    *
-   * If notifications are disabled or migration is in progress, an [IllegalStateException] is thrown.
-   *
-   * @throws IllegalStateException
-   */
-  suspend fun subscribeNow() {
-    subscriptionController.subscribeNow()
-  }
-
-  /**
-   * Unsubscribes the device from notifications immediately.
-   *
-   * If migration is in progress, an [IllegalStateException] is thrown.
-   */
-  suspend fun unsubscribeNow() {
-    subscriptionController.unsubscribeNow()
-  }
-
-  /**
-   * Subscribes the device to notifications immediately.
-   *
-   * Java-friendly wrapper for [subscribeNow].
+   * Java-friendly wrapper for [subscribe].
    *
    * @returns [CompletableFuture]
    */
-  fun subscribeNowFuture(): CompletableFuture<Void?> =
+  fun subscribeAsync(): CompletableFuture<Void?> =
     sdkScope.future {
-      subscribeNow()
+      subscribe()
       null
     }
 
   /**
-   * Unsubscribes the device from notifications immediately.
+   * Unsubscribes the device from notifications asynchronously.
    *
-   * Java-friendly wrapper for [unsubscribeNow].
+   * Java-friendly wrapper for [unsubscribe].
    *
    * @returns [CompletableFuture]
    */
-  fun unsubscribeNowFuture(): CompletableFuture<Void?> =
+  fun unsubscribeAsync(): CompletableFuture<Void?> =
     sdkScope.future {
-      unsubscribeNow()
+      unsubscribe()
       null
     }
 

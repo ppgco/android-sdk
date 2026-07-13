@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
     findViewById<Button>(R.id.register).setOnClickListener {
       lifecycleScope.launch {
         try {
-          ppg.subscribeNow()
+          ppg.subscribe()
           Toast.makeText(this@MainActivity, "Subscribed!", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
           Toast.makeText(this@MainActivity, "Can't subscribe! ${e.message}", Toast.LENGTH_SHORT).show()
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
     findViewById<Button>(R.id.unregister).setOnClickListener {
       lifecycleScope.launch {
-        ppg.unsubscribeNow()
+        ppg.unsubscribe()
       }
     }
 

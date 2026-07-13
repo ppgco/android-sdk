@@ -16,7 +16,7 @@ progress bar with break indicators.
 |---|---|
 | Android 16 (API 36) device | On older devices Live Activity pushes are ignored — check `liveActivities.isSupported()` |
 | PushNotifications SDK integrated | Push notifications must already work (see the [README](README.md)) |
-| Registered subscriber | Call `subscribe()` / `subscribeNow()` before subscribing to a Live Activity |
+| Registered subscriber | Call `subscribe()` before subscribing to a Live Activity |
 | `POST_NOTIFICATIONS` granted | Standard runtime notification permission |
 | FCM | Live Activity pushes are delivered as FCM data messages |
 

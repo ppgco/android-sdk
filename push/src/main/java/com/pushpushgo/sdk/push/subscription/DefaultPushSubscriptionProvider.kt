@@ -11,13 +11,13 @@ class DefaultPushSubscriptionProvider internal constructor(
 ) : PushSubscriptionProvider {
   override suspend fun subscribe() {
     withContext(Dispatchers.Main) {
-      PushNotifications.getInstance().subscribeNow()
+      PushNotifications.getInstance().subscribe()
     }
   }
 
   override suspend fun unsubscribe() {
     withContext(Dispatchers.Main) {
-      PushNotifications.getInstance().unsubscribeNow()
+      PushNotifications.getInstance().unsubscribe()
     }
   }
 
