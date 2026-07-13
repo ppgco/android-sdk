@@ -71,6 +71,7 @@ class LiveActivities internal constructor(
    * @param liveNotificationId backend ID of the Live Activity to follow
    * @return the assigned Live Activity subscriber ID
    */
+  @JvmSynthetic
   suspend fun subscribe(liveNotificationId: String): String = controller.subscribe(liveNotificationId)
 
   /**
@@ -92,6 +93,7 @@ class LiveActivities internal constructor(
    *
    * @param liveNotificationId backend ID of the Live Activity to leave
    */
+  @JvmSynthetic
   suspend fun unsubscribe(liveNotificationId: String) {
     controller.unsubscribe(liveNotificationId)
   }

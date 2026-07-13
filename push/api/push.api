@@ -67,9 +67,9 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public final fun setErrorCallback (Lkotlin/jvm/functions/Function1;)V
 	public final fun setInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
 	public final fun setNotificationClickHandler (Lkotlin/jvm/functions/Function3;)V
-	public final fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final synthetic fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun subscribeAsync ()Ljava/util/concurrent/CompletableFuture;
-	public final fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final synthetic fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun unsubscribeAsync ()Ljava/util/concurrent/CompletableFuture;
 }
 
@@ -114,9 +114,9 @@ public final class com/pushpushgo/sdk/push/liveactivity/LiveActivities {
 	public final fun isActive (Ljava/lang/String;)Z
 	public final fun isSupported ()Z
 	public final fun simulatePush (Ljava/util/Map;)V
-	public final fun subscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final synthetic fun subscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun subscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
-	public final fun unsubscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final synthetic fun unsubscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun unsubscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
 }
 

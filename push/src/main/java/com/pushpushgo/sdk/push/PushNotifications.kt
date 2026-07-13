@@ -238,6 +238,7 @@ class PushNotifications private constructor(
    *
    * @throws IllegalStateException
    */
+  @JvmSynthetic
   suspend fun subscribe() {
     subscriptionController.subscribe()
   }
@@ -247,6 +248,7 @@ class PushNotifications private constructor(
    *
    * If migration is in progress, an [IllegalStateException] is thrown.
    */
+  @JvmSynthetic
   suspend fun unsubscribe() {
     subscriptionController.unsubscribe()
   }
