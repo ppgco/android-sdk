@@ -30,6 +30,7 @@ internal class UploadDelegate(
     when (type) {
       UploadWorker.REGISTER -> apiRepository.registerToken(data)
       UploadWorker.UNREGISTER -> apiRepository.unregisterSubscriber()
+      UploadWorker.SYNC_TOKEN -> apiRepository.updateSubscriberToken(data)
       else -> logDebug("Unknown upload data type")
     }
   }

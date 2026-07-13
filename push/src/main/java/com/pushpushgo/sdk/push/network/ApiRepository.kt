@@ -16,6 +16,7 @@ import com.pushpushgo.sdk.push.network.data.LiveActivityEventDto
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
 import com.pushpushgo.sdk.push.network.data.TokenRequest
+import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
 import com.pushpushgo.sdk.push.utils.PlatformType
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.utils.getPlatformType
@@ -55,12 +56,56 @@ internal class ApiRepository(
     if (data.id.isNotBlank()) {
       sharedPref.subscriberId = data.id
     }
-    // Persist the token we actually registered so startup reconciliation can
-    // detect drift between the stored token and a freshly rotated platform token.
     if (tokenToRegister.isNotBlank()) {
       sharedPref.lastToken = tokenToRegister
     }
     logDebug("RegisterSubscriber received: $data")
+  }
+
+  suspend fun updateSubscriberToken(token: String?) {
+    logDebug("updateSubscriberToken invoked")
+
+    if (!sharedPref.isSubscribed) {
+      return logDebug("Token update skipped. Reason: not subscribed")
+    }
+
+    val subscriberId = sharedPref.subscriberId
+    if (subscriberId == null) {
+      return logDebug("Token update skipped. Reason: empty subscriberId")
+    }
+
+    val storedToken = sharedPref.lastToken
+    if (storedToken == null) {
+      return logDebug("Token update skipped. Reason: empty stored token")
+    }
+
+    val tokenToUpdate = (token ?: getPlatformPushToken(context)).takeIf { it.isNotBlank() }
+    if (tokenToUpdate == null) {
+      return logDebug("Token update skipped. Reason: empty new token")
+    }
+
+    if (tokenToUpdate == storedToken) {
+      return logDebug("Token update skipped. Reason: token unchanged")
+    }
+
+    apiService.updateSubscriberToken(
+      token = config.apiKey,
+      projectId = config.projectId,
+      subscriberId = subscriberId,
+      body =
+        TokenUpdateRequest(
+          token = tokenToUpdate,
+          sdkVersion = PushNotifications.VERSION,
+          osVersion = osVersion(),
+          installationId = sharedPref.installationId,
+        ),
+    )
+
+    if (!sharedPref.isSubscribed) {
+      return logDebug("Token update skipped. Reason: unsubscribed during update")
+    }
+
+    sharedPref.lastToken = tokenToUpdate
   }
 
   suspend fun unregisterSubscriber() {

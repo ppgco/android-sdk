@@ -11,7 +11,6 @@ class FcmMessagingServiceDelegate(
   private val context: Context,
 ) {
   private val delegate = PushNotifications.getInstance().pushNotificationsDelegate
-  private val preferencesHelper = PushNotifications.getInstance().sharedPreferencesHelper
 
   fun onMessageReceived(remoteMessage: RemoteMessage) {
     logDebug("onMessageReceived(${remoteMessage.data})")
@@ -24,7 +23,6 @@ class FcmMessagingServiceDelegate(
 
   fun onNewToken(token: String) {
     delegate.onNewToken(token)
-    preferencesHelper.lastToken = token
   }
 
   private fun RemoteMessage.toPushMessage() =

@@ -159,6 +159,11 @@ class PushNotifications private constructor(
     println(startupMessage)
 
     createNotificationChannel(application)
+
+    if (sharedPreferencesHelper.isSubscribed) {
+      uploadManager.syncToken(null)
+      uploadManager.schedulePeriodicTokenSync()
+    }
   }
 
   init {

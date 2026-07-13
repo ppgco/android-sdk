@@ -21,7 +21,7 @@ internal class ResponseInterceptor : Interceptor {
 
     val message = parseErrorMessage(response.peekBody(MAX_ERROR_BODY_BYTES).string())
     if (message != null) {
-      throw PushPushException(message)
+      throw PushPushException(message, response.code)
     }
     return response
   }

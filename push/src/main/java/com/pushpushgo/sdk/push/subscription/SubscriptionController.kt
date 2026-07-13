@@ -42,6 +42,7 @@ internal class SubscriptionController(
       guard(throwOnMigration = false) {
         sharedPref.isSubscribed = true
         uploadManager.sendRegister(null)
+        uploadManager.schedulePeriodicTokenSync()
       }
     }
   }
@@ -50,6 +51,7 @@ internal class SubscriptionController(
     scope.launch {
       guard(throwOnMigration = false) {
         uploadManager.sendUnregister()
+        uploadManager.cancelPeriodicTokenSync()
         sharedPref.isSubscribed = false
       }
     }
@@ -64,6 +66,7 @@ internal class SubscriptionController(
       guard(throwOnMigration = true) {
         apiRepository.registerToken(null)
         sharedPref.isSubscribed = true
+        uploadManager.schedulePeriodicTokenSync()
       }
     }
   }
@@ -72,6 +75,7 @@ internal class SubscriptionController(
     withContext(Dispatchers.IO) {
       guard(throwOnMigration = true) {
         apiRepository.unregisterSubscriber()
+        uploadManager.cancelPeriodicTokenSync()
         sharedPref.isSubscribed = false
       }
     }

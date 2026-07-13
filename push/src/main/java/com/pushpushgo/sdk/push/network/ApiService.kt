@@ -7,6 +7,7 @@ import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeResponse
 import com.pushpushgo.sdk.push.network.data.TokenRequest
 import com.pushpushgo.sdk.push.network.data.TokenResponse
+import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
 import com.pushpushgo.sdk.push.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.push.network.interceptor.ResponseInterceptor
 import com.pushpushgo.sdk.push.utils.getPlatformType
@@ -41,6 +42,14 @@ internal interface ApiService {
     @Header("X-Token") token: String,
     @Path("projectId") projectId: String,
     @Path("subscriberId") subscriberId: String,
+  ): Response<Void>
+
+  @PUT("{projectId}/subscriber/{subscriberId}/token")
+  suspend fun updateSubscriberToken(
+    @Header("X-Token") token: String,
+    @Path("projectId") projectId: String,
+    @Path("subscriberId") subscriberId: String,
+    @Body body: TokenUpdateRequest,
   ): Response<Void>
 
   @POST("{projectId}/subscriber/{subscriberId}/beacon")

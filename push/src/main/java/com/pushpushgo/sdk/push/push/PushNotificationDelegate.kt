@@ -122,7 +122,7 @@ internal class PushNotificationDelegate(
     if (!PushNotifications.isInitialized()) return
     if (!PushNotifications.getInstance().areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
 
-    uploadManager.sendRegister(token)
+    uploadManager.syncToken(token)
   }
 
   fun onDestroy() {

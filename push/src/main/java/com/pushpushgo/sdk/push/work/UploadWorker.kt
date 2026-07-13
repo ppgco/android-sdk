@@ -5,6 +5,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.EventType
+import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import kotlinx.coroutines.coroutineScope
@@ -20,6 +21,10 @@ internal class UploadWorker(
     const val REGISTER = "register"
     const val UNREGISTER = "unregister"
     const val EVENT = "event"
+    const val SYNC_TOKEN = "sync_token"
+    const val SYNC_TOKEN_PERIODIC = "sync_token_periodic"
+    private const val MAX_EVENT_ATTEMPTS = 3
+    private const val MAX_SYNC_TOKEN_ATTEMPTS = 3
 
     // EVENT payload keys
     const val EVENT_TYPE = "event_type"
@@ -48,6 +53,8 @@ internal class UploadWorker(
               subscriberId = inputData.getString(EVENT_SUBSCRIBER_ID),
             )
 
+          SYNC_TOKEN_PERIODIC -> delegate.doNetworkWork(SYNC_TOKEN, null)
+
           else -> delegate.doNetworkWork(type, inputData.getString(DATA))
         }
       } catch (e: Throwable) {
@@ -55,7 +62,9 @@ internal class UploadWorker(
 
         return@coroutineScope when {
           "Please configure FCM keys and senderIds on your " in e.message.orEmpty() -> Result.failure()
-          type == REGISTER || type == UNREGISTER || type == EVENT -> Result.retry()
+          type == EVENT && !shouldRetry(e, MAX_EVENT_ATTEMPTS) -> Result.failure()
+          type in setOf(SYNC_TOKEN, SYNC_TOKEN_PERIODIC) && !shouldRetry(e, MAX_SYNC_TOKEN_ATTEMPTS) -> Result.failure()
+          type in setOf(REGISTER, UNREGISTER, EVENT, SYNC_TOKEN, SYNC_TOKEN_PERIODIC) -> Result.retry()
           else -> Result.failure()
         }
       }
@@ -64,4 +73,14 @@ internal class UploadWorker(
 
       Result.success()
     }
+
+  private fun shouldRetry(
+    throwable: Throwable,
+    maxAttempts: Int,
+  ): Boolean {
+    if (runAttemptCount >= maxAttempts - 1) return false
+
+    val statusCode = (throwable as? PushPushException)?.statusCode
+    return statusCode == null || statusCode == 429 || statusCode >= 500
+  }
 }
