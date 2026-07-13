@@ -14,8 +14,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.lifecycleScope
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.sample.push.firebase.R
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import timber.log.Timber
 
@@ -97,28 +99,26 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
 
   private fun subscribe() {
     val id = liveNotificationId()
-    liveActivities.subscribe(id).whenComplete { laSubscriberId, error ->
-      runOnUiThread {
-        if (error != null) {
-          Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.subscribe failed")
-          toast("Subscribe failed: ${error.message}")
-        } else {
-          toast("Subscribed to $id (laSubscriberId=$laSubscriberId)")
-        }
+    lifecycleScope.launch {
+      try {
+        val laSubscriberId = liveActivities.subscribe(id)
+        toast("Subscribed to $id (laSubscriberId=$laSubscriberId)")
+      } catch (error: Exception) {
+        Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.subscribe failed")
+        toast("Subscribe failed: ${error.message}")
       }
     }
   }
 
   private fun unsubscribe() {
     val id = liveNotificationId()
-    liveActivities.unsubscribe(id).whenComplete { _, error ->
-      runOnUiThread {
-        if (error != null) {
-          Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.unsubscribe failed")
-          toast("Unsubscribe failed: ${error.message}")
-        } else {
-          toast("Unsubscribed from $id")
-        }
+    lifecycleScope.launch {
+      try {
+        liveActivities.unsubscribe(id)
+        toast("Unsubscribed from $id")
+      } catch (error: Exception) {
+        Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.unsubscribe failed")
+        toast("Unsubscribe failed: ${error.message}")
       }
     }
   }

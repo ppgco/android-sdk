@@ -7,9 +7,9 @@ import com.pushpushgo.sdk.push.NotificationClickHandler
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
-import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
+import java.util.concurrent.CompletableFuture
 
 /**
  * Entry point for Live Activities functionality.
@@ -65,16 +65,25 @@ class LiveActivities internal constructor(
   /**
    * Subscribes this device to a backend Live Activity.
    *
-   * The device must already be a registered push subscriber. The returned future
-   * resolves to the backend Live Activity subscriber ID, which is persisted for
-   * later [unsubscribe] calls.
+   * The device must already be a registered push subscriber. Returns the backend
+   * Live Activity subscriber ID, which is persisted for later [unsubscribe] calls.
+   *
+   * @param liveNotificationId backend ID of the Live Activity to follow
+   * @return the assigned Live Activity subscriber ID
+   */
+  suspend fun subscribe(liveNotificationId: String): String = controller.subscribe(liveNotificationId)
+
+  /**
+   * Subscribes this device to a backend Live Activity.
+   *
+   * Java-friendly wrapper for [subscribe].
    *
    * @param liveNotificationId backend ID of the Live Activity to follow
    * @return future with the assigned Live Activity subscriber ID
    */
-  fun subscribe(liveNotificationId: String): CompletableFuture<String> =
+  fun subscribeAsync(liveNotificationId: String): CompletableFuture<String> =
     scope.future {
-      controller.subscribe(liveNotificationId)
+      subscribe(liveNotificationId)
     }
 
   /**
@@ -83,9 +92,21 @@ class LiveActivities internal constructor(
    *
    * @param liveNotificationId backend ID of the Live Activity to leave
    */
-  fun unsubscribe(liveNotificationId: String): CompletableFuture<Void?> =
+  suspend fun unsubscribe(liveNotificationId: String) {
+    controller.unsubscribe(liveNotificationId)
+  }
+
+  /**
+   * Unsubscribes this device from a backend Live Activity previously followed via
+   * [subscribe]. Fails if the device is not subscribed to it.
+   *
+   * Java-friendly wrapper for [unsubscribe].
+   *
+   * @param liveNotificationId backend ID of the Live Activity to leave
+   */
+  fun unsubscribeAsync(liveNotificationId: String): CompletableFuture<Void?> =
     scope.future {
-      controller.unsubscribe(liveNotificationId)
+      unsubscribe(liveNotificationId)
       null
     }
 

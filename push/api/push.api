@@ -116,8 +116,10 @@ public final class com/pushpushgo/sdk/push/liveactivity/LiveActivities {
 	public final fun isActive (Ljava/lang/String;)Z
 	public final fun isSupported ()Z
 	public final fun simulatePush (Ljava/util/Map;)V
-	public final fun subscribe (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
-	public final fun unsubscribe (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public final fun subscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun subscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
+	public final fun unsubscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun unsubscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
 }
 
 public final class com/pushpushgo/sdk/push/liveactivity/LiveActivityDismissReceiver : android/content/BroadcastReceiver {

@@ -57,21 +57,18 @@ val liveActivities = ppg.liveActivities
 
 // The device must already be a registered push subscriber.
 if (liveActivities.isSupported()) {
-    liveActivities.subscribe("<liveNotificationId>")
-        .whenComplete { laSubscriberId, error ->
-            if (error == null) {
-                // subscribed; laSubscriberId is also persisted by the SDK
-            }
-        }
+    val laSubscriberId = liveActivities.subscribe("<liveNotificationId>")
+    // subscribed; laSubscriberId is also persisted by the SDK
 }
 
 // Later:
 liveActivities.unsubscribe("<liveNotificationId>")
 ```
 
-- Both methods return a `CompletableFuture` (`subscribe` resolves to
-  the backend LA subscriber id; the SDK persists it, so `unsubscribe`
-  only needs the live notification id).
+- Both methods are suspending (`subscribe` returns the backend LA subscriber id;
+  the SDK persists it, so `unsubscribe` only needs the live notification id).
+  Java callers can use `subscribeAsync` and `unsubscribeAsync`, which return a
+  `CompletableFuture`.
 - Subscribing to an already running activity renders its current state at once.
 
 ### 2. Handle clicks
@@ -131,8 +128,10 @@ PushNotifications.getInstance().setNotificationClickHandler { context, url, over
 | Method | Description |
 |---|---|
 | `liveActivities.isSupported(): Boolean` | `true` on API 36+ |
-| `liveActivities.subscribe(id): CompletableFuture<String>` | Subscribes the device to a live notification, resolves to the LA subscriber id |
-| `liveActivities.unsubscribe(id): CompletableFuture<Void?>` | Unsubscribes the device |
+| `liveActivities.subscribe(id): String` | Suspends while subscribing the device and returns the LA subscriber id |
+| `liveActivities.subscribeAsync(id): CompletableFuture<String>` | Java-friendly asynchronous subscription wrapper |
+| `liveActivities.unsubscribe(id): Unit` | Suspends while unsubscribing the device |
+| `liveActivities.unsubscribeAsync(id): CompletableFuture<Void?>` | Java-friendly asynchronous unsubscription wrapper |
 | `liveActivities.getSubscriberId(id): String` | Persisted LA subscriber id (empty if not subscribed) |
 | `liveActivities.getActiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities |
 | `liveActivities.isActive(id): Boolean` | Whether a given activity is currently active |
