@@ -10,7 +10,7 @@ import com.pushpushgo.sdk.push.utils.logDebug
 class HmsMessagingServiceDelegate(
   private val context: Context,
 ) {
-  private val delegate = PushNotifications.getInstance().pushNotificationsDelegate
+  private val delegate = PushNotifications.pushNotificationsDelegate
 
   fun onMessageReceived(remoteMessage: RemoteMessage) {
     logDebug("onMessageReceived(${remoteMessage.data})")

@@ -34,8 +34,7 @@ import timber.log.Timber
  * pushes and the buttons only update the local status readout.
  */
 class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activity) {
-  private val ppg by lazy { PushNotifications.getInstance() }
-  private val liveActivities by lazy { ppg.liveActivities }
+  private val liveActivities by lazy { PushNotifications.liveActivities }
 
   // Local mirror of the match state so the buttons can evolve it over time.
   private var homeScore = 0
@@ -150,8 +149,8 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
         "liveNotificationId" to liveNotificationId(),
         "event" to event,
         "template" to "FOOTBALL_MATCH_TRACKING",
-        "project" to ppg.getProjectId(),
-        "subscriber" to ppg.getSubscriberId().orEmpty(),
+        "project" to PushNotifications.getProjectId(),
+        "subscriber" to PushNotifications.getSubscriberId().orEmpty(),
         "liveData" to liveDataJson(),
       )
     if (includeConfiguration) envelope["configuration"] = CONFIGURATION_JSON

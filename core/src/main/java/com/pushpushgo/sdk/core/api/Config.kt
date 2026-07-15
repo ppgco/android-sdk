@@ -36,4 +36,22 @@ class Config private constructor(
       "Invalid API key format"
     }
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Config) return false
+
+    return projectId == other.projectId &&
+      apiKey == other.apiKey &&
+      apiUrl == other.apiUrl &&
+      isDebug == other.isDebug
+  }
+
+  override fun hashCode(): Int {
+    var result = projectId.hashCode()
+    result = 31 * result + apiKey.hashCode()
+    result = 31 * result + apiUrl.hashCode()
+    result = 31 * result + isDebug.hashCode()
+    return result
+  }
 }

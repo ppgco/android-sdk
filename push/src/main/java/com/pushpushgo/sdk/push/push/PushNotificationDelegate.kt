@@ -59,23 +59,21 @@ internal class PushNotificationDelegate(
       if (!areNotificationsEnabled(context)) {
         return logWarning("Push notifications are disabled by user")
       }
-      PushNotifications
-        .getInstance()
-        .liveActivities.handler
+      PushNotifications.liveActivities.handler
         ?.handlePush(pushMessage.data)
         ?: logWarning("LiveActivityHandler not initialized, ignoring LA push")
       return
     }
 
-    if (!PushNotifications.getInstance().isPushPushGoNotification(pushMessage.data)) {
+    if (!PushNotifications.isPushPushGoNotification(pushMessage.data)) {
       return logWarning("Push is not from PPGo")
     }
 
     val pushProjectId = pushMessage.data["project"].orEmpty()
     val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
-    val initializedProjectId = PushNotifications.getInstance().getProjectId()
+    val initializedProjectId = PushNotifications.getProjectId()
     if (pushProjectId != initializedProjectId) {
-      PushNotifications.getInstance().invalidProjectIdHandler(pushProjectId, pushSubscriberId, initializedProjectId)
+      PushNotifications.invalidProjectIdHandler(pushProjectId, pushSubscriberId, initializedProjectId)
     } else {
       processPushMessage(pushMessage, context)
     }
@@ -123,7 +121,7 @@ internal class PushNotificationDelegate(
   fun onNewToken(token: String) {
     logDebug("Refreshed token: $token")
     if (!PushNotifications.isInitialized()) return
-    if (!PushNotifications.getInstance().areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
+    if (!PushNotifications.areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
 
     uploadManager.syncToken(token)
   }
@@ -184,7 +182,7 @@ internal class PushNotificationDelegate(
     return createNotification(
       id = notificationId,
       context = context,
-      projectId = PushNotifications.getInstance().getProjectId(),
+      projectId = PushNotifications.getProjectId(),
       subscriberId = remoteMessage.data["subscriber"].orEmpty(),
       title = title?.ifBlank { null } ?: context.getString(R.string.app_name),
       content = content,
@@ -401,7 +399,7 @@ internal class PushNotificationDelegate(
       logDebug("launcher intenet flags before override: $flags")
 
       if (PushNotifications.isInitialized()) {
-        val customFlags = PushNotifications.getInstance().customClickIntentFlags
+        val customFlags = PushNotifications.customClickIntentFlags
         logDebug("launcher intent flags restored: $customFlags")
         if (customFlags > 0) {
           flags = customFlags

@@ -14,8 +14,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
-  private val ppg by lazy { PushNotifications.getInstance() }
-
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
@@ -38,7 +36,7 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
     )
 
     findViewById<Button>(R.id.beacon1).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .set("see_invoice", true)
         .setCustomId("SEEI")
@@ -46,7 +44,7 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
     }
 
     findViewById<Button>(R.id.beacon2).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .set("basket_price", 299)
         .setCustomId("BP299")
@@ -54,7 +52,7 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
     }
 
     findViewById<Button>(R.id.beacon3).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .set("basket_price", 301)
         .setCustomId("BP301")
@@ -62,7 +60,7 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
     }
 
     findViewById<Button>(R.id.beacon4).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .appendTag("demo")
         .appendTag("${Build.MANUFACTURER} ${Build.MODEL}", "phone_model")
@@ -71,7 +69,7 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
     }
 
     findViewById<Button>(R.id.beacon5).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .removeTag("desktop", "test")
         .setCustomId("RTAGS")
@@ -79,28 +77,28 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
     }
 
     findViewById<Button>(R.id.beacon6).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .setCustomId("TEST1")
         .send()
     }
 
     findViewById<Button>(R.id.beacon7).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .assignToGroup("test-group-123")
         .send()
     }
 
     findViewById<Button>(R.id.beacon8).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .unassignFromGroup("test-group-123")
         .send()
     }
 
     findViewById<Button>(R.id.beacon9).setOnClickListener {
-      ppg
+      PushNotifications
         .createBeacon()
         .assignToGroup("group-to-join")
         .unassignFromGroup("group-to-leave")

@@ -8,6 +8,8 @@ import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -124,5 +126,41 @@ class PushNotificationsTest {
   @Test
   fun `get notification data mapping from invalid map`() {
     assertEquals(null, systemUnderTest.getNotificationDetails(mapOf("adsasfdafdf" to "")))
+  }
+
+  @Test
+  fun `initialize with the same config is a no-op`() {
+    val initializedAgain =
+      PushNotifications.initialize(
+        application = getApplicationContext(),
+        config =
+          Config.create(
+            projectId = "hm93nzyt5bmczmtjeghy2aph",
+            apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
+          ),
+      )
+
+    assertSame(systemUnderTest, initializedAgain)
+  }
+
+  @Test
+  fun `initialize with a different config requires deactivation`() {
+    val exception =
+      assertThrows(IllegalStateException::class.java) {
+        PushNotifications.initialize(
+          application = getApplicationContext(),
+          config =
+            Config.create(
+              projectId = "hm93nzyt5bmczmtjeghy2aaa",
+              apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
+            ),
+        )
+      }
+
+    assertEquals(
+      "PushNotifications SDK is already initialized with a different configuration. " +
+        "Call PushNotifications.deactivate() before initializing it again.",
+      exception.message,
+    )
   }
 }

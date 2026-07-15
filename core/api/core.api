@@ -4,9 +4,11 @@ public final class com/pushpushgo/sdk/core/api/Config {
 	public static final fun create (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
 	public static final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
 	public static final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/pushpushgo/sdk/core/api/Config;
+	public fun equals (Ljava/lang/Object;)Z
 	public final fun getApiKey ()Ljava/lang/String;
 	public final fun getApiUrl ()Ljava/lang/String;
 	public final fun getProjectId ()Ljava/lang/String;
+	public fun hashCode ()I
 	public static final fun isApiKeyFormatValid (Ljava/lang/String;)Z
 	public final fun isDebug ()Z
 	public static final fun isProjectIdFormatValid (Ljava/lang/String;)Z

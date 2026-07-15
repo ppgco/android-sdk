@@ -32,7 +32,7 @@ internal class UploadWorker(
     const val EVENT_SUBSCRIBER_ID = "event_subscriber_id"
   }
 
-  private val delegate = PushNotifications.getInstance().uploadDelegate
+  private val delegate = PushNotifications.uploadDelegate
 
   override suspend fun doWork(): Result =
     coroutineScope {

@@ -20,7 +20,7 @@ internal class UploadDelegate(
   private val errorHandler = CoroutineExceptionHandler { _, e -> logError(e) }
 
   suspend fun syncToken(token: String?) {
-    if (PushNotifications.getInstance().getSubscriberId() == null) {
+    if (PushNotifications.getSubscriberId() == null) {
       return logDebug("UploadWorker: skipped. Reason: not subscribed")
     }
 
@@ -50,7 +50,7 @@ internal class UploadDelegate(
   }
 
   fun sendBeacon(beacon: JSONObject) {
-    if (PushNotifications.getInstance().getSubscriberId() == null) {
+    if (PushNotifications.getSubscriberId() == null) {
       logDebug("Beacon not sent. Reason: not subscribed")
       return
     }

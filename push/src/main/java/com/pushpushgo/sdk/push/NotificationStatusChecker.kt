@@ -43,12 +43,12 @@ internal class NotificationStatusChecker(
     if (areNotificationsEnabled(context) && sharedPreferencesHelper.isSubscribed) {
       if (sharedPreferencesHelper.subscriberId == null) {
         logDebug("Notifications enabled, but not subscribed. Registering token...")
-        PushNotifications.getInstance().subscribe()
+        PushNotifications.subscribe()
       }
     } else {
       if (sharedPreferencesHelper.subscriberId != null) {
         logDebug("Notifications disabled, but subscribed. Unregistering subscriber...")
-        PushNotifications.getInstance().unsubscribe()
+        PushNotifications.unsubscribe()
       }
     }
   }

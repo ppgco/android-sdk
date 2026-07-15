@@ -19,20 +19,18 @@ import com.pushpushgo.sdk.sample.push.hms.R
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-  private val ppg by lazy { PushNotifications.getInstance() }
-
   @SuppressLint("SetTextI18n")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
-    ppg.handleBackgroundNotificationClick(intent)
+    PushNotifications.handleBackgroundNotificationClick(intent)
 
     findViewById<TextView>(R.id.version).text = PushNotifications.VERSION
 
     findViewById<Button>(R.id.register).setOnClickListener {
       lifecycleScope.launch {
         try {
-          ppg.subscribe()
+          PushNotifications.subscribe()
           Toast.makeText(this@MainActivity, "Subscribed!", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
           Toast.makeText(this@MainActivity, "Can't subscribe! ${e.message}", Toast.LENGTH_SHORT).show()
@@ -42,13 +40,13 @@ class MainActivity : AppCompatActivity() {
 
     findViewById<Button>(R.id.unregister).setOnClickListener {
       lifecycleScope.launch {
-        ppg.unsubscribe()
+        PushNotifications.unsubscribe()
       }
     }
 
     findViewById<Button>(R.id.check).setOnClickListener {
       findViewById<TextView>(R.id.content).text =
-        "Status: " + (if (PushNotifications.getInstance().isSubscribed()) "subscribed" else "unsubscribed")
+        "Status: " + (if (PushNotifications.isSubscribed()) "subscribed" else "unsubscribed")
     }
 
     findViewById<Button>(R.id.beacons).setOnClickListener {
@@ -58,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
   override fun onNewIntent(intent: Intent?) {
     super.onNewIntent(intent)
-    PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+    PushNotifications.handleBackgroundNotificationClick(intent)
   }
 
   override fun onCreateOptionsMenu(menu: Menu): Boolean {

@@ -50,7 +50,7 @@ internal class SharedPreferencesHelper(
     get() =
       sharedPreferences.getBoolean(
         IS_SUBSCRIBED,
-        PushNotifications.isInitialized().takeIf { it }?.let { PushNotifications.getInstance().defaultIsSubscribed } ?: false,
+        PushNotifications.isInitialized().takeIf { it }?.let { PushNotifications.defaultIsSubscribed } ?: false,
       )
     set(value) {
       sharedPreferences.edit { putBoolean(IS_SUBSCRIBED, value) }
