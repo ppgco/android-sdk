@@ -7,14 +7,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicBoolean
 
 internal class SubscriptionController(
   private val mutex: Mutex,
   private val apiRepository: ApiRepository,
   private val uploadManager: UploadManager,
   private val sharedPref: SharedPreferencesHelper,
-  private val isMigrating: AtomicBoolean,
   private val notificationsEnabled: () -> Boolean,
 ) {
   suspend fun subscribe() {
@@ -23,7 +21,7 @@ internal class SubscriptionController(
     }
 
     withContext(Dispatchers.IO) {
-      guard {
+      mutex.withLock {
         apiRepository.registerToken(null)
         sharedPref.isSubscribed = true
         uploadManager.schedulePeriodicTokenSync()
@@ -33,18 +31,11 @@ internal class SubscriptionController(
 
   suspend fun unsubscribe() {
     withContext(Dispatchers.IO) {
-      guard {
+      mutex.withLock {
         apiRepository.unregisterSubscriber()
         uploadManager.cancelPeriodicTokenSync()
         sharedPref.isSubscribed = false
       }
-    }
-  }
-
-  private suspend fun guard(block: suspend () -> Unit) {
-    mutex.withLock {
-      check(!isMigrating.get()) { "Migration in progress" }
-      block()
     }
   }
 }

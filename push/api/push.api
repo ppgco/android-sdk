@@ -61,7 +61,6 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public final fun isPushPushGoNotification (Landroid/content/Intent;)Z
 	public final fun isPushPushGoNotification (Ljava/util/Map;)Z
 	public final fun isSubscribed ()Z
-	public final fun migrateToNewProject (Ljava/lang/String;Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
 	public final fun setCustomClickIntentFlags (I)V
 	public final fun setDefaultIsSubscribed (Z)V
 	public final fun setErrorCallback (Lkotlin/jvm/functions/Function1;)V

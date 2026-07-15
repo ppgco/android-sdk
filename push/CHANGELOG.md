@@ -37,10 +37,6 @@
   - `setNotificationHandler(...)` → `setNotificationClickHandler(...)`
   - `setOnInvalidProjectIdHandler(...)` → `setInvalidProjectIdHandler(...)`
 
-#### Project migration API
-- Replaced `migrateToNewProject(...)` with `migrateToNewProjectNow(...)`
-- Migration now happens in-place and no longer returns a new SDK instance.
-
 #### Beacon
 - Selector assignment is now explicit and type-specific:
   - `set(key, String)`

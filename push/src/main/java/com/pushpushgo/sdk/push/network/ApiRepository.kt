@@ -9,7 +9,6 @@ import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.Event
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.Payload
-import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.data.InstallationMetadata
 import com.pushpushgo.sdk.push.network.data.LiveActivityEndpoint
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventDto
@@ -31,11 +30,7 @@ internal class ApiRepository(
   private val sharedPref: SharedPreferencesHelper,
   private val config: Config,
 ) {
-  suspend fun registerToken(
-    token: String?,
-    apiKey: String? = null,
-    projectId: String? = null,
-  ) {
+  suspend fun registerToken(token: String?) {
     logDebug("registerToken invoked: $token")
     val tokenToRegister = token ?: sharedPref.lastToken ?: getPlatformPushToken(context)
 
@@ -43,8 +38,8 @@ internal class ApiRepository(
 
     val data =
       apiService.registerSubscriber(
-        token = apiKey ?: config.apiKey,
-        projectId = projectId ?: config.projectId,
+        token = config.apiKey,
+        projectId = config.projectId,
         body =
           TokenRequest(
             token = tokenToRegister,
@@ -124,60 +119,6 @@ internal class ApiRepository(
       subscriberId = subscriberId,
     )
     sharedPref.subscriberId = ""
-  }
-
-  private suspend fun unregisterSubscriber(
-    projectId: String,
-    token: String,
-    subscriberId: String,
-  ) {
-    try {
-      apiService.unregisterSubscriber(
-        token = token,
-        projectId = projectId,
-        subscriberId = subscriberId,
-      )
-    } catch (e: PushPushException) {
-      when (e.message.orEmpty()) {
-        "Cannot perform operation on inactive subscriber",
-        "Subscriber not belongs to given project",
-        "Not Found",
-        "Subscriber not found",
-        -> logError(e)
-
-        else -> throw e
-      }
-    }
-  }
-
-  suspend fun migrateSubscriber(
-    newProjectId: String,
-    newApiKey: String,
-  ) {
-    logDebug("migrateSubscriber($newProjectId, $newApiKey) invoked")
-
-    if (newProjectId.isBlank() || newApiKey.isBlank()) {
-      return logDebug("Empty new project info!")
-    }
-
-    val subscriberId = sharedPref.subscriberId
-
-    if (subscriberId == null) {
-      logError("Cannot migrate - empty subscriberId")
-      return
-    }
-
-    unregisterSubscriber(
-      token = config.apiKey,
-      projectId = config.projectId,
-      subscriberId = subscriberId,
-    )
-
-    registerToken(
-      token = null,
-      apiKey = newApiKey,
-      projectId = newProjectId,
-    )
   }
 
   suspend fun sendBeacon(beacon: String) {

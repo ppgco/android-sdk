@@ -30,12 +30,9 @@ import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
 
 class PushNotifications private constructor(
   private val application: Application,
@@ -92,16 +89,6 @@ class PushNotifications private constructor(
       INSTANCE ?: synchronized(this) {
         INSTANCE ?: PushNotifications(application, config).also { INSTANCE = it }
       }
-
-    @JvmStatic
-    private fun reinitialize(
-      application: Application,
-      config: Config,
-    ): PushNotifications {
-      INSTANCE = PushNotifications(application, config)
-
-      return INSTANCE as PushNotifications
-    }
   }
 
   init {
@@ -112,8 +99,6 @@ class PushNotifications private constructor(
 
   private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private val subscriptionMutex = Mutex()
-
-  internal val isMigrating: AtomicBoolean = AtomicBoolean(false)
 
   internal val sharedPreferencesHelper = SharedPreferencesHelper(application)
   private val apiService = ApiService.fromConfig(config)
@@ -128,7 +113,6 @@ class PushNotifications private constructor(
       apiRepository = apiRepository,
       uploadManager = uploadManager,
       sharedPref = sharedPreferencesHelper,
-      isMigrating = isMigrating,
       notificationsEnabled = { areNotificationsEnabled() },
     )
 
@@ -234,7 +218,7 @@ class PushNotifications private constructor(
   /**
    * Subscribes the device to notifications.
    *
-   * If notifications are disabled or migration is in progress, an [IllegalStateException] is thrown.
+   * If notifications are disabled, an [IllegalStateException] is thrown.
    *
    * @throws IllegalStateException
    */
@@ -245,8 +229,6 @@ class PushNotifications private constructor(
 
   /**
    * Unsubscribes the device from notifications.
-   *
-   * If migration is in progress, an [IllegalStateException] is thrown.
    */
   @JvmSynthetic
   suspend fun unsubscribe() {
@@ -278,90 +260,6 @@ class PushNotifications private constructor(
       unsubscribe()
       null
     }
-
-  /**
-   * Migrates the current subscriber to a different project.
-   *
-   * This method:
-   * - unregisters the subscriber in the old project
-   * - registers the subscriber in the new project
-   * - initializes the SDK with the new project
-   *
-   * During migration, subscription operations are blocked.
-   *
-   * WARNING: after migration use the object returned by this function
-   * instead of the previous one.
-   *
-   * @param newProjectId project id to which we are switching
-   * @param newApiKey project api key
-   *
-   * @return [CompletableFuture] with the new [PushNotifications] instance
-   *
-   * @throws IllegalStateException if notifications are disabled or migration is in progress.
-   */
-  fun migrateToNewProject(
-    newProjectId: String,
-    newApiKey: String,
-  ): CompletableFuture<PushNotifications> {
-    require(Config.isProjectIdFormatValid(newProjectId)) {
-      "Invalid project ID format"
-    }
-
-    require(Config.isApiKeyFormatValid(newApiKey)) {
-      "Invalid API key format"
-    }
-
-    check(areNotificationsEnabled()) {
-      "Notifications disabled! Subscriber registration canceled"
-    }
-
-    check(isMigrating.compareAndSet(false, true)) {
-      "Migration is already in progress"
-    }
-
-    // Captured so we can tear down this (soon-to-be-abandoned) instance's
-    // background loops once migration succeeds. Cancelling from inside the
-    // future would cancel the migration coroutine itself (it runs on sdkScope).
-    val previousScope = sdkScope
-
-    return sdkScope
-      .future {
-        try {
-          subscriptionMutex.withLock {
-            uploadManager.cancelAllJobs()
-
-            apiRepository.migrateSubscriber(
-              newProjectId = newProjectId,
-              newApiKey = newApiKey,
-            )
-
-            reinitialize(
-              application = application,
-              config =
-                Config.create(
-                  projectId = newProjectId,
-                  apiKey = newApiKey,
-                  isDebug = config.isDebug,
-                  apiUrl = config.apiUrl,
-                ),
-            ).apply {
-              notificationClickHandler = this@PushNotifications.notificationClickHandler
-              invalidProjectIdHandler = this@PushNotifications.invalidProjectIdHandler
-              defaultIsSubscribed = this@PushNotifications.defaultIsSubscribed
-            }
-          }
-        } finally {
-          isMigrating.set(false)
-        }
-      }.whenComplete { _, throwable ->
-        // On success the old instance is replaced and abandoned, so cancel its
-        // NotificationStatusChecker poll loop and any Live Activity tickers.
-        // On failure the old instance stays current — leave it running.
-        if (throwable == null) {
-          previousScope.cancel()
-        }
-      }
-  }
 
   /**
    * Checks whether the given notification intent belongs to PushPushGo.

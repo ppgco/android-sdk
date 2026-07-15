@@ -11,7 +11,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.atomic.AtomicBoolean
 
 @RunWith(AndroidJUnit4::class)
 @org.robolectric.annotation.Config(sdk = [33])
@@ -19,7 +18,6 @@ class SubscriptionControllerTest {
   private val apiRepository = mockk<ApiRepository>(relaxed = true)
   private val uploadManager = mockk<UploadManager>(relaxed = true)
   private val sharedPref = mockk<SharedPreferencesHelper>(relaxed = true)
-  private val isMigrating = AtomicBoolean(false)
 
   private fun controller(notificationsEnabled: Boolean = true) =
     SubscriptionController(
@@ -27,7 +25,6 @@ class SubscriptionControllerTest {
       apiRepository = apiRepository,
       uploadManager = uploadManager,
       sharedPref = sharedPref,
-      isMigrating = isMigrating,
       notificationsEnabled = { notificationsEnabled },
     )
 
@@ -41,13 +38,6 @@ class SubscriptionControllerTest {
         sharedPref.isSubscribed = true
         uploadManager.schedulePeriodicTokenSync()
       }
-    }
-
-  @Test(expected = IllegalStateException::class)
-  fun `subscribe throws while migrating`() =
-    runBlocking {
-      isMigrating.set(true)
-      controller().subscribe()
     }
 
   @Test(expected = IllegalStateException::class)

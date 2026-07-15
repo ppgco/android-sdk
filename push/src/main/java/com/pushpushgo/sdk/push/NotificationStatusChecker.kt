@@ -25,7 +25,7 @@ internal class NotificationStatusChecker(
   fun start() {
     sdkScope.launch {
       while (true) {
-        if (isAppOnForeground() && !isMigrating()) {
+        if (isAppOnForeground()) {
           checkNotificationsStatus()
         }
 
@@ -33,8 +33,6 @@ internal class NotificationStatusChecker(
       }
     }
   }
-
-  private fun isMigrating(): Boolean = PushNotifications.getInstance().isMigrating.get()
 
   private fun isAppOnForeground(): Boolean =
     activityManager?.runningAppProcesses.orEmpty().any {
