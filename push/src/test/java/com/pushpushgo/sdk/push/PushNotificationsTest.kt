@@ -144,7 +144,7 @@ class PushNotificationsTest {
   }
 
   @Test
-  fun `initialize with a different config requires deactivation`() {
+  fun `initialize with a different config requires deinitialization`() {
     val exception =
       assertThrows(IllegalStateException::class.java) {
         PushNotifications.initialize(
@@ -159,7 +159,7 @@ class PushNotificationsTest {
 
     assertEquals(
       "PushNotifications SDK is already initialized with a different configuration. " +
-        "Call PushNotifications.deactivate() before initializing it again.",
+        "Call PushNotifications.deinitialize() before initializing it again.",
       exception.message,
     )
   }

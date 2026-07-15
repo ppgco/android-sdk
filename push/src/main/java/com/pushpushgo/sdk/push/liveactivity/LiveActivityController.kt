@@ -27,12 +27,10 @@ internal class LiveActivityController(
   private val getSubscriberId: () -> String?,
   private val notificationClickHandler: () -> NotificationClickHandler,
 ) {
-  private val persistence: LiveActivityPersistence? by lazy {
-    if (Build.VERSION.SDK_INT >= 36) LiveActivityPersistence(application) else null
-  }
+  private val persistence: LiveActivityPersistence by lazy { LiveActivityPersistence(application) }
 
   private val manager: LiveActivityManager? by lazy {
-    persistence?.let { LiveActivityManager(it) }
+    if (Build.VERSION.SDK_INT >= 36) LiveActivityManager(persistence) else null
   }
 
   val handler: LiveActivityHandler? by lazy {
@@ -75,6 +73,10 @@ internal class LiveActivityController(
     if (Build.VERSION.SDK_INT >= 36) {
       manager?.restoreFromPersistence()
     }
+  }
+
+  fun clearProjectData() {
+    persistence.clearAll()
   }
 
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36

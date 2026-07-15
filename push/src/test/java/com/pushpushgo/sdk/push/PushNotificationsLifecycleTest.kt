@@ -1,0 +1,196 @@
+package com.pushpushgo.sdk.push
+
+import androidx.test.core.app.ApplicationProvider.getApplicationContext
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.work.testing.WorkManagerTestInitHelper
+import com.pushpushgo.sdk.core.api.Config
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
+import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.push.network.data.TokenResponse
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import retrofit2.Response
+import java.io.IOException
+
+@RunWith(AndroidJUnit4::class)
+@org.robolectric.annotation.Config(sdk = [33])
+class PushNotificationsLifecycleTest {
+  private val application by lazy { getApplicationContext<android.app.Application>() }
+  private val config =
+    Config.create(
+      projectId = "hm93nzyt5bmczmtjeghy2aph",
+      apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
+    )
+
+  private lateinit var apiService: ApiService
+  private lateinit var preferences: SharedPreferencesHelper
+
+  @Before
+  fun setUp() {
+    WorkManagerTestInitHelper.initializeTestWorkManager(application)
+    preferences = SharedPreferencesHelper(application)
+    preferences.clearProjectData()
+    LiveActivityPersistence(application).clearAll()
+
+    apiService = mockk(relaxed = true)
+    mockkObject(ApiService.Companion)
+    every { ApiService.fromConfig(any()) } returns apiService
+    coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
+    coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "sub-new")
+
+    PushNotifications.initialize(application, config)
+  }
+
+  @After
+  fun tearDown() {
+    if (PushNotifications.isInitialized()) {
+      PushNotifications.sharedPreferencesHelper.isSubscribed = false
+      runBlocking { PushNotifications.deinitialize() }
+    }
+    unmockkObject(ApiService.Companion)
+  }
+
+  @Test
+  fun `deinitialize unsubscribes clears project data and releases runtime`() =
+    runBlocking {
+      preferences.subscriberId = "sub-123"
+      preferences.lastToken = "token-123"
+      preferences.isSubscribed = true
+      preferences.customIntentFlags = 17
+      val installationId = preferences.installationId
+      preferences.setLiveActivitySubscriberId("live-1", "live-sub-1")
+      preferences.setNotificationId("notification-1", 51)
+      LiveActivityPersistence(application).addActiveId("live-1")
+
+      PushNotifications.deinitialize()
+
+      coVerify(exactly = 1) { apiService.unregisterSubscriber(any(), config.projectId, "sub-123") }
+      assertFalse(PushNotifications.isInitialized())
+
+      assertNull(preferences.subscriberId)
+      assertNull(preferences.lastToken)
+      assertFalse(preferences.isSubscribed)
+      assertEquals("", preferences.getLiveActivitySubscriberId("live-1"))
+      assertEquals(-1, preferences.getNotificationId("notification-1"))
+      assertEquals(17, preferences.customIntentFlags)
+      assertEquals(installationId, preferences.installationId)
+      assertTrue(LiveActivityPersistence(application).getActiveIds().isEmpty())
+    }
+
+  @Test
+  fun `deinitialize preserves state and runtime when unsubscribe fails`() =
+    runBlocking {
+      preferences.subscriberId = "sub-123"
+      preferences.lastToken = "token-123"
+      preferences.isSubscribed = true
+      preferences.setLiveActivitySubscriberId("live-1", "live-sub-1")
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
+
+      val failure = runCatching { PushNotifications.deinitialize() }.exceptionOrNull()
+
+      assertTrue(failure is IOException)
+      assertTrue(PushNotifications.isInitialized())
+      assertEquals("sub-123", preferences.subscriberId)
+      assertEquals("token-123", preferences.lastToken)
+      assertTrue(preferences.isSubscribed)
+      assertEquals("live-sub-1", preferences.getLiveActivitySubscriberId("live-1"))
+    }
+
+  @Test
+  fun `lifecycle setter can run while subscription is in progress`() =
+    runBlocking {
+      preferences.lastToken = "token-123"
+      val subscriptionStarted = CompletableDeferred<Unit>()
+      val finishSubscription = CompletableDeferred<Unit>()
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
+        subscriptionStarted.complete(Unit)
+        finishSubscription.await()
+        TokenResponse(id = "sub-new")
+      }
+
+      val subscription = launch(Dispatchers.Default) { PushNotifications.subscribe() }
+      subscriptionStarted.await()
+
+      PushNotifications.setDefaultIsSubscribed(true)
+
+      assertTrue(PushNotifications.defaultIsSubscribed)
+      finishSubscription.complete(Unit)
+      subscription.join()
+    }
+
+  @Test
+  fun `mutation queued behind deinitialize cannot access released runtime`() =
+    runBlocking {
+      preferences.subscriberId = "sub-123"
+      preferences.lastToken = "token-123"
+      preferences.isSubscribed = true
+      val unsubscribeStarted = CompletableDeferred<Unit>()
+      val finishUnsubscribe = CompletableDeferred<Unit>()
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
+        unsubscribeStarted.complete(Unit)
+        finishUnsubscribe.await()
+        Response.success(null)
+      }
+
+      val deinitialize = launch(Dispatchers.Default) { PushNotifications.deinitialize() }
+      unsubscribeStarted.await()
+
+      val initializeFailure =
+        assertThrows(IllegalStateException::class.java) {
+          PushNotifications.initialize(application, config)
+        }
+      assertEquals("PushNotifications lifecycle mutation is in progress", initializeFailure.message)
+
+      val setterFailure =
+        assertThrows(IllegalStateException::class.java) {
+          PushNotifications.setDefaultIsSubscribed(true)
+        }
+      assertEquals("PushNotifications lifecycle mutation is in progress", setterFailure.message)
+
+      val subscribeFailure = CompletableDeferred<Throwable?>()
+      val queuedSubscribe =
+        launch(Dispatchers.Default) {
+          subscribeFailure.complete(runCatching { PushNotifications.subscribe() }.exceptionOrNull())
+        }
+      finishUnsubscribe.complete(Unit)
+      deinitialize.join()
+      queuedSubscribe.join()
+
+      assertTrue(subscribeFailure.await() is IllegalStateException)
+      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `another project can be initialized after deinitialize`() =
+    runBlocking {
+      preferences.isSubscribed = false
+      PushNotifications.deinitialize()
+
+      val otherConfig =
+        Config.create(
+          projectId = "hm93nzyt5bmczmtjeghy2aaa",
+          apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
+        )
+      PushNotifications.initialize(application, otherConfig)
+
+      assertEquals(otherConfig.projectId, PushNotifications.getProjectId())
+    }
+}

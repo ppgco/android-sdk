@@ -37,39 +37,40 @@ public final class com/pushpushgo/sdk/push/BuildConfig {
 public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final field INSTANCE Lcom/pushpushgo/sdk/push/PushNotifications;
 	public static final field VERSION Ljava/lang/String;
-	public final fun areNotificationsEnabled ()Z
-	public final fun createBeacon ()Lcom/pushpushgo/sdk/push/BeaconBuilder;
-	public static final fun deactivate ()V
-	public final fun getApiKey ()Ljava/lang/String;
-	public final fun getCustomClickIntentFlags ()I
-	public final fun getDefaultIsSubscribed ()Z
-	public final fun getErrorCallback ()Lkotlin/jvm/functions/Function1;
-	public final fun getInvalidProjectIdHandler ()Lkotlin/jvm/functions/Function3;
-	public final fun getLiveActivities ()Lcom/pushpushgo/sdk/push/liveactivity/LiveActivities;
-	public final fun getNotificationClickHandler ()Lkotlin/jvm/functions/Function3;
-	public final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/push/dto/PushPushGoNotification;
-	public final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/push/dto/PushPushGoNotification;
-	public final fun getProjectId ()Ljava/lang/String;
-	public final fun getPushSubscriptionProvider ()Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;
-	public final fun getPushToken ()Ljava/lang/String;
-	public final fun getSubscriberId ()Ljava/lang/String;
-	public final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
-	public static synthetic fun handleBackgroundNotificationClick$default (Lcom/pushpushgo/sdk/push/PushNotifications;Landroid/content/Intent;IILjava/lang/Object;)V
+	public static final fun areNotificationsEnabled ()Z
+	public static final fun createBeacon ()Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final synthetic fun deinitialize (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun deinitializeAsync ()Ljava/util/concurrent/CompletableFuture;
+	public static final fun getApiKey ()Ljava/lang/String;
+	public static final fun getCustomClickIntentFlags ()I
+	public static final fun getDefaultIsSubscribed ()Z
+	public static final fun getErrorCallback ()Lkotlin/jvm/functions/Function1;
+	public static final fun getInvalidProjectIdHandler ()Lkotlin/jvm/functions/Function3;
+	public static final fun getLiveActivities ()Lcom/pushpushgo/sdk/push/liveactivity/LiveActivities;
+	public static final fun getNotificationClickHandler ()Lkotlin/jvm/functions/Function3;
+	public static final fun getNotificationDetails (Landroid/content/Intent;)Lcom/pushpushgo/sdk/push/dto/PushPushGoNotification;
+	public static final fun getNotificationDetails (Ljava/util/Map;)Lcom/pushpushgo/sdk/push/dto/PushPushGoNotification;
+	public static final fun getProjectId ()Ljava/lang/String;
+	public static final fun getPushSubscriptionProvider ()Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;
+	public static final fun getPushToken ()Ljava/lang/String;
+	public static final fun getSubscriberId ()Ljava/lang/String;
+	public static final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
+	public static synthetic fun handleBackgroundNotificationClick$default (Landroid/content/Intent;IILjava/lang/Object;)V
 	public static final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/push/PushNotifications;
 	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/Config;)Lcom/pushpushgo/sdk/push/PushNotifications;
 	public static final fun isInitialized ()Z
-	public final fun isPushPushGoNotification (Landroid/content/Intent;)Z
-	public final fun isPushPushGoNotification (Ljava/util/Map;)Z
-	public final fun isSubscribed ()Z
-	public final fun setCustomClickIntentFlags (I)V
-	public final fun setDefaultIsSubscribed (Z)V
-	public final fun setErrorCallback (Lkotlin/jvm/functions/Function1;)V
-	public final fun setInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
-	public final fun setNotificationClickHandler (Lkotlin/jvm/functions/Function3;)V
+	public static final fun isPushPushGoNotification (Landroid/content/Intent;)Z
+	public static final fun isPushPushGoNotification (Ljava/util/Map;)Z
+	public static final fun isSubscribed ()Z
+	public static final fun setCustomClickIntentFlags (I)V
+	public static final fun setDefaultIsSubscribed (Z)V
+	public static final fun setErrorCallback (Lkotlin/jvm/functions/Function1;)V
+	public static final fun setInvalidProjectIdHandler (Lkotlin/jvm/functions/Function3;)V
+	public static final fun setNotificationClickHandler (Lkotlin/jvm/functions/Function3;)V
 	public final synthetic fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun subscribeAsync ()Ljava/util/concurrent/CompletableFuture;
+	public static final fun subscribeAsync ()Ljava/util/concurrent/CompletableFuture;
 	public final synthetic fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun unsubscribeAsync ()Ljava/util/concurrent/CompletableFuture;
+	public static final fun unsubscribeAsync ()Ljava/util/concurrent/CompletableFuture;
 }
 
 public final class com/pushpushgo/sdk/push/dto/PushPushGoNotification {

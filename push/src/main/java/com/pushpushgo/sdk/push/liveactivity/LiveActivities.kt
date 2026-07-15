@@ -35,6 +35,10 @@ class LiveActivities internal constructor(
   internal val handler: LiveActivityHandler?
     get() = controller.handler
 
+  internal fun clearProjectData() {
+    controller.clearProjectData()
+  }
+
   init {
     controller.restoreFromPersistence()
   }

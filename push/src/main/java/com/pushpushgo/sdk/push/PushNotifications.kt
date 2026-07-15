@@ -16,6 +16,12 @@ import com.pushpushgo.sdk.push.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.utils.mapToBundle
 import com.pushpushgo.sdk.push.work.UploadDelegate
 import com.pushpushgo.sdk.push.work.UploadManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.future.future
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.CompletableFuture
 
 object PushNotifications {
@@ -25,6 +31,9 @@ object PushNotifications {
 
   @Volatile
   private var runtime: PushNotificationsRuntime? = null
+
+  private val lifecycleMutex = Mutex()
+  private val asyncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
   internal val config: Config
     get() = requireRuntime().config
@@ -44,21 +53,27 @@ object PushNotifications {
   internal val pushNotificationsDelegate: PushNotificationDelegate
     get() = requireRuntime().pushNotificationsDelegate
 
+  @JvmStatic
   val liveActivities: LiveActivities
     get() = requireRuntime().liveActivities
 
+  @JvmStatic
   val notificationClickHandler: NotificationClickHandler
     get() = requireRuntime().notificationClickHandler
 
+  @JvmStatic
   val invalidProjectIdHandler: InvalidProjectIdHandler
     get() = requireRuntime().invalidProjectIdHandler
 
+  @JvmStatic
   val customClickIntentFlags: Int
     get() = requireRuntime().customClickIntentFlags
 
+  @JvmStatic
   val defaultIsSubscribed: Boolean
     get() = requireRuntime().defaultIsSubscribed
 
+  @JvmStatic
   val errorCallback: ((Throwable) -> Unit)?
     get() = requireRuntime().errorCallback
 
@@ -69,7 +84,7 @@ object PushNotifications {
    * Initializes the PushNotifications SDK using configuration defined in AndroidManifest.xml.
    *
    * Calling this method again with the same configuration has no effect. If the SDK is already
-   * initialized with a different configuration, call [deactivate] before initializing it again.
+   * initialized with a different configuration, call [deinitialize] before initializing it again.
    *
    * @throws IllegalStateException if required manifest values are missing or the SDK is already
    * initialized with a different configuration.
@@ -81,7 +96,7 @@ object PushNotifications {
    * Initializes the PushNotifications SDK using an explicit [Config] instance.
    *
    * Calling this method again with an equal configuration has no effect. If the SDK is already
-   * initialized with a different configuration, call [deactivate] before initializing it again.
+   * initialized with a different configuration, call [deinitialize] before initializing it again.
    *
    * @throws IllegalStateException if the SDK is already initialized with a different configuration.
    */
@@ -89,61 +104,93 @@ object PushNotifications {
   fun initialize(
     application: Application,
     config: Config,
-  ): PushNotifications {
-    synchronized(this) {
+  ): PushNotifications =
+    withLifecycleLock {
       val activeRuntime = runtime
       if (activeRuntime == null) {
         runtime = PushNotificationsRuntime(application, config)
       } else {
         check(activeRuntime.config == config) {
           "PushNotifications SDK is already initialized with a different configuration. " +
-            "Call PushNotifications.deactivate() before initializing it again."
+            "Call PushNotifications.deinitialize() before initializing it again."
         }
       }
+
+      this
     }
 
-    return this
-  }
-
   /**
-   * Deactivates the PushNotifications SDK, allowing it to be initialized again.
+   * Unsubscribes the current project, clears its persisted state, and releases the SDK runtime.
+   *
+   * After this method completes, [initialize] may be called with another project configuration.
    */
-  @JvmStatic
-  fun deactivate() {
-    synchronized(this) {
-      runtime?.deactivate()
+  @JvmSynthetic
+  suspend fun deinitialize() {
+    lifecycleMutex.withLock {
+      val activeRuntime = requireRuntime()
+      activeRuntime.deinitialize()
       runtime = null
     }
   }
 
+  /**
+   * Java-friendly wrapper for [deinitialize].
+   */
+  @JvmStatic
+  fun deinitializeAsync(): CompletableFuture<Void?> =
+    asyncScope.future {
+      deinitialize()
+      null
+    }
+
+  @JvmStatic
   fun setCustomClickIntentFlags(flags: Int) {
-    requireRuntime().setCustomClickIntentFlags(flags)
+    withLifecycleLock {
+      requireRuntime().setCustomClickIntentFlags(flags)
+    }
   }
 
+  @JvmStatic
   fun setDefaultIsSubscribed(isSubscribed: Boolean) {
-    requireRuntime().setDefaultIsSubscribed(isSubscribed)
+    withLifecycleLock {
+      requireRuntime().setDefaultIsSubscribed(isSubscribed)
+    }
   }
 
+  @JvmStatic
   fun setNotificationClickHandler(handler: NotificationClickHandler) {
-    requireRuntime().setNotificationClickHandler(handler)
+    withLifecycleLock {
+      requireRuntime().setNotificationClickHandler(handler)
+    }
   }
 
+  @JvmStatic
   fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler) {
-    requireRuntime().setInvalidProjectIdHandler(handler)
+    withLifecycleLock {
+      requireRuntime().setInvalidProjectIdHandler(handler)
+    }
   }
 
+  @JvmStatic
   fun setErrorCallback(callback: ((Throwable) -> Unit)?) {
-    requireRuntime().setErrorCallback(callback)
+    withLifecycleLock {
+      requireRuntime().setErrorCallback(callback)
+    }
   }
 
+  @JvmStatic
   fun getProjectId(): String = requireRuntime().getProjectId()
 
+  @JvmStatic
   fun getApiKey(): String = requireRuntime().getApiKey()
 
+  @JvmStatic
   fun isSubscribed(): Boolean = requireRuntime().isSubscribed()
 
+  @JvmStatic
   fun getSubscriberId(): String? = requireRuntime().getSubscriberId()
 
+  @JvmStatic
   fun getPushToken(): String? = requireRuntime().getPushToken()
 
   /**
@@ -173,7 +220,12 @@ object PushNotifications {
    *
    * @returns [CompletableFuture]
    */
-  fun subscribeAsync(): CompletableFuture<Void?> = requireRuntime().subscribeAsync()
+  @JvmStatic
+  fun subscribeAsync(): CompletableFuture<Void?> =
+    asyncScope.future {
+      subscribe()
+      null
+    }
 
   /**
    * Unsubscribes the device from notifications asynchronously.
@@ -182,27 +234,36 @@ object PushNotifications {
    *
    * @returns [CompletableFuture]
    */
-  fun unsubscribeAsync(): CompletableFuture<Void?> = requireRuntime().unsubscribeAsync()
+  @JvmStatic
+  fun unsubscribeAsync(): CompletableFuture<Void?> =
+    asyncScope.future {
+      unsubscribe()
+      null
+    }
 
   /**
    * Checks whether the given notification intent belongs to PushPushGo.
    */
+  @JvmStatic
   fun isPushPushGoNotification(notificationIntent: Intent?): Boolean = notificationIntent?.hasExtra("project") == true
 
   /**
    * Checks whether the given notification data belongs to PushPushGo.
    */
+  @JvmStatic
   fun isPushPushGoNotification(notificationData: Map<String, String>): Boolean = notificationData.containsKey("project")
 
   /**
    * Retrieves PushPushGo notification details from the given intent.
    */
+  @JvmStatic
   fun getNotificationDetails(notificationIntent: Intent?): PushPushGoNotification? =
     deserializeNotificationData(notificationIntent?.extras)?.mapToDto()
 
   /**
    * Retrieves PushPushGo notification details from the given data payload.
    */
+  @JvmStatic
   fun getNotificationDetails(notificationData: Map<String, String>): PushPushGoNotification? =
     deserializeNotificationData(notificationData.mapToBundle())?.mapToDto()
 
@@ -210,6 +271,7 @@ object PushNotifications {
    * Handles a PushPushGo notification click when the application is launched
    * or resumed from the background.
    */
+  @JvmStatic
   fun handleBackgroundNotificationClick(
     intent: Intent?,
     overrideFlags: Int = Intent.FLAG_ACTIVITY_NEW_TASK,
@@ -217,13 +279,28 @@ object PushNotifications {
     requireRuntime().handleBackgroundNotificationClick(intent, overrideFlags)
   }
 
+  @JvmStatic
   fun areNotificationsEnabled(): Boolean = requireRuntime().areNotificationsEnabled()
 
+  @JvmStatic
   fun createBeacon(): BeaconBuilder = requireRuntime().createBeacon()
 
+  @JvmStatic
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = requireRuntime().getPushSubscriptionProvider()
 
   private fun requireRuntime(): PushNotificationsRuntime = checkNotNull(runtime) { "PushNotifications SDK is not initialized" }
+
+  private inline fun <T> withLifecycleLock(block: () -> T): T {
+    check(lifecycleMutex.tryLock()) {
+      "PushNotifications lifecycle mutation is in progress"
+    }
+
+    return try {
+      block()
+    } finally {
+      lifecycleMutex.unlock()
+    }
+  }
 }
 
 typealias NotificationClickHandler = (context: Context, url: String, overrideFlags: Int) -> Unit

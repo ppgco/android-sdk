@@ -124,6 +124,20 @@ internal class SharedPreferencesHelper(
     sharedPreferences.edit { remove(LA_SUBSCRIBER_PREFIX + liveNotificationId) }
   }
 
+  fun clearProjectData() {
+    val liveActivitySubscriberKeys = sharedPreferences.all.keys.filter { it.startsWith(LA_SUBSCRIBER_PREFIX) }
+
+    sharedPreferences.edit {
+      remove(SUBSCRIBER_ID)
+      remove(LAST_FCM_TOKEN)
+      remove(LAST_HCM_TOKEN)
+      remove(IS_SUBSCRIBED)
+      liveActivitySubscriberKeys.forEach(::remove)
+    }
+
+    notificationIdsPreferences.edit { clear() }
+  }
+
   fun getNotificationId(key: String): Int = notificationIdsPreferences.getInt(key, -1)
 
   /**

@@ -24,10 +24,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.CompletableFuture
 
 internal class PushNotificationsRuntime(
   val application: Application,
@@ -41,6 +39,7 @@ internal class PushNotificationsRuntime(
 
   private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private val subscriptionMutex = Mutex()
+  private var isDeinitialized = false
 
   val sharedPreferencesHelper = SharedPreferencesHelper(application)
   private val apiService = ApiService.fromConfig(config)
@@ -108,10 +107,6 @@ internal class PushNotificationsRuntime(
   val customClickIntentFlags: Int
     get() = sharedPreferencesHelper.customIntentFlags
 
-  fun deactivate() {
-    sdkScope.cancel()
-  }
-
   fun setCustomClickIntentFlags(flags: Int) {
     sharedPreferencesHelper.customIntentFlags = flags
   }
@@ -144,31 +139,49 @@ internal class PushNotificationsRuntime(
 
   suspend fun subscribe() {
     subscriptionMutex.withLock {
-      apiRepository.registerToken(null)
-      uploadManager.schedulePeriodicTokenSync()
-      sharedPreferencesHelper.isSubscribed = true
+      assertActive()
+      subscribeLocked()
     }
   }
 
   suspend fun unsubscribe() {
     subscriptionMutex.withLock {
-      apiRepository.unregisterSubscriber()
-      uploadManager.cancelPeriodicTokenSync()
-      sharedPreferencesHelper.isSubscribed = false
+      assertActive()
+      unsubscribeLocked()
     }
   }
 
-  fun subscribeAsync(): CompletableFuture<Void?> =
-    sdkScope.future {
-      subscribe()
-      null
-    }
+  suspend fun deinitialize() {
+    subscriptionMutex.withLock {
+      assertActive()
 
-  fun unsubscribeAsync(): CompletableFuture<Void?> =
-    sdkScope.future {
-      unsubscribe()
-      null
+      if (sharedPreferencesHelper.isSubscribed) {
+        unsubscribeLocked()
+      }
+
+      sharedPreferencesHelper.clearProjectData()
+      liveActivities.clearProjectData()
+
+      isDeinitialized = true
+      sdkScope.cancel()
     }
+  }
+
+  private suspend fun subscribeLocked() {
+    apiRepository.registerToken(null)
+    uploadManager.schedulePeriodicTokenSync()
+    sharedPreferencesHelper.isSubscribed = true
+  }
+
+  private suspend fun unsubscribeLocked() {
+    apiRepository.unregisterSubscriber()
+    uploadManager.cancelPeriodicTokenSync()
+    sharedPreferencesHelper.isSubscribed = false
+  }
+
+  private fun assertActive() {
+    check(!isDeinitialized) { "PushNotifications is deinitialized" }
+  }
 
   fun handleBackgroundNotificationClick(
     intent: Intent?,
