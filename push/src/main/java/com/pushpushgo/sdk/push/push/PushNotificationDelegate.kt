@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.R
 import com.pushpushgo.sdk.push.data.Action
 import com.pushpushgo.sdk.push.data.EventType
@@ -40,6 +41,7 @@ internal class PushNotificationDelegate(
   private val sharedPreferencesHelper: SharedPreferencesHelper,
   private val apiRepository: ApiRepository,
   private val uploadManager: UploadManager,
+  private val callbacks: PushNotificationsCallbacks,
 ) {
   private val errorHandler = CoroutineExceptionHandler { _, throwable -> logError(throwable) }
 
@@ -73,7 +75,7 @@ internal class PushNotificationDelegate(
     val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
     val initializedProjectId = PushNotifications.getProjectId()
     if (pushProjectId != initializedProjectId) {
-      PushNotifications.invalidProjectIdHandler(pushProjectId, pushSubscriberId, initializedProjectId)
+      callbacks.invalidProjectIdHandler.onInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
     } else {
       processPushMessage(pushMessage, context)
     }

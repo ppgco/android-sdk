@@ -37,5 +37,5 @@ internal fun logError(exception: Throwable?) {
 private fun reportError(exception: Throwable?) {
   val throwable = exception ?: return
   if (!PushNotifications.isInitialized()) return
-  runCatching { PushNotifications.errorCallback?.invoke(throwable) }
+  runCatching { PushNotifications.errorCallback?.onError(throwable) }
 }

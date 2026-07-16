@@ -12,12 +12,11 @@ import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
+import com.pushpushgo.sdk.push.push.areNotificationsEnabled
 import com.pushpushgo.sdk.push.push.createNotificationChannel
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
-import com.pushpushgo.sdk.push.push.handleNotificationLinkClick
 import com.pushpushgo.sdk.push.subscription.DefaultPushSubscriptionProvider
 import com.pushpushgo.sdk.push.utils.getPlatformType
-import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.work.UploadDelegate
 import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +29,7 @@ import kotlinx.coroutines.sync.withLock
 internal class PushNotificationsRuntime(
   val application: Application,
   val config: Config,
+  private val callbacks: PushNotificationsCallbacks,
 ) {
   init {
     check(WorkManager.isInitialized()) {
@@ -46,19 +46,7 @@ internal class PushNotificationsRuntime(
   val apiRepository = ApiRepository(application, apiService, sharedPreferencesHelper, config)
   val uploadDelegate = UploadDelegate(apiRepository)
   val uploadManager = UploadManager(application, sharedPreferencesHelper)
-  val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager)
-
-  val defaultInvalidProjectIdHandler: InvalidProjectIdHandler = { pushProjectId, _, currentProjectId ->
-    logDebug("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
-  }
-
-  val defaultNotificationClickHandler: NotificationClickHandler = { context, url, overrideFlags ->
-    handleNotificationLinkClick(
-      context,
-      url,
-      overrideFlags,
-    )
-  }
+  val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager, callbacks)
 
   val liveActivities: LiveActivities =
     LiveActivities(
@@ -67,7 +55,7 @@ internal class PushNotificationsRuntime(
       apiRepository = apiRepository,
       sharedPreferencesHelper = sharedPreferencesHelper,
       getSubscriberId = { getSubscriberId() },
-      notificationClickHandler = { notificationClickHandler },
+      callbacks = callbacks,
     )
 
   init {
@@ -92,16 +80,7 @@ internal class PushNotificationsRuntime(
     ).start()
   }
 
-  var notificationClickHandler: NotificationClickHandler = defaultNotificationClickHandler
-    private set
-
-  var invalidProjectIdHandler: InvalidProjectIdHandler = defaultInvalidProjectIdHandler
-    private set
-
   var defaultIsSubscribed: Boolean = false
-    private set
-
-  var errorCallback: ((Throwable) -> Unit)? = null
     private set
 
   val customClickIntentFlags: Int
@@ -113,18 +92,6 @@ internal class PushNotificationsRuntime(
 
   fun setDefaultIsSubscribed(isSubscribed: Boolean) {
     defaultIsSubscribed = isSubscribed
-  }
-
-  fun setNotificationClickHandler(handler: NotificationClickHandler) {
-    notificationClickHandler = handler
-  }
-
-  fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler) {
-    invalidProjectIdHandler = handler
-  }
-
-  fun setErrorCallback(callback: ((Throwable) -> Unit)?) {
-    errorCallback = callback
   }
 
   fun getProjectId(): String = config.projectId
@@ -140,6 +107,11 @@ internal class PushNotificationsRuntime(
   suspend fun subscribe() {
     subscriptionMutex.withLock {
       assertActive()
+
+      check(areNotificationsEnabled(application)) {
+        "Cannot subscribe because notifications are disabled"
+      }
+
       subscribeLocked()
     }
   }
@@ -175,7 +147,7 @@ internal class PushNotificationsRuntime(
 
   private suspend fun unsubscribeLocked() {
     apiRepository.unregisterSubscriber()
-    uploadManager.cancelPeriodicTokenSync()
+    uploadManager.cancelAllJobs()
     sharedPreferencesHelper.isSubscribed = false
   }
 
@@ -197,14 +169,22 @@ internal class PushNotificationsRuntime(
     val intentNotificationId = intent.getIntExtra(PushNotificationDelegate.NOTIFICATION_ID_EXTRA, 0)
 
     if (intentProjectId != config.projectId) {
-      return invalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, config.projectId)
+      return callbacks.invalidProjectIdHandler.onInvalidProjectId(
+        intentProjectId.orEmpty(),
+        intentSubscriberId,
+        config.projectId,
+      )
     }
 
     NotificationManagerCompat.from(application).cancel(intentNotificationId)
 
     // TODO Remove duplicated code
     val notify = deserializeNotificationData(intent.extras)
-    notificationClickHandler(application, notify?.redirectLink ?: intentLink, overrideFlags)
+    callbacks.notificationClickHandler.onNotificationClick(
+      application,
+      notify?.redirectLink ?: intentLink,
+      overrideFlags,
+    )
     intent.removeExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
 
     uploadManager.sendEvent(

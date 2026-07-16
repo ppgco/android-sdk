@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.push
 
+import android.Manifest
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
@@ -8,12 +9,15 @@ import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.network.data.TokenResponse
+import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import io.mockk.unmockkObject
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,11 +26,13 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import retrofit2.Response
 import java.io.IOException
 
@@ -46,13 +52,16 @@ class PushNotificationsLifecycleTest {
   @Before
   fun setUp() {
     WorkManagerTestInitHelper.initializeTestWorkManager(application)
+    shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
     preferences = SharedPreferencesHelper(application)
     preferences.clearProjectData()
     LiveActivityPersistence(application).clearAll()
 
     apiService = mockk(relaxed = true)
     mockkObject(ApiService.Companion)
+    mockkStatic("com.pushpushgo.sdk.push.utils.PushTokenUtilsKt")
     every { ApiService.fromConfig(any()) } returns apiService
+    coEvery { getPlatformPushToken(any()) } returns "token-123"
     coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
     coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "sub-new")
 
@@ -61,11 +70,15 @@ class PushNotificationsLifecycleTest {
 
   @After
   fun tearDown() {
+    PushNotifications.setNotificationClickHandler(null)
+    PushNotifications.setInvalidProjectIdHandler(null)
+    PushNotifications.setErrorCallback(null)
     if (PushNotifications.isInitialized()) {
       PushNotifications.sharedPreferencesHelper.isSubscribed = false
       runBlocking { PushNotifications.deinitialize() }
     }
     unmockkObject(ApiService.Companion)
+    unmockkStatic("com.pushpushgo.sdk.push.utils.PushTokenUtilsKt")
   }
 
   @Test
@@ -165,6 +178,10 @@ class PushNotificationsLifecycleTest {
         }
       assertEquals("PushNotifications lifecycle mutation is in progress", setterFailure.message)
 
+      val clickHandler = NotificationClickHandler { _, _, _ -> }
+      PushNotifications.setNotificationClickHandler(clickHandler)
+      assertSame(clickHandler, PushNotifications.notificationClickHandler)
+
       val subscribeFailure = CompletableDeferred<Throwable?>()
       val queuedSubscribe =
         launch(Dispatchers.Default) {
@@ -177,6 +194,68 @@ class PushNotificationsLifecycleTest {
       assertTrue(subscribeFailure.await() is IllegalStateException)
       coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
     }
+
+  @Test
+  fun `callbacks can be configured while uninitialized and survive another project initialization`() =
+    runBlocking {
+      preferences.isSubscribed = false
+      PushNotifications.deinitialize()
+
+      val clickHandler = NotificationClickHandler { _, _, _ -> }
+      val invalidProjectIdHandler = InvalidProjectIdHandler { _, _, _ -> }
+      val errorCallback = PushNotificationsErrorCallback { }
+
+      PushNotifications.setNotificationClickHandler(clickHandler)
+      PushNotifications.setInvalidProjectIdHandler(invalidProjectIdHandler)
+      PushNotifications.setErrorCallback(errorCallback)
+
+      assertSame(clickHandler, PushNotifications.notificationClickHandler)
+      assertSame(invalidProjectIdHandler, PushNotifications.invalidProjectIdHandler)
+      assertSame(errorCallback, PushNotifications.errorCallback)
+
+      val otherConfig =
+        Config.create(
+          projectId = "hm93nzyt5bmczmtjeghy2aaa",
+          apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
+        )
+      PushNotifications.initialize(application, otherConfig)
+
+      assertSame(clickHandler, PushNotifications.notificationClickHandler)
+      assertSame(invalidProjectIdHandler, PushNotifications.invalidProjectIdHandler)
+      assertSame(errorCallback, PushNotifications.errorCallback)
+    }
+
+  @Test
+  fun `null callbacks restore defaults`() {
+    PushNotifications.setNotificationClickHandler(NotificationClickHandler { _, _, _ -> })
+    PushNotifications.setInvalidProjectIdHandler(InvalidProjectIdHandler { _, _, _ -> })
+    PushNotifications.setErrorCallback(PushNotificationsErrorCallback { })
+
+    PushNotifications.setNotificationClickHandler(null)
+    PushNotifications.setInvalidProjectIdHandler(null)
+    PushNotifications.setErrorCallback(null)
+
+    assertTrue(PushNotifications.notificationClickHandler is DefaultNotificationClickHandler)
+    assertTrue(PushNotifications.invalidProjectIdHandler is DefaultInvalidProjectIdHandler)
+    assertNull(PushNotifications.errorCallback)
+  }
+
+  @Test
+  fun `active runtime uses callback holder`() {
+    var callbackArguments: Triple<String, String, String>? = null
+    PushNotifications.setInvalidProjectIdHandler { pushProjectId, pushSubscriberId, currentProjectId ->
+      callbackArguments = Triple(pushProjectId, pushSubscriberId, currentProjectId)
+    }
+
+    PushNotifications.handleBackgroundNotificationClick(
+      android.content
+        .Intent()
+        .putExtra(com.pushpushgo.sdk.push.push.PushNotificationDelegate.PROJECT_ID_EXTRA, "another-project")
+        .putExtra(com.pushpushgo.sdk.push.push.PushNotificationDelegate.SUBSCRIBER_ID_EXTRA, "subscriber"),
+    )
+
+    assertEquals(Triple("another-project", "subscriber", config.projectId), callbackArguments)
+  }
 
   @Test
   fun `another project can be initialized after deinitialize`() =

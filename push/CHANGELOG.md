@@ -36,6 +36,12 @@
 - Renamed handlers:
   - `setNotificationHandler(...)` → `setNotificationClickHandler(...)`
   - `setOnInvalidProjectIdHandler(...)` → `setInvalidProjectIdHandler(...)`
+- Handler and error callback APIs now use named SAM interfaces:
+  - `NotificationClickHandler`
+  - `InvalidProjectIdHandler`
+  - `PushNotificationsErrorCallback`
+- Callbacks can be configured before initialization and survive deinitialization.
+- Passing `null` to a callback setter restores its default behavior.
 
 #### Beacon
 - Selector assignment is now explicit and type-specific:
@@ -52,6 +58,7 @@
   - `invalidProjectIdHandler`
   - `defaultIsSubscribed`
   - `customClickIntentFlags`
+- `defaultIsSubscribed` and `setDefaultIsSubscribed(...)` are deprecated and will be removed in a future release.
 
 #### Core dependency
 - The SDK now depends on a shared internal **core** module.

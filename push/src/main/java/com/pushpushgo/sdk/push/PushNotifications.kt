@@ -1,7 +1,6 @@
 package com.pushpushgo.sdk.push
 
 import android.app.Application
-import android.content.Context
 import android.content.Intent
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
@@ -32,6 +31,7 @@ object PushNotifications {
   @Volatile
   private var runtime: PushNotificationsRuntime? = null
 
+  private val callbacks = PushNotificationsCallbacks()
   private val lifecycleMutex = Mutex()
   private val asyncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -53,29 +53,26 @@ object PushNotifications {
   internal val pushNotificationsDelegate: PushNotificationDelegate
     get() = requireRuntime().pushNotificationsDelegate
 
+  internal val notificationClickHandler: NotificationClickHandler
+    get() = callbacks.notificationClickHandler
+
+  internal val invalidProjectIdHandler: InvalidProjectIdHandler
+    get() = callbacks.invalidProjectIdHandler
+
+  internal val errorCallback: PushNotificationsErrorCallback?
+    get() = callbacks.errorCallback
+
+  @Deprecated("")
+  internal val defaultIsSubscribed: Boolean
+    get() = requireRuntime().defaultIsSubscribed
+
   @JvmStatic
   val liveActivities: LiveActivities
     get() = requireRuntime().liveActivities
 
   @JvmStatic
-  val notificationClickHandler: NotificationClickHandler
-    get() = requireRuntime().notificationClickHandler
-
-  @JvmStatic
-  val invalidProjectIdHandler: InvalidProjectIdHandler
-    get() = requireRuntime().invalidProjectIdHandler
-
-  @JvmStatic
   val customClickIntentFlags: Int
     get() = requireRuntime().customClickIntentFlags
-
-  @JvmStatic
-  val defaultIsSubscribed: Boolean
-    get() = requireRuntime().defaultIsSubscribed
-
-  @JvmStatic
-  val errorCallback: ((Throwable) -> Unit)?
-    get() = requireRuntime().errorCallback
 
   @JvmStatic
   fun isInitialized(): Boolean = runtime != null
@@ -108,7 +105,7 @@ object PushNotifications {
     withLifecycleLock {
       val activeRuntime = runtime
       if (activeRuntime == null) {
-        runtime = PushNotificationsRuntime(application, config)
+        runtime = PushNotificationsRuntime(application, config, callbacks)
       } else {
         check(activeRuntime.config == config) {
           "PushNotifications SDK is already initialized with a different configuration. " +
@@ -150,32 +147,44 @@ object PushNotifications {
     }
   }
 
-  @JvmStatic
-  fun setDefaultIsSubscribed(isSubscribed: Boolean) {
+  @Deprecated("")
+  internal fun setDefaultIsSubscribed(isSubscribed: Boolean) {
     withLifecycleLock {
       requireRuntime().setDefaultIsSubscribed(isSubscribed)
     }
   }
 
+  /**
+   * Sets the process-wide notification click handler.
+   *
+   * The handler may be configured before [initialize] and survives [deinitialize]. Pass `null` to
+   * restore the default handler.
+   */
   @JvmStatic
-  fun setNotificationClickHandler(handler: NotificationClickHandler) {
-    withLifecycleLock {
-      requireRuntime().setNotificationClickHandler(handler)
-    }
+  fun setNotificationClickHandler(handler: NotificationClickHandler?) {
+    callbacks.notificationClickHandler = handler ?: DefaultNotificationClickHandler()
   }
 
+  /**
+   * Sets the handler invoked when a received notification belongs to a different project than the one
+   * currently initialized.
+   *
+   * The handler is process-wide, may be configured before [initialize], and survives
+   * [deinitialize]. Pass `null` to restore the default handler, which logs the mismatch.
+   */
   @JvmStatic
-  fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler) {
-    withLifecycleLock {
-      requireRuntime().setInvalidProjectIdHandler(handler)
-    }
+  fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler?) {
+    callbacks.invalidProjectIdHandler = handler ?: DefaultInvalidProjectIdHandler()
   }
 
+  /**
+   * Sets the process-wide SDK error callback.
+   *
+   * The callback may be configured before [initialize], survives [deinitialize]. Pass `null` to disable it.
+   */
   @JvmStatic
-  fun setErrorCallback(callback: ((Throwable) -> Unit)?) {
-    withLifecycleLock {
-      requireRuntime().setErrorCallback(callback)
-    }
+  fun setErrorCallback(callback: PushNotificationsErrorCallback?) {
+    callbacks.errorCallback = callback
   }
 
   @JvmStatic
@@ -302,7 +311,3 @@ object PushNotifications {
     }
   }
 }
-
-typealias NotificationClickHandler = (context: Context, url: String, overrideFlags: Int) -> Unit
-
-typealias InvalidProjectIdHandler = (pushProjectId: String, pushSubscriberId: String, currentProjectId: String) -> Unit

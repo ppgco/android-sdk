@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.push.liveactivity
 import android.app.Application
 import android.content.Intent
 import android.os.Build
-import com.pushpushgo.sdk.push.NotificationClickHandler
+import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.network.ApiRepository
@@ -25,7 +25,7 @@ internal class LiveActivityController(
   private val apiRepository: ApiRepository,
   private val sharedPref: SharedPreferencesHelper,
   private val getSubscriberId: () -> String?,
-  private val notificationClickHandler: () -> NotificationClickHandler,
+  private val callbacks: PushNotificationsCallbacks,
 ) {
   private val persistence: LiveActivityPersistence by lazy { LiveActivityPersistence(application) }
 
@@ -129,7 +129,7 @@ internal class LiveActivityController(
     intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
 
     if (openDeepLink && !deepLink.isNullOrBlank()) {
-      notificationClickHandler().invoke(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
+      callbacks.notificationClickHandler.onNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
     return deepLink

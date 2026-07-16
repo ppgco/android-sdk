@@ -52,8 +52,7 @@ notification campaign        (PUT /live-data),                 │
 ### 1. Subscribe / unsubscribe
 
 ```kotlin
-val ppg = PushNotifications.getInstance()
-val liveActivities = ppg.liveActivities
+val liveActivities = PushNotifications.liveActivities
 
 // The device must already be a registered push subscriber.
 if (liveActivities.isSupported()) {
@@ -80,14 +79,14 @@ Add this to your launcher (main) activity, next to the existing
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     // ...
-    PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
-    PushNotifications.getInstance().liveActivities.handleClick(intent)
+    PushNotifications.handleBackgroundNotificationClick(intent)
+    PushNotifications.liveActivities.handleClick(intent)
 }
 
 override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
-    PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
-    PushNotifications.getInstance().liveActivities.handleClick(intent)
+    PushNotifications.handleBackgroundNotificationClick(intent)
+    PushNotifications.liveActivities.handleClick(intent)
 }
 ```
 
@@ -101,7 +100,7 @@ override fun onNewIntent(intent: Intent) {
 To handle the link yourself, pass `openDeepLink = false`:
 
 ```kotlin
-val deepLink = PushNotifications.getInstance().liveActivities.handleClick(intent, openDeepLink = false)
+val deepLink = PushNotifications.liveActivities.handleClick(intent, openDeepLink = false)
 if (deepLink != null) {
     // custom navigation
 }
@@ -118,7 +117,7 @@ For custom routing override the click handler once — it then applies to both
 regular pushes and Live Activities:
 
 ```kotlin
-PushNotifications.getInstance().setNotificationClickHandler { context, url, overrideFlags ->
+PushNotifications.setNotificationClickHandler { context, url, overrideFlags ->
     // e.g. route app://<host>/beacons to a specific screen
 }
 ```

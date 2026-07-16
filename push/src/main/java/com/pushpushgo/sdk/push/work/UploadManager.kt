@@ -110,8 +110,4 @@ internal class UploadManager(
     workManager.cancelUniqueWork(SYNC_TOKEN)
     workManager.cancelUniqueWork(SYNC_TOKEN_PERIODIC)
   }
-
-  fun cancelPeriodicTokenSync() {
-    workManager.cancelUniqueWork(SYNC_TOKEN_PERIODIC)
-  }
 }

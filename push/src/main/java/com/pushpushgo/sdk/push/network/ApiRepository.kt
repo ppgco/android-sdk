@@ -32,7 +32,10 @@ internal class ApiRepository(
 ) {
   suspend fun registerToken(token: String?) {
     logDebug("registerToken invoked: $token")
-    val tokenToRegister = token ?: sharedPref.lastToken ?: getPlatformPushToken(context)
+
+    val tokenToRegister = token ?: getPlatformPushToken(context)
+
+    require(tokenToRegister.isNotBlank()) { "Cannot register subscriber with an empty push token" }
 
     logDebug("Token to register: $tokenToRegister")
 
@@ -48,12 +51,13 @@ internal class ApiRepository(
             installationId = sharedPref.installationId,
           ),
       )
+
     if (data.id.isNotBlank()) {
       sharedPref.subscriberId = data.id
     }
-    if (tokenToRegister.isNotBlank()) {
-      sharedPref.lastToken = tokenToRegister
-    }
+
+    sharedPref.lastToken = tokenToRegister
+
     logDebug("RegisterSubscriber received: $data")
   }
 
@@ -100,7 +104,9 @@ internal class ApiRepository(
       return logDebug("Token update skipped. Reason: unsubscribed during update")
     }
 
-    sharedPref.lastToken = tokenToUpdate
+    if (sharedPref.subscriberId == subscriberId) {
+      sharedPref.lastToken = tokenToUpdate
+    }
   }
 
   suspend fun unregisterSubscriber() {

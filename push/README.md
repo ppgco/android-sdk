@@ -264,14 +264,14 @@ To ensure correct handling of notification taps:
      super.onCreate(savedInstanceState)
 
      if (savedInstanceState == null) {
-       PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+       PushNotifications.handleBackgroundNotificationClick(intent)
      }
    }
 
    override fun onNewIntent(intent: Intent) {
-   super.onNewIntent(intent)
+     super.onNewIntent(intent)
 
-   PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+     PushNotifications.handleBackgroundNotificationClick(intent)
    }
    ```
 
@@ -286,10 +286,10 @@ This ensures notification data is processed both when the app is cold-started an
 ### Push subscription
 
 ```kotlin
-PushNotifications.getInstance().isSubscribed()
+PushNotifications.isSubscribed()
 
-PushNotifications.getInstance().subscribe()
-PushNotifications.getInstance().unsubscribe()
+PushNotifications.subscribe()
+PushNotifications.unsubscribe()
 ```
 
 From Java, use `subscribeAsync()` and `unsubscribeAsync()`. Both return a
@@ -315,18 +315,18 @@ unsubscribes the user.
 ### Beacons, tags, and dynamic groups
 
 ```kotlin
-PushNotifications.getInstance().createBeacon()
+PushNotifications.createBeacon()
   .set("see_invoice", true)
   .setCustomId("CID")
   .appendTag("demo")
   .appendTag("mobile", "platform")
   .send()
 
-PushNotifications.getInstance().createBeacon()
+PushNotifications.createBeacon()
   .assignToGroup("my-group-name")
   .send()
 
-PushNotifications.getInstance().createBeacon()
+PushNotifications.createBeacon()
   .unassignFromGroup("my-group-name")
   .send()
 ```
@@ -337,7 +337,7 @@ Real-time, continuously updated notifications (Android 16+ Live Updates), e.g.
 live football match tracking:
 
 ```kotlin
-val liveActivities = PushNotifications.getInstance().liveActivities
+val liveActivities = PushNotifications.liveActivities
 liveActivities.subscribe("liveNotificationId")
 // ...
 liveActivities.unsubscribe("liveNotificationId")

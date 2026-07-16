@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.push.liveactivity
 import android.app.Application
 import android.content.Intent
 import androidx.annotation.RestrictTo
-import com.pushpushgo.sdk.push.NotificationClickHandler
+import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
@@ -20,7 +20,7 @@ class LiveActivities internal constructor(
   apiRepository: ApiRepository,
   sharedPreferencesHelper: SharedPreferencesHelper,
   getSubscriberId: () -> String?,
-  notificationClickHandler: () -> NotificationClickHandler,
+  callbacks: PushNotificationsCallbacks,
 ) {
   private val controller =
     LiveActivityController(
@@ -29,7 +29,7 @@ class LiveActivities internal constructor(
       apiRepository = apiRepository,
       sharedPref = sharedPreferencesHelper,
       getSubscriberId = getSubscriberId,
-      notificationClickHandler = notificationClickHandler,
+      callbacks = callbacks,
     )
 
   internal val handler: LiveActivityHandler?
