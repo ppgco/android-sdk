@@ -7,8 +7,12 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.pushpushgo.sdk.push.Beacon
+import com.pushpushgo.sdk.push.BeaconBuilder
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.sample.push.firebase.R
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -36,74 +40,80 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
     )
 
     findViewById<Button>(R.id.beacon1).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .set("see_invoice", true)
         .setCustomId("SEEI")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon2).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .set("basket_price", 299)
         .setCustomId("BP299")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon3).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .set("basket_price", 301)
         .setCustomId("BP301")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon4).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .appendTag("demo")
         .appendTag("${Build.MANUFACTURER} ${Build.MODEL}", "phone_model")
         .setCustomId("ATAGS")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon5).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .removeTag("desktop", "test")
         .setCustomId("RTAGS")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon6).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .setCustomId("TEST1")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon7).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .assignToGroup("test-group-123")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon8).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .unassignFromGroup("test-group-123")
-        .send()
+        .build()
+        .also(::sendBeacon)
     }
 
     findViewById<Button>(R.id.beacon9).setOnClickListener {
-      PushNotifications
-        .createBeacon()
+      BeaconBuilder()
         .assignToGroup("group-to-join")
         .unassignFromGroup("group-to-leave")
         .setCustomId("GROUPS_TEST")
-        .send()
+        .build()
+        .also(::sendBeacon)
+    }
+  }
+
+  private fun sendBeacon(beacon: Beacon) {
+    lifecycleScope.launch {
+      PushNotifications.sendBeacon(beacon)
     }
   }
 }

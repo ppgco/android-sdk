@@ -315,20 +315,16 @@ unsubscribes the user.
 ### Beacons, tags, and dynamic groups
 
 ```kotlin
-PushNotifications.createBeacon()
-  .set("see_invoice", true)
-  .setCustomId("CID")
-  .appendTag("demo")
-  .appendTag("mobile", "platform")
-  .send()
+val beacon =
+  BeaconBuilder()
+    .set("see_invoice", true)
+    .setCustomId("CID")
+    .appendTag("demo")
+    .appendTag("mobile", "platform")
+    .assignToGroup("my-group-name")
+    .build()
 
-PushNotifications.createBeacon()
-  .assignToGroup("my-group-name")
-  .send()
-
-PushNotifications.createBeacon()
-  .unassignFromGroup("my-group-name")
-  .send()
+PushNotifications.sendBeacon(beacon)
 ```
 
 ## Live Activities

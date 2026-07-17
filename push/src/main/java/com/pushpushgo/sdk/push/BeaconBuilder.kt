@@ -1,7 +1,6 @@
 package com.pushpushgo.sdk.push
 
 import com.pushpushgo.sdk.push.data.BeaconTag
-import com.pushpushgo.sdk.push.work.UploadDelegate
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -10,9 +9,7 @@ enum class BeaconTagStrategy {
   REWRITE,
 }
 
-class BeaconBuilder internal constructor(
-  private val uploadDelegate: UploadDelegate,
-) {
+class BeaconBuilder {
   private val selectors = mutableMapOf<String, Any>()
 
   private val tags = mutableListOf<BeaconTag>()
@@ -177,20 +174,20 @@ class BeaconBuilder internal constructor(
   }
 
   /**
-   * Dispatches the configured beacon.
+   * Creates an immutable beacon from the current builder state.
    */
-  fun send() {
-    uploadDelegate.sendBeacon(
-      JSONObject().apply {
-        addSelectors()
-        addTags()
-        addTagsToDelete()
-        if (customId.isNotEmpty()) put("customId", customId)
-        assignToGroup?.let { put("assignToGroup", it) }
-        unassignFromGroup?.let { put("unassignFromGroup", it) }
-      },
+  fun build(): Beacon =
+    Beacon(
+      JSONObject()
+        .apply {
+          addSelectors()
+          addTags()
+          addTagsToDelete()
+          if (customId.isNotEmpty()) put("customId", customId)
+          assignToGroup?.let { put("assignToGroup", it) }
+          unassignFromGroup?.let { put("unassignFromGroup", it) }
+        }.toString(),
     )
-  }
 
   private fun JSONObject.addSelectors() {
     selectors.forEach { (key, value) ->

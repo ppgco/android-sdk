@@ -4,21 +4,10 @@ import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.utils.logDebug
-import com.pushpushgo.sdk.push.utils.logError
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 internal class UploadDelegate(
   private val apiRepository: ApiRepository,
 ) {
-  private val uploadScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-  private val errorHandler = CoroutineExceptionHandler { _, e -> logError(e) }
-
   suspend fun syncToken(token: String?) {
     if (PushNotifications.getSubscriberId() == null) {
       return logDebug("UploadWorker: skipped. Reason: not subscribed")
@@ -47,16 +36,5 @@ internal class UploadDelegate(
       project = projectId,
       subscriber = subscriberId,
     )
-  }
-
-  fun sendBeacon(beacon: JSONObject) {
-    if (PushNotifications.getSubscriberId() == null) {
-      logDebug("Beacon not sent. Reason: not subscribed")
-      return
-    }
-
-    uploadScope.launch(errorHandler) {
-      apiRepository.sendBeacon(beacon.toString())
-    }
   }
 }

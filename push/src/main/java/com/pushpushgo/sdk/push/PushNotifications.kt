@@ -291,8 +291,26 @@ object PushNotifications {
   @JvmStatic
   fun areNotificationsEnabled(): Boolean = requireRuntime().areNotificationsEnabled()
 
+  /**
+   * Sends a beacon created with [BeaconBuilder].
+   */
   @JvmStatic
-  fun createBeacon(): BeaconBuilder = requireRuntime().createBeacon()
+  @JvmSynthetic
+  suspend fun sendBeacon(beacon: Beacon) {
+    requireRuntime().sendBeacon(beacon)
+  }
+
+  /**
+   * Sends a beacon asynchronously.
+   *
+   * Java-friendly wrapper for [sendBeacon].
+   */
+  @JvmStatic
+  fun sendBeaconAsync(beacon: Beacon): CompletableFuture<Void?> =
+    asyncScope.future {
+      sendBeacon(beacon)
+      null
+    }
 
   @JvmStatic
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = requireRuntime().getPushSubscriptionProvider()

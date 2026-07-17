@@ -6,25 +6,25 @@ import android.view.MenuItem;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.pushpushgo.sdk.push.BeaconBuilder;
 import com.pushpushgo.sdk.push.PushNotifications;
 import com.pushpushgo.sdk.sample.push.java.R;
 
 public class MainActivity extends AppCompatActivity {
-
-    private final PushNotifications ppg = PushNotifications.getInstance();
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ppg.createBeacon()
-                .appendTag("jacek")
-                .appendTag("sabina", "dziewczyna")
-                .set("see_invoice", true)
-                .setCustomId("CRMID200")
-                .removeTag("marek", "janek")
-                .send();
+        PushNotifications.sendBeaconAsync(
+                new BeaconBuilder()
+                        .appendTag("jacek")
+                        .appendTag("sabina", "dziewczyna")
+                        .set("see_invoice", true)
+                        .setCustomId("CRMID200")
+                        .removeTag("marek", "janek")
+                        .build()
+        );
     }
 
     @Override

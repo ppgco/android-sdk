@@ -139,6 +139,10 @@ internal class PushNotificationsRuntime(
     }
   }
 
+  suspend fun sendBeacon(beacon: Beacon) {
+    apiRepository.sendBeacon(beacon.payload)
+  }
+
   private suspend fun subscribeLocked() {
     apiRepository.registerToken(null)
     uploadManager.schedulePeriodicTokenSync()
@@ -196,11 +200,7 @@ internal class PushNotificationsRuntime(
     )
   }
 
-  fun areNotificationsEnabled(): Boolean =
-    com.pushpushgo.sdk.push.push
-      .areNotificationsEnabled(application)
-
-  fun createBeacon(): BeaconBuilder = BeaconBuilder(uploadDelegate)
+  fun areNotificationsEnabled(): Boolean = areNotificationsEnabled(application)
 
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = DefaultPushSubscriptionProvider(application)
 }

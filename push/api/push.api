@@ -1,16 +1,20 @@
+public final class com/pushpushgo/sdk/push/Beacon {
+}
+
 public final class com/pushpushgo/sdk/push/BeaconBuilder {
+	public fun <init> ()V
 	public final fun appendTag (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/BeaconTagStrategy;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun appendTag (Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/BeaconTagStrategy;I)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public static synthetic fun appendTag$default (Lcom/pushpushgo/sdk/push/BeaconBuilder;Ljava/lang/String;Ljava/lang/String;Lcom/pushpushgo/sdk/push/BeaconTagStrategy;IILjava/lang/Object;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun assignToGroup (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
+	public final fun build ()Lcom/pushpushgo/sdk/push/Beacon;
 	public final fun getTags ()Ljava/util/List;
 	public final fun getTagsToDelete ()Ljava/util/List;
 	public final fun removeTag ([Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun removeTags (Ljava/util/List;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun removeTags (Ljava/util/Map;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
-	public final fun send ()V
 	public final fun set (Ljava/lang/String;C)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun set (Ljava/lang/String;Ljava/lang/Number;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final fun set (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/BeaconBuilder;
@@ -46,7 +50,6 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final field INSTANCE Lcom/pushpushgo/sdk/push/PushNotifications;
 	public static final field VERSION Ljava/lang/String;
 	public static final fun areNotificationsEnabled ()Z
-	public static final fun createBeacon ()Lcom/pushpushgo/sdk/push/BeaconBuilder;
 	public final synthetic fun deinitialize (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun deinitializeAsync ()Ljava/util/concurrent/CompletableFuture;
 	public static final fun getApiKey ()Ljava/lang/String;
@@ -66,6 +69,8 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final fun isPushPushGoNotification (Landroid/content/Intent;)Z
 	public static final fun isPushPushGoNotification (Ljava/util/Map;)Z
 	public static final fun isSubscribed ()Z
+	public static final synthetic fun sendBeacon (Lcom/pushpushgo/sdk/push/Beacon;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun sendBeaconAsync (Lcom/pushpushgo/sdk/push/Beacon;)Ljava/util/concurrent/CompletableFuture;
 	public static final fun setCustomClickIntentFlags (I)V
 	public static final fun setErrorCallback (Lcom/pushpushgo/sdk/push/PushNotificationsErrorCallback;)V
 	public static final fun setInvalidProjectIdHandler (Lcom/pushpushgo/sdk/push/InvalidProjectIdHandler;)V
