@@ -122,10 +122,16 @@ internal class PushNotificationDelegate(
 
   fun onNewToken(token: String) {
     logDebug("Refreshed token: $token")
+
     if (!PushNotifications.isInitialized()) return
+    if (!PushNotifications.isSubscribed()) return
     if (!PushNotifications.areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
 
-    uploadManager.syncToken(token)
+    val subscriberId = sharedPreferencesHelper.subscriberId
+
+    if (subscriberId != null) {
+      uploadManager.syncToken(subscriberId, token)
+    }
   }
 
   fun onDestroy() {
@@ -156,19 +162,20 @@ internal class PushNotificationDelegate(
       // Malformed / incomplete inner JSON: still report DELIVERED from the raw
       // data payload (don't lose the delivery metric) and render a best-effort
       // notification from the available fields.
+
       reportDelivered(
-        project = remoteMessage.data["project"].orEmpty(),
         subscriber = remoteMessage.data["subscriber"].orEmpty(),
         campaign = remoteMessage.data["campaign"].orEmpty(),
       )
+
       return getSimpleNotification(context, remoteMessage, notificationId)
     }
 
     reportDelivered(
-      project = pushPushNotification.project,
       subscriber = pushPushNotification.subscriber,
       campaign = pushPushNotification.campaignId,
     )
+
     return createDataNotification(context, notificationId, pushPushNotification)
   }
 
@@ -206,7 +213,6 @@ internal class PushNotificationDelegate(
    * so deliveries are still reported when local state is momentarily out of sync.
    */
   private fun reportDelivered(
-    project: String,
     subscriber: String,
     campaign: String,
   ) {
@@ -214,7 +220,6 @@ internal class PushNotificationDelegate(
       type = EventType.DELIVERED,
       buttonId = 0,
       campaign = campaign,
-      projectId = project,
       subscriberId = subscriber,
     )
   }

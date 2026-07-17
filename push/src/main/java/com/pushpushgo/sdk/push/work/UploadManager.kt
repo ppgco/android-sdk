@@ -10,28 +10,34 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.data.EventType
-import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.utils.logDebug
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.DATA
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_BUTTON_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_CAMPAIGN
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_PROJECT_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_SUBSCRIBER_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_TYPE
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_PERIODIC
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_SUBSCRIBER_ID
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_TOKEN
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.TYPE
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_API_KEY
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_API_URL
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_PROJECT_ID
 import java.util.concurrent.TimeUnit
 
 internal class UploadManager(
   context: Context,
-  private val sharedPref: SharedPreferencesHelper,
+  private val config: Config,
 ) {
   companion object {
     private const val UPLOAD_RETRY_DELAY = 30L
     private const val TOKEN_SYNC_PERIOD_DAYS = 14L
+
+    internal const val SYNC_TOKEN_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token"
+    internal const val PERIODIC_TOKEN_SYNC_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token-periodic"
   }
 
   private val workManager = WorkManager.getInstance(context)
@@ -42,31 +48,51 @@ internal class UploadManager(
       .setRequiredNetworkType(NetworkType.CONNECTED)
       .build()
 
-  fun syncToken(token: String?) {
-    logDebug("Token sync enqueued")
+  fun syncToken(
+    subscriberId: String,
+    token: String?,
+  ) {
+    if (subscriberId.isBlank()) {
+      return logDebug("Token sync not enqueued. Reason: empty subscriberId")
+    }
 
     workManager.enqueueUniqueWork(
-      SYNC_TOKEN,
+      SYNC_TOKEN_WORK_NAME,
       ExistingWorkPolicy.REPLACE,
       OneTimeWorkRequestBuilder<UploadWorker>()
-        .setInputData(workDataOf(TYPE to SYNC_TOKEN, DATA to token))
-        .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setInputData(
+          workDataOf(
+            TYPE to SYNC_TOKEN,
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
+            SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+            SYNC_TOKEN_TOKEN to token,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
         .setConstraints(networkConstraints)
         .build(),
     )
   }
 
-  fun schedulePeriodicTokenSync() {
-    if (!sharedPref.isSubscribed) {
-      return logDebug("Periodic token sync not scheduled. Reason: not subscribed")
+  fun schedulePeriodicTokenSync(subscriberId: String) {
+    if (subscriberId.isBlank()) {
+      return logDebug("Periodic token sync not scheduled. Reason: empty subscriberId")
     }
 
     workManager.enqueueUniquePeriodicWork(
-      SYNC_TOKEN_PERIODIC,
-      ExistingPeriodicWorkPolicy.KEEP,
+      PERIODIC_TOKEN_SYNC_WORK_NAME,
+      ExistingPeriodicWorkPolicy.REPLACE,
       PeriodicWorkRequestBuilder<UploadWorker>(TOKEN_SYNC_PERIOD_DAYS, TimeUnit.DAYS)
-        .setInputData(workDataOf(TYPE to SYNC_TOKEN_PERIODIC))
-        .setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setInputData(
+          workDataOf(
+            TYPE to SYNC_TOKEN_PERIODIC,
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
+            SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
         .setConstraints(networkConstraints)
         .build(),
     )
@@ -84,7 +110,6 @@ internal class UploadManager(
     type: EventType,
     buttonId: Int,
     campaign: String,
-    projectId: String?,
     subscriberId: String?,
   ) {
     logDebug("Event enqueued: ${type.value}")
@@ -93,11 +118,13 @@ internal class UploadManager(
       OneTimeWorkRequestBuilder<UploadWorker>()
         .setInputData(
           workDataOf(
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
             TYPE to EVENT,
             EVENT_TYPE to type.name,
             EVENT_BUTTON_ID to buttonId,
             EVENT_CAMPAIGN to campaign,
-            EVENT_PROJECT_ID to projectId,
             EVENT_SUBSCRIBER_ID to subscriberId,
           ),
         ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
@@ -107,7 +134,7 @@ internal class UploadManager(
   }
 
   fun cancelAllJobs() {
-    workManager.cancelUniqueWork(SYNC_TOKEN)
-    workManager.cancelUniqueWork(SYNC_TOKEN_PERIODIC)
+    workManager.cancelUniqueWork(SYNC_TOKEN_WORK_NAME)
+    workManager.cancelUniqueWork(PERIODIC_TOKEN_SYNC_WORK_NAME)
   }
 }

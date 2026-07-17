@@ -17,7 +17,6 @@ import com.pushpushgo.sdk.push.push.createNotificationChannel
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.subscription.DefaultPushSubscriptionProvider
 import com.pushpushgo.sdk.push.utils.getPlatformType
-import com.pushpushgo.sdk.push.work.UploadDelegate
 import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,8 +43,7 @@ internal class PushNotificationsRuntime(
   val sharedPreferencesHelper = SharedPreferencesHelper(application)
   private val apiService = ApiService.fromConfig(config)
   val apiRepository = ApiRepository(application, apiService, sharedPreferencesHelper, config)
-  val uploadDelegate = UploadDelegate(apiRepository)
-  val uploadManager = UploadManager(application, sharedPreferencesHelper)
+  val uploadManager = UploadManager(application, config)
   val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager, callbacks)
 
   val liveActivities: LiveActivities =
@@ -67,8 +65,12 @@ internal class PushNotificationsRuntime(
     createNotificationChannel(application)
 
     if (sharedPreferencesHelper.isSubscribed) {
-      uploadManager.syncToken(null)
-      uploadManager.schedulePeriodicTokenSync()
+      val subscriberId = sharedPreferencesHelper.subscriberId
+
+      if (subscriberId != null) {
+        uploadManager.syncToken(subscriberId, null)
+        uploadManager.schedulePeriodicTokenSync(subscriberId)
+      }
     }
   }
 
@@ -140,13 +142,21 @@ internal class PushNotificationsRuntime(
   }
 
   suspend fun sendBeacon(beacon: Beacon) {
-    apiRepository.sendBeacon(beacon.payload)
+    subscriptionMutex.withLock {
+      assertActive()
+      apiRepository.sendBeacon(beacon.payload)
+    }
   }
 
   private suspend fun subscribeLocked() {
     apiRepository.registerToken(null)
-    uploadManager.schedulePeriodicTokenSync()
     sharedPreferencesHelper.isSubscribed = true
+
+    val subscriberId = sharedPreferencesHelper.subscriberId
+
+    if (subscriberId != null) {
+      uploadManager.schedulePeriodicTokenSync(subscriberId)
+    }
   }
 
   private suspend fun unsubscribeLocked() {
@@ -194,7 +204,6 @@ internal class PushNotificationsRuntime(
     uploadManager.sendEvent(
       type = EventType.CLICKED,
       buttonId = intentButtonId,
-      projectId = notify?.project ?: intentProjectId,
       subscriberId = notify?.subscriber ?: intentSubscriberId,
       campaign = notify?.campaignId ?: intentCampaignId,
     )

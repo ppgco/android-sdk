@@ -13,7 +13,6 @@ import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.utils.mapToBundle
-import com.pushpushgo.sdk.push.work.UploadDelegate
 import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,9 +42,6 @@ object PushNotifications {
 
   internal val apiRepository: ApiRepository
     get() = requireRuntime().apiRepository
-
-  internal val uploadDelegate: UploadDelegate
-    get() = requireRuntime().uploadDelegate
 
   internal val uploadManager: UploadManager
     get() = requireRuntime().uploadManager

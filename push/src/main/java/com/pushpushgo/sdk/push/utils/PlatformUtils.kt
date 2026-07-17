@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.push.utils
 
+import android.os.Build
 import com.google.firebase.messaging.FirebaseMessaging
 import com.huawei.agconnect.AGConnectOptionsBuilder
 import com.huawei.hms.aaid.HmsInstanceId
@@ -17,6 +18,8 @@ internal enum class PlatformType(
   FCM("android"),
   HCM("huawei"),
 }
+
+internal fun osVersion(): String = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
 
 private fun hasHMSPushKitLibrary(): Boolean =
   try {

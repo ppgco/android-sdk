@@ -6,6 +6,7 @@ import androidx.preference.PreferenceManager.getDefaultSharedPreferences
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.utils.PlatformType
 import com.pushpushgo.sdk.push.utils.getPlatformType
+import com.pushpushgo.sdk.push.utils.logDebug
 import java.util.UUID
 
 internal class SharedPreferencesHelper(
@@ -108,6 +109,21 @@ internal class SharedPreferencesHelper(
         ?: UUID.randomUUID().toString().also {
           sharedPreferences.edit { putString(INSTALLATION_ID, it) }
         }
+
+  fun onPushTokenUpdated(
+    subscriberId: String,
+    pushToken: String,
+  ) {
+    if (!isSubscribed) {
+      return logDebug("Token update skipped - not subscribed")
+    }
+
+    if (subscriberId != this.subscriberId) {
+      return logDebug("Token update skipped - subscriberId mismatch")
+    }
+
+    this.lastToken = pushToken
+  }
 
   /** LA subscriber id returned by the backend, keyed by live notification id. */
   fun getLiveActivitySubscriberId(liveNotificationId: String): String =

@@ -3,24 +3,20 @@ package com.pushpushgo.sdk.push.network
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Build
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
-import com.pushpushgo.sdk.push.data.Event
-import com.pushpushgo.sdk.push.data.EventType
-import com.pushpushgo.sdk.push.data.Payload
 import com.pushpushgo.sdk.push.network.data.InstallationMetadata
 import com.pushpushgo.sdk.push.network.data.LiveActivityEndpoint
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventDto
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
 import com.pushpushgo.sdk.push.network.data.TokenRequest
-import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
 import com.pushpushgo.sdk.push.utils.PlatformType
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
+import com.pushpushgo.sdk.push.utils.osVersion
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
@@ -61,54 +57,6 @@ internal class ApiRepository(
     logDebug("RegisterSubscriber received: $data")
   }
 
-  suspend fun updateSubscriberToken(token: String?) {
-    logDebug("updateSubscriberToken invoked")
-
-    if (!sharedPref.isSubscribed) {
-      return logDebug("Token update skipped. Reason: not subscribed")
-    }
-
-    val subscriberId = sharedPref.subscriberId
-    if (subscriberId == null) {
-      return logDebug("Token update skipped. Reason: empty subscriberId")
-    }
-
-    val storedToken = sharedPref.lastToken
-    if (storedToken == null) {
-      return logDebug("Token update skipped. Reason: empty stored token")
-    }
-
-    val tokenToUpdate = (token ?: getPlatformPushToken(context)).takeIf { it.isNotBlank() }
-    if (tokenToUpdate == null) {
-      return logDebug("Token update skipped. Reason: empty new token")
-    }
-
-    if (tokenToUpdate == storedToken) {
-      return logDebug("Token update skipped. Reason: token unchanged")
-    }
-
-    apiService.updateSubscriberToken(
-      token = config.apiKey,
-      projectId = config.projectId,
-      subscriberId = subscriberId,
-      body =
-        TokenUpdateRequest(
-          token = tokenToUpdate,
-          sdkVersion = PushNotifications.VERSION,
-          osVersion = osVersion(),
-          installationId = sharedPref.installationId,
-        ),
-    )
-
-    if (!sharedPref.isSubscribed) {
-      return logDebug("Token update skipped. Reason: unsubscribed during update")
-    }
-
-    if (sharedPref.subscriberId == subscriberId) {
-      sharedPref.lastToken = tokenToUpdate
-    }
-  }
-
   suspend fun unregisterSubscriber() {
     logDebug("unregisterSubscriber() invoked")
 
@@ -139,36 +87,6 @@ internal class ApiRepository(
       projectId = config.projectId,
       subscriberId = subscriberId,
       beacon = beacon.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()),
-    )
-  }
-
-  suspend fun sendEvent(
-    type: EventType,
-    buttonId: Int,
-    campaign: String,
-    project: String?,
-    subscriber: String?,
-  ) {
-    val subscriberId = subscriber?.ifBlank { null } ?: sharedPref.subscriberId
-
-    if (subscriberId == null) {
-      logError("Cannot send event - empty subscriberId")
-      return
-    }
-
-    apiService.sendEvent(
-      token = config.apiKey,
-      projectId = project ?: config.projectId,
-      event =
-        Event(
-          type = type.value,
-          payload =
-            Payload(
-              button = buttonId,
-              campaign = campaign,
-              subscriber = subscriberId,
-            ),
-        ),
     )
   }
 
@@ -246,8 +164,6 @@ internal class ApiRepository(
       .SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
       .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
       .format(java.util.Date())
-
-  private fun osVersion(): String = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
 
   /**
    * Fetches the current live notification document (configuration + live data +

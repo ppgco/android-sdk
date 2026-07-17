@@ -10,18 +10,23 @@ import com.pushpushgo.sdk.push.utils.logDebug
 class HmsMessagingServiceDelegate(
   private val context: Context,
 ) {
-  private val delegate = PushNotifications.pushNotificationsDelegate
+  private val delegate = {
+    runCatching {
+      PushNotifications.pushNotificationsDelegate
+    }.getOrNull()
+  }
 
   fun onMessageReceived(remoteMessage: RemoteMessage) {
     logDebug("onMessageReceived(${remoteMessage.data})")
-    delegate.onMessageReceived(
+
+    delegate()?.onMessageReceived(
       pushMessage = remoteMessage.toPushMessage(),
       context = context,
     )
   }
 
   fun onNewToken(token: String) {
-    delegate.onNewToken(token)
+    delegate()?.onNewToken(token)
   }
 
   private fun RemoteMessage.toPushMessage() =

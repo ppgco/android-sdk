@@ -5,10 +5,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
-import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -48,49 +46,5 @@ class ApiRepositoryTest {
 
       assertEquals("token-xyz", prefs.lastToken)
       assertEquals("sub-1", prefs.subscriberId)
-    }
-
-  @Test
-  fun `sendEvent prefers the payload subscriber over local state (ISSUE-09)`() =
-    runBlocking {
-      prefs.subscriberId = "local-sub"
-
-      repository.sendEvent(
-        type = EventType.DELIVERED,
-        buttonId = 0,
-        campaign = "camp",
-        project = "proj",
-        subscriber = "payload-sub",
-      )
-
-      coVerify {
-        apiService.sendEvent(
-          token = any(),
-          projectId = "proj",
-          event = match { it.payload.subscriber == "payload-sub" },
-        )
-      }
-    }
-
-  @Test
-  fun `sendEvent falls back to local subscriber when payload subscriber is blank (ISSUE-09)`() =
-    runBlocking {
-      prefs.subscriberId = "local-sub"
-
-      repository.sendEvent(
-        type = EventType.DELIVERED,
-        buttonId = 0,
-        campaign = "camp",
-        project = null,
-        subscriber = "   ",
-      )
-
-      coVerify {
-        apiService.sendEvent(
-          token = any(),
-          projectId = config.projectId,
-          event = match { it.payload.subscriber == "local-sub" },
-        )
-      }
     }
 }

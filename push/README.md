@@ -195,6 +195,10 @@ Add your Project ID and API Key inside `<application>`:
 
 Initialize the SDK in your `Application` class.
 
+The SDK requires WorkManager to be initialized first. The standard WorkManager setup does this
+automatically through AndroidX Startup. If your application disables WorkManager's automatic
+initializer, initialize WorkManager manually before calling `PushNotifications.initialize(...)`.
+
 #### Automatic (from AndroidManifest.xml)
 
 ```kotlin
@@ -225,6 +229,32 @@ class MyApplication : Application() {
   }
 }
 ```
+
+#### Switching to another project
+
+Changing manifest credentials is not a supported project-migration mechanism.
+To switch an explicitly configured SDK to another project, deinitialize the
+current runtime and wait for that operation to complete before initializing the
+new one:
+
+```kotlin
+PushNotifications.deinitialize()
+PushNotifications.initialize(
+  application = application,
+  config = newConfig,
+)
+```
+
+Java callers can chain the asynchronous wrapper:
+
+```java
+PushNotifications.deinitializeAsync()
+    .thenRun(() -> PushNotifications.initialize(application, newConfig));
+```
+
+Deinitialization unsubscribes the current subscriber and clears persisted project
+data. If unsubscription fails, the SDK remains initialized with the current
+configuration and the operation throws an exception.
 
 ### Notification UI customization
 
