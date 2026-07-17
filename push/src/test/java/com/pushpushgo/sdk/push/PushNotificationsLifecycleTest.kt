@@ -8,6 +8,7 @@ import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeResponse
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import io.mockk.coEvery
@@ -22,6 +23,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -125,6 +127,50 @@ class PushNotificationsLifecycleTest {
       assertEquals("token-123", preferences.lastToken)
       assertTrue(preferences.isSubscribed)
       assertEquals("live-sub-1", preferences.getLiveActivitySubscriberId("live-1"))
+    }
+
+  @Test
+  fun `cached live activities facade rejects calls after deinitialize`() =
+    runBlocking {
+      preferences.isSubscribed = false
+
+      val liveActivities = PushNotifications.liveActivities
+
+      PushNotifications.deinitialize()
+
+      val subscribeFailure = runCatching { liveActivities.subscribe("live-1") }.exceptionOrNull()
+      val queryFailure = runCatching { liveActivities.getSubscriberId("live-1") }.exceptionOrNull()
+
+      assertEquals("PushNotifications is deinitialized", subscribeFailure?.message)
+      assertEquals("PushNotifications is deinitialized", queryFailure?.message)
+      coVerify(exactly = 0) { apiService.subscribeLiveActivity(any(), any(), any()) }
+    }
+
+  @Test
+  fun `deinitialize waits for live activity subscription`() =
+    runBlocking {
+      val subscriptionStarted = CompletableDeferred<Unit>()
+      val finishSubscription = CompletableDeferred<Unit>()
+      coEvery { apiService.subscribeLiveActivity(any(), any(), any()) } coAnswers {
+        subscriptionStarted.complete(Unit)
+        finishSubscription.await()
+        LiveActivitySubscribeResponse("live-sub-1")
+      }
+
+      val subscription = launch(Dispatchers.Default) { PushNotifications.liveActivities.subscribe("live-1") }
+      subscriptionStarted.await()
+
+      val deinitialize = launch(Dispatchers.Default) { PushNotifications.deinitialize() }
+      yield()
+
+      assertFalse(deinitialize.isCompleted)
+
+      finishSubscription.complete(Unit)
+      subscription.join()
+      deinitialize.join()
+
+      assertFalse(PushNotifications.isInitialized())
+      assertEquals("", preferences.getLiveActivitySubscriberId("live-1"))
     }
 
   @Test

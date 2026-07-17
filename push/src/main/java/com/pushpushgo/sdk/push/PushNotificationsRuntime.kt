@@ -37,7 +37,9 @@ internal class PushNotificationsRuntime(
   }
 
   private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-  private val subscriptionMutex = Mutex()
+  private val operationMutex = Mutex()
+
+  @Volatile
   private var isDeinitialized = false
 
   val sharedPreferencesHelper = SharedPreferencesHelper(application)
@@ -54,6 +56,8 @@ internal class PushNotificationsRuntime(
       sharedPreferencesHelper = sharedPreferencesHelper,
       getSubscriberId = { getSubscriberId() },
       callbacks = callbacks,
+      operationMutex = operationMutex,
+      assertActive = ::assertActive,
     )
 
   init {
@@ -107,7 +111,7 @@ internal class PushNotificationsRuntime(
   fun getPushToken(): String? = sharedPreferencesHelper.lastToken
 
   suspend fun subscribe() {
-    subscriptionMutex.withLock {
+    operationMutex.withLock {
       assertActive()
 
       check(areNotificationsEnabled(application)) {
@@ -119,14 +123,14 @@ internal class PushNotificationsRuntime(
   }
 
   suspend fun unsubscribe() {
-    subscriptionMutex.withLock {
+    operationMutex.withLock {
       assertActive()
       unsubscribeLocked()
     }
   }
 
   suspend fun deinitialize() {
-    subscriptionMutex.withLock {
+    operationMutex.withLock {
       assertActive()
 
       if (sharedPreferencesHelper.isSubscribed) {
@@ -142,7 +146,7 @@ internal class PushNotificationsRuntime(
   }
 
   suspend fun sendBeacon(beacon: Beacon) {
-    subscriptionMutex.withLock {
+    operationMutex.withLock {
       assertActive()
       apiRepository.sendBeacon(beacon.payload)
     }

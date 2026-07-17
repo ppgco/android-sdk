@@ -9,6 +9,8 @@ import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -21,6 +23,8 @@ class LiveActivities internal constructor(
   sharedPreferencesHelper: SharedPreferencesHelper,
   getSubscriberId: () -> String?,
   callbacks: PushNotificationsCallbacks,
+  private val operationMutex: Mutex,
+  private val assertActive: () -> Unit,
 ) {
   private val controller =
     LiveActivityController(
@@ -44,25 +48,35 @@ class LiveActivities internal constructor(
   }
 
   /** Checks whether Live Activities are supported on this device (API 36+). */
-  fun isSupported(): Boolean = controller.isSupported()
+  fun isSupported(): Boolean {
+    assertActive()
+    return controller.isSupported()
+  }
 
   /**
    * Returns the currently active Live Activities.
    * Returns an empty list on API < 36.
    */
-  fun getActiveActivities(): List<LiveActivity> = controller.getActiveActivities()
+  fun getActiveActivities(): List<LiveActivity> {
+    assertActive()
+    return controller.getActiveActivities()
+  }
 
   /**
    * Checks whether a specific Live Activity is currently active.
    * Returns `false` on API < 36.
    */
-  fun isActive(id: String): Boolean = controller.isActive(id)
+  fun isActive(id: String): Boolean {
+    assertActive()
+    return controller.isActive(id)
+  }
 
   /**
    * Simulates a Live Activity push for SDK testing. No-op on API < 36.
    */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   fun simulatePush(data: Map<String, String>) {
+    assertActive()
     controller.simulatePush(data)
   }
 
@@ -76,7 +90,11 @@ class LiveActivities internal constructor(
    * @return the assigned Live Activity subscriber ID
    */
   @JvmSynthetic
-  suspend fun subscribe(liveNotificationId: String): String = controller.subscribe(liveNotificationId)
+  suspend fun subscribe(liveNotificationId: String): String =
+    operationMutex.withLock {
+      assertActive()
+      controller.subscribe(liveNotificationId)
+    }
 
   /**
    * Subscribes this device to a backend Live Activity.
@@ -99,7 +117,10 @@ class LiveActivities internal constructor(
    */
   @JvmSynthetic
   suspend fun unsubscribe(liveNotificationId: String) {
-    controller.unsubscribe(liveNotificationId)
+    operationMutex.withLock {
+      assertActive()
+      controller.unsubscribe(liveNotificationId)
+    }
   }
 
   /**
@@ -120,7 +141,10 @@ class LiveActivities internal constructor(
    * Returns the persisted Live Activity subscriber ID, or an empty string if this
    * device is not subscribed to it.
    */
-  fun getSubscriberId(liveNotificationId: String): String = controller.getSubscriberId(liveNotificationId)
+  fun getSubscriberId(liveNotificationId: String): String {
+    assertActive()
+    return controller.getSubscriberId(liveNotificationId)
+  }
 
   /**
    * Handles a Live Activity notification click. Call from `Activity.onCreate()` or
@@ -135,5 +159,8 @@ class LiveActivities internal constructor(
   fun handleClick(
     intent: Intent?,
     openDeepLink: Boolean = true,
-  ): String? = controller.handleClick(application, intent, openDeepLink)
+  ): String? {
+    assertActive()
+    return controller.handleClick(application, intent, openDeepLink)
+  }
 }
