@@ -50,7 +50,7 @@ class MyApplication : Application() {
         // Initialize the SDK using configuration from AndroidManifest.xml
         InAppMessages.initialize(
           application = this,
-          // pushSubscriptionProvider = ...,  optional, see [Action Handling] section
+          // pushSubscriptionProvider = ..., required for push audiences/actions; see Action Handling
           // customCodeHandler = ..., optional, see [Action Handling] section
         )
       
@@ -63,7 +63,7 @@ class MyApplication : Application() {
             projectId = "your-project-id",
             apiKey = "your-api-key",
           ),
-          // pushSubscriptionProvider = ...,  optional, see [Action Handling] section
+          // pushSubscriptionProvider = ..., required for push audiences/actions; see Action Handling
           // customCodeHandler = ..., optional, see [Action Handling] section
         )
     }
@@ -219,12 +219,21 @@ No additional configuration is required.
 
 In-app message buttons can be configured to **subscribe users to push notifications**.
 
-The InAppMessages SDK does not handle push subscription logic on its own. Instead, these actions are delegated to a `PushSubscriptionProvider`, if supplied during SDK initialization.
+The InAppMessages SDK does not handle push subscriptions itself. Provide a
+`PushSubscriptionProvider` during initialization when messages use push-based
+audience targeting or push subscription actions. Without it, the SDK cannot
+reliably check the user's push subscription status or perform those actions.
 
-A default implementation is provided by the PushPushGo PushNotifications SDK:
+The PushPushGo PushNotifications SDK provides the default implementation. The
+PushNotifications SDK must be initialized before requesting it:
 
 ```kotlin
-PushNotifications.getInstance().getPushSubscriptionProvider()
+PushNotifications.initialize(application)
+
+InAppMessages.initialize(
+    application = application,
+    pushSubscriptionProvider = PushNotifications.getPushSubscriptionProvider(),
+)
 ```
 
 A custom implementation may also be supplied.

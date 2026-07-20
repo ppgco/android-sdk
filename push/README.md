@@ -252,9 +252,10 @@ PushNotifications.deinitializeAsync()
     .thenRun(() -> PushNotifications.initialize(application, newConfig));
 ```
 
-Deinitialization unsubscribes the current subscriber and clears persisted project
-data. If unsubscription fails, the SDK remains initialized with the current
-configuration and the operation throws an exception.
+Deinitialization removes Live Activities first, then unsubscribes the current
+subscriber and clears persisted project data. If any step fails, the SDK remains
+initialized and the operation throws an exception. Live Activities already
+removed stay removed.
 
 ### Notification UI customization
 

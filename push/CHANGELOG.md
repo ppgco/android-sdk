@@ -68,9 +68,10 @@
   call `PushNotifications.initialize(application, newConfig)`.
 - Java callers should wait for `PushNotifications.deinitializeAsync()` before
   calling `initialize(...)`.
-- Deinitialization unsubscribes the current subscriber and clears its persisted
-  project data. If unsubscription fails, the current runtime and its state are
-  retained and the returned operation fails.
+- Deinitialization removes Live Activities first, then unsubscribes the current
+  subscriber and clears its persisted project data. If any step fails, the SDK
+  remains initialized and the operation fails. Live Activities already removed
+  stay removed.
 
 #### Live Activities
 - Live Activity APIs moved from `PushNotifications` to the

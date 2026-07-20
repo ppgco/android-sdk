@@ -7,6 +7,7 @@ import androidx.core.content.getSystemService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.areNotificationsEnabled
 import com.pushpushgo.sdk.push.utils.logDebug
+import com.pushpushgo.sdk.push.utils.logError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -26,7 +27,11 @@ internal class NotificationStatusChecker(
     sdkScope.launch {
       while (true) {
         if (isAppOnForeground()) {
-          checkNotificationsStatus()
+          try {
+            checkNotificationsStatus()
+          } catch (exception: Exception) {
+            logError("Notification status check failed", exception)
+          }
         }
 
         delay(CHECK_PERIOD)

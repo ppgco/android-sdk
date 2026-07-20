@@ -111,6 +111,10 @@ object PushNotifications {
   /**
    * Unsubscribes the current project, clears its persisted state, and releases the SDK runtime.
    *
+   * Live Activities are removed first, followed by the current push subscription. If any step
+   * fails, the SDK remains initialized and the error is returned. Live Activities already removed
+   * stay removed.
+   *
    * After this method completes, [initialize] may be called with another project configuration.
    */
   @JvmSynthetic
