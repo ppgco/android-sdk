@@ -88,4 +88,34 @@ class ApiRepositoryTest {
       assertSame(expected, actual)
       assertEquals("sub-1", prefs.subscriberId)
     }
+
+  @Test
+  fun `unsubscribeFromLiveActivity treats missing live notification as success`() =
+    runBlocking {
+      coEvery { apiService.unsubscribeLiveActivity(any(), any()) } throws
+        PushPushException("Live notification not found", 400)
+
+      repository.unsubscribeFromLiveActivity("live-1", "live-sub-1")
+    }
+
+  @Test
+  fun `unsubscribeFromLiveActivity treats missing live notification subscriber as success`() =
+    runBlocking {
+      coEvery { apiService.unsubscribeLiveActivity(any(), any()) } throws
+        PushPushException("Live notification subscriber not found", 400)
+
+      repository.unsubscribeFromLiveActivity("live-1", "live-sub-1")
+    }
+
+  @Test
+  fun `unsubscribeFromLiveActivity propagates other errors`() =
+    runBlocking {
+      val expected = PushPushException("Unexpected error", 400)
+
+      coEvery { apiService.unsubscribeLiveActivity(any(), any()) } throws expected
+
+      val actual = runCatching { repository.unsubscribeFromLiveActivity("live-1", "live-sub-1") }.exceptionOrNull()
+
+      assertSame(expected, actual)
+    }
 }

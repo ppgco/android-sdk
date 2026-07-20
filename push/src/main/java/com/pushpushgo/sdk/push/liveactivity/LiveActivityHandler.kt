@@ -293,6 +293,20 @@ internal class LiveActivityHandler(
     tickerJobs.remove(notificationId)?.cancel()
   }
 
+  fun removeActivity(liveActivityId: String) {
+    val notificationId = manager.getNotificationId(liveActivityId)
+
+    if (notificationId != -1) {
+      cancelTicker(notificationId)
+    }
+
+    manager.removeActivity(liveActivityId)
+
+    if (notificationId != -1) {
+      NotificationManagerCompat.from(context).cancel(notificationId)
+    }
+  }
+
   fun handleDismiss(liveActivityId: String) {
     val activity = manager.getActivity(liveActivityId)
     manager.markDismissedByUser(liveActivityId)

@@ -29,6 +29,8 @@ internal class ApiRepository(
 ) {
   companion object {
     private const val INACTIVE_SUBSCRIBER_MESSAGE = "Cannot perform operation on inactive subscriber"
+    private const val LIVE_ACTIVITY_NOT_FOUND_MESSAGE = "Live notification not found"
+    private const val LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE = "Live notification subscriber not found"
   }
 
   suspend fun registerToken(token: String?) {
@@ -139,10 +141,23 @@ internal class ApiRepository(
     liveNotificationId: String,
     liveActivitySubscriberId: String,
   ) {
-    apiService.unsubscribeLiveActivity(
-      url = "${liveActivitySubscribersUrl(liveNotificationId)}/$liveActivitySubscriberId",
-      token = config.apiKey,
-    )
+    try {
+      apiService.unsubscribeLiveActivity(
+        url = "${liveActivitySubscribersUrl(liveNotificationId)}/$liveActivitySubscriberId",
+        token = config.apiKey,
+      )
+    } catch (exception: PushPushException) {
+      val isAlreadyUnsubscribed =
+        exception.statusCode == 400 &&
+          (
+            exception.message == LIVE_ACTIVITY_NOT_FOUND_MESSAGE ||
+              exception.message == LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE
+          )
+
+      if (!isAlreadyUnsubscribed) throw exception
+
+      logDebug("Live Activity subscription is already unregistered")
+    }
   }
 
   /**

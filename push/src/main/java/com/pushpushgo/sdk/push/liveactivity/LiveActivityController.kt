@@ -79,6 +79,14 @@ internal class LiveActivityController(
     persistence.clearAll()
   }
 
+  suspend fun deinitialize() {
+    val liveActivities = sharedPref.getLiveActivitySubscriptions()
+
+    for (liveActivityId in liveActivities.keys) {
+      unsubscribe(liveActivityId)
+    }
+  }
+
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36
 
   fun getActiveActivities(): List<LiveActivity> = manager?.getActiveActivities() ?: emptyList()
@@ -89,22 +97,23 @@ internal class LiveActivityController(
     handler?.handlePush(data)
   }
 
-  suspend fun subscribe(liveNotificationId: String): String {
-    val laSubscriberId = apiRepository.subscribeToLiveActivity(liveNotificationId)
-    sharedPref.setLiveActivitySubscriberId(liveNotificationId, laSubscriberId)
+  suspend fun subscribe(liveActivityId: String): String {
+    val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)
+    sharedPref.setLiveActivitySubscriberId(liveActivityId, laSubscriberId)
     // Catch up: render the current state for subscribers that joined after the
     // `start` push was already delivered (no-op if the LA isn't live yet).
-    catchUp(liveNotificationId)
+    catchUp(liveActivityId)
     return laSubscriberId
   }
 
-  suspend fun unsubscribe(liveNotificationId: String) {
-    val laSubscriberId = sharedPref.getLiveActivitySubscriberId(liveNotificationId)
+  suspend fun unsubscribe(liveActivityId: String) {
+    val laSubscriberId = sharedPref.getLiveActivitySubscriberId(liveActivityId)
     check(laSubscriberId.isNotEmpty()) {
-      "Not subscribed to live notification $liveNotificationId"
+      "Not subscribed to live activity $liveActivityId"
     }
-    apiRepository.unsubscribeFromLiveActivity(liveNotificationId, laSubscriberId)
-    sharedPref.removeLiveActivitySubscriberId(liveNotificationId)
+    apiRepository.unsubscribeFromLiveActivity(liveActivityId, laSubscriberId)
+    handler?.removeActivity(liveActivityId)
+    sharedPref.removeLiveActivitySubscriberId(liveActivityId)
   }
 
   fun getSubscriberId(liveNotificationId: String): String = sharedPref.getLiveActivitySubscriberId(liveNotificationId)

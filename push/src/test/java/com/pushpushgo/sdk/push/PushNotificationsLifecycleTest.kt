@@ -97,6 +97,9 @@ class PushNotificationsLifecycleTest {
 
       PushNotifications.deinitialize()
 
+      coVerify(exactly = 1) {
+        apiService.unsubscribeLiveActivity(match { "/live-1/subscribers/live-sub-1" in it }, any())
+      }
       coVerify(exactly = 1) { apiService.unregisterSubscriber(any(), config.projectId, "sub-123") }
       assertFalse(PushNotifications.isInitialized())
 
@@ -126,7 +129,7 @@ class PushNotificationsLifecycleTest {
       assertEquals("sub-123", preferences.subscriberId)
       assertEquals("token-123", preferences.lastToken)
       assertTrue(preferences.isSubscribed)
-      assertEquals("live-sub-1", preferences.getLiveActivitySubscriberId("live-1"))
+      assertEquals("", preferences.getLiveActivitySubscriberId("live-1"))
     }
 
   @Test

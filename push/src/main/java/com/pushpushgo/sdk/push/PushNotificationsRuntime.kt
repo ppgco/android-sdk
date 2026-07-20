@@ -126,6 +126,8 @@ internal class PushNotificationsRuntime(
     operationMutex.withLock {
       assertActive()
 
+      liveActivities.deinitialize()
+
       if (sharedPreferencesHelper.isSubscribed) {
         unsubscribeLocked()
       } else {

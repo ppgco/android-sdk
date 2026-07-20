@@ -43,6 +43,10 @@ class LiveActivities internal constructor(
     controller.clearProjectData()
   }
 
+  internal suspend fun deinitialize() {
+    controller.deinitialize()
+  }
+
   init {
     controller.restoreFromPersistence()
   }

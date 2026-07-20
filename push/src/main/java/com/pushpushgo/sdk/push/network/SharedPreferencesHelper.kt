@@ -139,6 +139,16 @@ internal class SharedPreferencesHelper(
     sharedPreferences.edit { remove(LA_SUBSCRIBER_PREFIX + liveNotificationId) }
   }
 
+  internal fun getLiveActivitySubscriptions(): Map<String, String> =
+    sharedPreferences.all
+      .mapNotNull { (key, value) ->
+        if (!key.startsWith(LA_SUBSCRIBER_PREFIX) || value !is String) {
+          null
+        } else {
+          key.removePrefix(LA_SUBSCRIBER_PREFIX) to value
+        }
+      }.toMap()
+
   fun clearProjectData() {
     val liveActivitySubscriberKeys = sharedPreferences.all.keys.filter { it.startsWith(LA_SUBSCRIBER_PREFIX) }
 
