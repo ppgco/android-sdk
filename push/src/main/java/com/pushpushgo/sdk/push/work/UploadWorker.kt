@@ -51,6 +51,8 @@ internal class UploadWorker(
     coroutineScope {
       logDebug("UploadWorker: started")
 
+      val type = inputData.getString(TYPE)
+
       val projectId = inputData.getString(WORK_PROJECT_ID)
       val apiKey = inputData.getString(WORK_API_KEY)
       val apiUrl = inputData.getString(WORK_API_URL)
@@ -59,14 +61,12 @@ internal class UploadWorker(
         if (projectId != null && apiKey != null && apiUrl != null) {
           Config.create(projectId, apiKey, apiUrl)
         } else {
-          logDebug("UploadWorker: Work not configured with project credentials, skipping.")
+          logDebug("UploadWorker: Work is not configured with project credentials, skipping.")
 
           return@coroutineScope Result.failure()
         }
 
       val apiService = ApiService.fromConfig(config)
-
-      val type = inputData.getString(TYPE)
 
       try {
         when (type) {

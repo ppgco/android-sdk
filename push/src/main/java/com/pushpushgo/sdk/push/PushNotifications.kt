@@ -132,6 +132,11 @@ object PushNotifications {
       null
     }
 
+  /**
+   * Sets the intent flags used when opening a notification.
+   *
+   * This setting requires an initialized SDK.
+   */
   @JvmStatic
   fun setCustomClickIntentFlags(flags: Int) {
     withLifecycleLock {

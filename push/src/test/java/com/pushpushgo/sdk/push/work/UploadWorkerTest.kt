@@ -35,7 +35,7 @@ class UploadWorkerTest {
 
   @Before
   fun setUp() {
-    apiService = mockk(relaxed = true)
+    apiService = mockk()
     mockkObject(ApiService.Companion)
     every { ApiService.fromConfig(any()) } returns apiService
     coEvery { apiService.sendEvent(any(), any(), any()) } returns Response.success(null)
