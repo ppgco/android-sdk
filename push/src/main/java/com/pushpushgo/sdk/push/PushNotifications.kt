@@ -58,10 +58,6 @@ object PushNotifications {
   internal val errorCallback: PushNotificationsErrorCallback?
     get() = callbacks.errorCallback
 
-  @Deprecated("")
-  internal val defaultIsSubscribed: Boolean
-    get() = requireRuntime().defaultIsSubscribed
-
   @JvmStatic
   val liveActivities: LiveActivities
     get() = requireRuntime().liveActivities
@@ -140,13 +136,6 @@ object PushNotifications {
   fun setCustomClickIntentFlags(flags: Int) {
     withLifecycleLock {
       requireRuntime().setCustomClickIntentFlags(flags)
-    }
-  }
-
-  @Deprecated("")
-  internal fun setDefaultIsSubscribed(isSubscribed: Boolean) {
-    withLifecycleLock {
-      requireRuntime().setDefaultIsSubscribed(isSubscribed)
     }
   }
 

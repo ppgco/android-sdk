@@ -5,11 +5,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,6 +37,7 @@ class ApiRepositoryTest {
     PushNotifications.initialize(getApplicationContext(), config)
     apiService = mockk(relaxed = true)
     prefs = SharedPreferencesHelper(getApplicationContext(), prefsName = "api_repo_test")
+    prefs.clearProjectData()
     repository = ApiRepository(getApplicationContext(), apiService, prefs, config)
   }
 
@@ -45,6 +49,43 @@ class ApiRepositoryTest {
       repository.registerToken("token-xyz")
 
       assertEquals("token-xyz", prefs.lastToken)
+      assertEquals("sub-1", prefs.subscriberId)
+    }
+
+  @Test
+  fun `unregisterSubscriber treats missing subscriber as already unregistered`() =
+    runBlocking {
+      prefs.subscriberId = "sub-1"
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws
+        PushPushException("Subscriber not exists", 404)
+
+      repository.unregisterSubscriber()
+
+      assertNull(prefs.subscriberId)
+    }
+
+  @Test
+  fun `unregisterSubscriber treats inactive subscriber as already unregistered`() =
+    runBlocking {
+      prefs.subscriberId = "sub-1"
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws
+        PushPushException("Cannot perform operation on inactive subscriber", 400)
+
+      repository.unregisterSubscriber()
+
+      assertNull(prefs.subscriberId)
+    }
+
+  @Test
+  fun `unregisterSubscriber propagates other API errors and preserves subscriber`() =
+    runBlocking {
+      prefs.subscriberId = "sub-1"
+      val expected = PushPushException("Unexpected error", 400)
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws expected
+
+      val actual = runCatching { repository.unregisterSubscriber() }.exceptionOrNull()
+
+      assertSame(expected, actual)
       assertEquals("sub-1", prefs.subscriberId)
     }
 }

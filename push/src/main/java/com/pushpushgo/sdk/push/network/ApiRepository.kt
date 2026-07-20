@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.data.InstallationMetadata
 import com.pushpushgo.sdk.push.network.data.LiveActivityEndpoint
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventDto
@@ -26,6 +27,10 @@ internal class ApiRepository(
   private val sharedPref: SharedPreferencesHelper,
   private val config: Config,
 ) {
+  companion object {
+    private const val INACTIVE_SUBSCRIBER_MESSAGE = "Cannot perform operation on inactive subscriber"
+  }
+
   suspend fun registerToken(token: String?) {
     logDebug("registerToken invoked: $token")
 
@@ -67,11 +72,22 @@ internal class ApiRepository(
       return
     }
 
-    apiService.unregisterSubscriber(
-      token = config.apiKey,
-      projectId = config.projectId,
-      subscriberId = subscriberId,
-    )
+    try {
+      apiService.unregisterSubscriber(
+        token = config.apiKey,
+        projectId = config.projectId,
+        subscriberId = subscriberId,
+      )
+    } catch (exception: PushPushException) {
+      val isAlreadyUnregistered =
+        exception.statusCode == 404 ||
+          (exception.statusCode == 400 && exception.message == INACTIVE_SUBSCRIBER_MESSAGE)
+
+      if (!isAlreadyUnregistered) throw exception
+
+      logDebug("Subscriber is already unregistered")
+    }
+
     sharedPref.subscriberId = ""
   }
 

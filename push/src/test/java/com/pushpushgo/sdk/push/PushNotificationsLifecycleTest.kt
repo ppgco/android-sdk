@@ -130,6 +130,21 @@ class PushNotificationsLifecycleTest {
     }
 
   @Test
+  fun `deinitialize skips unregister and clears stale subscriber when not subscribed`() =
+    runBlocking {
+      preferences.subscriberId = "stale-sub-123"
+      preferences.lastToken = "token-123"
+      preferences.isSubscribed = false
+
+      PushNotifications.deinitialize()
+
+      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
+      assertFalse(PushNotifications.isInitialized())
+      assertNull(preferences.subscriberId)
+      assertNull(preferences.lastToken)
+    }
+
+  @Test
   fun `cached live activities facade rejects calls after deinitialize`() =
     runBlocking {
       preferences.isSubscribed = false
@@ -174,28 +189,6 @@ class PushNotificationsLifecycleTest {
     }
 
   @Test
-  fun `lifecycle setter can run while subscription is in progress`() =
-    runBlocking {
-      preferences.lastToken = "token-123"
-      val subscriptionStarted = CompletableDeferred<Unit>()
-      val finishSubscription = CompletableDeferred<Unit>()
-      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
-        subscriptionStarted.complete(Unit)
-        finishSubscription.await()
-        TokenResponse(id = "sub-new")
-      }
-
-      val subscription = launch(Dispatchers.Default) { PushNotifications.subscribe() }
-      subscriptionStarted.await()
-
-      PushNotifications.setDefaultIsSubscribed(true)
-
-      assertTrue(PushNotifications.defaultIsSubscribed)
-      finishSubscription.complete(Unit)
-      subscription.join()
-    }
-
-  @Test
   fun `mutation queued behind deinitialize cannot access released runtime`() =
     runBlocking {
       preferences.subscriberId = "sub-123"
@@ -217,12 +210,6 @@ class PushNotificationsLifecycleTest {
           PushNotifications.initialize(application, config)
         }
       assertEquals("PushNotifications lifecycle mutation is in progress", initializeFailure.message)
-
-      val setterFailure =
-        assertThrows(IllegalStateException::class.java) {
-          PushNotifications.setDefaultIsSubscribed(true)
-        }
-      assertEquals("PushNotifications lifecycle mutation is in progress", setterFailure.message)
 
       val clickHandler = NotificationClickHandler { _, _, _ -> }
       PushNotifications.setNotificationClickHandler(clickHandler)

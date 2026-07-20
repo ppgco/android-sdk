@@ -3,7 +3,6 @@ package com.pushpushgo.sdk.push.network
 import android.content.Context
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
-import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.utils.PlatformType
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
@@ -51,7 +50,7 @@ internal class SharedPreferencesHelper(
     get() =
       sharedPreferences.getBoolean(
         IS_SUBSCRIBED,
-        PushNotifications.isInitialized().takeIf { it }?.let { PushNotifications.defaultIsSubscribed } ?: false,
+        false,
       )
     set(value) {
       sharedPreferences.edit { putBoolean(IS_SUBSCRIBED, value) }

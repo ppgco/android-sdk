@@ -12,6 +12,7 @@ import com.pushpushgo.sdk.push.network.interceptor.RequestInterceptor
 import com.pushpushgo.sdk.push.network.interceptor.ResponseInterceptor
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
+import com.squareup.moshi.Moshi
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -113,11 +114,13 @@ internal interface ApiService {
 
   companion object {
     fun fromConfig(config: Config): ApiService {
+      val moshi = Moshi.Builder().build()
+
       val client =
         OkHttpClient
           .Builder()
           .addInterceptor(RequestInterceptor())
-          .addInterceptor(ResponseInterceptor())
+          .addInterceptor(ResponseInterceptor(moshi))
           .addNetworkInterceptor(
             HttpLoggingInterceptor {
               logDebug(it)
@@ -136,7 +139,7 @@ internal interface ApiService {
         .Builder()
         .client(client)
         .baseUrl("${config.apiUrl}/v1/${platformType.apiName}/")
-        .addConverterFactory(MoshiConverterFactory.create())
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
         .create()
     }

@@ -86,18 +86,11 @@ internal class PushNotificationsRuntime(
     ).start()
   }
 
-  var defaultIsSubscribed: Boolean = false
-    private set
-
   val customClickIntentFlags: Int
     get() = sharedPreferencesHelper.customIntentFlags
 
   fun setCustomClickIntentFlags(flags: Int) {
     sharedPreferencesHelper.customIntentFlags = flags
-  }
-
-  fun setDefaultIsSubscribed(isSubscribed: Boolean) {
-    defaultIsSubscribed = isSubscribed
   }
 
   fun getProjectId(): String = config.projectId
@@ -135,6 +128,8 @@ internal class PushNotificationsRuntime(
 
       if (sharedPreferencesHelper.isSubscribed) {
         unsubscribeLocked()
+      } else {
+        uploadManager.cancelAllJobs()
       }
 
       sharedPreferencesHelper.clearProjectData()
