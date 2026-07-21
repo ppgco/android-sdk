@@ -3,7 +3,6 @@ package com.pushpushgo.sdk.push.liveactivity
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
-import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchConfiguration
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchContent
@@ -13,6 +12,7 @@ import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
+import com.pushpushgo.sdk.push.testConfig
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -38,11 +38,7 @@ internal class LiveActivityManagerTest {
     WorkManagerTestInitHelper.initializeTestWorkManager(getApplicationContext())
     PushNotifications.initialize(
       application = getApplicationContext(),
-      config =
-        Config.create(
-          projectId = "hm93nzyt5bmczmtjeghy2aph",
-          apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-        ),
+      config = testConfig(),
     )
     MockKAnnotations.init(this)
     every { persistence.getNotificationId(any()) } returns -1

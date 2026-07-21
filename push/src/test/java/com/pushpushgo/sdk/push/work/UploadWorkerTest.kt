@@ -5,9 +5,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
-import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.testConfig
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -25,11 +25,7 @@ import retrofit2.Response
 @RunWith(AndroidJUnit4::class)
 @org.robolectric.annotation.Config(sdk = [33])
 class UploadWorkerTest {
-  private val config =
-    Config.create(
-      projectId = "hm93nzyt5bmczmtjeghy2aph",
-      apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-    )
+  private val config = testConfig()
 
   private lateinit var apiService: ApiService
 

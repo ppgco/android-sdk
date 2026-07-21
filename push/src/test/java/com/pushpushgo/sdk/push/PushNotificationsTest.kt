@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
-import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,11 +25,7 @@ class PushNotificationsTest {
     systemUnderTest =
       PushNotifications.initialize(
         application = getApplicationContext(),
-        config =
-          Config.create(
-            projectId = "hm93nzyt5bmczmtjeghy2aph",
-            apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-          ),
+        config = testConfig(),
       )
   }
 
@@ -133,11 +128,7 @@ class PushNotificationsTest {
     val initializedAgain =
       PushNotifications.initialize(
         application = getApplicationContext(),
-        config =
-          Config.create(
-            projectId = "hm93nzyt5bmczmtjeghy2aph",
-            apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-          ),
+        config = testConfig(),
       )
 
     assertSame(systemUnderTest, initializedAgain)
@@ -149,11 +140,7 @@ class PushNotificationsTest {
       assertThrows(IllegalStateException::class.java) {
         PushNotifications.initialize(
           application = getApplicationContext(),
-          config =
-            Config.create(
-              projectId = "hm93nzyt5bmczmtjeghy2aaa",
-              apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-            ),
+          config = otherProjectTestConfig(),
         )
       }
 

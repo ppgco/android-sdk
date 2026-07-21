@@ -2,9 +2,9 @@ package com.pushpushgo.sdk.push.network
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.data.TokenResponse
+import com.pushpushgo.sdk.push.testConfig
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -19,11 +19,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @org.robolectric.annotation.Config(sdk = [33])
 class ApiRepositoryTest {
-  private val config =
-    Config.create(
-      projectId = "hm93nzyt5bmczmtjeghy2aph",
-      apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-    )
+  private val config = testConfig()
 
   private lateinit var apiService: ApiService
   private lateinit var prefs: SharedPreferencesHelper
