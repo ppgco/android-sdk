@@ -395,6 +395,12 @@ internal class PushNotificationDelegate(
       putExtra(SUBSCRIBER_ID_EXTRA, subscriberId)
       putExtra(LINK_EXTRA, link)
 
+      // Without these flags an already-running task is merely brought to the
+      // front and the intent (with the click extras) is never delivered to the
+      // activity — neither onCreate nor onNewIntent fires, so the redirect and
+      // the CLICKED event are lost.
+      addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
       logDebug("launcher intenet flags before override: $flags")
 
       if (PushNotifications.isInitialized()) {
