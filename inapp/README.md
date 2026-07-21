@@ -34,7 +34,7 @@ dependencies {
 ```
 
 ### Requirements
-- Android API 28+
+- Android API 26+
 - Kotlin 1.6+
 - Jetpack Compose (the library uses Compose for UI rendering)
 

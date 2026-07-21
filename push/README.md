@@ -32,6 +32,10 @@ Android SDK for integrating push notifications into your application. Supports b
 
 ## Installation
 
+### Requirements
+
+- Android API 26+
+
 Choose installation path depending on your provider.
 
 ## FCM (Firebase Cloud Messaging)

@@ -5,7 +5,7 @@
 ### Breaking changes
 
 #### Min SDK Version
-- Minimum Android SDK version increased from 23 to 28.
+- Minimum Android SDK version increased from 23 to 26.
 
 #### SDK entry point & initialization
 - **Replaced `PushPushGo` with `PushNotifications`** as the main public API.
@@ -65,7 +65,8 @@
 - Removed `migrateToNewProject(...)`.
 - To switch an initialized SDK to another explicit configuration, first call the
   suspending `PushNotifications.deinitialize()` method and, after it completes,
-  call `PushNotifications.initialize(application, newConfig)`.
+  call `PushNotifications.initialize(application, newConfig)`, then explicitly
+  call `PushNotifications.subscribe()` to subscribe to the new project.
 - Java callers should wait for `PushNotifications.deinitializeAsync()` before
   calling `initialize(...)`.
 - Deinitialization removes Live Activities first, then unsubscribes the current
@@ -98,7 +99,8 @@
   - `PushNotifications.getInstance().method()` → `PushNotifications.method()`
   - `ListenableFuture` → `CompletableFuture`
   - Legacy subscription calls → new unified subscription API
-  - `migrateToNewProject(...)` → `deinitialize()` followed by `initialize(...)`
+  - `migrateToNewProject(...)` → `deinitialize()`, then `initialize(...)`, followed by an
+    explicit `subscribe()`
   - Direct Live Activity methods → `PushNotifications.liveActivities`
   - `createBeacon()...send()` → `BeaconBuilder()...build()` followed by `sendBeacon(...)`
   - String-based tag strategies (e.g. `"append"`, `"rewrite"`) → `BeaconTagStrategy.APPEND` / `BeaconTagStrategy.REWRITE`
