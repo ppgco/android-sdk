@@ -2,12 +2,11 @@ package com.pushpushgo.sdk.push.network
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.core.api.Config
-import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -32,10 +31,7 @@ class ApiRepositoryTest {
 
   @Before
   fun setUp() {
-    WorkManagerTestInitHelper.initializeTestWorkManager(getApplicationContext())
-    // logDebug() resolves config through the SDK singleton, so it must exist.
-    PushNotifications.initialize(getApplicationContext(), config)
-    apiService = mockk(relaxed = true)
+    apiService = mockk()
     prefs = SharedPreferencesHelper(getApplicationContext(), prefsName = "api_repo_test")
     prefs.clearProjectData()
     repository = ApiRepository(getApplicationContext(), apiService, prefs, config)
@@ -87,6 +83,16 @@ class ApiRepositoryTest {
 
       assertSame(expected, actual)
       assertEquals("sub-1", prefs.subscriberId)
+    }
+
+  @Test
+  fun `sendBeacon throws when unsubscribed`() =
+    runBlocking {
+      val failure = runCatching { repository.sendBeacon("{}") }.exceptionOrNull()
+
+      assertEquals(IllegalStateException::class.java, failure?.javaClass)
+      assertEquals("Cannot send beacon - unsubscribed", failure?.message)
+      coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
     }
 
   @Test

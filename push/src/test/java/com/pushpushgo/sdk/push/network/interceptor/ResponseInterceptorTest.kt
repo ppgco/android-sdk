@@ -26,6 +26,7 @@ class ResponseInterceptorTest {
     body: String,
   ): Response {
     val request = Request.Builder().url("https://api.example.com/").build()
+
     return Response
       .Builder()
       .request(request)

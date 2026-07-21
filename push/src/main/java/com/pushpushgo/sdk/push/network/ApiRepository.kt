@@ -94,12 +94,11 @@ internal class ApiRepository(
   }
 
   suspend fun sendBeacon(beacon: String) {
-    val subscriberId = sharedPref.subscriberId
+    val subscriberId =
+      checkNotNull(sharedPref.subscriberId) {
+        "Cannot send beacon - unsubscribed"
+      }
 
-    if (subscriberId == null) {
-      logError("Cannot send beacon - empty subscriberId")
-      return
-    }
     apiService.sendBeacon(
       token = config.apiKey,
       projectId = config.projectId,

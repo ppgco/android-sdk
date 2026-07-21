@@ -287,6 +287,8 @@ object PushNotifications {
 
   /**
    * Sends a beacon created with [BeaconBuilder].
+   *
+   * @throws IllegalStateException if the device is not subscribed.
    */
   @JvmStatic
   @JvmSynthetic
@@ -297,7 +299,8 @@ object PushNotifications {
   /**
    * Sends a beacon asynchronously.
    *
-   * Java-friendly wrapper for [sendBeacon].
+   * Java-friendly wrapper for [sendBeacon]. The future completes exceptionally if the device is
+   * not subscribed.
    */
   @JvmStatic
   fun sendBeaconAsync(beacon: Beacon): CompletableFuture<Void?> =
