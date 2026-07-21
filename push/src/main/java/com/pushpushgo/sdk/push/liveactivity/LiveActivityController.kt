@@ -3,7 +3,7 @@ package com.pushpushgo.sdk.push.liveactivity
 import android.app.Application
 import android.content.Intent
 import android.os.Build
-import com.pushpushgo.sdk.push.NotificationClickHandler
+import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.network.ApiRepository
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Owns the Live Activity subsystem (persistence + manager + push handler) and
- * the subscriber-side operations exposed through [com.pushpushgo.sdk.push.PushNotifications].
+ * the subscriber-side operations exposed through [LiveActivities].
  *
  * Everything here is a no-op on API < 36 (Live Activities require ProgressStyle
  * notifications), which is why [manager]/[handler] are nullable and lazy.
@@ -25,14 +25,12 @@ internal class LiveActivityController(
   private val apiRepository: ApiRepository,
   private val sharedPref: SharedPreferencesHelper,
   private val getSubscriberId: () -> String?,
-  private val notificationClickHandler: () -> NotificationClickHandler,
+  private val callbacks: PushNotificationsCallbacks,
 ) {
-  private val persistence: LiveActivityPersistence? by lazy {
-    if (Build.VERSION.SDK_INT >= 36) LiveActivityPersistence(application) else null
-  }
+  private val persistence: LiveActivityPersistence by lazy { LiveActivityPersistence(application) }
 
   private val manager: LiveActivityManager? by lazy {
-    persistence?.let { LiveActivityManager(it) }
+    if (Build.VERSION.SDK_INT >= 36) LiveActivityManager(persistence) else null
   }
 
   val handler: LiveActivityHandler? by lazy {
@@ -77,6 +75,18 @@ internal class LiveActivityController(
     }
   }
 
+  fun clearProjectData() {
+    persistence.clearAll()
+  }
+
+  suspend fun deinitialize() {
+    val liveActivities = sharedPref.getLiveActivitySubscriptions()
+
+    for (liveActivityId in liveActivities.keys) {
+      unsubscribe(liveActivityId)
+    }
+  }
+
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36
 
   fun getActiveActivities(): List<LiveActivity> = manager?.getActiveActivities() ?: emptyList()
@@ -87,22 +97,23 @@ internal class LiveActivityController(
     handler?.handlePush(data)
   }
 
-  suspend fun subscribe(liveNotificationId: String): String {
-    val laSubscriberId = apiRepository.subscribeToLiveActivity(liveNotificationId)
-    sharedPref.setLiveActivitySubscriberId(liveNotificationId, laSubscriberId)
+  suspend fun subscribe(liveActivityId: String): String {
+    val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)
+    sharedPref.setLiveActivitySubscriberId(liveActivityId, laSubscriberId)
     // Catch up: render the current state for subscribers that joined after the
     // `start` push was already delivered (no-op if the LA isn't live yet).
-    catchUp(liveNotificationId)
+    catchUp(liveActivityId)
     return laSubscriberId
   }
 
-  suspend fun unsubscribe(liveNotificationId: String) {
-    val laSubscriberId = sharedPref.getLiveActivitySubscriberId(liveNotificationId)
+  suspend fun unsubscribe(liveActivityId: String) {
+    val laSubscriberId = sharedPref.getLiveActivitySubscriberId(liveActivityId)
     check(laSubscriberId.isNotEmpty()) {
-      "Not subscribed to live notification $liveNotificationId"
+      "Not subscribed to live activity $liveActivityId"
     }
-    apiRepository.unsubscribeFromLiveActivity(liveNotificationId, laSubscriberId)
-    sharedPref.removeLiveActivitySubscriberId(liveNotificationId)
+    apiRepository.unsubscribeFromLiveActivity(liveActivityId, laSubscriberId)
+    handler?.removeActivity(liveActivityId)
+    sharedPref.removeLiveActivitySubscriberId(liveActivityId)
   }
 
   fun getSubscriberId(liveNotificationId: String): String = sharedPref.getLiveActivitySubscriberId(liveNotificationId)
@@ -127,7 +138,7 @@ internal class LiveActivityController(
     intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
 
     if (openDeepLink && !deepLink.isNullOrBlank()) {
-      notificationClickHandler().invoke(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
+      callbacks.notificationClickHandler.onNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
     return deepLink

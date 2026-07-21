@@ -3,12 +3,8 @@ package com.pushpushgo.sdk.push.network
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Build
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
-import com.pushpushgo.sdk.push.data.Event
-import com.pushpushgo.sdk.push.data.EventType
-import com.pushpushgo.sdk.push.data.Payload
 import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.data.InstallationMetadata
 import com.pushpushgo.sdk.push.network.data.LiveActivityEndpoint
@@ -21,6 +17,7 @@ import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
+import com.pushpushgo.sdk.push.utils.osVersion
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
@@ -30,30 +27,40 @@ internal class ApiRepository(
   private val sharedPref: SharedPreferencesHelper,
   private val config: Config,
 ) {
-  suspend fun registerToken(
-    token: String?,
-    apiKey: String? = null,
-    projectId: String? = null,
-  ) {
+  companion object {
+    private const val INACTIVE_SUBSCRIBER_MESSAGE = "Cannot perform operation on inactive subscriber"
+    private const val LIVE_ACTIVITY_NOT_FOUND_MESSAGE = "Live notification not found"
+    private const val LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE = "Live notification subscriber not found"
+  }
+
+  suspend fun registerToken(token: String?) {
     logDebug("registerToken invoked: $token")
-    val tokenToRegister = token ?: sharedPref.lastToken ?: getPlatformPushToken(context)
+
+    val tokenToRegister = token ?: getPlatformPushToken(context)
+
+    require(tokenToRegister.isNotBlank()) { "Cannot register subscriber with an empty push token" }
 
     logDebug("Token to register: $tokenToRegister")
 
     val data =
       apiService.registerSubscriber(
-        token = apiKey ?: config.apiKey,
-        projectId = projectId ?: config.projectId,
-        body = TokenRequest(tokenToRegister),
+        token = config.apiKey,
+        projectId = config.projectId,
+        body =
+          TokenRequest(
+            token = tokenToRegister,
+            sdkVersion = PushNotifications.VERSION,
+            osVersion = osVersion(),
+            installationId = sharedPref.installationId,
+          ),
       )
+
     if (data.id.isNotBlank()) {
       sharedPref.subscriberId = data.id
     }
-    // Persist the token we actually registered so startup reconciliation can
-    // detect drift between the stored token and a freshly rotated platform token.
-    if (tokenToRegister.isNotBlank()) {
-      sharedPref.lastToken = tokenToRegister
-    }
+
+    sharedPref.lastToken = tokenToRegister
+
     logDebug("RegisterSubscriber received: $data")
   }
 
@@ -67,110 +74,36 @@ internal class ApiRepository(
       return
     }
 
-    apiService.unregisterSubscriber(
-      token = config.apiKey,
-      projectId = config.projectId,
-      subscriberId = subscriberId,
-    )
+    try {
+      apiService.unregisterSubscriber(
+        token = config.apiKey,
+        projectId = config.projectId,
+        subscriberId = subscriberId,
+      )
+    } catch (exception: PushPushException) {
+      val isAlreadyUnregistered =
+        exception.statusCode == 404 ||
+          (exception.statusCode == 400 && exception.message == INACTIVE_SUBSCRIBER_MESSAGE)
+
+      if (!isAlreadyUnregistered) throw exception
+
+      logDebug("Subscriber is already unregistered")
+    }
+
     sharedPref.subscriberId = ""
   }
 
-  private suspend fun unregisterSubscriber(
-    projectId: String,
-    token: String,
-    subscriberId: String,
-  ) {
-    try {
-      apiService.unregisterSubscriber(
-        token = token,
-        projectId = projectId,
-        subscriberId = subscriberId,
-      )
-    } catch (e: PushPushException) {
-      when (e.message.orEmpty()) {
-        "Cannot perform operation on inactive subscriber",
-        "Subscriber not belongs to given project",
-        "Not Found",
-        "Subscriber not found",
-        -> logError(e)
-
-        else -> throw e
-      }
-    }
-  }
-
-  suspend fun migrateSubscriber(
-    newProjectId: String,
-    newApiKey: String,
-  ) {
-    logDebug("migrateSubscriber($newProjectId, $newApiKey) invoked")
-
-    if (newProjectId.isBlank() || newApiKey.isBlank()) {
-      return logDebug("Empty new project info!")
-    }
-
-    val subscriberId = sharedPref.subscriberId
-
-    if (subscriberId == null) {
-      logError("Cannot migrate - empty subscriberId")
-      return
-    }
-
-    unregisterSubscriber(
-      token = config.apiKey,
-      projectId = config.projectId,
-      subscriberId = subscriberId,
-    )
-
-    registerToken(
-      token = null,
-      apiKey = newApiKey,
-      projectId = newProjectId,
-    )
-  }
-
   suspend fun sendBeacon(beacon: String) {
-    val subscriberId = sharedPref.subscriberId
+    val subscriberId =
+      checkNotNull(sharedPref.subscriberId) {
+        "Cannot send beacon - unsubscribed"
+      }
 
-    if (subscriberId == null) {
-      logError("Cannot send beacon - empty subscriberId")
-      return
-    }
     apiService.sendBeacon(
       token = config.apiKey,
       projectId = config.projectId,
       subscriberId = subscriberId,
       beacon = beacon.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()),
-    )
-  }
-
-  suspend fun sendEvent(
-    type: EventType,
-    buttonId: Int,
-    campaign: String,
-    project: String?,
-    subscriber: String?,
-  ) {
-    val subscriberId = subscriber?.ifBlank { null } ?: sharedPref.subscriberId
-
-    if (subscriberId == null) {
-      logError("Cannot send event - empty subscriberId")
-      return
-    }
-
-    apiService.sendEvent(
-      token = config.apiKey,
-      projectId = project ?: config.projectId,
-      event =
-        Event(
-          type = type.value,
-          payload =
-            Payload(
-              button = buttonId,
-              campaign = campaign,
-              subscriber = subscriberId,
-            ),
-        ),
     )
   }
 
@@ -207,10 +140,23 @@ internal class ApiRepository(
     liveNotificationId: String,
     liveActivitySubscriberId: String,
   ) {
-    apiService.unsubscribeLiveActivity(
-      url = "${liveActivitySubscribersUrl(liveNotificationId)}/$liveActivitySubscriberId",
-      token = config.apiKey,
-    )
+    try {
+      apiService.unsubscribeLiveActivity(
+        url = "${liveActivitySubscribersUrl(liveNotificationId)}/$liveActivitySubscriberId",
+        token = config.apiKey,
+      )
+    } catch (exception: PushPushException) {
+      val isAlreadyUnsubscribed =
+        exception.statusCode == 400 &&
+          (
+            exception.message == LIVE_ACTIVITY_NOT_FOUND_MESSAGE ||
+              exception.message == LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE
+          )
+
+      if (!isAlreadyUnsubscribed) throw exception
+
+      logDebug("Live Activity subscription is already unregistered")
+    }
   }
 
   /**
@@ -277,7 +223,7 @@ internal class ApiRepository(
       installationMetadata =
         InstallationMetadata(
           sdkVersion = PushNotifications.VERSION,
-          osVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+          osVersion = osVersion(),
         ),
       endpoint =
         LiveActivityEndpoint(

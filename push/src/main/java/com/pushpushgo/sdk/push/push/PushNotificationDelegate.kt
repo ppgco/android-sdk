@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.R
 import com.pushpushgo.sdk.push.data.Action
 import com.pushpushgo.sdk.push.data.EventType
@@ -40,6 +41,7 @@ internal class PushNotificationDelegate(
   private val sharedPreferencesHelper: SharedPreferencesHelper,
   private val apiRepository: ApiRepository,
   private val uploadManager: UploadManager,
+  private val callbacks: PushNotificationsCallbacks,
 ) {
   private val errorHandler = CoroutineExceptionHandler { _, throwable -> logError(throwable) }
 
@@ -59,20 +61,21 @@ internal class PushNotificationDelegate(
       if (!areNotificationsEnabled(context)) {
         return logWarning("Push notifications are disabled by user")
       }
-      PushNotifications.getInstance().liveActivityHandler?.handlePush(pushMessage.data)
+      PushNotifications.liveActivities.handler
+        ?.handlePush(pushMessage.data)
         ?: logWarning("LiveActivityHandler not initialized, ignoring LA push")
       return
     }
 
-    if (!PushNotifications.getInstance().isPushPushGoNotification(pushMessage.data)) {
+    if (!PushNotifications.isPushPushGoNotification(pushMessage.data)) {
       return logWarning("Push is not from PPGo")
     }
 
     val pushProjectId = pushMessage.data["project"].orEmpty()
     val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
-    val initializedProjectId = PushNotifications.getInstance().getProjectId()
+    val initializedProjectId = PushNotifications.getProjectId()
     if (pushProjectId != initializedProjectId) {
-      PushNotifications.getInstance().invalidProjectIdHandler(pushProjectId, pushSubscriberId, initializedProjectId)
+      callbacks.invalidProjectIdHandler.onInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
     } else {
       processPushMessage(pushMessage, context)
     }
@@ -119,10 +122,16 @@ internal class PushNotificationDelegate(
 
   fun onNewToken(token: String) {
     logDebug("Refreshed token: $token")
-    if (!PushNotifications.isInitialized()) return
-    if (!PushNotifications.getInstance().areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
 
-    uploadManager.sendRegister(token)
+    if (!PushNotifications.isInitialized()) return
+    if (!PushNotifications.isSubscribed()) return
+    if (!PushNotifications.areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
+
+    val subscriberId = sharedPreferencesHelper.subscriberId
+
+    if (subscriberId != null) {
+      uploadManager.syncToken(subscriberId, token)
+    }
   }
 
   fun onDestroy() {
@@ -153,19 +162,20 @@ internal class PushNotificationDelegate(
       // Malformed / incomplete inner JSON: still report DELIVERED from the raw
       // data payload (don't lose the delivery metric) and render a best-effort
       // notification from the available fields.
+
       reportDelivered(
-        project = remoteMessage.data["project"].orEmpty(),
         subscriber = remoteMessage.data["subscriber"].orEmpty(),
         campaign = remoteMessage.data["campaign"].orEmpty(),
       )
+
       return getSimpleNotification(context, remoteMessage, notificationId)
     }
 
     reportDelivered(
-      project = pushPushNotification.project,
       subscriber = pushPushNotification.subscriber,
       campaign = pushPushNotification.campaignId,
     )
+
     return createDataNotification(context, notificationId, pushPushNotification)
   }
 
@@ -181,7 +191,7 @@ internal class PushNotificationDelegate(
     return createNotification(
       id = notificationId,
       context = context,
-      projectId = PushNotifications.getInstance().getProjectId(),
+      projectId = PushNotifications.getProjectId(),
       subscriberId = remoteMessage.data["subscriber"].orEmpty(),
       title = title?.ifBlank { null } ?: context.getString(R.string.app_name),
       content = content,
@@ -203,7 +213,6 @@ internal class PushNotificationDelegate(
    * so deliveries are still reported when local state is momentarily out of sync.
    */
   private fun reportDelivered(
-    project: String,
     subscriber: String,
     campaign: String,
   ) {
@@ -211,7 +220,6 @@ internal class PushNotificationDelegate(
       type = EventType.DELIVERED,
       buttonId = 0,
       campaign = campaign,
-      projectId = project,
       subscriberId = subscriber,
     )
   }
@@ -404,7 +412,7 @@ internal class PushNotificationDelegate(
       logDebug("launcher intenet flags before override: $flags")
 
       if (PushNotifications.isInitialized()) {
-        val customFlags = PushNotifications.getInstance().customClickIntentFlags
+        val customFlags = PushNotifications.customClickIntentFlags
         logDebug("launcher intent flags restored: $customFlags")
         if (customFlags > 0) {
           flags = customFlags

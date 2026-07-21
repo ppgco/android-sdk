@@ -14,25 +14,27 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.lifecycleScope
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.sample.push.firebase.R
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import timber.log.Timber
 
 /**
  * Demonstrates the Live Activities (live notification) integration.
  *
- * The "Backend" section uses [PushNotifications.subscribeToLiveActivity] to
+ * The "Backend" section uses [com.pushpushgo.sdk.push.liveactivity.LiveActivities.subscribe] to
  * register the device on a real campaign; the "Local simulation" section feeds
  * the SDK the same `Map<String, String>` envelope an FCM data push would carry
- * via [PushNotifications.simulateLiveActivityPush], exercising the full
+ * via [com.pushpushgo.sdk.push.liveactivity.LiveActivities.simulatePush], exercising the full
  * parse -> manage -> render pipeline without a backend.
  *
  * Live Activities require Android API 36+. On older devices the SDK ignores the
  * pushes and the buttons only update the local status readout.
  */
 class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activity) {
-  private val ppg by lazy { PushNotifications.getInstance() }
+  private val liveActivities by lazy { PushNotifications.liveActivities }
 
   // Local mirror of the match state so the buttons can evolve it over time.
   private var homeScore = 0
@@ -49,7 +51,7 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
     requestNotificationPermission()
 
     findViewById<TextView>(R.id.la_support).text =
-      "Live Activities supported (API 36+): ${ppg.isLiveActivitiesSupported()}"
+      "Live Activities supported (API 36+): ${liveActivities.isSupported()}"
 
     findViewById<EditText>(R.id.la_id_input).setText(LA_ID)
 
@@ -96,28 +98,26 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
 
   private fun subscribe() {
     val id = liveNotificationId()
-    ppg.subscribeToLiveActivity(id).whenComplete { laSubscriberId, error ->
-      runOnUiThread {
-        if (error != null) {
-          Timber.tag("PPGO_SAMPLE").e(error, "subscribeToLiveActivity failed")
-          toast("Subscribe failed: ${error.message}")
-        } else {
-          toast("Subscribed to $id (laSubscriberId=$laSubscriberId)")
-        }
+    lifecycleScope.launch {
+      try {
+        val laSubscriberId = liveActivities.subscribe(id)
+        toast("Subscribed to $id (laSubscriberId=$laSubscriberId)")
+      } catch (error: Exception) {
+        Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.subscribe failed")
+        toast("Subscribe failed: ${error.message}")
       }
     }
   }
 
   private fun unsubscribe() {
     val id = liveNotificationId()
-    ppg.unsubscribeFromLiveActivity(id).whenComplete { _, error ->
-      runOnUiThread {
-        if (error != null) {
-          Timber.tag("PPGO_SAMPLE").e(error, "unsubscribeFromLiveActivity failed")
-          toast("Unsubscribe failed: ${error.message}")
-        } else {
-          toast("Unsubscribed from $id")
-        }
+    lifecycleScope.launch {
+      try {
+        liveActivities.unsubscribe(id)
+        toast("Unsubscribed from $id")
+      } catch (error: Exception) {
+        Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.unsubscribe failed")
+        toast("Unsubscribe failed: ${error.message}")
       }
     }
   }
@@ -128,10 +128,10 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
     hotMessage: String? = null,
   ) {
     val payload = buildEnvelope(event, includeConfiguration, hotMessage)
-    Timber.tag("PPGO_SAMPLE").d("simulateLiveActivityPush: $payload")
-    ppg.simulateLiveActivityPush(payload)
+    Timber.tag("PPGO_SAMPLE").d("LiveActivities.simulatePush: $payload")
+    liveActivities.simulatePush(payload)
 
-    if (!ppg.isLiveActivitiesSupported()) {
+    if (!liveActivities.isSupported()) {
       toast("Device < API 36 - push ignored by SDK")
     }
     // Give the SDK a moment to apply the change before reading state back.
@@ -149,8 +149,8 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
         "liveNotificationId" to liveNotificationId(),
         "event" to event,
         "template" to "FOOTBALL_MATCH_TRACKING",
-        "project" to ppg.getProjectId(),
-        "subscriber" to ppg.getSubscriberId().orEmpty(),
+        "project" to PushNotifications.getProjectId(),
+        "subscriber" to PushNotifications.getSubscriberId().orEmpty(),
         "liveData" to liveDataJson(),
       )
     if (includeConfiguration) envelope["configuration"] = CONFIGURATION_JSON
@@ -178,7 +178,7 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
 
   @SuppressLint("SetTextI18n")
   private fun renderStatus() {
-    val active = ppg.getActiveLiveActivities()
+    val active = liveActivities.getActiveActivities()
     val text =
       if (active.isEmpty()) {
         "No active live activities"
@@ -186,7 +186,7 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
         active.joinToString("\n") { la ->
           val c = la.configuration.content
           "${la.id}\n  ${c.homeTeamName} ${la.liveData.scoreText} ${c.awayTeamName}" +
-            "\n  status=${la.liveData.status}  active=${ppg.isLiveActivityActive(la.id)}"
+            "\n  status=${la.liveData.status}  active=${liveActivities.isActive(la.id)}"
         }
       }
     findViewById<TextView>(R.id.la_status).text = text

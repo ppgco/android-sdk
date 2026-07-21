@@ -3,9 +3,9 @@ package com.pushpushgo.sdk.push.network
 import android.content.Context
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
-import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.utils.PlatformType
 import com.pushpushgo.sdk.push.utils.getPlatformType
+import com.pushpushgo.sdk.push.utils.logDebug
 import java.util.UUID
 
 internal class SharedPreferencesHelper(
@@ -50,7 +50,7 @@ internal class SharedPreferencesHelper(
     get() =
       sharedPreferences.getBoolean(
         IS_SUBSCRIBED,
-        PushNotifications.isInitialized().takeIf { it }?.let { PushNotifications.getInstance().defaultIsSubscribed } ?: false,
+        false,
       )
     set(value) {
       sharedPreferences.edit { putBoolean(IS_SUBSCRIBED, value) }
@@ -109,6 +109,21 @@ internal class SharedPreferencesHelper(
           sharedPreferences.edit { putString(INSTALLATION_ID, it) }
         }
 
+  fun onPushTokenUpdated(
+    subscriberId: String,
+    pushToken: String,
+  ) {
+    if (!isSubscribed) {
+      return logDebug("Token update skipped - not subscribed")
+    }
+
+    if (subscriberId != this.subscriberId) {
+      return logDebug("Token update skipped - subscriberId mismatch")
+    }
+
+    this.lastToken = pushToken
+  }
+
   /** LA subscriber id returned by the backend, keyed by live notification id. */
   fun getLiveActivitySubscriberId(liveNotificationId: String): String =
     sharedPreferences.getString(LA_SUBSCRIBER_PREFIX + liveNotificationId, "").orEmpty()
@@ -122,6 +137,30 @@ internal class SharedPreferencesHelper(
 
   fun removeLiveActivitySubscriberId(liveNotificationId: String) {
     sharedPreferences.edit { remove(LA_SUBSCRIBER_PREFIX + liveNotificationId) }
+  }
+
+  internal fun getLiveActivitySubscriptions(): Map<String, String> =
+    sharedPreferences.all
+      .mapNotNull { (key, value) ->
+        if (!key.startsWith(LA_SUBSCRIBER_PREFIX) || value !is String) {
+          null
+        } else {
+          key.removePrefix(LA_SUBSCRIBER_PREFIX) to value
+        }
+      }.toMap()
+
+  fun clearProjectData() {
+    val liveActivitySubscriberKeys = sharedPreferences.all.keys.filter { it.startsWith(LA_SUBSCRIBER_PREFIX) }
+
+    sharedPreferences.edit {
+      remove(SUBSCRIBER_ID)
+      remove(LAST_FCM_TOKEN)
+      remove(LAST_HCM_TOKEN)
+      remove(IS_SUBSCRIBED)
+      liveActivitySubscriberKeys.forEach(::remove)
+    }
+
+    notificationIdsPreferences.edit { clear() }
   }
 
   fun getNotificationId(key: String): Int = notificationIdsPreferences.getInt(key, -1)

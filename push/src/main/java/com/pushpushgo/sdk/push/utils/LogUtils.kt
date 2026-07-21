@@ -7,7 +7,7 @@ internal fun logDebug(text: String) {
   // Safe before initialize() completes: the SDK logs during construction (e.g.
   // Live Activity restore on API 36+), when the singleton isn't published yet.
   if (!PushNotifications.isInitialized()) return
-  if (!PushNotifications.getInstance().config.isDebug) return
+  if (!PushNotifications.config.isDebug) return
 
   Log.d(PushNotifications.TAG, text)
 }
@@ -37,5 +37,5 @@ internal fun logError(exception: Throwable?) {
 private fun reportError(exception: Throwable?) {
   val throwable = exception ?: return
   if (!PushNotifications.isInitialized()) return
-  runCatching { PushNotifications.getInstance().errorCallback?.invoke(throwable) }
+  runCatching { PushNotifications.errorCallback?.onError(throwable) }
 }

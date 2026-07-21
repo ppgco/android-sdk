@@ -1,565 +1,328 @@
 package com.pushpushgo.sdk.push
 
 import android.app.Application
-import android.content.Context
 import android.content.Intent
-import androidx.core.app.NotificationManagerCompat
-import androidx.work.Configuration
-import androidx.work.WorkManager
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
 import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
-import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.mapToDto
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
-import com.pushpushgo.sdk.push.liveactivity.LiveActivityController
-import com.pushpushgo.sdk.push.liveactivity.LiveActivityHandler
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.LiveActivities
 import com.pushpushgo.sdk.push.network.ApiRepository
-import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
-import com.pushpushgo.sdk.push.push.areNotificationsEnabled
-import com.pushpushgo.sdk.push.push.createNotificationChannel
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
-import com.pushpushgo.sdk.push.push.handleNotificationLinkClick
-import com.pushpushgo.sdk.push.subscription.DefaultPushSubscriptionProvider
-import com.pushpushgo.sdk.push.subscription.SubscriptionController
-import com.pushpushgo.sdk.push.utils.getPlatformType
-import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.mapToBundle
-import com.pushpushgo.sdk.push.work.UploadDelegate
 import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
 
-class PushNotifications private constructor(
-  private val application: Application,
-  internal val config: Config,
-) {
-  companion object {
-    const val VERSION = "4.0.0"
+object PushNotifications {
+  const val VERSION = "4.0.0"
 
-    internal const val TAG = "[PushPushGo:PushNotifications]"
+  internal const val TAG = "[PushPushGo:PushNotifications]"
 
-    @Volatile
-    private var INSTANCE: PushNotifications? = null
+  @Volatile
+  private var runtime: PushNotificationsRuntime? = null
 
-    val defaultInvalidProjectIdHandler: InvalidProjectIdHandler = { pushProjectId, _, currentProjectId ->
-      logDebug("Project ID inconsistency detected! Project ID from push is $pushProjectId while SDK is configured with $currentProjectId")
-    }
+  private val callbacks = PushNotificationsCallbacks()
+  private val lifecycleMutex = Mutex()
+  private val asyncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    val defaultNotificationClickHandler: NotificationClickHandler = { context, url, overrideFlags ->
-      handleNotificationLinkClick(
-        context,
-        url,
-        overrideFlags,
-      )
-    }
+  internal val config: Config
+    get() = requireRuntime().config
 
-    fun isInitialized(): Boolean = INSTANCE != null
+  internal val sharedPreferencesHelper: SharedPreferencesHelper
+    get() = requireRuntime().sharedPreferencesHelper
 
-    @JvmStatic
-    fun getInstance(): PushNotifications = checkNotNull(INSTANCE) { "PushNotifications SDK is not initialized" }
+  internal val apiRepository: ApiRepository
+    get() = requireRuntime().apiRepository
 
-    /**
-     * Initializes the PushNotifications SDK using configuration defined in AndroidManifest.xml.
-     *
-     * Subsequent calls return the same instance.
-     *
-     * @throws IllegalStateException if required manifest values are missing.
-     */
-    @JvmStatic
-    fun initialize(application: Application): PushNotifications =
-      INSTANCE ?: synchronized(this) {
-        INSTANCE ?: PushNotifications(application, ManifestConfigProvider(application).provide()).also { INSTANCE = it }
-      }
+  internal val uploadManager: UploadManager
+    get() = requireRuntime().uploadManager
 
-    /**
-     * Initializes the PushNotifications SDK using an explicit [Config] instance.
-     *
-     * Subsequent calls return the same instance.
-     */
-    @JvmStatic
-    fun initialize(
-      application: Application,
-      config: Config,
-    ): PushNotifications =
-      INSTANCE ?: synchronized(this) {
-        INSTANCE ?: PushNotifications(application, config).also { INSTANCE = it }
-      }
+  internal val pushNotificationsDelegate: PushNotificationDelegate
+    get() = requireRuntime().pushNotificationsDelegate
 
-    @JvmStatic
-    private fun reinitialize(
-      application: Application,
-      config: Config,
-    ): PushNotifications {
-      INSTANCE = PushNotifications(application, config)
+  internal val notificationClickHandler: NotificationClickHandler
+    get() = callbacks.notificationClickHandler
 
-      return INSTANCE as PushNotifications
-    }
-  }
+  internal val invalidProjectIdHandler: InvalidProjectIdHandler
+    get() = callbacks.invalidProjectIdHandler
 
-  init {
-    if (!WorkManager.isInitialized()) {
-      WorkManager.initialize(application, Configuration.Builder().build())
-    }
-  }
+  internal val errorCallback: PushNotificationsErrorCallback?
+    get() = callbacks.errorCallback
 
-  private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-  private val subscriptionMutex = Mutex()
+  @JvmStatic
+  val liveActivities: LiveActivities
+    get() = requireRuntime().liveActivities
 
-  internal val isMigrating: AtomicBoolean = AtomicBoolean(false)
+  @JvmStatic
+  val customClickIntentFlags: Int
+    get() = requireRuntime().customClickIntentFlags
 
-  internal val sharedPreferencesHelper = SharedPreferencesHelper(application)
-  private val apiService = ApiService.fromConfig(config)
-  internal val apiRepository = ApiRepository(application, apiService, sharedPreferencesHelper, config)
-  internal val uploadDelegate = UploadDelegate(apiRepository)
-  internal val uploadManager = UploadManager(application, sharedPreferencesHelper)
-  internal val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager)
-
-  private val subscriptionController =
-    SubscriptionController(
-      scope = sdkScope,
-      mutex = subscriptionMutex,
-      apiRepository = apiRepository,
-      uploadManager = uploadManager,
-      sharedPref = sharedPreferencesHelper,
-      isMigrating = isMigrating,
-      notificationsEnabled = { areNotificationsEnabled() },
-    )
-
-  private val liveActivityController =
-    LiveActivityController(
-      application = application,
-      scope = sdkScope,
-      apiRepository = apiRepository,
-      sharedPref = sharedPreferencesHelper,
-      getSubscriberId = { getSubscriberId() },
-      notificationClickHandler = { notificationClickHandler },
-    )
-
-  internal val liveActivityHandler: LiveActivityHandler?
-    get() = liveActivityController.handler
-
-  init {
-    liveActivityController.restoreFromPersistence()
-  }
-
-  init {
-    val platformType = getPlatformType()
-    val startupMessage = "PushNotifications SDK $VERSION initialized (project id: ${config.projectId}, platform: $platformType)"
-    println(startupMessage)
-
-    createNotificationChannel(application)
-  }
-
-  init {
-    NotificationStatusChecker(
-      context = application,
-      sdkScope = sdkScope,
-      sharedPreferencesHelper = sharedPreferencesHelper,
-    ).start()
-  }
+  @JvmStatic
+  fun isInitialized(): Boolean = runtime != null
 
   /**
-   * Handler invoked when a notification is clicked.
-   */
-  var notificationClickHandler: NotificationClickHandler = defaultNotificationClickHandler
-    private set
-
-  /**
-   * Handler invoked when a push notification contains a project ID
-   * that does not match the currently configured SDK project.
-   */
-  var invalidProjectIdHandler: InvalidProjectIdHandler = defaultInvalidProjectIdHandler
-    private set
-
-  /**
-   * Intent flags applied when launching the application from
-   * a notification click.
-   */
-  var customClickIntentFlags: Int = sharedPreferencesHelper.customIntentFlags
-    get() = sharedPreferencesHelper.customIntentFlags
-    private set
-
-  /**
-   * Indicates whether the user should be treated as subscribed by default
-   */
-  var defaultIsSubscribed: Boolean = false
-    private set
-
-  /**
-   * Optional callback invoked with otherwise-swallowed SDK errors (network
-   * failures during register/unregister/event upload, response parsing, etc.).
+   * Initializes the PushNotifications SDK using configuration defined in AndroidManifest.xml.
    *
-   * Useful for integrators who want to surface delivery problems in their own
-   * telemetry instead of relying on Logcat. The callback may be invoked on
-   * background threads; keep it lightweight and thread-safe.
+   * Calling this method again with the same configuration has no effect. If the SDK is already
+   * initialized with a different configuration, call [deinitialize] before initializing it again.
+   *
+   * @throws IllegalStateException if required manifest values are missing or the SDK is already
+   * initialized with a different configuration.
    */
-  var errorCallback: ((Throwable) -> Unit)? = null
-    private set
+  @JvmStatic
+  fun initialize(application: Application): PushNotifications = initialize(application, ManifestConfigProvider(application).provide())
 
+  /**
+   * Initializes the PushNotifications SDK using an explicit [Config] instance.
+   *
+   * Calling this method again with an equal configuration has no effect. If the SDK is already
+   * initialized with a different configuration, call [deinitialize] before initializing it again.
+   *
+   * @throws IllegalStateException if the SDK is already initialized with a different configuration.
+   */
+  @JvmStatic
+  fun initialize(
+    application: Application,
+    config: Config,
+  ): PushNotifications =
+    withLifecycleLock {
+      val activeRuntime = runtime
+      if (activeRuntime == null) {
+        runtime = PushNotificationsRuntime(application, config, callbacks)
+      } else {
+        check(activeRuntime.config == config) {
+          "PushNotifications SDK is already initialized with a different configuration. " +
+            "Call PushNotifications.deinitialize() before initializing it again."
+        }
+      }
+
+      this
+    }
+
+  /**
+   * Unsubscribes the current project, clears its persisted state, and releases the SDK runtime.
+   *
+   * Live Activities are removed first, followed by the current push subscription. If any step
+   * fails, the SDK remains initialized and the error is returned. Live Activities already removed
+   * stay removed.
+   *
+   * After this method completes, [initialize] may be called with another project configuration.
+   */
+  @JvmSynthetic
+  suspend fun deinitialize() {
+    lifecycleMutex.withLock {
+      val activeRuntime = requireRuntime()
+      activeRuntime.deinitialize()
+      runtime = null
+    }
+  }
+
+  /**
+   * Java-friendly wrapper for [deinitialize].
+   */
+  @JvmStatic
+  fun deinitializeAsync(): CompletableFuture<Void?> =
+    asyncScope.future {
+      deinitialize()
+      null
+    }
+
+  /**
+   * Sets the intent flags used when opening a notification.
+   *
+   * This setting requires an initialized SDK.
+   */
+  @JvmStatic
   fun setCustomClickIntentFlags(flags: Int) {
-    sharedPreferencesHelper.customIntentFlags = flags
+    withLifecycleLock {
+      requireRuntime().setCustomClickIntentFlags(flags)
+    }
   }
 
-  fun setDefaultIsSubscribed(isSubscribed: Boolean) {
-    defaultIsSubscribed = isSubscribed
+  /**
+   * Sets the process-wide notification click handler.
+   *
+   * The handler may be configured before [initialize] and survives [deinitialize]. Pass `null` to
+   * restore the default handler.
+   */
+  @JvmStatic
+  fun setNotificationClickHandler(handler: NotificationClickHandler?) {
+    callbacks.notificationClickHandler = handler ?: DefaultNotificationClickHandler()
   }
 
-  fun setNotificationClickHandler(handler: NotificationClickHandler) {
-    notificationClickHandler = handler
+  /**
+   * Sets the handler invoked when a received notification belongs to a different project than the one
+   * currently initialized.
+   *
+   * The handler is process-wide, may be configured before [initialize], and survives
+   * [deinitialize]. Pass `null` to restore the default handler, which logs the mismatch.
+   */
+  @JvmStatic
+  fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler?) {
+    callbacks.invalidProjectIdHandler = handler ?: DefaultInvalidProjectIdHandler()
   }
 
-  fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler) {
-    invalidProjectIdHandler = handler
+  /**
+   * Sets the process-wide SDK error callback.
+   *
+   * The callback may be configured before [initialize], survives [deinitialize]. Pass `null` to disable it.
+   */
+  @JvmStatic
+  fun setErrorCallback(callback: PushNotificationsErrorCallback?) {
+    callbacks.errorCallback = callback
   }
 
-  fun setErrorCallback(callback: ((Throwable) -> Unit)?) {
-    errorCallback = callback
-  }
+  @JvmStatic
+  fun getProjectId(): String = requireRuntime().getProjectId()
 
-  fun getProjectId(): String = config.projectId
+  @JvmStatic
+  fun getApiKey(): String = requireRuntime().getApiKey()
 
-  fun getApiKey(): String = config.apiKey
+  @JvmStatic
+  fun isSubscribed(): Boolean = requireRuntime().isSubscribed()
 
-  fun isSubscribed(): Boolean = sharedPreferencesHelper.isSubscribed
+  @JvmStatic
+  fun getSubscriberId(): String? = requireRuntime().getSubscriberId()
 
-  fun getSubscriberId(): String? = sharedPreferencesHelper.subscriberId
-
-  fun getPushToken(): String? = sharedPreferencesHelper.lastToken
+  @JvmStatic
+  fun getPushToken(): String? = requireRuntime().getPushToken()
 
   /**
    * Subscribes the device to notifications.
    *
-   * This method enqueues the subscription request and returns immediately.
+   * If notifications are disabled, an [IllegalStateException] is thrown.
    *
-   * If notifications are disabled or migration is in progress, the request is ignored.
+   * @throws IllegalStateException
    */
-  fun subscribe() {
-    subscriptionController.subscribe()
+  @JvmSynthetic
+  suspend fun subscribe() {
+    requireRuntime().subscribe()
   }
 
   /**
    * Unsubscribes the device from notifications.
-   *
-   * This method enqueues the unsubscription request and returns immediately.
-   *
-   * If migration is in progress, the request is ignored.
    */
-  fun unsubscribe() {
-    subscriptionController.unsubscribe()
+  @JvmSynthetic
+  suspend fun unsubscribe() {
+    requireRuntime().unsubscribe()
   }
 
   /**
-   * Subscribes the device to notifications immediately.
+   * Subscribes the device to notifications asynchronously.
    *
-   * If notifications are disabled or migration is in progress, an [IllegalStateException] is thrown.
-   *
-   * @throws IllegalStateException
-   */
-  suspend fun subscribeNow() {
-    subscriptionController.subscribeNow()
-  }
-
-  /**
-   * Unsubscribes the device from notifications immediately.
-   *
-   * If migration is in progress, an [IllegalStateException] is thrown.
-   */
-  suspend fun unsubscribeNow() {
-    subscriptionController.unsubscribeNow()
-  }
-
-  /**
-   * Subscribes the device to notifications immediately.
-   *
-   * Java-friendly wrapper for [subscribeNow].
+   * Java-friendly wrapper for [subscribe].
    *
    * @returns [CompletableFuture]
    */
-  fun subscribeNowFuture(): CompletableFuture<Void?> =
-    sdkScope.future {
-      subscribeNow()
+  @JvmStatic
+  fun subscribeAsync(): CompletableFuture<Void?> =
+    asyncScope.future {
+      subscribe()
       null
     }
 
   /**
-   * Unsubscribes the device from notifications immediately.
+   * Unsubscribes the device from notifications asynchronously.
    *
-   * Java-friendly wrapper for [unsubscribeNow].
+   * Java-friendly wrapper for [unsubscribe].
    *
    * @returns [CompletableFuture]
    */
-  fun unsubscribeNowFuture(): CompletableFuture<Void?> =
-    sdkScope.future {
-      unsubscribeNow()
+  @JvmStatic
+  fun unsubscribeAsync(): CompletableFuture<Void?> =
+    asyncScope.future {
+      unsubscribe()
       null
     }
-
-  /**
-   * Migrates the current subscriber to a different project.
-   *
-   * This method:
-   * - unregisters the subscriber in the old project
-   * - registers the subscriber in the new project
-   * - initializes the SDK with the new project
-   *
-   * During migration, subscription operations are blocked.
-   *
-   * WARNING: after migration use the object returned by this function
-   * instead of the previous one.
-   *
-   * @param newProjectId project id to which we are switching
-   * @param newApiKey project api key
-   *
-   * @return [CompletableFuture] with the new [PushNotifications] instance
-   *
-   * @throws IllegalStateException if notifications are disabled or migration is in progress.
-   */
-  fun migrateToNewProject(
-    newProjectId: String,
-    newApiKey: String,
-  ): CompletableFuture<PushNotifications> {
-    require(Config.isProjectIdFormatValid(newProjectId)) {
-      "Invalid project ID format"
-    }
-
-    require(Config.isApiKeyFormatValid(newApiKey)) {
-      "Invalid API key format"
-    }
-
-    check(areNotificationsEnabled()) {
-      "Notifications disabled! Subscriber registration canceled"
-    }
-
-    check(isMigrating.compareAndSet(false, true)) {
-      "Migration is already in progress"
-    }
-
-    // Captured so we can tear down this (soon-to-be-abandoned) instance's
-    // background loops once migration succeeds. Cancelling from inside the
-    // future would cancel the migration coroutine itself (it runs on sdkScope).
-    val previousScope = sdkScope
-
-    return sdkScope
-      .future {
-        try {
-          subscriptionMutex.withLock {
-            uploadManager.cancelAllJobs()
-
-            apiRepository.migrateSubscriber(
-              newProjectId = newProjectId,
-              newApiKey = newApiKey,
-            )
-
-            reinitialize(
-              application = application,
-              config =
-                Config.create(
-                  projectId = newProjectId,
-                  apiKey = newApiKey,
-                  isDebug = config.isDebug,
-                  apiUrl = config.apiUrl,
-                ),
-            ).apply {
-              notificationClickHandler = this@PushNotifications.notificationClickHandler
-              invalidProjectIdHandler = this@PushNotifications.invalidProjectIdHandler
-              defaultIsSubscribed = this@PushNotifications.defaultIsSubscribed
-            }
-          }
-        } finally {
-          isMigrating.set(false)
-        }
-      }.whenComplete { _, throwable ->
-        // On success the old instance is replaced and abandoned, so cancel its
-        // NotificationStatusChecker poll loop and any Live Activity tickers.
-        // On failure the old instance stays current — leave it running.
-        if (throwable == null) {
-          previousScope.cancel()
-        }
-      }
-  }
 
   /**
    * Checks whether the given notification intent belongs to PushPushGo.
-   *
-   * @param notificationIntent Intent associated with the clicked notification.
-   *
-   * @return `true` if the notification was sent by PushPushGo, `false` otherwise.
    */
+  @JvmStatic
   fun isPushPushGoNotification(notificationIntent: Intent?): Boolean = notificationIntent?.hasExtra("project") == true
 
   /**
-   * Checks whether the given notification intent belongs to PushPushGo.
-   *
-   * @param notificationData Data payload of the received notification.
-   *
-   * @return `true` if the notification was sent by PushPushGo, `false` otherwise.
+   * Checks whether the given notification data belongs to PushPushGo.
    */
+  @JvmStatic
   fun isPushPushGoNotification(notificationData: Map<String, String>): Boolean = notificationData.containsKey("project")
 
   /**
    * Retrieves PushPushGo notification details from the given intent.
-   *
-   * @param notificationIntent Intent associated with the clicked notification.
-   *
-   * @return [PushPushGoNotification] instance if the intent contains valid
-   * PushPushGo notification data, or `null` otherwise.
    */
+  @JvmStatic
   fun getNotificationDetails(notificationIntent: Intent?): PushPushGoNotification? =
     deserializeNotificationData(notificationIntent?.extras)?.mapToDto()
 
   /**
-   * Retrieves PushPushGo notification details from the given intent.
-   *
-   * @param notificationData Data payload of the received notification.
-   *
-   * @return [PushPushGoNotification] instance if the intent contains valid
-   * PushPushGo notification data, or `null` otherwise.
+   * Retrieves PushPushGo notification details from the given data payload.
    */
+  @JvmStatic
   fun getNotificationDetails(notificationData: Map<String, String>): PushPushGoNotification? =
     deserializeNotificationData(notificationData.mapToBundle())?.mapToDto()
 
   /**
    * Handles a PushPushGo notification click when the application is launched
    * or resumed from the background.
-   *
-   * This method should be called from:
-   * - `Activity.onCreate()`
-   * - `Activity.onNewIntent()`
-   *
-   * @param intent Intent received from the notification click.
-   * @param overrideFlags Optional intent flags used when launching the target activity
    */
+  @JvmStatic
   fun handleBackgroundNotificationClick(
     intent: Intent?,
     overrideFlags: Int = Intent.FLAG_ACTIVITY_NEW_TASK,
   ) {
-    if (intent?.hasExtra(PushNotificationDelegate.PROJECT_ID_EXTRA) != true) return
-
-    val intentProjectId = intent.getStringExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
-    val intentSubscriberId = intent.getStringExtra(PushNotificationDelegate.SUBSCRIBER_ID_EXTRA).orEmpty()
-    val intentButtonId = intent.getIntExtra(PushNotificationDelegate.BUTTON_ID_EXTRA, 0)
-    val intentLink = intent.getStringExtra(PushNotificationDelegate.LINK_EXTRA).orEmpty()
-    val intentCampaignId = intent.getStringExtra(PushNotificationDelegate.CAMPAIGN_ID_EXTRA).orEmpty()
-    val intentNotificationId = intent.getIntExtra(PushNotificationDelegate.NOTIFICATION_ID_EXTRA, 0)
-
-    if (intentProjectId != config.projectId) {
-      return invalidProjectIdHandler(intentProjectId.orEmpty(), intentSubscriberId, config.projectId)
-    }
-
-    NotificationManagerCompat.from(application).cancel(intentNotificationId)
-
-    // TODO Remove duplicated code
-    val notify = deserializeNotificationData(intent.extras)
-    notificationClickHandler(application, notify?.redirectLink ?: intentLink, overrideFlags)
-    intent.removeExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
-
-    uploadManager.sendEvent(
-      type = EventType.CLICKED,
-      buttonId = intentButtonId,
-      projectId = notify?.project ?: intentProjectId,
-      subscriberId = notify?.subscriber ?: intentSubscriberId,
-      campaign = notify?.campaignId ?: intentCampaignId,
-    )
+    requireRuntime().handleBackgroundNotificationClick(intent, overrideFlags)
   }
 
-  fun areNotificationsEnabled(): Boolean = areNotificationsEnabled(application)
-
-  fun createBeacon(): BeaconBuilder = BeaconBuilder(uploadDelegate)
-
-  fun getPushSubscriptionProvider(): PushSubscriptionProvider = DefaultPushSubscriptionProvider(application)
+  @JvmStatic
+  fun areNotificationsEnabled(): Boolean = requireRuntime().areNotificationsEnabled()
 
   /**
-   * Checks whether Live Activities are supported on this device.
-   * Requires API 36+ (Android 16) for ProgressStyle notifications.
-   */
-  fun isLiveActivitiesSupported(): Boolean = liveActivityController.isSupported()
-
-  /**
-   * Returns the list of currently active live activities.
-   * Returns empty list on API < 36.
-   */
-  fun getActiveLiveActivities(): List<LiveActivity> = liveActivityController.getActiveActivities()
-
-  /**
-   * Checks whether a specific live activity is currently active.
-   * Returns false on API < 36.
-   */
-  fun isLiveActivityActive(id: String): Boolean = liveActivityController.isActive(id)
-
-  /**
-   * Simulates a Live Activity push for testing purposes. No-op on API < 36.
+   * Sends a beacon created with [BeaconBuilder].
    *
-   * Pass a data map matching the Live Activity push payload format.
+   * @throws IllegalStateException if the device is not subscribed.
    */
-  fun simulateLiveActivityPush(data: Map<String, String>) {
-    liveActivityController.simulatePush(data)
+  @JvmStatic
+  @JvmSynthetic
+  suspend fun sendBeacon(beacon: Beacon) {
+    requireRuntime().sendBeacon(beacon)
   }
 
   /**
-   * Subscribes this device to a backend live notification (Live Activity) so it
-   * starts receiving its push updates.
+   * Sends a beacon asynchronously.
    *
-   * The device must already be a registered push subscriber (call [subscribe]
-   * first). The returned future resolves to the backend LA subscriber id, which
-   * is also persisted so [unsubscribeFromLiveActivity] can be called later
-   * without tracking it yourself.
-   *
-   * @param liveNotificationId backend id of the live notification to follow.
-   * @return future with the assigned LA subscriber id.
+   * Java-friendly wrapper for [sendBeacon]. The future completes exceptionally if the device is
+   * not subscribed.
    */
-  fun subscribeToLiveActivity(liveNotificationId: String): CompletableFuture<String> =
-    sdkScope.future {
-      liveActivityController.subscribe(liveNotificationId)
-    }
-
-  /**
-   * Unsubscribes this device from a backend live notification it previously
-   * subscribed to via [subscribeToLiveActivity]. Fails if the device is not
-   * subscribed to it.
-   *
-   * @param liveNotificationId backend id of the live notification to leave.
-   */
-  fun unsubscribeFromLiveActivity(liveNotificationId: String): CompletableFuture<Void?> =
-    sdkScope.future {
-      liveActivityController.unsubscribe(liveNotificationId)
+  @JvmStatic
+  fun sendBeaconAsync(beacon: Beacon): CompletableFuture<Void?> =
+    asyncScope.future {
+      sendBeacon(beacon)
       null
     }
 
-  /**
-   * Returns the persisted LA subscriber id for a live notification, or empty
-   * string if this device is not subscribed to it.
-   */
-  fun getLiveActivitySubscriberId(liveNotificationId: String): String = liveActivityController.getSubscriberId(liveNotificationId)
+  @JvmStatic
+  fun getPushSubscriptionProvider(): PushSubscriptionProvider = requireRuntime().getPushSubscriptionProvider()
 
-  /**
-   * Handles a Live Activity notification click when the app is launched or
-   * resumed from a tap. Call from `Activity.onCreate()` / `Activity.onNewIntent()`
-   * alongside [handleBackgroundNotificationClick].
-   *
-   * Reports the click analytics event and, unless [openDeepLink] is false, opens
-   * the carried deep link through [notificationClickHandler] (same routing as
-   * regular push clicks).
-   *
-   * @return the deep link if this was a Live Activity click, `null` otherwise.
-   */
-  @JvmOverloads
-  fun handleLiveActivityClick(
-    intent: Intent?,
-    openDeepLink: Boolean = true,
-  ): String? = liveActivityController.handleClick(application, intent, openDeepLink)
+  private fun requireRuntime(): PushNotificationsRuntime = checkNotNull(runtime) { "PushNotifications SDK is not initialized" }
+
+  private inline fun <T> withLifecycleLock(block: () -> T): T {
+    check(lifecycleMutex.tryLock()) {
+      "PushNotifications lifecycle mutation is in progress"
+    }
+
+    return try {
+      block()
+    } finally {
+      lifecycleMutex.unlock()
+    }
+  }
 }
-
-typealias NotificationClickHandler = (context: Context, url: String, overrideFlags: Int) -> Unit
-
-typealias InvalidProjectIdHandler = (pushProjectId: String, pushSubscriberId: String, currentProjectId: String) -> Unit

@@ -24,7 +24,7 @@ android {
   compileSdk = 36
 
   defaultConfig {
-    minSdk = 28
+    minSdk = 26
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -91,6 +91,7 @@ dependencies {
   testImplementation(libs.json)
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.robolectric)
+  testImplementation(libs.androidx.work.testing)
 
   testImplementation(platform(libs.firebase.bom))
   testImplementation(libs.firebase.messaging)

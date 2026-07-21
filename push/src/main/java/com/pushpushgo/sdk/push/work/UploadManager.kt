@@ -3,34 +3,41 @@ package com.pushpushgo.sdk.push.work
 import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.data.EventType
-import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.utils.logDebug
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.DATA
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_BUTTON_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_CAMPAIGN
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_PROJECT_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_SUBSCRIBER_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_TYPE
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.REGISTER
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_PERIODIC
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_SUBSCRIBER_ID
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_TOKEN
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.TYPE
-import com.pushpushgo.sdk.push.work.UploadWorker.Companion.UNREGISTER
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_API_KEY
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_API_URL
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_PROJECT_ID
 import java.util.concurrent.TimeUnit
 
 internal class UploadManager(
   context: Context,
-  private val sharedPref: SharedPreferencesHelper,
+  private val config: Config,
 ) {
   companion object {
-    private const val UPLOAD_DELAY = 10L
     private const val UPLOAD_RETRY_DELAY = 30L
+    private const val TOKEN_SYNC_PERIOD_DAYS = 14L
+
+    internal const val SYNC_TOKEN_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token"
+    internal const val PERIODIC_TOKEN_SYNC_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token-periodic"
   }
 
   private val workManager = WorkManager.getInstance(context)
@@ -41,42 +48,73 @@ internal class UploadManager(
       .setRequiredNetworkType(NetworkType.CONNECTED)
       .build()
 
-  fun sendRegister(token: String?) {
-    logDebug("Register enqueued")
-
-    enqueueJob(REGISTER, isMustRunImmediately = true, data = token)
-    listOf(UNREGISTER).forEach {
-      workManager.cancelAllWorkByTag(it)
+  fun syncToken(
+    subscriberId: String,
+    token: String?,
+  ) {
+    if (subscriberId.isBlank()) {
+      return logDebug("Token sync not enqueued. Reason: empty subscriberId")
     }
+
+    workManager.enqueueUniqueWork(
+      SYNC_TOKEN_WORK_NAME,
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<UploadWorker>()
+        .setInputData(
+          workDataOf(
+            TYPE to SYNC_TOKEN,
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
+            SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+            SYNC_TOKEN_TOKEN to token,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
   }
 
-  fun sendUnregister() {
-    if (!sharedPref.isSubscribed) {
-      logDebug("Can't unregister, because device not registered. Skipping")
-      return
+  fun schedulePeriodicTokenSync(subscriberId: String) {
+    if (subscriberId.isBlank()) {
+      return logDebug("Periodic token sync not scheduled. Reason: empty subscriberId")
     }
 
-    logDebug("Unregister enqueued")
-
-    enqueueJob(UNREGISTER, isMustRunImmediately = true)
-    listOf(REGISTER).forEach {
-      workManager.cancelAllWorkByTag(it)
-    }
+    workManager.enqueueUniquePeriodicWork(
+      PERIODIC_TOKEN_SYNC_WORK_NAME,
+      ExistingPeriodicWorkPolicy.UPDATE,
+      PeriodicWorkRequestBuilder<UploadWorker>(
+        TOKEN_SYNC_PERIOD_DAYS,
+        TimeUnit.DAYS,
+      ).setInitialDelay(
+        TOKEN_SYNC_PERIOD_DAYS,
+        TimeUnit.DAYS,
+      ).setInputData(
+        workDataOf(
+          TYPE to SYNC_TOKEN_PERIODIC,
+          WORK_PROJECT_ID to config.projectId,
+          WORK_API_KEY to config.apiKey,
+          WORK_API_URL to config.apiUrl,
+          SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+        ),
+      ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
   }
 
   /**
    * Enqueues a delivery/click event for durable, retried upload. Events are
    * fire-and-forget at the call site but survive process death and transient
-   * network loss because they run as a [UploadWorker] job with linear backoff.
+   * network loss because they run as a [UploadWorker] job with exponential
+   * backoff.
    *
-   * Not unique work: every event must reach the backend, so they are never
-   * de-duplicated against one another.
+   * Not unique work: events are never de-duplicated against one another.
    */
   fun sendEvent(
     type: EventType,
     buttonId: Int,
     campaign: String,
-    projectId: String?,
     subscriberId: String?,
   ) {
     logDebug("Event enqueued: ${type.value}")
@@ -85,50 +123,23 @@ internal class UploadManager(
       OneTimeWorkRequestBuilder<UploadWorker>()
         .setInputData(
           workDataOf(
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
             TYPE to EVENT,
             EVENT_TYPE to type.name,
             EVENT_BUTTON_ID to buttonId,
             EVENT_CAMPAIGN to campaign,
-            EVENT_PROJECT_ID to projectId,
             EVENT_SUBSCRIBER_ID to subscriberId,
           ),
-        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
         .setConstraints(networkConstraints)
         .build(),
     )
   }
 
   fun cancelAllJobs() {
-    workManager.cancelUniqueWork(REGISTER)
-    workManager.cancelUniqueWork(UNREGISTER)
+    workManager.cancelUniqueWork(SYNC_TOKEN_WORK_NAME)
+    workManager.cancelUniqueWork(PERIODIC_TOKEN_SYNC_WORK_NAME)
   }
-
-  private fun enqueueJob(
-    name: String,
-    data: String? = null,
-    isMustRunImmediately: Boolean = false,
-  ) {
-    workManager.enqueueUniqueWork(
-      name,
-      // REGISTER must REPLACE: when two registrations race (e.g. token rotation),
-      // the newest token has to win. UNREGISTER keeps the in-flight request.
-      if (name == REGISTER) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP,
-      OneTimeWorkRequestBuilder<UploadWorker>()
-        .setInputData(
-          workDataOf(TYPE to name, DATA to data),
-        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
-        .setInitialDelay(if (isMustRunImmediately || isJobAlreadyEnqueued(name)) 0 else UPLOAD_DELAY, TimeUnit.SECONDS)
-        .setConstraints(networkConstraints)
-        .build(),
-    )
-  }
-
-  private fun isJobAlreadyEnqueued(name: String) =
-    try {
-      workManager.getWorkInfosForUniqueWork(name).get().any {
-        it.state == WorkInfo.State.ENQUEUED
-      }
-    } catch (e: InterruptedException) {
-      false
-    }
 }

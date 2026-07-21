@@ -2,15 +2,16 @@ package com.pushpushgo.sdk.push.network
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.pushpushgo.sdk.core.api.Config
-import com.pushpushgo.sdk.push.PushNotifications
-import com.pushpushgo.sdk.push.data.EventType
+import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.data.TokenResponse
+import com.pushpushgo.sdk.push.testConfig
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,11 +19,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @org.robolectric.annotation.Config(sdk = [33])
 class ApiRepositoryTest {
-  private val config =
-    Config.create(
-      projectId = "hm93nzyt5bmczmtjeghy2aph",
-      apiKey = "e5d706d7-0ebb-4793-9edc-6bd9eb9aff3a",
-    )
+  private val config = testConfig()
 
   private lateinit var apiService: ApiService
   private lateinit var prefs: SharedPreferencesHelper
@@ -30,10 +27,9 @@ class ApiRepositoryTest {
 
   @Before
   fun setUp() {
-    // logDebug() resolves config through the SDK singleton, so it must exist.
-    PushNotifications.initialize(getApplicationContext(), config)
-    apiService = mockk(relaxed = true)
+    apiService = mockk()
     prefs = SharedPreferencesHelper(getApplicationContext(), prefsName = "api_repo_test")
+    prefs.clearProjectData()
     repository = ApiRepository(getApplicationContext(), apiService, prefs, config)
   }
 
@@ -49,46 +45,79 @@ class ApiRepositoryTest {
     }
 
   @Test
-  fun `sendEvent prefers the payload subscriber over local state (ISSUE-09)`() =
+  fun `unregisterSubscriber treats missing subscriber as already unregistered`() =
     runBlocking {
-      prefs.subscriberId = "local-sub"
+      prefs.subscriberId = "sub-1"
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws
+        PushPushException("Subscriber not exists", 404)
 
-      repository.sendEvent(
-        type = EventType.DELIVERED,
-        buttonId = 0,
-        campaign = "camp",
-        project = "proj",
-        subscriber = "payload-sub",
-      )
+      repository.unregisterSubscriber()
 
-      coVerify {
-        apiService.sendEvent(
-          token = any(),
-          projectId = "proj",
-          event = match { it.payload.subscriber == "payload-sub" },
-        )
-      }
+      assertNull(prefs.subscriberId)
     }
 
   @Test
-  fun `sendEvent falls back to local subscriber when payload subscriber is blank (ISSUE-09)`() =
+  fun `unregisterSubscriber treats inactive subscriber as already unregistered`() =
     runBlocking {
-      prefs.subscriberId = "local-sub"
+      prefs.subscriberId = "sub-1"
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws
+        PushPushException("Cannot perform operation on inactive subscriber", 400)
 
-      repository.sendEvent(
-        type = EventType.DELIVERED,
-        buttonId = 0,
-        campaign = "camp",
-        project = null,
-        subscriber = "   ",
-      )
+      repository.unregisterSubscriber()
 
-      coVerify {
-        apiService.sendEvent(
-          token = any(),
-          projectId = config.projectId,
-          event = match { it.payload.subscriber == "local-sub" },
-        )
-      }
+      assertNull(prefs.subscriberId)
+    }
+
+  @Test
+  fun `unregisterSubscriber propagates other API errors and preserves subscriber`() =
+    runBlocking {
+      prefs.subscriberId = "sub-1"
+      val expected = PushPushException("Unexpected error", 400)
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws expected
+
+      val actual = runCatching { repository.unregisterSubscriber() }.exceptionOrNull()
+
+      assertSame(expected, actual)
+      assertEquals("sub-1", prefs.subscriberId)
+    }
+
+  @Test
+  fun `sendBeacon throws when unsubscribed`() =
+    runBlocking {
+      val failure = runCatching { repository.sendBeacon("{}") }.exceptionOrNull()
+
+      assertEquals(IllegalStateException::class.java, failure?.javaClass)
+      assertEquals("Cannot send beacon - unsubscribed", failure?.message)
+      coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
+    }
+
+  @Test
+  fun `unsubscribeFromLiveActivity treats missing live notification as success`() =
+    runBlocking {
+      coEvery { apiService.unsubscribeLiveActivity(any(), any()) } throws
+        PushPushException("Live notification not found", 400)
+
+      repository.unsubscribeFromLiveActivity("live-1", "live-sub-1")
+    }
+
+  @Test
+  fun `unsubscribeFromLiveActivity treats missing live notification subscriber as success`() =
+    runBlocking {
+      coEvery { apiService.unsubscribeLiveActivity(any(), any()) } throws
+        PushPushException("Live notification subscriber not found", 400)
+
+      repository.unsubscribeFromLiveActivity("live-1", "live-sub-1")
+    }
+
+  @Test
+  fun `unsubscribeFromLiveActivity propagates other errors`() =
+    runBlocking {
+      val expected = PushPushException("Unexpected error", 400)
+
+      coEvery { apiService.unsubscribeLiveActivity(any(), any()) } throws expected
+
+      val actual = runCatching { repository.unsubscribeFromLiveActivity("live-1", "live-sub-1") }.exceptionOrNull()
+
+      assertSame(expected, actual)
     }
 }

@@ -2,19 +2,15 @@ package com.pushpushgo.sdk.push.push
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
 import com.pushpushgo.sdk.core.internal.NotificationPermissionProvider
 import com.pushpushgo.sdk.push.R
 import com.pushpushgo.sdk.push.data.Action
 import com.pushpushgo.sdk.push.data.NotificationJsonAdapter
 import com.pushpushgo.sdk.push.data.PushPushNotification
-import com.pushpushgo.sdk.push.utils.logError
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 
@@ -36,22 +32,6 @@ internal fun deserializeNotificationData(data: Bundle?): PushPushNotification? {
     image = data.getString("image").orEmpty(),
     redirectLink = data.getString("redirectLink").orEmpty(),
   )
-}
-
-internal fun handleNotificationLinkClick(
-  context: Context,
-  uri: String,
-  overrideFlags: Int,
-) {
-  Intent.parseUri(uri, 0).let {
-    it.addFlags(overrideFlags)
-    try {
-      context.startActivity(it)
-    } catch (e: ActivityNotFoundException) {
-      logError("Not found activity to open uri: $uri", e)
-      Toast.makeText(context, uri, Toast.LENGTH_SHORT).show()
-    }
-  }
 }
 
 internal fun areNotificationsEnabled(context: Context): Boolean {

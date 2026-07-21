@@ -3,6 +3,8 @@ package com.pushpushgo.sdk.push.network
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -66,5 +68,26 @@ class SharedPreferencesHelperTest {
 
     assertEquals(999_999, prefs.getNotificationId("k-0"))
     assertEquals(-1, prefs.getNotificationId("k-1"))
+  }
+
+  @Test
+  fun `clear project data removes project state and preserves installation settings`() {
+    prefs.subscriberId = "sub-123"
+    prefs.lastToken = "token-abc"
+    prefs.isSubscribed = true
+    prefs.customIntentFlags = 42
+    val installationId = prefs.installationId
+    prefs.setLiveActivitySubscriberId("live-1", "live-sub-1")
+    prefs.setNotificationId("notification-1", 7)
+
+    prefs.clearProjectData()
+
+    assertNull(prefs.subscriberId)
+    assertNull(prefs.lastToken)
+    assertFalse(prefs.isSubscribed)
+    assertEquals("", prefs.getLiveActivitySubscriberId("live-1"))
+    assertEquals(-1, prefs.getNotificationId("notification-1"))
+    assertEquals(42, prefs.customIntentFlags)
+    assertEquals(installationId, prefs.installationId)
   }
 }

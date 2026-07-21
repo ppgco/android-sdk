@@ -11,19 +11,19 @@ class DefaultPushSubscriptionProvider internal constructor(
 ) : PushSubscriptionProvider {
   override suspend fun subscribe() {
     withContext(Dispatchers.Main) {
-      PushNotifications.getInstance().subscribeNow()
+      PushNotifications.subscribe()
     }
   }
 
   override suspend fun unsubscribe() {
     withContext(Dispatchers.Main) {
-      PushNotifications.getInstance().unsubscribeNow()
+      PushNotifications.unsubscribe()
     }
   }
 
-  override fun isSubscribed(): Boolean = PushNotifications.getInstance().isSubscribed()
+  override fun isSubscribed(): Boolean = PushNotifications.isSubscribed()
 
-  override fun getPushToken(): String? = PushNotifications.getInstance().getPushToken()
+  override fun getPushToken(): String? = PushNotifications.getPushToken()
 
   override fun isNotificationChannelEnabled(): Boolean =
     com.pushpushgo.sdk.push.push

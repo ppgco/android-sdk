@@ -32,6 +32,10 @@ Android SDK for integrating push notifications into your application. Supports b
 
 ## Installation
 
+### Requirements
+
+- Android API 26+
+
 Choose installation path depending on your provider.
 
 ## FCM (Firebase Cloud Messaging)
@@ -195,6 +199,10 @@ Add your Project ID and API Key inside `<application>`:
 
 Initialize the SDK in your `Application` class.
 
+The SDK requires WorkManager to be initialized first. The standard WorkManager setup does this
+automatically through AndroidX Startup. If your application disables WorkManager's automatic
+initializer, initialize WorkManager manually before calling `PushNotifications.initialize(...)`.
+
 #### Automatic (from AndroidManifest.xml)
 
 ```kotlin
@@ -225,6 +233,33 @@ class MyApplication : Application() {
   }
 }
 ```
+
+#### Switching to another project
+
+Changing manifest credentials is not a supported project-migration mechanism.
+To switch an explicitly configured SDK to another project, deinitialize the
+current runtime and wait for that operation to complete before initializing the
+new one:
+
+```kotlin
+PushNotifications.deinitialize()
+PushNotifications.initialize(
+  application = application,
+  config = newConfig,
+)
+```
+
+Java callers can chain the asynchronous wrapper:
+
+```java
+PushNotifications.deinitializeAsync()
+    .thenRun(() -> PushNotifications.initialize(application, newConfig));
+```
+
+Deinitialization removes Live Activities first, then unsubscribes the current
+subscriber and clears persisted project data. If any step fails, the SDK remains
+initialized and the operation throws an exception. Live Activities already
+removed stay removed.
 
 ### Notification UI customization
 
@@ -264,14 +299,14 @@ To ensure correct handling of notification taps:
      super.onCreate(savedInstanceState)
 
      if (savedInstanceState == null) {
-       PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+       PushNotifications.handleBackgroundNotificationClick(intent)
      }
    }
 
    override fun onNewIntent(intent: Intent) {
-   super.onNewIntent(intent)
+     super.onNewIntent(intent)
 
-   PushNotifications.getInstance().handleBackgroundNotificationClick(intent)
+     PushNotifications.handleBackgroundNotificationClick(intent)
    }
    ```
 
@@ -286,24 +321,22 @@ This ensures notification data is processed both when the app is cold-started an
 ### Push subscription
 
 ```kotlin
-PushNotifications.getInstance().isSubscribed()
+PushNotifications.isSubscribed()
 
-PushNotifications.getInstance().subscribe()
-PushNotifications.getInstance().unsubscribe()
-
-PushNotifications.getInstance().subscribeNow()
-PushNotifications.getInstance().unsubscribeNow()
+PushNotifications.subscribe()
+PushNotifications.unsubscribe()
 ```
+
+From Java, use `subscribeAsync()` and `unsubscribeAsync()`. Both return a
+`CompletableFuture`.
 
 #### Notification permission required
 
 On Android 13 (API 33) and newer, push subscription requires the
 `POST_NOTIFICATIONS` permission to be granted by the user.
 
-If the permission is not granted:
-
-- asynchronous methods (`subscribe`, `unsubscribe`) **log an error and fail**
-- synchronous methods (`subscribeNow`, `unsubscribeNow`) **throw an exception**
+If the permission is not granted, `subscribe()` (and its Java wrapper,
+`subscribeAsync()`) throws an exception.
 
 The application is responsible for requesting the permission before calling
 any subscription methods.
@@ -317,20 +350,16 @@ unsubscribes the user.
 ### Beacons, tags, and dynamic groups
 
 ```kotlin
-PushNotifications.getInstance().createBeacon()
-  .set("see_invoice", true)
-  .setCustomId("CID")
-  .appendTag("demo")
-  .appendTag("mobile", "platform")
-  .send()
+val beacon =
+  BeaconBuilder()
+    .set("see_invoice", true)
+    .setCustomId("CID")
+    .appendTag("demo")
+    .appendTag("mobile", "platform")
+    .assignToGroup("my-group-name")
+    .build()
 
-PushNotifications.getInstance().createBeacon()
-  .assignToGroup("my-group-name")
-  .send()
-
-PushNotifications.getInstance().createBeacon()
-  .unassignFromGroup("my-group-name")
-  .send()
+PushNotifications.sendBeacon(beacon)
 ```
 
 ## Live Activities
@@ -339,9 +368,10 @@ Real-time, continuously updated notifications (Android 16+ Live Updates), e.g.
 live football match tracking:
 
 ```kotlin
-PushNotifications.getInstance().subscribeToLiveActivity("liveNotificationId")
+val liveActivities = PushNotifications.liveActivities
+liveActivities.subscribe("liveNotificationId")
 // ...
-PushNotifications.getInstance().unsubscribeFromLiveActivity("liveNotificationId")
+liveActivities.unsubscribe("liveNotificationId")
 ```
 
 For the full integration guide (clicks, deep links, analytics, rendering
