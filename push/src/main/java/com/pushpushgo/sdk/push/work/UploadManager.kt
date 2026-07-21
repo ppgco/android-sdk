@@ -82,17 +82,22 @@ internal class UploadManager(
 
     workManager.enqueueUniquePeriodicWork(
       PERIODIC_TOKEN_SYNC_WORK_NAME,
-      ExistingPeriodicWorkPolicy.REPLACE,
-      PeriodicWorkRequestBuilder<UploadWorker>(TOKEN_SYNC_PERIOD_DAYS, TimeUnit.DAYS)
-        .setInputData(
-          workDataOf(
-            TYPE to SYNC_TOKEN_PERIODIC,
-            WORK_PROJECT_ID to config.projectId,
-            WORK_API_KEY to config.apiKey,
-            WORK_API_URL to config.apiUrl,
-            SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
-          ),
-        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+      ExistingPeriodicWorkPolicy.UPDATE,
+      PeriodicWorkRequestBuilder<UploadWorker>(
+        TOKEN_SYNC_PERIOD_DAYS,
+        TimeUnit.DAYS,
+      ).setInitialDelay(
+        TOKEN_SYNC_PERIOD_DAYS,
+        TimeUnit.DAYS,
+      ).setInputData(
+        workDataOf(
+          TYPE to SYNC_TOKEN_PERIODIC,
+          WORK_PROJECT_ID to config.projectId,
+          WORK_API_KEY to config.apiKey,
+          WORK_API_URL to config.apiUrl,
+          SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+        ),
+      ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
         .setConstraints(networkConstraints)
         .build(),
     )
