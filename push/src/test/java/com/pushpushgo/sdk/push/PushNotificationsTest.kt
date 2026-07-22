@@ -5,6 +5,8 @@ import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.push.dto.PushPushGoNotification
+import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -27,6 +29,13 @@ class PushNotificationsTest {
         application = getApplicationContext(),
         config = testConfig(),
       )
+  }
+
+  @After
+  fun tearDown() {
+    PushNotifications.sharedPreferencesHelper.isSubscribed = false
+    runBlocking { PushNotifications.deinitialize() }
+    WorkManagerTestInitHelper.closeWorkDatabase()
   }
 
   @Test

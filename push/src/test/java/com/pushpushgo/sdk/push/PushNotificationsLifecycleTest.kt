@@ -61,10 +61,13 @@ class PushNotificationsLifecycleTest {
     PushNotifications.setNotificationClickHandler(null)
     PushNotifications.setInvalidProjectIdHandler(null)
     PushNotifications.setErrorCallback(null)
+
     if (PushNotifications.isInitialized()) {
       PushNotifications.sharedPreferencesHelper.isSubscribed = false
       runBlocking { PushNotifications.deinitialize() }
     }
+
+    WorkManagerTestInitHelper.closeWorkDatabase()
     unmockkObject(ApiService.Companion)
   }
 

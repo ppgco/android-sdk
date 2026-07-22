@@ -9,6 +9,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -31,6 +32,11 @@ class ApiRepositoryTest {
     prefs = SharedPreferencesHelper(getApplicationContext(), prefsName = "api_repo_test")
     prefs.clearProjectData()
     repository = ApiRepository(getApplicationContext(), apiService, prefs, config)
+  }
+
+  @After
+  fun tearDown() {
+    prefs.clearProjectData()
   }
 
   @Test

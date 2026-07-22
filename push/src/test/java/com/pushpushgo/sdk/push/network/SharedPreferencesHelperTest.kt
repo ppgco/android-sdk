@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.push.network
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -18,6 +19,11 @@ class SharedPreferencesHelperTest {
   @Before
   fun setUp() {
     prefs = SharedPreferencesHelper(getApplicationContext(), prefsName = "test_prefs")
+  }
+
+  @After
+  fun tearDown() {
+    prefs.clearProjectData()
   }
 
   @Test

@@ -16,6 +16,8 @@ import com.pushpushgo.sdk.push.testConfig
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -45,6 +47,13 @@ internal class LiveActivityManagerTest {
     every { persistence.getCreatedAt(any()) } returns 0L
     every { persistence.rebuild(any()) } returns null
     manager = LiveActivityManager(persistence)
+  }
+
+  @After
+  fun tearDown() {
+    PushNotifications.sharedPreferencesHelper.isSubscribed = false
+    runBlocking { PushNotifications.deinitialize() }
+    WorkManagerTestInitHelper.closeWorkDatabase()
   }
 
   @Test
