@@ -16,7 +16,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -138,16 +138,13 @@ class PushNotificationsLifecycleTest {
   fun `initialize is rejected while deinitialize is in progress`() =
     runBlocking {
       setSubscribed()
-      val unregisterStarted = CompletableDeferred<Unit>()
       val finishUnregister = CompletableDeferred<Unit>()
       coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
-        unregisterStarted.complete(Unit)
         finishUnregister.await()
         Response.success(null)
       }
 
-      val deinitialize = launch(Dispatchers.Default) { PushNotifications.deinitialize() }
-      unregisterStarted.await()
+      val deinitialize = launch(start = CoroutineStart.UNDISPATCHED) { PushNotifications.deinitialize() }
 
       val failure =
         try {
