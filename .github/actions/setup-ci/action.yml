@@ -9,4 +9,4 @@ runs:
         java-version: 21
         cache: gradle
 
-    - uses: gradle/wrapper-validation-action@v3
+    - uses: gradle/actions/wrapper-validation@v6

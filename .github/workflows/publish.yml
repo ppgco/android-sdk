@@ -2,6 +2,16 @@ name: Publish to Maven Central
 
 on:
   workflow_dispatch:
+    inputs:
+      module:
+        description: Module to publish
+        required: true
+        type: choice
+        options:
+          - core
+          - push
+          - inapp
+          - all
 
 jobs:
   publish:
@@ -17,10 +27,26 @@ jobs:
       - name: Setup CI
         uses: ./.github/actions/setup-ci
 
-      - name: Publish to Maven Central
-        run: ./gradlew clean publish -PRELEASE --no-daemon --stacktrace
+      - name: Verify module API
         env:
+          MODULE: ${{ inputs.module }}
+        run: |
+          if [[ "$MODULE" == "all" ]]; then
+            ./gradlew apiCheck --no-daemon --stacktrace
+          else
+            ./gradlew ":$MODULE:apiCheck" --no-daemon --stacktrace
+          fi
+
+      - name: Upload to Maven Central
+        env:
+          MODULE: ${{ inputs.module }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          if [[ "$MODULE" == "all" ]]; then
+            ./gradlew publishToMavenCentral --no-daemon --stacktrace
+          else
+            ./gradlew ":$MODULE:publishToMavenCentral" --no-daemon --stacktrace
+          fi

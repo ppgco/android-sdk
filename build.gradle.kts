@@ -57,10 +57,8 @@ subprojects {
         }
       }
 
-      if (hasProperty("RELEASE")) {
-        publishToMavenCentral()
-        signAllPublications()
-      }
+      publishToMavenCentral(automaticRelease = false)
+      signAllPublications()
     }
   }
 }
