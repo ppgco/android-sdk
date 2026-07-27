@@ -166,7 +166,7 @@ plugins {
 // settings.gradle.kts
 pluginManagement {
   repositories {
-    maven(url = "https://developer.huawei.com/repo/")
+    maven(url = "https://developer.huawei.com/repo")
   }
 
   resolutionStrategy {
@@ -175,6 +175,12 @@ pluginManagement {
         useModule("com.huawei.agconnect:agcp:1.9.1.304")
       }
     }
+  }
+}
+
+dependencyResolutionManagement {
+  repositories {
+    maven(url = "https://developer.huawei.com/repo")
   }
 }
 ```
