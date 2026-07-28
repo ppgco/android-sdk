@@ -4,6 +4,10 @@
 
 ### Breaking changes
 
+#### Distribution
+- The SDK has migrated from JitPack to Maven Central.
+- The JitPack Maven repository (`https://jitpack.io`) can be removed from your Gradle configuration.
+
 #### SDK entry point & initialization
 - **Replaced `InAppMessagesSDK` with `InAppMessages`** as the main public API.
 - Initialization is now explicit and standardized:
@@ -51,4 +55,3 @@
   - `showActiveMessages(...)` → route- or trigger-based APIs
   - String-based triggers → `Trigger`
   - JS action handling → `CustomCodeHandler` passed during initialization
-

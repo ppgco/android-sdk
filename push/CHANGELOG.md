@@ -4,6 +4,10 @@
 
 ### Breaking changes
 
+#### Distribution
+- The SDK has migrated from JitPack to Maven Central.
+- The JitPack Maven repository (`https://jitpack.io`) can be removed from your Gradle configuration.
+
 #### Min SDK Version
 - Minimum Android SDK version increased from 23 to 26.
 
