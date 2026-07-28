@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk.push
 
-import android.Manifest
 import android.app.Application
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
@@ -10,11 +9,15 @@ import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkConstructor
 import io.mockk.mockkObject
+import io.mockk.unmockkConstructor
 import io.mockk.unmockkObject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
@@ -29,7 +32,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Shadows.shadowOf
 import retrofit2.Response
 import java.io.IOException
 
@@ -45,7 +47,6 @@ class PushNotificationsLifecycleTest {
 
   @Before
   fun setUp() {
-    shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
     WorkManagerTestInitHelper.initializeTestWorkManager(application)
     preferences = SharedPreferencesHelper(application)
     preferences.clearProjectData()
@@ -53,6 +54,8 @@ class PushNotificationsLifecycleTest {
 
     apiService = mockk(relaxed = true)
     mockkObject(ApiService.Companion)
+    mockkConstructor(NotificationStatusChecker::class)
+    every { anyConstructed<NotificationStatusChecker>().start() } just Runs
     every { ApiService.fromConfig(any()) } returns apiService
     coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
 
@@ -71,6 +74,7 @@ class PushNotificationsLifecycleTest {
     }
 
     WorkManagerTestInitHelper.closeWorkDatabase()
+    unmockkConstructor(NotificationStatusChecker::class)
     unmockkObject(ApiService.Companion)
   }
 
@@ -101,10 +105,14 @@ class PushNotificationsLifecycleTest {
 
       val failure = runCatching { PushNotifications.deinitialize() }.exceptionOrNull()
 
-      assertTrue(failure is IOException)
-      assertTrue(PushNotifications.isInitialized())
-      assertEquals("sub-123", preferences.subscriberId)
-      assertEquals("", preferences.getLiveActivitySubscriberId("live-1"))
+      assertTrue("Expected IOException, got: $failure", failure is IOException)
+      assertTrue("SDK should remain initialized", PushNotifications.isInitialized())
+      assertEquals("Subscriber ID should be preserved", "sub-123", preferences.subscriberId)
+      assertEquals(
+        "Removed Live Activity subscription should stay removed",
+        "",
+        preferences.getLiveActivitySubscriberId("live-1"),
+      )
     }
 
   @Test
