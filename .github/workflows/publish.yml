@@ -13,12 +13,19 @@ on:
           - inapp
           - all
 
+  push:
+    branches:
+      - 4.0.0-rc
+
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
+
+    env:
+      MODULE: ${{ github.event_name == 'workflow_dispatch' && inputs.module || 'all' }}
 
     steps:
       - name: Checkout
@@ -28,8 +35,6 @@ jobs:
         uses: ./.github/actions/setup-ci
 
       - name: Verify module API
-        env:
-          MODULE: ${{ inputs.module }}
         run: |
           if [[ "$MODULE" == "all" ]]; then
             ./gradlew apiCheck --no-daemon --stacktrace
@@ -39,7 +44,6 @@ jobs:
 
       - name: Upload to Maven Central
         env:
-          MODULE: ${{ inputs.module }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
