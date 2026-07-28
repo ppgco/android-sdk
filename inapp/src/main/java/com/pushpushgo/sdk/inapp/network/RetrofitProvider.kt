@@ -1,0 +1,36 @@
+package com.pushpushgo.sdk.inapp.network
+
+import com.pushpushgo.sdk.inapp.utils.ZonedDateTimeAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
+
+internal object RetrofitProvider {
+  fun buildRetrofit(baseUrl: String): Retrofit {
+    val okHttpClient =
+      OkHttpClient
+        .Builder()
+        .addInterceptor(
+          HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+          },
+        ).build()
+
+    val moshi =
+      Moshi
+        .Builder()
+        .add(ZonedDateTimeAdapter.Companion.FACTORY)
+        .add(KotlinJsonAdapterFactory())
+        .build()
+
+    return Retrofit
+      .Builder()
+      .baseUrl(baseUrl)
+      .client(okHttpClient)
+      .addConverterFactory(MoshiConverterFactory.create(moshi))
+      .build()
+  }
+}

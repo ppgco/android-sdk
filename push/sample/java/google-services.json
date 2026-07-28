@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "120314134586",
+    "firebase_url": "https://pushpushgo-sample-app.firebaseio.com",
+    "project_id": "pushpushgo-sample-app",
+    "storage_bucket": "pushpushgo-sample-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:120314134586:android:01615cfde51b13c2393503",
+        "android_client_info": {
+          "package_name": "com.pushpushgo.sdk.sample.push.java"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "120314134586-6b52jbofani2ldlek116ol7dh80vac8t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAO0xvaOvatZqkaMiy7PzkyI4q94FcPYgI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "120314134586-6b52jbofani2ldlek116ol7dh80vac8t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

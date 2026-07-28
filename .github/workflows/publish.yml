@@ -1,0 +1,56 @@
+name: Publish to Maven Central
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: Module to publish
+        required: true
+        type: choice
+        options:
+          - core
+          - push
+          - inapp
+          - all
+
+  push:
+    branches:
+      - 4.0.0-rc
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    env:
+      MODULE: ${{ github.event_name == 'workflow_dispatch' && inputs.module || 'all' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup CI
+        uses: ./.github/actions/setup-ci
+
+      - name: Verify module API
+        run: |
+          if [[ "$MODULE" == "all" ]]; then
+            ./gradlew apiCheck --no-daemon --stacktrace
+          else
+            ./gradlew ":$MODULE:apiCheck" --no-daemon --stacktrace
+          fi
+
+      - name: Upload to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          if [[ "$MODULE" == "all" ]]; then
+            ./gradlew publishToMavenCentral --no-daemon --stacktrace
+          else
+            ./gradlew ":$MODULE:publishToMavenCentral" --no-daemon --stacktrace
+          fi
