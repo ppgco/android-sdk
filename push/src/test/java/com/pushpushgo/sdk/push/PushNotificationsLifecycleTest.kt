@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.push
 
+import android.Manifest
 import android.app.Application
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
@@ -28,6 +29,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import retrofit2.Response
 import java.io.IOException
 
@@ -43,6 +45,7 @@ class PushNotificationsLifecycleTest {
 
   @Before
   fun setUp() {
+    shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
     WorkManagerTestInitHelper.initializeTestWorkManager(application)
     preferences = SharedPreferencesHelper(application)
     preferences.clearProjectData()
