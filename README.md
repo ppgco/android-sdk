@@ -118,6 +118,30 @@ plugins {
 
 5. **In PushPushGo application collect your project ID and generate API KEY in access manager (/user/access-manager/keys) as u will need them later**
 
+> [!IMPORTANT]
+> ### Use a dedicated Mobile SDK token
+>
+> We have introduced a **dedicated mobile authorization token** for mobile SDK
+> integrations. We recommend generating one in *Project settings → Integration → Mobile*
+> (`https://app.pushpushgo.com/projects/{yourProjectID}/settings/integration/mobile`)
+> and using it in the SDK instead of a general-purpose API key from the Access Manager.
+> It is a drop-in replacement — no other changes to your integration are required.
+
+### Why a separate token?
+
+The recommendation is a security one — a credential shipped inside a mobile app should
+be the one you can afford to lose:
+
+- **Limited blast radius** — the mobile token is scoped to what the SDK actually needs.
+  A general API key usually also allows sending campaigns, exporting subscribers or
+  changing project settings; if it leaks from an app, the attacker gets all of that.
+- **Independent revocation** — you can revoke or rotate the mobile token without
+  breaking your server-side integrations that share the old key.
+
+> [!NOTE]
+> Tokens you are currently using will keep working — this is not a breaking change.
+> We still recommend switching to a dedicated mobile token.
+
 
 ## Instalation
 
