@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -249,14 +250,36 @@ internal class PushNotificationDelegate(
     }
 
   private suspend fun getBitmapFromUrl(url: String?): Bitmap? {
+    if (url.isNullOrBlank()) return null
+
+    val startedAt = SystemClock.elapsedRealtime()
     try {
-      return withTimeoutOrNull(5000) {
-        withContext(Dispatchers.IO) {
-          apiRepository.getBitmapFromUrl(url)
+      val bitmap =
+        withTimeoutOrNull(BITMAP_TIMEOUT_MS) {
+          withContext(Dispatchers.IO) {
+            apiRepository.getBitmapFromUrl(url)
+          }
+        }
+      val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+
+      return when {
+        bitmap != null -> {
+          logDebug("Bitmap downloaded in ${elapsedMs}ms (${bitmap.width}x${bitmap.height}): $url")
+          bitmap
+        }
+
+        elapsedMs >= BITMAP_TIMEOUT_MS -> {
+          logWarning("Bitmap download timed out after ${elapsedMs}ms (limit ${BITMAP_TIMEOUT_MS}ms): $url")
+          null
+        }
+
+        else -> {
+          logWarning("Bitmap decoded to null after ${elapsedMs}ms: $url")
+          null
         }
       }
     } catch (e: Throwable) {
-      logError("Failed to download bitmap picture", e)
+      logError("Failed to download bitmap picture after ${SystemClock.elapsedRealtime() - startedAt}ms: $url", e)
     }
 
     return null
@@ -423,6 +446,8 @@ internal class PushNotificationDelegate(
   )
 
   companion object {
+    private const val BITMAP_TIMEOUT_MS = 10_000L
+
     const val NOTIFICATION_ID_EXTRA = "notification_id"
     const val CAMPAIGN_ID_EXTRA = "campaign"
     const val BUTTON_ID_EXTRA = "button"
