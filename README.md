@@ -7,7 +7,7 @@
 ![GitHub tag (latest)](https://img.shields.io/github/v/tag/ppgco/android-sdk?style=flat-square)
 
 > [!IMPORTANT]
-> **Version 3.2.0**
+> **Version 3.2.1**
 >
 > Introducing **Live Activities (Android Live Updates)** — real-time, continuously
 > updated notifications (football match tracking template) on Android 16+.
