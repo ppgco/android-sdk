@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
+import android.os.SystemClock
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import com.pushpushgo.sdk.network.ApiRepository
@@ -58,7 +59,7 @@ internal class LiveActivityHandler(
     /** Index of the tapped action button (0-based); absent/-1 for a content tap. */
     const val EXTRA_ACTION_INDEX = "la_action_index"
 
-    private const val BITMAP_TIMEOUT_MS = 5000L
+    private const val BITMAP_TIMEOUT_MS = 10_000L
     private const val ENDED_NOTIFICATION_DELAY_MS = 10_000L
     private const val TICK_INTERVAL_MS = 1000L
     private const val ICON_ALTERNATION_INTERVAL_MS = 3500L
@@ -480,14 +481,35 @@ internal class LiveActivityHandler(
 
   private suspend fun downloadBitmap(url: String?): Bitmap? {
     if (url.isNullOrBlank()) return null
+
+    val startedAt = SystemClock.elapsedRealtime()
     return try {
-      withTimeoutOrNull(BITMAP_TIMEOUT_MS) {
-        withContext(Dispatchers.IO) {
-          apiRepository.getBitmapFromUrl(url)
+      val bitmap =
+        withTimeoutOrNull(BITMAP_TIMEOUT_MS) {
+          withContext(Dispatchers.IO) {
+            apiRepository.getBitmapFromUrl(url)
+          }
         }
+      val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+
+      // Diagnostics for missing team logos: withTimeoutOrNull() swallows the
+      // timeout and returns null, so a slow image is otherwise indistinguishable
+      // from one that was never configured.
+      when {
+        bitmap != null ->
+          logDebug("LiveActivityHandler: bitmap downloaded in ${elapsedMs}ms (${bitmap.width}x${bitmap.height}): $url")
+
+        elapsedMs >= BITMAP_TIMEOUT_MS ->
+          logWarning("LiveActivityHandler: bitmap timed out after ${elapsedMs}ms (limit ${BITMAP_TIMEOUT_MS}ms): $url")
+
+        else ->
+          logWarning("LiveActivityHandler: bitmap decoded to null after ${elapsedMs}ms: $url")
       }
+
+      bitmap
     } catch (e: Exception) {
-      logError("LiveActivityHandler: failed to download bitmap from $url", e)
+      val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+      logError("LiveActivityHandler: failed to download bitmap from $url after ${elapsedMs}ms", e)
       null
     }
   }
