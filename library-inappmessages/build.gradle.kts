@@ -78,7 +78,6 @@ dependencies {
   implementation(libs.coil.compose)
 
   // Serialization
-  implementation(libs.moshi.kotlin)
   ksp(libs.moshi.codegen)
   implementation(libs.kotlinx.serialization)
 

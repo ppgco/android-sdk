@@ -45,7 +45,6 @@ dependencyResolutionManagement {
             library('retrofit-moshi', 'com.squareup.retrofit2', 'converter-moshi').versionRef('retrofit')
 
             library('moshi', 'com.squareup.moshi', 'moshi').versionRef('moshi')
-            library('moshi-kotlin', 'com.squareup.moshi', 'moshi-kotlin').versionRef('moshi')
             library('moshi-codegen', 'com.squareup.moshi', 'moshi-kotlin-codegen').versionRef('moshi')
             library('moshi-adapters', 'com.squareup.moshi', 'moshi-adapters').versionRef('moshi')
 
