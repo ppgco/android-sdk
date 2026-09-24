@@ -1,10 +1,12 @@
 package com.pushpushgo.sdk.inapp.model
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
 /**
  * Enum representing the font families that can be received from the backend.
  */
+@JsonClass(generateAdapter = false)
 internal enum class FontFamily {
   @Json(name = "Roboto")
   ROBOTO,

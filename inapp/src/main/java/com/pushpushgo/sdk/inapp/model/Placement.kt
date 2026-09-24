@@ -1,10 +1,12 @@
 package com.pushpushgo.sdk.inapp.model
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
 /**
  * Enum representing the placement of the in-app message on the screen.
  */
+@JsonClass(generateAdapter = false)
 internal enum class Placement {
   @Json(name = "TOP")
   TOP,

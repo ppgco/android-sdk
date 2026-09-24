@@ -10,7 +10,6 @@ import com.pushpushgo.sdk.inapp.utils.ZonedDateTimeAdapter
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 internal class InAppMessagePersistenceImpl(
   context: Context,
@@ -18,8 +17,7 @@ internal class InAppMessagePersistenceImpl(
   private val moshi: Moshi =
     Moshi
       .Builder()
-      .add(ZonedDateTimeAdapter.Companion.FACTORY)
-      .addLast(KotlinJsonAdapterFactory())
+      .add(ZonedDateTimeAdapter.FACTORY)
       .build(),
 ) : InAppMessagePersistence {
   private val prefs: SharedPreferences = context.getSharedPreferences("in_app_messages_prefs", Context.MODE_PRIVATE)

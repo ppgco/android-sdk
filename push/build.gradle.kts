@@ -76,7 +76,6 @@ dependencies {
   implementation(libs.okhttp.logging)
 
   ksp(libs.moshi.codegen)
-  implementation(libs.moshi.kotlin)
   implementation(libs.moshi.adapters)
 
   implementation(libs.androidx.work.runtime)

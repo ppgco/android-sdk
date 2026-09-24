@@ -87,7 +87,6 @@ dependencies {
 
   // Serialization
   ksp(libs.moshi.codegen)
-  implementation(libs.moshi.kotlin)
   implementation(libs.kotlinx.serialization)
 
   // Networking
