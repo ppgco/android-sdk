@@ -1,0 +1,12 @@
+name: Setup CI
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: 21
+        cache: gradle
+
+    - uses: gradle/actions/wrapper-validation@v6

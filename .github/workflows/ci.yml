@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ktlint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup CI
+        uses: ./.github/actions/setup-ci
+
+      - name: Run Ktlint
+        run: ./gradlew ktlintCheck --no-daemon
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup CI
+        uses: ./.github/actions/setup-ci
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon --build-cache

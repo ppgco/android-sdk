@@ -1,0 +1,41 @@
+public final class com/pushpushgo/sdk/core/api/Config {
+	public static final field Companion Lcom/pushpushgo/sdk/core/api/Config$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun create (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
+	public static final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
+	public static final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/pushpushgo/sdk/core/api/Config;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiKey ()Ljava/lang/String;
+	public final fun getApiUrl ()Ljava/lang/String;
+	public final fun getProjectId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static final fun isApiKeyFormatValid (Ljava/lang/String;)Z
+	public final fun isDebug ()Z
+	public static final fun isProjectIdFormatValid (Ljava/lang/String;)Z
+}
+
+public final class com/pushpushgo/sdk/core/api/Config$Companion {
+	public final fun create (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
+	public final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/core/api/Config;
+	public final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/pushpushgo/sdk/core/api/Config;
+	public static synthetic fun create$default (Lcom/pushpushgo/sdk/core/api/Config$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/pushpushgo/sdk/core/api/Config;
+	public final fun isApiKeyFormatValid (Ljava/lang/String;)Z
+	public final fun isProjectIdFormatValid (Ljava/lang/String;)Z
+}
+
+public abstract interface class com/pushpushgo/sdk/core/api/PushSubscriptionProvider {
+	public abstract fun getPushToken ()Ljava/lang/String;
+	public abstract fun isNotificationChannelEnabled ()Z
+	public abstract fun isSubscribed ()Z
+	public abstract fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class com/pushpushgo/sdk/core/api/PushSubscriptionProviderJavaAdapter : com/pushpushgo/sdk/core/api/PushSubscriptionProvider {
+	public fun <init> ()V
+	public fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun subscribeFuture ()Ljava/util/concurrent/CompletableFuture;
+	public fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun unsubscribeFuture ()Ljava/util/concurrent/CompletableFuture;
+}
+
