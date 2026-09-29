@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Looper
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -26,16 +27,19 @@ import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.logWarning
 import com.pushpushgo.sdk.push.utils.mapToBundle
 import com.pushpushgo.sdk.push.work.UploadManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.IOException
 import kotlin.random.Random
 
 internal class PushNotificationDelegate(
@@ -91,34 +95,55 @@ internal class PushNotificationDelegate(
       return logWarning("Push notifications are disabled by user")
     }
 
-    delegateScope.launch(errorHandler) {
-      val notificationManager = NotificationManagerCompat.from(context)
-
-      val notificationId = getNotificationId(pushMessage.data["nId"] ?: "default")
-      logDebug("Notification ID: $notificationId")
-
-      val notification =
-        when {
-          pushMessage.data.isNotEmpty() ->
-            getDataNotification(
-              context = context,
-              remoteMessage = pushMessage,
-              notificationId = notificationId,
-            )
-
-          pushMessage.notification != null ->
-            getSimpleNotification(
-              context = context,
-              remoteMessage = pushMessage,
-              notificationId = notificationId,
-            )
-
-          else -> throw IllegalStateException("Unknown notification type")
-        }
-
-      notificationManager.notify(notificationId, notification)
-      logDebug("Notification sent: $notificationId => $notification")
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      // Blocking the main thread would risk an ANR, so integrations that forward
+      // messages from the main thread keep the asynchronous path.
+      delegateScope.launch(errorHandler) { showNotification(pushMessage, context) }
+      return
     }
+
+    // Messaging services deliver onMessageReceived on a worker thread and stop the
+    // service as soon as it returns. Returning before the notification was posted
+    // let the service be destroyed mid image download, which dropped the
+    // notification (or its image), so wait for it here.
+    try {
+      runBlocking { showNotification(pushMessage, context) }
+    } catch (e: Throwable) {
+      logError(e)
+    }
+  }
+
+  @SuppressLint("MissingPermission")
+  private suspend fun showNotification(
+    pushMessage: PushMessage,
+    context: Context,
+  ) {
+    val notificationManager = NotificationManagerCompat.from(context)
+
+    val notificationId = getNotificationId(pushMessage.data["nId"] ?: "default")
+    logDebug("Notification ID: $notificationId")
+
+    val notification =
+      when {
+        pushMessage.data.isNotEmpty() ->
+          getDataNotification(
+            context = context,
+            remoteMessage = pushMessage,
+            notificationId = notificationId,
+          )
+
+        pushMessage.notification != null ->
+          getSimpleNotification(
+            context = context,
+            remoteMessage = pushMessage,
+            notificationId = notificationId,
+          )
+
+        else -> throw IllegalStateException("Unknown notification type")
+      }
+
+    notificationManager.notify(notificationId, notification)
+    logDebug("Notification sent: $notificationId => $notification")
   }
 
   fun onNewToken(token: String) {
@@ -136,7 +161,9 @@ internal class PushNotificationDelegate(
   }
 
   fun onDestroy() {
-    job.cancelChildren()
+    // Intentionally does not cancel in-flight work: the service is destroyed right
+    // after onMessageReceived returns, and cancelling here dropped notifications
+    // mid image download. Pending work is bounded by IMAGE_DOWNLOAD_BUDGET_MS.
   }
 
   private fun getUniqueNotificationId() = Random.nextInt(0, Int.MAX_VALUE)
@@ -253,36 +280,48 @@ internal class PushNotificationDelegate(
     if (url.isNullOrBlank()) return null
 
     val startedAt = SystemClock.elapsedRealtime()
-    try {
-      val bitmap =
-        withTimeoutOrNull(BITMAP_TIMEOUT_MS) {
-          withContext(Dispatchers.IO) {
-            apiRepository.getBitmapFromUrl(url)
-          }
-        }
-      val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+    val bitmap = withTimeoutOrNull(IMAGE_DOWNLOAD_BUDGET_MS) { downloadBitmapWithRetry(url, startedAt) }
 
-      return when {
-        bitmap != null -> {
-          logDebug("Bitmap downloaded in ${elapsedMs}ms (${bitmap.width}x${bitmap.height}): $url")
-          bitmap
-        }
-
-        elapsedMs >= BITMAP_TIMEOUT_MS -> {
-          logWarning("Bitmap download timed out after ${elapsedMs}ms (limit ${BITMAP_TIMEOUT_MS}ms): $url")
-          null
-        }
-
-        else -> {
-          logWarning("Bitmap decoded to null after ${elapsedMs}ms: $url")
-          null
-        }
-      }
-    } catch (e: Throwable) {
-      logError("Failed to download bitmap picture after ${SystemClock.elapsedRealtime() - startedAt}ms: $url", e)
+    // withTimeoutOrNull() swallows the timeout and returns null, so log it here;
+    // otherwise the notification is posted without a picture and nothing shows up in the logs.
+    val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+    if (bitmap == null && elapsedMs >= IMAGE_DOWNLOAD_BUDGET_MS) {
+      logWarning("Bitmap download timed out after ${elapsedMs}ms (limit ${IMAGE_DOWNLOAD_BUDGET_MS}ms): $url")
     }
+    return bitmap
+  }
 
-    return null
+  private suspend fun downloadBitmapWithRetry(
+    url: String,
+    startedAt: Long,
+  ): Bitmap? {
+    var attempt = 0
+    while (true) {
+      attempt++
+      try {
+        val bitmap = withContext(Dispatchers.IO) { apiRepository.getBitmapFromUrl(url) }
+        val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+        if (bitmap == null) {
+          logWarning("Bitmap decoded to null after ${elapsedMs}ms: $url")
+        } else {
+          logDebug("Bitmap downloaded in ${elapsedMs}ms (${bitmap.width}x${bitmap.height}, attempt $attempt): $url")
+        }
+        return bitmap
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: IOException) {
+        // Right after a cold start the app's network can still be blocked (DNS fails
+        // until the FCM network allowlist is applied), so network errors are retried
+        // until the download budget runs out.
+        val retryInMs = RETRY_DELAYS_MS.getOrElse(attempt - 1) { RETRY_DELAYS_MS.last() }
+        val elapsedMs = SystemClock.elapsedRealtime() - startedAt
+        logWarning("Bitmap download attempt $attempt failed after ${elapsedMs}ms, retrying in ${retryInMs}ms: $url ($e)")
+        delay(retryInMs)
+      } catch (e: Throwable) {
+        logError("Failed to download bitmap picture after ${SystemClock.elapsedRealtime() - startedAt}ms: $url", e)
+        return null
+      }
+    }
   }
 
   private fun createNotification(
@@ -446,7 +485,11 @@ internal class PushNotificationDelegate(
   )
 
   companion object {
-    private const val BITMAP_TIMEOUT_MS = 10_000L
+    // Shared by the image and icon downloads (they run concurrently). Kept well
+    // below the time Firebase allows for handling a message, since
+    // onMessageReceived now waits for the notification to be posted.
+    private const val IMAGE_DOWNLOAD_BUDGET_MS = 8_000L
+    private val RETRY_DELAYS_MS = listOf(250L, 500L, 1_000L, 2_000L)
 
     const val NOTIFICATION_ID_EXTRA = "notification_id"
     const val CAMPAIGN_ID_EXTRA = "campaign"
