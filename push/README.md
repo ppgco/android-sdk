@@ -242,30 +242,94 @@ class MyApplication : Application() {
 
 #### Switching to another project
 
-Changing manifest credentials is not a supported project-migration mechanism.
-To switch an explicitly configured SDK to another project, deinitialize the
-current runtime and wait for that operation to complete before initializing the
-new one:
+If your app works with several PushPushGo projects (e.g. one per country or
+brand), move the initialized SDK to another project with `switchProject`:
 
 ```kotlin
-PushNotifications.deinitialize()
-PushNotifications.initialize(
-  application = application,
-  config = newConfig,
+PushNotifications.switchProject(
+  Config.create(
+    projectId = "other-project-id",
+    apiKey = "other-api-key",
+  ),
 )
 ```
 
-Java callers can chain the asynchronous wrapper:
+Java callers use the asynchronous wrapper:
 
 ```java
-PushNotifications.deinitializeAsync()
-    .thenRun(() -> PushNotifications.initialize(application, newConfig));
+PushNotifications.switchProjectAsync(Config.create("other-project-id", "other-api-key"))
+    .thenRun(() -> { /* switched */ });
 ```
 
-Deinitialization removes Live Activities first, then unsubscribes the current
-subscriber and clears persisted project data. If any step fails, the SDK remains
-initialized and the operation throws an exception. Live Activities already
-removed stay removed.
+The switch happens locally right away and does not depend on the network:
+
+- The subscriber of the previous project and its Live Activity subscriptions are
+  removed in the background with the previous project's credentials, retried
+  until the API is reachable, also after an app restart.
+- `switchProject` returns right after the local switch. If the user was
+  subscribed and notifications are enabled, the device is then subscribed to
+  the new project in the background: `isSubscribed()` turns `true` once that
+  completes. A failed subscription is reported to the error callback
+  (`setErrorCallback`) and retried while the app is in the foreground.
+- If the user was not subscribed, call `subscribe()` when needed.
+- Handlers and the error callback stay in place.
+- Pushes the previous project sends until its subscriber is removed go to
+  `InvalidProjectIdHandler` instead of being displayed. So do clicks on
+  notifications of the previous project that were displayed before the switch.
+
+Switching to the configuration the SDK already uses has no effect. Switch calls
+run one after another, so switching twice in a row is safe. If the previous
+project is still registering the device, the next switch waits for that request
+to finish.
+
+If you use the InAppMessages SDK too, switch it as well with
+`InAppMessages.getInstance().switchProject(config)`.
+
+The SDK does not remember the selected configuration across app restarts. Store
+the selected project in your app and initialize the SDK with it on the next
+start:
+
+```kotlin
+class MyApplication : Application() {
+  override fun onCreate() {
+    super.onCreate()
+
+    val selectedProject = loadSelectedProjectConfig() // your own storage
+
+    if (selectedProject != null) {
+      PushNotifications.initialize(this, selectedProject)
+    } else {
+      PushNotifications.initialize(this)
+    }
+  }
+}
+```
+
+If the SDK is initialized with a different project than the one its persisted
+subscription belongs to - e.g. the app initializes from `AndroidManifest.xml`
+after a switch - it releases that subscription the same way `switchProject`
+does and registers the device in the initialized project once notifications are
+enabled. The state stays consistent, but the user ends up back in the
+initialized project.
+
+#### Turning the SDK off
+
+`PushNotifications.deinitialize()` (Java: `deinitializeAsync()`) unsubscribes
+the device and releases the SDK completely. It removes Live Activities first,
+then unsubscribes the current subscriber and clears persisted project data. If
+any step fails, the SDK remains initialized and the operation throws an
+exception. Live Activities already removed stay removed. Call `initialize(...)`
+to start the SDK again.
+
+#### Persisted state
+
+The SDK keeps its state (subscriber, push token, the user's subscription and the
+project they belong to) in the app's default `SharedPreferences`, under keys
+prefixed with `_PushPushGoSDK_`. Do not remove these keys, e.g. by clearing the
+default preferences on logout: the device would stay registered in PushPushGo
+while the SDK considers it unsubscribed. If your app uses Auto Backup, restoring
+the default preferences on another device carries over the subscriber of the
+original device.
 
 ### Notification UI customization
 
@@ -349,9 +413,12 @@ any subscription methods.
 
 #### Permission monitoring
 
-The SDK periodically checks whether the notification permission is still granted.
-If the permission is revoked while the user is subscribed, the SDK automatically
-unsubscribes the user.
+While the app is in the foreground, the SDK periodically checks whether the
+notification permission is still granted. If the permission is revoked while the
+user is subscribed, the SDK unregisters the device but remembers that the user
+subscribed: once the permission is granted back, the device is registered again
+automatically. `isSubscribed()` returns `false` in the meantime. Only
+`unsubscribe()` cancels the subscription for good.
 
 ### Beacons, tags, and dynamic groups
 

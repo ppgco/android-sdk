@@ -38,6 +38,7 @@ internal class UploadManager(
 
     internal const val SYNC_TOKEN_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token"
     internal const val PERIODIC_TOKEN_SYNC_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token-periodic"
+    internal const val PROJECT_CLEANUP_TAG = "com.pushpushgo.sdk.push.work:project-cleanup"
   }
 
   private val workManager = WorkManager.getInstance(context)
@@ -133,6 +134,43 @@ internal class UploadManager(
             EVENT_SUBSCRIBER_ID to subscriberId,
           ),
         ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  /**
+   * Enqueues durable removal of [subscriberId] and [liveActivitySubscriptions] (live notification
+   * id to Live Activity subscriber id) from [project], using that project's credentials rather
+   * than the current configuration. See [ProjectCleanupWorker].
+   *
+   * A newer cleanup of the same subscriber replaces a pending one. [cancelAllJobs] leaves these
+   * jobs alone.
+   */
+  fun scheduleProjectCleanup(
+    project: Config,
+    subscriberId: String?,
+    liveActivitySubscriptions: Map<String, String>,
+  ) {
+    logDebug("Project ${project.projectId} cleanup enqueued")
+
+    val liveActivities = liveActivitySubscriptions.toList()
+
+    workManager.enqueueUniqueWork(
+      "$PROJECT_CLEANUP_TAG:${project.projectId}:${subscriberId.orEmpty()}",
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<ProjectCleanupWorker>()
+        .setInputData(
+          workDataOf(
+            ProjectCleanupWorker.PROJECT_ID to project.projectId,
+            ProjectCleanupWorker.API_KEY to project.apiKey,
+            ProjectCleanupWorker.API_URL to project.apiUrl,
+            ProjectCleanupWorker.SUBSCRIBER_ID to subscriberId,
+            ProjectCleanupWorker.LIVE_ACTIVITY_IDS to liveActivities.map { it.first }.toTypedArray(),
+            ProjectCleanupWorker.LIVE_ACTIVITY_SUBSCRIBER_IDS to liveActivities.map { it.second }.toTypedArray(),
+          ),
+        ).addTag(PROJECT_CLEANUP_TAG)
+        .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
         .setConstraints(networkConstraints)
         .build(),
     )

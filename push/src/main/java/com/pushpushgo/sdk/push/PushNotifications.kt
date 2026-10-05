@@ -72,8 +72,8 @@ object PushNotifications {
   /**
    * Initializes the PushNotifications SDK using configuration defined in AndroidManifest.xml.
    *
-   * Calling this method again with the same configuration has no effect. If the SDK is already
-   * initialized with a different configuration, call [deinitialize] before initializing it again.
+   * Calling this method again with the same configuration has no effect. To move an initialized
+   * SDK to another project, use [switchProject].
    *
    * @throws IllegalStateException if required manifest values are missing or the SDK is already
    * initialized with a different configuration.
@@ -84,8 +84,13 @@ object PushNotifications {
   /**
    * Initializes the PushNotifications SDK using an explicit [Config] instance.
    *
-   * Calling this method again with an equal configuration has no effect. If the SDK is already
-   * initialized with a different configuration, call [deinitialize] before initializing it again.
+   * Calling this method again with an equal configuration has no effect. To move an initialized
+   * SDK to another project, use [switchProject].
+   *
+   * If the persisted subscription belongs to another project - e.g. the app switched projects
+   * before a restart and now initializes the SDK with a different configuration - that
+   * subscription is removed in the background and the device registers in this project once
+   * notifications are enabled, as long as the user subscribed before.
    *
    * @throws IllegalStateException if the SDK is already initialized with a different configuration.
    */
@@ -101,7 +106,7 @@ object PushNotifications {
       } else {
         check(activeRuntime.config == config) {
           "PushNotifications SDK is already initialized with a different configuration. " +
-            "Call PushNotifications.deinitialize() before initializing it again."
+            "Use PushNotifications.switchProject() to move it to another project."
         }
       }
 
@@ -115,7 +120,8 @@ object PushNotifications {
    * fails, the SDK remains initialized and the error is returned. Live Activities already removed
    * stay removed.
    *
-   * After this method completes, [initialize] may be called with another project configuration.
+   * After this method completes, [initialize] may be called again. To move the SDK to another
+   * project without turning it off, use [switchProject] - it does not depend on the network.
    */
   @JvmSynthetic
   suspend fun deinitialize() {
@@ -133,6 +139,53 @@ object PushNotifications {
   fun deinitializeAsync(): CompletableFuture<Void?> =
     asyncScope.future {
       deinitialize()
+      null
+    }
+
+  /**
+   * Moves the SDK to the project described by [config].
+   *
+   * The switch happens locally right away and does not depend on the network: the subscriber of
+   * the current project and its Live Activity subscriptions are removed in the background with the
+   * current project's credentials (retried until the API is reachable), local state is cleared,
+   * and the SDK starts working with [config]. Pushes the previous project sends in the meantime go
+   * to [InvalidProjectIdHandler] instead of being displayed.
+   *
+   * The method returns right after the local switch. If the user was subscribed and notifications
+   * are enabled, the device is then subscribed to the new project in the background, so
+   * [isSubscribed] turns `true` once that completes. A failed subscription is reported to the error
+   * callback and retried while the app is in the foreground. If the user was not subscribed, call
+   * [subscribe] when needed.
+   *
+   * Switching to the configuration the SDK already uses has no effect. Switches run one after
+   * another: if the previous project is still registering the device, the switch waits for that
+   * request to finish, so its result never mixes with the new project's state. Handlers and the
+   * error callback stay in place. The SDK does not remember [config] across app restarts -
+   * initialize it with the configuration of the current project on the next start.
+   *
+   * @throws IllegalStateException if the SDK is not initialized.
+   */
+  @JvmSynthetic
+  suspend fun switchProject(config: Config) {
+    lifecycleMutex.withLock {
+      val activeRuntime = requireRuntime()
+      if (activeRuntime.config == config) return
+
+      activeRuntime.release()
+      runtime =
+        PushNotificationsRuntime(activeRuntime.application, config, callbacks).apply {
+          subscribeIfRequestedInBackground()
+        }
+    }
+  }
+
+  /**
+   * Java-friendly wrapper for [switchProject].
+   */
+  @JvmStatic
+  fun switchProjectAsync(config: Config): CompletableFuture<Void?> =
+    asyncScope.future {
+      switchProject(config)
       null
     }
 
@@ -187,6 +240,13 @@ object PushNotifications {
   @JvmStatic
   fun getApiKey(): String = requireRuntime().getApiKey()
 
+  /**
+   * Returns `true` when the device is registered as a subscriber of the current project.
+   *
+   * While the notification permission is revoked this returns `false`, even if the user subscribed
+   * earlier: the SDK unregisters the device and registers it again once the permission is granted
+   * back. Only [unsubscribe] cancels the subscription for good.
+   */
   @JvmStatic
   fun isSubscribed(): Boolean = requireRuntime().isSubscribed()
 

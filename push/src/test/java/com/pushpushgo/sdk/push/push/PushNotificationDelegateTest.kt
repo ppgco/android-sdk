@@ -9,8 +9,11 @@ import android.os.Looper
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
+import com.pushpushgo.sdk.push.InvalidProjectIdHandler
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.network.ApiRepository
+import com.pushpushgo.sdk.push.otherProjectTestConfig
 import com.pushpushgo.sdk.push.testConfig
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -19,6 +22,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -102,6 +106,59 @@ class PushNotificationDelegateTest {
 
     assertEquals(BIG_TEXT_STYLE, postedNotification().extras.getString(Notification.EXTRA_TEMPLATE))
     coVerify(exactly = 1) { apiRepository.getBitmapFromUrl(IMAGE_URL) }
+  }
+
+  @Test
+  fun `live activity push of another project goes to the invalid project handler`() {
+    val otherProjectId = otherProjectTestConfig().projectId
+
+    val invalidProject = deliverLiveActivityPush(projectId = otherProjectId)
+
+    assertEquals(Triple(otherProjectId, "subscriber-id", testConfig().projectId), invalidProject)
+  }
+
+  @Test
+  fun `live activity push of the current project is not reported as invalid`() {
+    val invalidProject = deliverLiveActivityPush(projectId = testConfig().projectId)
+
+    assertNull(invalidProject)
+  }
+
+  /** Returns the arguments the invalid project handler was called with, `null` if it was not called. */
+  private fun deliverLiveActivityPush(projectId: String): Triple<String, String, String>? {
+    var invalidProject: Triple<String, String, String>? = null
+    val callbacks =
+      PushNotificationsCallbacks().apply {
+        invalidProjectIdHandler =
+          InvalidProjectIdHandler { pushProjectId, pushSubscriberId, currentProjectId ->
+            invalidProject = Triple(pushProjectId, pushSubscriberId, currentProjectId)
+          }
+      }
+    val liveActivityDelegate =
+      PushNotificationDelegate(
+        sharedPreferencesHelper = PushNotifications.sharedPreferencesHelper,
+        apiRepository = apiRepository,
+        uploadManager = mockk(relaxed = true),
+        callbacks = callbacks,
+      )
+
+    liveActivityDelegate.onMessageReceived(
+      PushMessage(
+        from = "702491788352",
+        data =
+          mapOf(
+            "type" to "live_notification",
+            "liveNotificationId" to "live-1",
+            "event" to "update",
+            "project" to projectId,
+            "subscriber" to "subscriber-id",
+          ),
+        notification = null,
+      ),
+      context,
+    )
+
+    return invalidProject
   }
 
   /** Delivers the message the way a messaging service does (on a worker thread) and waits for the notification. */

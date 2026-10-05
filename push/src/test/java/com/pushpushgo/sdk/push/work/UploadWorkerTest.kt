@@ -7,6 +7,7 @@ import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.testConfig
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -77,5 +78,30 @@ class UploadWorkerTest {
             },
         )
       }
+    }
+
+  @Test
+  fun `token sync skips a subscriber that is no longer active`() =
+    runBlocking {
+      SharedPreferencesHelper(getApplicationContext()).subscriberId = "current-subscriber"
+
+      val worker =
+        TestListenableWorkerBuilder<UploadWorker>(
+          context = getApplicationContext(),
+          inputData =
+            workDataOf(
+              UploadWorker.TYPE to UploadWorker.SYNC_TOKEN,
+              UploadWorker.WORK_PROJECT_ID to config.projectId,
+              UploadWorker.WORK_API_KEY to config.apiKey,
+              UploadWorker.WORK_API_URL to config.apiUrl,
+              UploadWorker.SYNC_TOKEN_SUBSCRIBER_ID to "previous-subscriber",
+              UploadWorker.SYNC_TOKEN_TOKEN to "new-token",
+            ),
+        ).build()
+
+      val result = worker.doWork()
+
+      assertTrue(result is ListenableWorker.Result.Success)
+      coVerify(exactly = 0) { apiService.updateSubscriberToken(any(), any(), any(), any()) }
     }
 }

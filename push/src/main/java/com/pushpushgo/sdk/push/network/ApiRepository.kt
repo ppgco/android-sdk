@@ -29,6 +29,7 @@ internal class ApiRepository(
 ) {
   companion object {
     private const val INACTIVE_SUBSCRIBER_MESSAGE = "Cannot perform operation on inactive subscriber"
+    private const val FOREIGN_SUBSCRIBER_MESSAGE = "Subscriber not belongs to given project"
     private const val LIVE_ACTIVITY_NOT_FOUND_MESSAGE = "Live notification not found"
     private const val LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE = "Live notification subscriber not found"
   }
@@ -74,6 +75,17 @@ internal class ApiRepository(
       return
     }
 
+    deleteSubscriber(subscriberId)
+
+    sharedPref.subscriberId = ""
+  }
+
+  /**
+   * Removes [subscriberId] from the configured project. A subscriber that is already inactive,
+   * does not exist, or belongs to another project (so these credentials can never remove it)
+   * counts as removed.
+   */
+  suspend fun deleteSubscriber(subscriberId: String) {
     try {
       apiService.unregisterSubscriber(
         token = config.apiKey,
@@ -83,14 +95,13 @@ internal class ApiRepository(
     } catch (exception: PushPushException) {
       val isAlreadyUnregistered =
         exception.statusCode == 404 ||
-          (exception.statusCode == 400 && exception.message == INACTIVE_SUBSCRIBER_MESSAGE)
+          (exception.statusCode == 400 && exception.message == INACTIVE_SUBSCRIBER_MESSAGE) ||
+          (exception.statusCode == 403 && exception.message == FOREIGN_SUBSCRIBER_MESSAGE)
 
       if (!isAlreadyUnregistered) throw exception
 
       logDebug("Subscriber is already unregistered")
     }
-
-    sharedPref.subscriberId = ""
   }
 
   suspend fun sendBeacon(beacon: String) {

@@ -77,6 +77,8 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final fun setNotificationClickHandler (Lcom/pushpushgo/sdk/push/NotificationClickHandler;)V
 	public final synthetic fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun subscribeAsync ()Ljava/util/concurrent/CompletableFuture;
+	public final synthetic fun switchProject (Lcom/pushpushgo/sdk/core/api/Config;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun switchProjectAsync (Lcom/pushpushgo/sdk/core/api/Config;)Ljava/util/concurrent/CompletableFuture;
 	public final synthetic fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun unsubscribeAsync ()Ljava/util/concurrent/CompletableFuture;
 }

@@ -8,7 +8,7 @@ import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.Event
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.Payload
-import com.pushpushgo.sdk.push.exception.PushPushException
+import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
@@ -118,8 +118,7 @@ internal class UploadWorker(
   ): Boolean {
     if (runAttemptCount >= maxAttempts - 1) return false
 
-    val statusCode = (throwable as? PushPushException)?.statusCode
-    return statusCode == null || statusCode == 429 || statusCode >= 500
+    return throwable.isTransientApiError()
   }
 
   private suspend fun sendEvent(
@@ -158,6 +157,12 @@ internal class UploadWorker(
   ) {
     if (subscriberId.isBlank()) {
       return logError("Cannot sync token - empty subscriberId")
+    }
+
+    // Work enqueued before an unsubscribe or a project change must not touch a subscriber the SDK
+    // no longer uses - it may belong to another project.
+    if (subscriberId != sharedPreferencesHelper.subscriberId) {
+      return logDebug("Token sync skipped - subscriber is no longer active")
     }
 
     val token = pushToken ?: getPlatformPushToken(context)

@@ -33,7 +33,7 @@ class PushNotificationsTest {
 
   @After
   fun tearDown() {
-    PushNotifications.sharedPreferencesHelper.isSubscribed = false
+    PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
     runBlocking { PushNotifications.deinitialize() }
     WorkManagerTestInitHelper.closeWorkDatabase()
   }
@@ -144,7 +144,7 @@ class PushNotificationsTest {
   }
 
   @Test
-  fun `initialize with a different config requires deinitialization`() {
+  fun `initialize with a different config points to switchProject`() {
     val exception =
       assertThrows(IllegalStateException::class.java) {
         PushNotifications.initialize(
@@ -155,7 +155,7 @@ class PushNotificationsTest {
 
     assertEquals(
       "PushNotifications SDK is already initialized with a different configuration. " +
-        "Call PushNotifications.deinitialize() before initializing it again.",
+        "Use PushNotifications.switchProject() to move it to another project.",
       exception.message,
     )
   }

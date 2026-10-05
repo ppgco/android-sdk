@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push.network
 import android.content.Context
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
+import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.utils.PlatformType
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
@@ -20,10 +21,13 @@ internal class SharedPreferencesHelper(
     private const val CUSTOM_INTENT_FLAGS = "_PushPushGoSDK_custom_intent_flags_"
     private const val LA_SUBSCRIBER_PREFIX = "_PushPushGoSDK_la_sub_"
     private const val INSTALLATION_ID = "_PushPushGoSDK_installation_id_"
+    private const val OWNER_PROJECT_ID = "_PushPushGoSDK_owner_project_id_"
+    private const val OWNER_API_KEY = "_PushPushGoSDK_owner_api_key_"
+    private const val OWNER_API_URL = "_PushPushGoSDK_owner_api_url_"
 
     // Notification-id de-duplication cache. Kept in a DEDICATED prefs file so its
     // bounded-size eviction can never delete subscription state (subscriberId /
-    // token / isSubscribed), which previously shared the default prefs file.
+    // token / subscription request), which previously shared the default prefs file.
     private const val NOTIFICATION_IDS_PREFS = "_PushPushGoSDK_notification_ids_"
     private const val NOTIFICATION_IDS_ORDER = "_PushPushGoSDK_nid_order_"
     private const val MAX_NOTIFICATION_IDS = 1000
@@ -46,7 +50,13 @@ internal class SharedPreferencesHelper(
       Context.MODE_PRIVATE,
     )
 
-  var isSubscribed
+  /**
+   * Whether the user asked to receive notifications. Set by a successful subscribe and cleared only
+   * by an explicit unsubscribe - losing the notification permission keeps it, so the device can be
+   * registered again once the permission is granted back. Being registered is tracked separately
+   * by [subscriberId]. SDK 3.x stored the same meaning under this key.
+   */
+  var subscriptionRequested
     get() =
       sharedPreferences.getBoolean(
         IS_SUBSCRIBED,
@@ -54,6 +64,33 @@ internal class SharedPreferencesHelper(
       )
     set(value) {
       sharedPreferences.edit { putBoolean(IS_SUBSCRIBED, value) }
+    }
+
+  /**
+   * Project the persisted subscription state (subscriber, token, Live Activity subscriptions)
+   * belongs to, with the credentials needed to remove it from that project. `null` for state
+   * saved before the SDK started tracking it.
+   */
+  var projectOwner: Config?
+    get() {
+      val projectId = sharedPreferences.getString(OWNER_PROJECT_ID, null) ?: return null
+      val apiKey = sharedPreferences.getString(OWNER_API_KEY, null) ?: return null
+      val apiUrl = sharedPreferences.getString(OWNER_API_URL, null) ?: return null
+
+      return runCatching { Config.create(projectId, apiKey, apiUrl) }.getOrNull()
+    }
+    set(value) {
+      sharedPreferences.edit {
+        if (value == null) {
+          remove(OWNER_PROJECT_ID)
+          remove(OWNER_API_KEY)
+          remove(OWNER_API_URL)
+        } else {
+          putString(OWNER_PROJECT_ID, value.projectId)
+          putString(OWNER_API_KEY, value.apiKey)
+          putString(OWNER_API_URL, value.apiUrl)
+        }
+      }
     }
 
   var customIntentFlags
@@ -113,7 +150,7 @@ internal class SharedPreferencesHelper(
     subscriberId: String,
     pushToken: String,
   ) {
-    if (!isSubscribed) {
+    if (!subscriptionRequested) {
       return logDebug("Token update skipped - not subscribed")
     }
 
@@ -157,6 +194,9 @@ internal class SharedPreferencesHelper(
       remove(LAST_FCM_TOKEN)
       remove(LAST_HCM_TOKEN)
       remove(IS_SUBSCRIBED)
+      remove(OWNER_PROJECT_ID)
+      remove(OWNER_API_KEY)
+      remove(OWNER_API_URL)
       liveActivitySubscriberKeys.forEach(::remove)
     }
 

@@ -31,6 +31,10 @@
   - `subscribeAsync()` / `unsubscribeAsync()` (Java-friendly `CompletableFuture`)
 - Removed `subscribeNow()`, `unsubscribeNow()`, `subscribeNowFuture()`, and
   `unsubscribeNowFuture()`; use the unified methods above.
+- `isSubscribed()` now returns `true` only while the device is registered in the
+  current project. When the notification permission is revoked, the SDK unregisters
+  the device but keeps the user's subscription and registers the device again once
+  the permission is granted back; only `unsubscribe()` cancels it for good.
 
 #### Async API changes
 - **Removed Guava `ListenableFuture` from the public API**.
@@ -50,7 +54,8 @@
   - `NotificationClickHandler`
   - `InvalidProjectIdHandler`
   - `PushNotificationsErrorCallback`
-- Callbacks can be configured before initialization and survive deinitialization.
+- Callbacks can be configured before initialization and survive deinitialization
+  and project switches.
 - Passing `null` to a callback setter restores its default behavior.
 
 #### Beacon
@@ -67,16 +72,29 @@
 
 #### Project migration API
 - Removed `migrateToNewProject(...)`.
-- To switch an initialized SDK to another explicit configuration, first call the
-  suspending `PushNotifications.deinitialize()` method and, after it completes,
-  call `PushNotifications.initialize(application, newConfig)`, then explicitly
-  call `PushNotifications.subscribe()` to subscribe to the new project.
-- Java callers should wait for `PushNotifications.deinitializeAsync()` before
-  calling `initialize(...)`.
-- Deinitialization removes Live Activities first, then unsubscribes the current
+- Added `PushNotifications.switchProject(config)` (Kotlin) and
+  `PushNotifications.switchProjectAsync(config)` (Java) to move an initialized SDK
+  to another project. The switch happens locally and returns right away, even
+  offline: the previous project's subscriber and Live Activity subscriptions are
+  removed in the background, and a user who was subscribed is subscribed to the
+  new project in the background. A failed subscription is reported to the error
+  callback and retried while the app is in the foreground.
+- Initializing an initialized SDK with a different configuration still throws
+  `IllegalStateException`; its message now points to `switchProject(...)`.
+- `PushNotifications.deinitialize()` turns the SDK off completely. It
+  removes Live Activities first, then unsubscribes the current
   subscriber and clears its persisted project data. If any step fails, the SDK
   remains initialized and the operation fails. Live Activities already removed
   stay removed.
+- The SDK remembers which project its persisted subscription belongs to. When it
+  is initialized with a configuration of another project (e.g. after an app
+  restart), it no longer adopts the previous project's subscriber: that subscriber
+  and its Live Activity subscriptions are removed in the background with the
+  previous project's credentials (retried until the API is reachable), local state
+  is cleared, and the user's subscription is kept, so the device registers in the
+  new project once notifications are enabled.
+- Live Activity pushes of a project other than the initialized one are reported to
+  `InvalidProjectIdHandler` instead of being displayed, like regular pushes.
 
 #### Live Activities
 - Live Activity APIs moved from `PushNotifications` to the

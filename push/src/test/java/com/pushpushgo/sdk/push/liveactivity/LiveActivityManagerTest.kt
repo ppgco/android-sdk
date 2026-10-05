@@ -51,7 +51,7 @@ internal class LiveActivityManagerTest {
 
   @After
   fun tearDown() {
-    PushNotifications.sharedPreferencesHelper.isSubscribed = false
+    PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
     runBlocking { PushNotifications.deinitialize() }
     WorkManagerTestInitHelper.closeWorkDatabase()
   }

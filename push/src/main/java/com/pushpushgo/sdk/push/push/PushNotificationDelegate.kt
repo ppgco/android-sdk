@@ -59,31 +59,37 @@ internal class PushNotificationDelegate(
   ) {
     logDebug("From: ${pushMessage.from}")
 
-    // Live Activity pushes use a dedicated envelope (type=live_notification) and
-    // don't carry the standard `project`/`subscriber` keys, so route them before
-    // the regular PPGo-push gate (and its project-id match check).
-    if (LiveActivityPayloadParser.isLiveActivityPush(pushMessage.data)) {
-      if (!areNotificationsEnabled(context)) {
-        return logWarning("Push notifications are disabled by user")
-      }
-      PushNotifications.liveActivities.handler
-        ?.handlePush(pushMessage.data)
-        ?: logWarning("LiveActivityHandler not initialized, ignoring LA push")
-      return
-    }
+    // Live Activity pushes use a dedicated envelope (type=live_notification) but carry the same
+    // `project`/`subscriber` keys, so they go through the same project-id match check - after a
+    // project change the previous project may still send them until its cleanup completes.
+    val isLiveActivityPush = LiveActivityPayloadParser.isLiveActivityPush(pushMessage.data)
 
-    if (!PushNotifications.isPushPushGoNotification(pushMessage.data)) {
+    if (!isLiveActivityPush && !PushNotifications.isPushPushGoNotification(pushMessage.data)) {
       return logWarning("Push is not from PPGo")
     }
 
     val pushProjectId = pushMessage.data["project"].orEmpty()
     val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
     val initializedProjectId = PushNotifications.getProjectId()
-    if (pushProjectId != initializedProjectId) {
-      callbacks.invalidProjectIdHandler.onInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
-    } else {
-      processPushMessage(pushMessage, context)
+    when {
+      pushProjectId != initializedProjectId ->
+        callbacks.invalidProjectIdHandler.onInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
+      isLiveActivityPush -> processLiveActivityPush(pushMessage, context)
+      else -> processPushMessage(pushMessage, context)
     }
+  }
+
+  private fun processLiveActivityPush(
+    pushMessage: PushMessage,
+    context: Context,
+  ) {
+    if (!areNotificationsEnabled(context)) {
+      return logWarning("Push notifications are disabled by user")
+    }
+
+    PushNotifications.liveActivities.handler
+      ?.handlePush(pushMessage.data)
+      ?: logWarning("LiveActivityHandler not initialized, ignoring LA push")
   }
 
   @SuppressLint("MissingPermission")

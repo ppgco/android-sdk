@@ -75,6 +75,30 @@ class ApiRepositoryTest {
     }
 
   @Test
+  fun `unregisterSubscriber treats subscriber of another project as already unregistered`() =
+    runBlocking {
+      prefs.subscriberId = "sub-1"
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws
+        PushPushException("Subscriber not belongs to given project", 403)
+
+      repository.unregisterSubscriber()
+
+      assertNull(prefs.subscriberId)
+    }
+
+  @Test
+  fun `deleteSubscriber removes the given subscriber and leaves local state alone`() =
+    runBlocking {
+      prefs.subscriberId = "current-sub"
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns retrofit2.Response.success(null)
+
+      repository.deleteSubscriber("other-sub")
+
+      coVerify(exactly = 1) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "other-sub") }
+      assertEquals("current-sub", prefs.subscriberId)
+    }
+
+  @Test
   fun `unregisterSubscriber propagates other API errors and preserves subscriber`() =
     runBlocking {
       prefs.subscriberId = "sub-1"

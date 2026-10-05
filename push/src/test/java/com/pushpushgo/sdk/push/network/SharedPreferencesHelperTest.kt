@@ -2,6 +2,8 @@ package com.pushpushgo.sdk.push.network
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.pushpushgo.sdk.core.api.Config
+import com.pushpushgo.sdk.push.testConfig
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -39,14 +41,14 @@ class SharedPreferencesHelperTest {
   fun `notification id eviction never deletes subscription state (ISSUE-14)`() {
     prefs.subscriberId = "sub-123"
     prefs.lastToken = "token-abc"
-    prefs.isSubscribed = true
+    prefs.subscriptionRequested = true
 
     // Overflow the notification-id cache well past its MAX bound.
     repeat(1100) { prefs.setNotificationId("nId-$it", it) }
 
     assertEquals("sub-123", prefs.subscriberId)
     assertEquals("token-abc", prefs.lastToken)
-    assertTrue(prefs.isSubscribed)
+    assertTrue(prefs.subscriptionRequested)
   }
 
   @Test
@@ -77,20 +79,38 @@ class SharedPreferencesHelperTest {
   }
 
   @Test
+  fun `project owner keeps the credentials needed to reach its project`() {
+    val owner = Config.create("8kp60aqdi49eioqzp0ihiytn", "00000000-0000-0000-0000-000000000001", "https://api.example.com")
+
+    prefs.projectOwner = owner
+
+    assertEquals(owner.projectId, prefs.projectOwner?.projectId)
+    assertEquals(owner.apiKey, prefs.projectOwner?.apiKey)
+    assertEquals(owner.apiUrl, prefs.projectOwner?.apiUrl)
+  }
+
+  @Test
+  fun `project owner is absent until it is set`() {
+    assertNull(prefs.projectOwner)
+  }
+
+  @Test
   fun `clear project data removes project state and preserves installation settings`() {
     prefs.subscriberId = "sub-123"
     prefs.lastToken = "token-abc"
-    prefs.isSubscribed = true
+    prefs.subscriptionRequested = true
     prefs.customIntentFlags = 42
     val installationId = prefs.installationId
     prefs.setLiveActivitySubscriberId("live-1", "live-sub-1")
     prefs.setNotificationId("notification-1", 7)
+    prefs.projectOwner = testConfig()
 
     prefs.clearProjectData()
 
     assertNull(prefs.subscriberId)
     assertNull(prefs.lastToken)
-    assertFalse(prefs.isSubscribed)
+    assertFalse(prefs.subscriptionRequested)
+    assertNull(prefs.projectOwner)
     assertEquals("", prefs.getLiveActivitySubscriberId("live-1"))
     assertEquals(-1, prefs.getNotificationId("notification-1"))
     assertEquals(42, prefs.customIntentFlags)
