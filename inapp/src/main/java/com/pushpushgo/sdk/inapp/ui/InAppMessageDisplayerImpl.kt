@@ -190,6 +190,11 @@ internal class InAppMessageDisplayerImpl(
     pendingMessageJobs.clear()
   }
 
+  override fun release() {
+    cancelPendingMessages(isActivityPaused = true)
+    job.cancel()
+  }
+
   private fun hideMessage() {
     currentDialog?.let {
       if (it.isShowing) {

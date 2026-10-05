@@ -11,8 +11,14 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 
+/**
+ * Message state keyed by message id (dismissals, eligibility) is shared by all projects, since
+ * message ids are unique. The message cache belongs to [projectId], so switching projects never
+ * serves messages of another project - not even as an offline fallback.
+ */
 internal class InAppMessagePersistenceImpl(
   context: Context,
+  projectId: String,
   private val debug: Boolean = false,
   private val moshi: Moshi =
     Moshi
@@ -26,13 +32,29 @@ internal class InAppMessagePersistenceImpl(
   private val listType = Types.newParameterizedType(List::class.java, InAppMessage::class.java)
   private val messagesAdapter: JsonAdapter<List<InAppMessage>> = moshi.adapter(listType)
 
+  private val keyEtag = "etag_$projectId"
+  private val keyCachedMessages = "cached_messages_$projectId"
+  private val keyCacheTimestamp = "cache_timestamp_$projectId"
+
   companion object {
-    private const val KEY_ETAG = "etag"
-    private const val KEY_CACHED_MESSAGES = "cached_messages"
-    private const val KEY_CACHE_TIMESTAMP = "cache_timestamp"
+    // Cache keys of SDK versions that did not scope the cache by project
+    private const val LEGACY_KEY_ETAG = "etag"
+    private const val LEGACY_KEY_CACHED_MESSAGES = "cached_messages"
+    private const val LEGACY_KEY_CACHE_TIMESTAMP = "cache_timestamp"
 
     // Cache expiry - after 24h force refresh even with same ETag
     private const val CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000L
+  }
+
+  init {
+    // The legacy cache does not say which project it belongs to
+    if (prefs.contains(LEGACY_KEY_CACHED_MESSAGES) || prefs.contains(LEGACY_KEY_ETAG)) {
+      prefs.edit {
+        remove(LEGACY_KEY_ETAG)
+        remove(LEGACY_KEY_CACHED_MESSAGES)
+        remove(LEGACY_KEY_CACHE_TIMESTAMP)
+      }
+    }
   }
 
   override fun isMessageDismissed(messageId: String): Boolean = prefs.getBoolean("dismissed_$messageId", false)
@@ -79,7 +101,7 @@ internal class InAppMessagePersistenceImpl(
 
   // ETag caching implementation for HTTP cache optimization
   override fun getStoredETag(): String? {
-    val timestamp = prefs.getLong(KEY_CACHE_TIMESTAMP, 0)
+    val timestamp = prefs.getLong(keyCacheTimestamp, 0)
     val isExpired = System.currentTimeMillis() - timestamp > CACHE_EXPIRY_MS
 
     return if (isExpired) {
@@ -90,7 +112,7 @@ internal class InAppMessagePersistenceImpl(
       clearCache()
       null
     } else {
-      val etag = prefs.getString(KEY_ETAG, null)
+      val etag = prefs.getString(keyEtag, null)
       if (debug) {
         Log.d(InAppMessages.TAG, "[Persistence] Retrieved stored ETag: ${etag ?: "none"}")
       }
@@ -108,14 +130,14 @@ internal class InAppMessagePersistenceImpl(
     }
 
     prefs.edit {
-      putString(KEY_ETAG, etag)
-      putString(KEY_CACHED_MESSAGES, messagesJson)
-      putLong(KEY_CACHE_TIMESTAMP, System.currentTimeMillis())
+      putString(keyEtag, etag)
+      putString(keyCachedMessages, messagesJson)
+      putLong(keyCacheTimestamp, System.currentTimeMillis())
     }
   }
 
   override fun getCachedMessages(): List<InAppMessage>? {
-    val messagesJson = prefs.getString(KEY_CACHED_MESSAGES, null) ?: return null
+    val messagesJson = prefs.getString(keyCachedMessages, null) ?: return null
 
     return try {
       val messages = messagesAdapter.fromJson(messagesJson) ?: emptyList()
@@ -138,9 +160,9 @@ internal class InAppMessagePersistenceImpl(
       Log.d(InAppMessages.TAG, "[Persistence] Clearing cache")
     }
     prefs.edit {
-      remove(KEY_ETAG)
-      remove(KEY_CACHED_MESSAGES)
-      remove(KEY_CACHE_TIMESTAMP)
+      remove(keyEtag)
+      remove(keyCachedMessages)
+      remove(keyCacheTimestamp)
     }
   }
 }

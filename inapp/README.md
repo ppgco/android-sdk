@@ -5,6 +5,7 @@ Android SDK for integrating in-app messages into your applications. Provides adv
 ## Table of Contents
 - [Installation](#installation)
 - [Initialization](#initialization)
+  - [Switching to another project](#switching-to-another-project)
 - [Basic Usage](#basic-usage)
 - [Navigation Integration](#navigation-integration)
 - [Triggering Messages](#triggering-messages)
@@ -79,6 +80,40 @@ Don't forget to add your application class to your AndroidManifest.xml:
     <!-- Rest of manifest content -->
 </application>
 ```
+
+Calling `initialize` again with the same configuration returns the same instance.
+Calling it with a different configuration throws `IllegalStateException` - use
+`switchProject` instead.
+
+### Switching to another project
+
+If your app works with several PushPushGo projects (e.g. one per country or
+brand), move the initialized SDK to another project with `switchProject`:
+
+```kotlin
+InAppMessages.getInstance().switchProject(
+  Config.create(
+    projectId = "other-project-id",
+    apiKey = "other-api-key",
+  ),
+)
+```
+
+- The message displayed for the previous project is hidden and its messages are
+  no longer shown.
+- Messages of the new project are fetched and, when they apply to the current
+  route, displayed without waiting for the next navigation.
+- Messages the user already dismissed stay dismissed.
+- The instance returned by `getInstance()` stays the same, as do the push
+  subscription provider and the custom code handler.
+- Cached messages belong to their project, so the SDK never falls back to
+  messages of another project, even offline.
+
+Switching to the configuration the SDK already uses has no effect. The SDK does
+not remember the selected configuration across app restarts - initialize it
+with the configuration of the current project on the next start. If you use
+the PushNotifications SDK too, switch it as well with
+`PushNotifications.switchProject(config)`.
 
 ## Basic Usage
 

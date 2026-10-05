@@ -3,6 +3,8 @@ package com.pushpushgo.sdk.inapp.ui
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.pushpushgo.sdk.inapp.InAppMessages
 import com.pushpushgo.sdk.inapp.manager.InAppMessageManager
@@ -30,13 +32,38 @@ internal class InAppUIController(
   private var currentActivity: WeakReference<Activity?> = WeakReference(null)
   private var messageSubscription: Job? = null
 
-  fun start() {
+  /**
+   * Starts displaying messages. Pass the [activity] already on screen when the controller replaces
+   * another one (after a project switch) - otherwise messages wait for the next resumed activity.
+   */
+  fun start(activity: Activity? = null) {
     if (debug) {
       Log.d(InAppMessages.TAG, "[UIController] Starting")
+    }
+    if (activity != null && !activity.isFinishing) {
+      currentActivity = WeakReference(activity)
     }
     application.registerActivityLifecycleCallbacks(this)
     observeMessages()
   }
+
+  /** Stops displaying messages and hides the one on screen. */
+  fun stop() {
+    if (debug) {
+      Log.d(InAppMessages.TAG, "[UIController] Stopping")
+    }
+    application.unregisterActivityLifecycleCallbacks(this)
+    job.cancel()
+
+    // Dialogs can only be dismissed on the main thread
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      displayer.release()
+    } else {
+      Handler(Looper.getMainLooper()).post { displayer.release() }
+    }
+  }
+
+  fun getCurrentActivity(): Activity? = currentActivity.get()
 
   private fun observeMessages() {
     if (debug) {

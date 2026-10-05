@@ -12,4 +12,7 @@ internal interface InAppMessageDisplayer {
   fun dismissMessage(message: InAppMessage)
 
   fun cancelPendingMessages(isActivityPaused: Boolean = false)
+
+  /** Hides the displayed message and stops displaying new ones. Must be called on the main thread. */
+  fun release()
 }

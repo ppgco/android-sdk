@@ -18,6 +18,7 @@ public final class com/pushpushgo/sdk/inapp/InAppMessages {
 	public static final fun initialize (Landroid/app/Application;Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;Lcom/pushpushgo/sdk/inapp/ui/CustomCodeHandler;)Lcom/pushpushgo/sdk/inapp/InAppMessages;
 	public final fun showMessagesOnRoute (Ljava/lang/String;)V
 	public final fun showMessagesOnTrigger (Lcom/pushpushgo/sdk/inapp/ui/Trigger;)V
+	public final fun switchProject (Lcom/pushpushgo/sdk/core/api/Config;)V
 }
 
 public final class com/pushpushgo/sdk/inapp/InAppMessages$Companion {

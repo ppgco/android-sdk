@@ -54,6 +54,12 @@ android {
       apiVersion.set(KotlinVersion.KOTLIN_2_1)
     }
   }
+
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+    }
+  }
 }
 
 dependencies {
@@ -99,6 +105,8 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.mockk)
   testImplementation(libs.coroutines.test)
+  testImplementation(libs.androidx.test.junit)
+  testImplementation(libs.robolectric)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.espresso.core)
 }

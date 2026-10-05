@@ -1,70 +1,21 @@
 package com.pushpushgo.sdk.inapp
 
 import android.app.Application
-import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
 import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
-import com.pushpushgo.sdk.inapp.event.InAppMessageEvent
-import com.pushpushgo.sdk.inapp.event.InAppMessageEventRepository
-import com.pushpushgo.sdk.inapp.manager.InAppMessageManager
-import com.pushpushgo.sdk.inapp.manager.InAppMessageManagerImpl
-import com.pushpushgo.sdk.inapp.network.InAppEventApi
-import com.pushpushgo.sdk.inapp.network.InAppListGetApi
-import com.pushpushgo.sdk.inapp.network.RetrofitProvider
-import com.pushpushgo.sdk.inapp.persistence.InAppMessagePersistenceImpl
-import com.pushpushgo.sdk.inapp.repository.InAppMessageRepositoryImpl
 import com.pushpushgo.sdk.inapp.ui.CustomCodeHandler
-import com.pushpushgo.sdk.inapp.ui.InAppMessageDisplayer
-import com.pushpushgo.sdk.inapp.ui.InAppMessageDisplayerImpl
-import com.pushpushgo.sdk.inapp.ui.InAppUIController
 import com.pushpushgo.sdk.inapp.ui.Trigger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import retrofit2.Retrofit
 
 class InAppMessages private constructor(
   private val application: Application,
-  private val config: Config,
-  private val pushSubscriptionProvider: PushSubscriptionProvider? = null,
-  private val customCodeHandler: CustomCodeHandler? = null,
+  config: Config,
+  private val pushSubscriptionProvider: PushSubscriptionProvider?,
+  private val customCodeHandler: CustomCodeHandler?,
 ) {
-  private val retrofit: Retrofit by lazy {
-    RetrofitProvider.buildRetrofit(config.apiUrl)
-  }
-  private val api: InAppListGetApi by lazy {
-    retrofit.create(InAppListGetApi::class.java)
-  }
-  private val eventApi: InAppEventApi by lazy {
-    retrofit.create(InAppEventApi::class.java)
-  }
-  private val eventRepository by lazy {
-    InAppMessageEventRepository(eventApi, debug = config.isDebug)
-  }
-
-  internal suspend fun dispatchInAppEvent(
-    action: String,
-    inAppId: String,
-  ) {
-    try {
-      eventRepository.sendEvent(
-        projectId = config.projectId,
-        token = config.apiKey,
-        event = InAppMessageEvent(action = action, inApp = inAppId),
-      )
-    } catch (e: Exception) {
-      if (config.isDebug) {
-        Log.e(TAG, "Failed to send in-app event", e)
-      }
-    }
-  }
-
-  private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-  private val manager: InAppMessageManager
-  private val displayer: InAppMessageDisplayer
-  private val uiController: InAppUIController
+  @Volatile
+  private var runtime = createRuntime(config).apply { start() }
 
   companion object {
     internal const val TAG = "[PushPushGo:InAppMessages]"
@@ -75,9 +26,11 @@ class InAppMessages private constructor(
     /**
      * Initializes the InAppMessages SDK using configuration defined in AndroidManifest.xml.
      *
-     * Subsequent calls return the same instance.
+     * Subsequent calls with the same configuration return the same instance. To move an
+     * initialized SDK to another project, use [switchProject].
      *
-     * @throws IllegalStateException if required manifest values are missing.
+     * @throws IllegalStateException if required manifest values are missing or the SDK is already
+     * initialized with a different configuration.
      */
     @JvmStatic
     @JvmOverloads
@@ -86,19 +39,21 @@ class InAppMessages private constructor(
       pushSubscriptionProvider: PushSubscriptionProvider? = null,
       customCodeHandler: CustomCodeHandler? = null,
     ): InAppMessages =
-      INSTANCE ?: synchronized(this) {
-        INSTANCE ?: InAppMessages(
-          application = application,
-          config = ManifestConfigProvider(application).provide(),
-          pushSubscriptionProvider = pushSubscriptionProvider,
-          customCodeHandler = customCodeHandler,
-        ).also { INSTANCE = it }
-      }
+      obtain(
+        application = application,
+        config = ManifestConfigProvider(application).provide(),
+        pushSubscriptionProvider = pushSubscriptionProvider,
+        customCodeHandler = customCodeHandler,
+      )
 
     /**
      * Initializes the InAppMessages SDK using an explicit [Config].
      *
-     * Subsequent calls return the same instance.
+     * Subsequent calls with the same configuration return the same instance. To move an
+     * initialized SDK to another project, use [switchProject].
+     *
+     * @throws IllegalStateException if the SDK is already initialized with a different
+     * configuration.
      */
     @JvmStatic
     @JvmOverloads
@@ -108,60 +63,67 @@ class InAppMessages private constructor(
       pushSubscriptionProvider: PushSubscriptionProvider? = null,
       customCodeHandler: CustomCodeHandler? = null,
     ): InAppMessages =
-      INSTANCE ?: synchronized(this) {
-        INSTANCE ?: InAppMessages(
-          application = application,
-          config = config,
-          pushSubscriptionProvider = pushSubscriptionProvider,
-          customCodeHandler = customCodeHandler,
-        ).also {
-          INSTANCE = it
-        }
-      }
-
-    @JvmStatic
-    fun getInstance(): InAppMessages = INSTANCE ?: throw IllegalStateException("InAppMessages SDK is not initialized!")
-  }
-
-  init {
-    val persistence = InAppMessagePersistenceImpl(application, config.isDebug)
-    val repository = InAppMessageRepositoryImpl(api, config.projectId, config.apiKey, persistence, config.isDebug)
-    manager =
-      InAppMessageManagerImpl(
-        scope = sdkScope,
-        repository = repository,
-        persistence = persistence,
-        context = application,
-        debug = config.isDebug,
-        pushSubscriptionProvider = pushSubscriptionProvider,
-      )
-    displayer =
-      InAppMessageDisplayerImpl(
-        persistence = persistence,
-        debug = config.isDebug,
-        onMessageDismissed = {
-          sdkScope.launch {
-            manager.refreshActiveMessages(manager.getRoute())
-          }
-        },
-        onMessageEvent = { eventType, message, ctaIndex ->
-          sdkScope.launch {
-            when (eventType) {
-              "show" -> dispatchInAppEvent("inapp.show", message.id)
-              "close" -> dispatchInAppEvent("inapp.close", message.id)
-              "cta" -> dispatchInAppEvent("inapp.cta.$ctaIndex", message.id)
-            }
-          }
-        },
+      obtain(
+        application = application,
+        config = config,
         pushSubscriptionProvider = pushSubscriptionProvider,
         customCodeHandler = customCodeHandler,
       )
-    uiController = InAppUIController(application, manager, displayer, config.isDebug)
 
-    sdkScope.launch {
-      manager.initialize()
+    @JvmStatic
+    fun getInstance(): InAppMessages = INSTANCE ?: throw IllegalStateException("InAppMessages SDK is not initialized!")
+
+    private fun obtain(
+      application: Application,
+      config: Config,
+      pushSubscriptionProvider: PushSubscriptionProvider?,
+      customCodeHandler: CustomCodeHandler?,
+    ): InAppMessages =
+      synchronized(this) {
+        val instance = INSTANCE
+
+        if (instance != null) {
+          check(instance.runtime.config == config) {
+            "InAppMessages SDK is already initialized with a different configuration. " +
+              "Use InAppMessages.getInstance().switchProject() to move it to another project."
+          }
+          return instance
+        }
+
+        InAppMessages(application, config, pushSubscriptionProvider, customCodeHandler).also { INSTANCE = it }
+      }
+
+    @VisibleForTesting
+    internal fun resetInstance() {
+      synchronized(this) {
+        INSTANCE?.runtime?.release()
+        INSTANCE = null
+      }
     }
-    uiController.start()
+  }
+
+  /**
+   * Moves the SDK to the project described by [config].
+   *
+   * The message displayed for the current project is hidden and its messages are no longer shown.
+   * Messages of the new project are fetched and, when they apply to the current screen, displayed
+   * without waiting for the next navigation. Messages the user already dismissed stay dismissed.
+   *
+   * Switching to the configuration the SDK already uses has no effect. The push subscription
+   * provider and the custom code handler stay in place. The SDK does not remember [config] across
+   * app restarts - initialize it with the configuration of the current project on the next start.
+   */
+  fun switchProject(config: Config) {
+    synchronized(this) {
+      val previous = runtime
+      if (previous.config == config) return
+
+      val route = previous.route
+      val activity = previous.currentActivity
+      previous.release()
+
+      runtime = createRuntime(config).apply { start(route, activity) }
+    }
   }
 
   /**
@@ -184,9 +146,7 @@ class InAppMessages private constructor(
       "Route name must not me blank"
     }
 
-    sdkScope.launch {
-      manager.refreshActiveMessages(route)
-    }
+    runtime.showMessagesOnRoute(route)
   }
 
   /**
@@ -196,12 +156,8 @@ class InAppMessages private constructor(
    * will be displayed.
    */
   fun showMessagesOnTrigger(trigger: Trigger) {
-    sdkScope.launch {
-      val messageToShow = manager.trigger(trigger.key, trigger.value)
-
-      if (messageToShow != null) {
-        uiController.displayCustomMessage(messageToShow)
-      }
-    }
+    runtime.showMessagesOnTrigger(trigger)
   }
+
+  private fun createRuntime(config: Config) = InAppMessagesRuntime(application, config, pushSubscriptionProvider, customCodeHandler)
 }
