@@ -58,6 +58,9 @@ internal class InAppMessageManagerImpl(
   private val messagesUpdateMutex = Mutex()
   private val refreshJobMutex = Mutex()
 
+  // Serializes the refresh bodies so concurrent refreshes cannot overwrite each other's results
+  private val refreshRunMutex = Mutex()
+
   private val hasInitialized = CompletableDeferred<Unit>()
 
   // Device info
@@ -252,104 +255,124 @@ internal class InAppMessageManagerImpl(
   override suspend fun refreshActiveMessages(route: String?) {
     hasInitialized.await()
 
-    // If a new route is explicitly provided (on navigation), update the manager's internal state.
-    this.currentRoute = route
+    // Only an explicit route (from navigation) updates the stored one. A null route means
+    // "refresh whatever route we are on" - writing it back would drop the route we already
+    // know and leave this and every later refresh matching no messages at all.
+    if (route != null) {
+      this.currentRoute = route
+    }
 
     val newJob =
       scope.launch {
-        try {
-          if (debug) {
-            Log.d(InAppMessages.TAG, "[Manager] Refreshing active messages for route: $route")
-          }
+        // Refreshes are serialized instead of cancelling each other. They used to race, and
+        // whichever wrote last won - which could be a refresh that matched nothing and so wiped
+        // the messages another refresh had just found.
+        refreshRunMutex.withLock {
+          val effectiveRoute = currentRoute
 
-          val eventBasedMessages =
-            if (route != null) {
-              allMessages.filter { msg ->
-                // CUSTOM_TRIGGER triggers are handled by the `trigger` method, not by general refresh.
-                if (msg.settings.triggerType == TriggerType.CUSTOM_TRIGGER) {
-                  return@filter false
-                }
-
-                val displayOnRules = msg.settings.displayOn
-
-                if (displayOnRules.isEmpty()) {
-                  return@filter true
-                }
-
-                val (displayed, hidden) = displayOnRules.partition { it.display }
-                val isDisplayed = displayed.any { it.path == route }
-                val isHidden = hidden.any { it.path == route }
-
-                if (displayed.isEmpty() && !isHidden) {
-                  return@filter true
-                }
-
-                if (isDisplayed && !isHidden) {
-                  return@filter true
-                }
-
-                false
-              }
-            } else {
-              emptyList()
-            }
-
-          val deviceType = currentDeviceType
-          val initiallyFiltered =
-            eventBasedMessages.filter { msg ->
-              val enabled = msg.enabled
-              val notExpired =
-                msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
-              val correctDeviceType =
-                msg.audience.device.contains(deviceType) ||
-                  msg.audience.device.contains(
-                    DeviceType.ALL,
-                  )
-              val correctOsType =
-                msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
-              val correctPlatform = msg.audience.platform == PlatformType.MOBILE || msg.audience.platform == PlatformType.ALL
-              enabled && notExpired && correctDeviceType && correctOsType && correctPlatform
-            }
-
-          val finalEligibleMessages = mutableListOf<InAppMessage>()
-          for (msg in initiallyFiltered) {
-            if (msg.settings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
-              persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
-            }
-
-            if (isInScheduleWindow(msg) && isMessageEligible(msg)) {
-              finalEligibleMessages.add(msg)
-            }
-          }
-
-          messagesUpdateMutex.withLock {
-            val newActiveMessages =
-              finalEligibleMessages.sortedWith(
-                compareBy { message ->
-                  when (val priority = message.settings.priority) {
-                    0 -> Int.MAX_VALUE
-
-                    // Lowest priority (0 = displayed last)
-                    else -> priority // 1 = highest, 2 = second, etc.
-                  }
-                },
-              )
-
-            activeMessages.clear()
-            activeMessages.addAll(newActiveMessages)
-            _messagesFlow.value = activeMessages.toList()
-
+          if (effectiveRoute == null) {
+            // No route is known yet. Nothing can match it, and publishing an empty list here
+            // would hide messages that a route-aware refresh has already published.
             if (debug) {
-              Log.d(InAppMessages.TAG, "[Manager] Active messages refreshed: ${newActiveMessages.size} eligible messages")
+              Log.d(InAppMessages.TAG, "[Manager] Skipping refresh, no route known yet")
             }
+
+            return@withLock
           }
-        } catch (e: Exception) {
-          Log.e(InAppMessages.TAG, "[Manager] Error refreshing active messages for route: $route", e)
+
+          try {
+            if (debug) {
+              Log.d(InAppMessages.TAG, "[Manager] Refreshing active messages for route: $effectiveRoute")
+            }
+
+            val eventBasedMessages =
+              if (effectiveRoute != null) {
+                allMessages.filter { msg ->
+                  // CUSTOM_TRIGGER triggers are handled by the `trigger` method, not by general refresh.
+                  if (msg.settings.triggerType == TriggerType.CUSTOM_TRIGGER) {
+                    return@filter false
+                  }
+
+                  val displayOnRules = msg.settings.displayOn
+
+                  if (displayOnRules.isEmpty()) {
+                    return@filter true
+                  }
+
+                  val (displayed, hidden) = displayOnRules.partition { it.display }
+                  val isDisplayed = displayed.any { it.path == effectiveRoute }
+                  val isHidden = hidden.any { it.path == effectiveRoute }
+
+                  if (displayed.isEmpty() && !isHidden) {
+                    return@filter true
+                  }
+
+                  if (isDisplayed && !isHidden) {
+                    return@filter true
+                  }
+
+                  false
+                }
+              } else {
+                emptyList()
+              }
+
+            val deviceType = currentDeviceType
+            val initiallyFiltered =
+              eventBasedMessages.filter { msg ->
+                val enabled = msg.enabled
+                val notExpired =
+                  msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
+                val correctDeviceType =
+                  msg.audience.device.contains(deviceType) ||
+                    msg.audience.device.contains(
+                      DeviceType.ALL,
+                    )
+                val correctOsType =
+                  msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
+                val correctPlatform = msg.audience.platform == PlatformType.MOBILE || msg.audience.platform == PlatformType.ALL
+                enabled && notExpired && correctDeviceType && correctOsType && correctPlatform
+              }
+
+            val finalEligibleMessages = mutableListOf<InAppMessage>()
+            for (msg in initiallyFiltered) {
+              if (msg.settings.showAfterDelay > 0 && persistence.getFirstEligibleAt(msg.id) == null) {
+                persistence.setFirstEligibleAt(msg.id, System.currentTimeMillis())
+              }
+
+              if (isInScheduleWindow(msg) && isMessageEligible(msg)) {
+                finalEligibleMessages.add(msg)
+              }
+            }
+
+            messagesUpdateMutex.withLock {
+              val newActiveMessages =
+                finalEligibleMessages.sortedWith(
+                  compareBy { message ->
+                    when (val priority = message.settings.priority) {
+                      0 -> Int.MAX_VALUE
+
+                      // Lowest priority (0 = displayed last)
+                      else -> priority // 1 = highest, 2 = second, etc.
+                    }
+                  },
+                )
+
+              activeMessages.clear()
+              activeMessages.addAll(newActiveMessages)
+              _messagesFlow.value = activeMessages.toList()
+
+              if (debug) {
+                Log.d(InAppMessages.TAG, "[Manager] Active messages refreshed: ${newActiveMessages.size} eligible messages")
+              }
+            }
+          } catch (e: Exception) {
+            Log.e(InAppMessages.TAG, "[Manager] Error refreshing active messages for route: $effectiveRoute", e)
+          }
         }
       }
 
     refreshJobMutex.withLock {
-      refreshJob?.cancel()
       refreshJob = newJob
     }
   }
