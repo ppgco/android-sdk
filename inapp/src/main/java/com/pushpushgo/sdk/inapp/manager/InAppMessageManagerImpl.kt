@@ -61,7 +61,8 @@ internal class InAppMessageManagerImpl(
   private val hasInitialized = CompletableDeferred<Unit>()
 
   // Device info
-  private val currentDeviceType by lazy { DeviceInfoProvider.getCurrentDeviceType(context) }
+  // Read on demand, not cached: the window can be resized at runtime, which changes the class
+  private val currentDeviceType get() = DeviceInfoProvider.getCurrentDeviceType(context)
   private val currentOsType = DeviceInfoProvider.getCurrentOSType()
 
   override suspend fun initialize() {
@@ -293,13 +294,14 @@ internal class InAppMessageManagerImpl(
               emptyList()
             }
 
+          val deviceType = currentDeviceType
           val initiallyFiltered =
             eventBasedMessages.filter { msg ->
               val enabled = msg.enabled
               val notExpired =
                 msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
               val correctDeviceType =
-                msg.audience.device.contains(currentDeviceType) ||
+                msg.audience.device.contains(deviceType) ||
                   msg.audience.device.contains(
                     DeviceType.ALL,
                   )

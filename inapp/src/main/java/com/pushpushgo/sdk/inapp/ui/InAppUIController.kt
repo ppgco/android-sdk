@@ -146,7 +146,7 @@ internal class InAppUIController(
     outState: Bundle,
   ) = Unit
 
-  override fun onActivityDestroyed(activity: Activity) = Unit
+  override fun onActivityDestroyed(activity: Activity) = displayer.onActivityDestroyed(activity)
 
   fun displayCustomMessage(message: InAppMessage) {
     launch {

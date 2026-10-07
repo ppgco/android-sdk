@@ -13,6 +13,9 @@ internal interface InAppMessageDisplayer {
 
   fun cancelPendingMessages(isActivityPaused: Boolean = false)
 
+  /** Releases the message attached to [activity] once that activity is destroyed. */
+  fun onActivityDestroyed(activity: Activity)
+
   /** Hides the displayed message and stops displaying new ones. Must be called on the main thread. */
   fun release()
 }

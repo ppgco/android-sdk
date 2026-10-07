@@ -26,6 +26,7 @@ import com.pushpushgo.sdk.inapp.model.InAppMessage
 import com.pushpushgo.sdk.inapp.model.InAppMessageAction
 import com.pushpushgo.sdk.inapp.model.ShowAgainType
 import com.pushpushgo.sdk.inapp.persistence.InAppMessagePersistence
+import com.pushpushgo.sdk.inapp.ui.composables.common.AdaptiveMessageContainer
 import com.pushpushgo.sdk.inapp.ui.composables.templates.InAppMessageDefaultTemplate
 import com.pushpushgo.sdk.inapp.ui.composables.templates.TemplateBannerMessage
 import com.pushpushgo.sdk.inapp.ui.composables.templates.TemplateReviewForDiscount
@@ -41,6 +42,9 @@ import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
+
+/** Templates that scroll their own content, so the shared container must not add a scroll. */
+private val SELF_SCROLLING_TEMPLATES = setOf("PAYWALL_PUBLISH", "WEBSITE_TO_HOME_SCREEN")
 
 internal class InAppMessageDisplayerImpl(
   private val persistence: InAppMessagePersistence? = null,
@@ -58,6 +62,13 @@ internal class InAppMessageDisplayerImpl(
 
   // Store current UI elements
   private var currentDialog: Dialog? = null
+
+  // Activity the current dialog is attached to, so the dialog can be released with it
+  private var currentDialogOwner: WeakReference<Activity>? = null
+
+  // Messages that already reported a "show" event. A re-display after a configuration change
+  // (rotation, resize) must not be counted as another impression.
+  private val shownMessageIds = mutableSetOf<String>()
 
   // Flag to prevent re-entrant calls to dismissMessage
   private var isDismissing = false
@@ -195,6 +206,16 @@ internal class InAppMessageDisplayerImpl(
     job.cancel()
   }
 
+  override fun onActivityDestroyed(activity: Activity) {
+    if (currentDialogOwner?.get() !== activity) return
+
+    if (debug) {
+      Log.d(InAppMessages.TAG, "[Displayer] Owner activity destroyed, releasing its dialog")
+    }
+
+    hideMessage()
+  }
+
   private fun hideMessage() {
     currentDialog?.let {
       if (it.isShowing) {
@@ -208,6 +229,7 @@ internal class InAppMessageDisplayerImpl(
       }
     }
     currentDialog = null
+    currentDialogOwner = null
   }
 
   override fun dismissMessage(message: InAppMessage) {
@@ -245,6 +267,7 @@ internal class InAppMessageDisplayerImpl(
         persistence?.markMessageDismissed(message.id)
       }
       hideMessage()
+      shownMessageIds.remove(message.id)
       onMessageDismissed()
 
       if (sendCloseEvent) {
@@ -332,8 +355,12 @@ internal class InAppMessageDisplayerImpl(
 
       dialog.show()
       currentDialog = dialog
-      // Fire show event after dialog is visible
-      onMessageEvent("show", message, null)
+      currentDialogOwner = WeakReference(activity)
+      // Fire the show event after the dialog is visible, but only on the first display:
+      // showing the same message again after a rotation or resize is not a new impression.
+      if (shownMessageIds.add(message.id)) {
+        onMessageEvent("show", message, null)
+      }
     }
   }
 
@@ -379,38 +406,40 @@ internal class InAppMessageDisplayerImpl(
           dismissMessageSilently(message)
         }
 
-        when (message.template) {
-          "PAYWALL_PUBLISH", "WEBSITE_TO_HOME_SCREEN" -> {
-            TemplateRichMessage(
-              message = message,
-              onDismiss = { dismissMessage(message) },
-              onAction = onAction,
-            )
-          }
+        AdaptiveMessageContainer(scrollContent = message.template !in SELF_SCROLLING_TEMPLATES) {
+          when (message.template) {
+            "PAYWALL_PUBLISH", "WEBSITE_TO_HOME_SCREEN" -> {
+              TemplateRichMessage(
+                message = message,
+                onDismiss = { dismissMessage(message) },
+                onAction = onAction,
+              )
+            }
 
-          "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> {
-            TemplateBannerMessage(
-              message = message,
-              onDismiss = { dismissMessage(message) },
-              onAction = onAction,
-            )
-          }
+            "EXIT_INTENT_ECOMM", "PUSH_NOTIFICATION_OPT_IN", "EXIT_INTENT_TRAVEL", "UNBLOCK_NOTIFICATIONS", "LOW_STOCK" -> {
+              TemplateBannerMessage(
+                message = message,
+                onDismiss = { dismissMessage(message) },
+                onAction = onAction,
+              )
+            }
 
-          "REVIEW_FOR_DISCOUNT" -> {
-            TemplateReviewForDiscount(
-              message = message,
-              onDismiss = { dismissMessage(message) },
-              onAction = onAction,
-            )
-          }
+            "REVIEW_FOR_DISCOUNT" -> {
+              TemplateReviewForDiscount(
+                message = message,
+                onDismiss = { dismissMessage(message) },
+                onAction = onAction,
+              )
+            }
 
-          else -> {
-            // Fallback to a default view
-            InAppMessageDefaultTemplate(
-              message = message,
-              onDismiss = { dismissMessage(message) },
-              onAction = onAction,
-            )
+            else -> {
+              // Fallback to a default view
+              InAppMessageDefaultTemplate(
+                message = message,
+                onDismiss = { dismissMessage(message) },
+                onAction = onAction,
+              )
+            }
           }
         }
       }

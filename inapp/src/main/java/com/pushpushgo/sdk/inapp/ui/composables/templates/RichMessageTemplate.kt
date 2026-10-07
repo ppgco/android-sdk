@@ -2,12 +2,16 @@ package com.pushpushgo.sdk.inapp.ui.composables.templates
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,19 +51,30 @@ internal fun TemplateRichMessage(
         )
       }
 
-      Box(
+      BoxWithConstraints(
         modifier =
           Modifier
             .fillMaxSize()
             .padding(parsePadding(message.layout.padding)),
       ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        val availableHeight = maxHeight
+
+        // Scrolls instead of clipping when the window is too short for the content (landscape,
+        // split screen), while heightIn(min) keeps the content centered in a tall window as before.
+        Column(
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .heightIn(min = availableHeight)
+              .verticalScroll(rememberScrollState()),
+          verticalArrangement = Arrangement.Center,
+        ) {
           if (message.image != null && !message.image.hideOnMobile) {
             Box(
               modifier =
                 Modifier
                   .fillMaxWidth()
-                  .weight(1f),
+                  .heightIn(max = availableHeight / 2),
             ) {
               AsyncImage(
                 model = message.image.url,
@@ -76,7 +91,6 @@ internal fun TemplateRichMessage(
             modifier =
               Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(parsePadding(message.layout.paddingBody)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
