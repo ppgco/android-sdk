@@ -1,4 +1,10 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val localProperties =
+  Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+  }
 
 plugins {
   alias(libs.plugins.android.application)
@@ -24,8 +30,9 @@ android {
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-    manifestPlaceholders["PPG_PROJECT_ID"] = ""
-    manifestPlaceholders["PPG_API_KEY"] = ""
+    manifestPlaceholders["PPG_PROJECT_ID"] = localProperties.getProperty("ppg.projectId", "")
+    manifestPlaceholders["PPG_API_KEY"] = localProperties.getProperty("ppg.apiKey", "")
+    manifestPlaceholders["PPG_API_URL"] = localProperties.getProperty("ppg.apiUrl", "https://api.pushpushgo.com")
   }
 
   buildTypes {

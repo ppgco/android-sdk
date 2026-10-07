@@ -23,6 +23,8 @@
 
       <meta-data android:name="com.pushpushgo.projectId" android:value="${PPG_PROJECT_ID}" />
       <meta-data android:name="com.pushpushgo.apiKey" android:value="${PPG_API_KEY}" />
+      <meta-data android:name="com.pushpushgo.apiUrl" android:value="${PPG_API_URL}" />
+      <meta-data android:name="com.pushpushgo.isDebug" android:value="true" />
 
     </application>
 
