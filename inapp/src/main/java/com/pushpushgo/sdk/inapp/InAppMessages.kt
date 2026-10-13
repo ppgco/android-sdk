@@ -8,99 +8,69 @@ import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
 import com.pushpushgo.sdk.inapp.ui.CustomCodeHandler
 import com.pushpushgo.sdk.inapp.ui.Trigger
 
-class InAppMessages private constructor(
-  private val application: Application,
-  config: Config,
-  private val pushSubscriptionProvider: PushSubscriptionProvider?,
-  private val customCodeHandler: CustomCodeHandler?,
-) {
+object InAppMessages {
+  internal const val TAG = "[PushPushGo:InAppMessages]"
+
   @Volatile
-  private var runtime = createRuntime(config).apply { start() }
+  private var runtime: InAppMessagesRuntime? = null
 
-  companion object {
-    internal const val TAG = "[PushPushGo:InAppMessages]"
+  /**
+   * Initializes the InAppMessages SDK using configuration defined in AndroidManifest.xml.
+   *
+   * Calling this method again with the same configuration has no effect. To move an initialized
+   * SDK to another project, use [switchProject].
+   *
+   * @throws IllegalStateException if required manifest values are missing or the SDK is already
+   * initialized with a different configuration.
+   */
+  @JvmStatic
+  @JvmOverloads
+  fun initialize(
+    application: Application,
+    pushSubscriptionProvider: PushSubscriptionProvider? = null,
+    customCodeHandler: CustomCodeHandler? = null,
+  ): InAppMessages =
+    initialize(
+      application = application,
+      config = ManifestConfigProvider(application).provide(),
+      pushSubscriptionProvider = pushSubscriptionProvider,
+      customCodeHandler = customCodeHandler,
+    )
 
-    @Volatile
-    private var INSTANCE: InAppMessages? = null
+  /**
+   * Initializes the InAppMessages SDK using an explicit [Config].
+   *
+   * Calling this method again with the same configuration has no effect. To move an initialized
+   * SDK to another project, use [switchProject].
+   *
+   * @throws IllegalStateException if the SDK is already initialized with a different
+   * configuration.
+   */
+  @JvmStatic
+  @JvmOverloads
+  fun initialize(
+    application: Application,
+    config: Config,
+    pushSubscriptionProvider: PushSubscriptionProvider? = null,
+    customCodeHandler: CustomCodeHandler? = null,
+  ): InAppMessages =
+    synchronized(this) {
+      val activeRuntime = runtime
 
-    /**
-     * Initializes the InAppMessages SDK using configuration defined in AndroidManifest.xml.
-     *
-     * Subsequent calls with the same configuration return the same instance. To move an
-     * initialized SDK to another project, use [switchProject].
-     *
-     * @throws IllegalStateException if required manifest values are missing or the SDK is already
-     * initialized with a different configuration.
-     */
-    @JvmStatic
-    @JvmOverloads
-    fun initialize(
-      application: Application,
-      pushSubscriptionProvider: PushSubscriptionProvider? = null,
-      customCodeHandler: CustomCodeHandler? = null,
-    ): InAppMessages =
-      obtain(
-        application = application,
-        config = ManifestConfigProvider(application).provide(),
-        pushSubscriptionProvider = pushSubscriptionProvider,
-        customCodeHandler = customCodeHandler,
-      )
-
-    /**
-     * Initializes the InAppMessages SDK using an explicit [Config].
-     *
-     * Subsequent calls with the same configuration return the same instance. To move an
-     * initialized SDK to another project, use [switchProject].
-     *
-     * @throws IllegalStateException if the SDK is already initialized with a different
-     * configuration.
-     */
-    @JvmStatic
-    @JvmOverloads
-    fun initialize(
-      application: Application,
-      config: Config,
-      pushSubscriptionProvider: PushSubscriptionProvider? = null,
-      customCodeHandler: CustomCodeHandler? = null,
-    ): InAppMessages =
-      obtain(
-        application = application,
-        config = config,
-        pushSubscriptionProvider = pushSubscriptionProvider,
-        customCodeHandler = customCodeHandler,
-      )
-
-    @JvmStatic
-    fun getInstance(): InAppMessages = INSTANCE ?: throw IllegalStateException("InAppMessages SDK is not initialized!")
-
-    private fun obtain(
-      application: Application,
-      config: Config,
-      pushSubscriptionProvider: PushSubscriptionProvider?,
-      customCodeHandler: CustomCodeHandler?,
-    ): InAppMessages =
-      synchronized(this) {
-        val instance = INSTANCE
-
-        if (instance != null) {
-          check(instance.runtime.config == config) {
-            "InAppMessages SDK is already initialized with a different configuration. " +
-              "Use InAppMessages.getInstance().switchProject() to move it to another project."
-          }
-          return instance
+      if (activeRuntime == null) {
+        runtime = InAppMessagesRuntime(application, config, pushSubscriptionProvider, customCodeHandler).apply { start() }
+      } else {
+        check(activeRuntime.config == config) {
+          "InAppMessages SDK is already initialized with a different configuration. " +
+            "Use InAppMessages.switchProject() to move it to another project."
         }
-
-        InAppMessages(application, config, pushSubscriptionProvider, customCodeHandler).also { INSTANCE = it }
       }
 
-    @VisibleForTesting
-    internal fun resetInstance() {
-      synchronized(this) {
-        INSTANCE?.runtime?.release()
-        INSTANCE = null
-      }
+      this
     }
-  }
+
+  @JvmStatic
+  fun isInitialized(): Boolean = runtime != null
 
   /**
    * Moves the SDK to the project described by [config].
@@ -112,17 +82,26 @@ class InAppMessages private constructor(
    * Switching to the configuration the SDK already uses has no effect. The push subscription
    * provider and the custom code handler stay in place. The SDK does not remember [config] across
    * app restarts - initialize it with the configuration of the current project on the next start.
+   *
+   * @throws IllegalStateException if the SDK is not initialized.
    */
+  @JvmStatic
   fun switchProject(config: Config) {
     synchronized(this) {
-      val previous = runtime
+      val previous = requireRuntime()
       if (previous.config == config) return
 
       val route = previous.route
       val activity = previous.currentActivity
       previous.release()
 
-      runtime = createRuntime(config).apply { start(route, activity) }
+      runtime =
+        InAppMessagesRuntime(
+          application = previous.application,
+          config = config,
+          pushSubscriptionProvider = previous.pushSubscriptionProvider,
+          customCodeHandler = previous.customCodeHandler,
+        ).apply { start(route, activity) }
     }
   }
 
@@ -140,13 +119,15 @@ class InAppMessages private constructor(
    * @param route Non-blank route identifier.
    *
    * @throws IllegalArgumentException if route is blank.
+   * @throws IllegalStateException if the SDK is not initialized.
    */
+  @JvmStatic
   fun showMessagesOnRoute(route: String) {
     require(route.isNotBlank()) {
       "Route name must not me blank"
     }
 
-    runtime.showMessagesOnRoute(route)
+    requireRuntime().showMessagesOnRoute(route)
   }
 
   /**
@@ -154,10 +135,21 @@ class InAppMessages private constructor(
    *
    * Only messages whose trigger conditions match the provided trigger
    * will be displayed.
+   *
+   * @throws IllegalStateException if the SDK is not initialized.
    */
+  @JvmStatic
   fun showMessagesOnTrigger(trigger: Trigger) {
-    runtime.showMessagesOnTrigger(trigger)
+    requireRuntime().showMessagesOnTrigger(trigger)
   }
 
-  private fun createRuntime(config: Config) = InAppMessagesRuntime(application, config, pushSubscriptionProvider, customCodeHandler)
+  @VisibleForTesting
+  internal fun reset() {
+    synchronized(this) {
+      runtime?.release()
+      runtime = null
+    }
+  }
+
+  private fun requireRuntime(): InAppMessagesRuntime = checkNotNull(runtime) { "InAppMessages SDK is not initialized" }
 }

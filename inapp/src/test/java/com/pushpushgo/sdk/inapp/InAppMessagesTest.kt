@@ -18,8 +18,9 @@ import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,15 +49,33 @@ class InAppMessagesTest {
 
   @After
   fun tearDown() {
-    InAppMessages.resetInstance()
+    InAppMessages.reset()
     unmockkObject(RetrofitProvider)
   }
 
   @Test
-  fun `initialize with the same configuration returns the same instance`() {
-    val instance = InAppMessages.initialize(application, projectA)
+  fun `initialize with the same configuration has no effect`() {
+    InAppMessages.initialize(application, projectA)
+    coVerify(timeout = 5_000) { fetchMessages(projectA) }
 
-    assertSame(instance, InAppMessages.initialize(application, projectA))
+    InAppMessages.initialize(application, projectA)
+    Thread.sleep(300)
+
+    assertTrue(InAppMessages.isInitialized())
+    coVerify(exactly = 1) { fetchMessages(projectA) }
+  }
+
+  @Test
+  fun `calls before initialization fail`() {
+    assertFalse(InAppMessages.isInitialized())
+
+    val failure =
+      assertThrows(IllegalStateException::class.java) {
+        InAppMessages.showMessagesOnRoute("home")
+      }
+
+    assertEquals("InAppMessages SDK is not initialized", failure.message)
+    assertThrows(IllegalStateException::class.java) { InAppMessages.switchProject(projectB) }
   }
 
   @Test
@@ -70,30 +89,30 @@ class InAppMessagesTest {
 
     assertEquals(
       "InAppMessages SDK is already initialized with a different configuration. " +
-        "Use InAppMessages.getInstance().switchProject() to move it to another project.",
+        "Use InAppMessages.switchProject() to move it to another project.",
       failure.message,
     )
   }
 
   @Test
-  fun `switchProject fetches messages of the new project and keeps the instance`() {
-    val instance = InAppMessages.initialize(application, projectA)
+  fun `switchProject fetches messages of the new project`() {
+    InAppMessages.initialize(application, projectA)
     coVerify(timeout = 5_000) { fetchMessages(projectA) }
 
-    instance.switchProject(projectB)
+    InAppMessages.switchProject(projectB)
 
     coVerify(timeout = 5_000) { fetchMessages(projectB) }
-    assertSame(instance, InAppMessages.getInstance())
-    // The same configuration is accepted again after the switch
-    assertSame(instance, InAppMessages.initialize(application, projectB))
+    // The new configuration is the current one now, so initializing with it has no effect
+    InAppMessages.initialize(application, projectB)
+    assertThrows(IllegalStateException::class.java) { InAppMessages.initialize(application, projectA) }
   }
 
   @Test
   fun `switchProject to the current configuration does nothing`() {
-    val instance = InAppMessages.initialize(application, projectA)
+    InAppMessages.initialize(application, projectA)
     coVerify(timeout = 5_000) { fetchMessages(projectA) }
 
-    instance.switchProject(projectA)
+    InAppMessages.switchProject(projectA)
     Thread.sleep(300)
 
     coVerify(exactly = 1) { fetchMessages(projectA) }

@@ -21,7 +21,7 @@ object InAppMessageHelper {
    * @param screenName The name of the current screen/route
    */
   fun showMessagesForScreen(screenName: String) {
-    InAppMessages.getInstance().showMessagesOnRoute(screenName)
+    InAppMessages.showMessagesOnRoute(screenName)
   }
 
   /**

@@ -10,19 +10,22 @@
 
 #### SDK entry point & initialization
 - **Replaced `InAppMessagesSDK` with `InAppMessages`** as the main public API.
+- `InAppMessages` is a singleton object, like `PushNotifications` in the push SDK:
+  there is no `getInstance()`; call `InAppMessages.showMessagesOnRoute(...)`,
+  `InAppMessages.showMessagesOnTrigger(...)` and `InAppMessages.switchProject(...)`
+  directly. Use `InAppMessages.isInitialized()` to check whether it is initialized.
 - Initialization is now explicit and standardized:
   - `InAppMessages.initialize(Application, PushSubscriptionProvider)`
   - `InAppMessages.initialize(Application, Config, PushSubscriptionProvider)`
 - Initializing an initialized SDK with a different configuration throws
-  `IllegalStateException` instead of silently returning the instance configured
-  for the previous project.
+  `IllegalStateException` instead of silently keeping the configuration of the
+  previous project.
 
 #### Project switching
-- Added `InAppMessages.getInstance().switchProject(config)` to move an initialized
-  SDK to another project: the displayed message of the previous project is hidden,
-  messages of the new project are fetched and shown on the current route, and
-  dismissed messages stay dismissed. The instance returned by `getInstance()` stays
-  the same.
+- Added `InAppMessages.switchProject(config)` to move an initialized SDK to another
+  project: the displayed message of the previous project is hidden, messages of
+  the new project are fetched and shown on the current route, and dismissed
+  messages stay dismissed.
 - Cached messages are stored per project, so the SDK never falls back to messages
   of another project, even offline. The message cache of previous SDK versions is
   dropped once.

@@ -81,8 +81,10 @@ Don't forget to add your application class to your AndroidManifest.xml:
 </application>
 ```
 
-Calling `initialize` again with the same configuration returns the same instance.
-Calling it with a different configuration throws `IllegalStateException` - use
+`InAppMessages` is a singleton object, like `PushNotifications`: after
+initialization, call its methods directly, e.g. `InAppMessages.showMessagesOnRoute(...)`.
+Calling `initialize` again with the same configuration has no effect. Calling it
+with a different configuration throws `IllegalStateException` - use
 `switchProject` instead.
 
 ### Switching to another project
@@ -91,7 +93,7 @@ If your app works with several PushPushGo projects (e.g. one per country or
 brand), move the initialized SDK to another project with `switchProject`:
 
 ```kotlin
-InAppMessages.getInstance().switchProject(
+InAppMessages.switchProject(
   Config.create(
     projectId = "other-project-id",
     apiKey = "other-api-key",
@@ -104,8 +106,7 @@ InAppMessages.getInstance().switchProject(
 - Messages of the new project are fetched and, when they apply to the current
   route, displayed without waiting for the next navigation.
 - Messages the user already dismissed stay dismissed.
-- The instance returned by `getInstance()` stays the same, as do the push
-  subscription provider and the custom code handler.
+- The push subscription provider and the custom code handler stay in place.
 - Cached messages belong to their project, so the SDK never falls back to
   messages of another project, even offline.
 
@@ -139,7 +140,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Display messages for main screen, example: screen nav route name is "main_screen"
-        InAppMessages.getInstance().showMessagesOnRoute("main_screen")
+        InAppMessages.showMessagesOnRoute("main_screen")
     }
 }
 ```
@@ -227,7 +228,7 @@ Messages can be triggered based on custom events in your application:
 ```kotlin
 // Trigger messages after purchase completion
 fun onPurchaseCompleted(productId: String) {
-    InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue(
+    InAppMessages.showMessagesOnTrigger(Trigger.keyValue(
         key = "purchase_completed",
         value = productId // value has to be a string
     ))
@@ -236,7 +237,7 @@ fun onPurchaseCompleted(productId: String) {
 // Trigger review request after 3 feature uses
 fun checkAndShowReviewRequest(usageCount: Int) {
     if (usageCount >= 3) {
-        InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("review_request"))
+        InAppMessages.showMessagesOnTrigger(Trigger.key("review_request"))
     }
 }
 ```
@@ -314,37 +315,37 @@ Below are examples of typical message triggers that you can implement in your ap
 ### E-commerce
 ```kotlin
 // Abandoned cart
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("cart_abandoned"))
+InAppMessages.showMessagesOnTrigger(Trigger.key("cart_abandoned"))
 
 // Product added to cart
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("product_added", productId))
+InAppMessages.showMessagesOnTrigger(Trigger.keyValue("product_added", productId))
 
 // Order completed
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("order_completed", orderId))
+InAppMessages.showMessagesOnTrigger(Trigger.keyValue("order_completed", orderId))
 ```
 
 ### Content Applications
 ```kotlin
 // Article read
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("article_read", articleId))
+InAppMessages.showMessagesOnTrigger(Trigger.keyValue("article_read", articleId))
 
 // Subscription expiring
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("subscription_expiring"))
+InAppMessages.showMessagesOnTrigger(Trigger.key("subscription_expiring"))
 
 // Free content limit reached
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("free_limit_reached"))
+InAppMessages.showMessagesOnTrigger(Trigger.key("free_limit_reached"))
 ```
 
 ### Games
 ```kotlin
 // Level completed
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("level_completed", levelId))
+InAppMessages.showMessagesOnTrigger(Trigger.keyValue("level_completed", levelId))
 
 // Achievement unlocked
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.keyValue("achievement_unlocked", achievementId))
+InAppMessages.showMessagesOnTrigger(Trigger.keyValue("achievement_unlocked", achievementId))
 
 // Game session ended
-InAppMessages.getInstance().showMessagesOnTrigger(Trigger.key("game_session_ended"))
+InAppMessages.showMessagesOnTrigger(Trigger.key("game_session_ended"))
 ```
 
 ## Troubleshooting

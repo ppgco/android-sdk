@@ -28,13 +28,13 @@ import retrofit2.Retrofit
 
 /**
  * Everything [InAppMessages] does for one project. A project switch releases this runtime and
- * starts a new one, while [InAppMessages] stays the same object for the app.
+ * starts a new one with the same application, push subscription provider and custom code handler.
  */
 internal class InAppMessagesRuntime(
-  application: Application,
+  val application: Application,
   val config: Config,
-  pushSubscriptionProvider: PushSubscriptionProvider?,
-  customCodeHandler: CustomCodeHandler?,
+  val pushSubscriptionProvider: PushSubscriptionProvider?,
+  val customCodeHandler: CustomCodeHandler?,
 ) {
   private val retrofit: Retrofit by lazy {
     RetrofitProvider.buildRetrofit(config.apiUrl)

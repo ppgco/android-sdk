@@ -19,7 +19,7 @@ import com.pushpushgo.sdk.sample.inapp.ui.Screen
 @Composable
 internal fun InfoScreen(navController: NavHostController) {
   LaunchedEffect(Screen.Info.route) {
-    InAppMessages.getInstance().showMessagesOnRoute(Screen.Info.route)
+    InAppMessages.showMessagesOnRoute(Screen.Info.route)
   }
 
   Column(
