@@ -266,11 +266,15 @@ class PushNotificationsLifecycleTest {
 
         assertEquals(otherConfig.projectId, PushNotifications.getProjectId())
         assertFalse("Subscription should still be in progress", PushNotifications.isSubscribed())
+        assertEquals(SubscriptionStatus.PENDING, PushNotifications.subscriptionStatusFlow.value)
       } finally {
         finishRegistration.complete(Unit)
       }
 
-      awaitTrue("Device should get subscribed to the new project") { PushNotifications.isSubscribed() }
+      awaitTrue("Flow should report the registration done in the background") {
+        PushNotifications.subscriptionStatusFlow.value == SubscriptionStatus.SUBSCRIBED
+      }
+      assertTrue(PushNotifications.isSubscribed())
       coVerify(exactly = 1) { apiService.registerSubscriber(otherConfig.apiKey, otherConfig.projectId, any()) }
       assertEquals("new-sub", PushNotifications.getSubscriberId())
       assertEquals(1, cleanupWork().size)
@@ -315,6 +319,18 @@ class PushNotificationsLifecycleTest {
       assertEquals("sub-123", PushNotifications.getSubscriberId())
       assertTrue(cleanupWork().isEmpty())
       assertEquals("Runtime should stay active", "", liveActivities.getSubscriberId("live-1"))
+    }
+
+  @Test
+  fun `deinitialize publishes unsubscribed status`() =
+    runBlocking {
+      setSubscribed()
+      givenNotificationsEnabled()
+      assertEquals(SubscriptionStatus.SUBSCRIBED, PushNotifications.getSubscriptionStatus())
+
+      PushNotifications.deinitialize()
+
+      assertEquals(SubscriptionStatus.UNSUBSCRIBED, PushNotifications.subscriptionStatusFlow.value)
     }
 
   @Test

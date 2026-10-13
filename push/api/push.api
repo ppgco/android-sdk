@@ -61,6 +61,8 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final fun getPushSubscriptionProvider ()Lcom/pushpushgo/sdk/core/api/PushSubscriptionProvider;
 	public static final fun getPushToken ()Ljava/lang/String;
 	public static final fun getSubscriberId ()Ljava/lang/String;
+	public static final fun getSubscriptionStatus ()Lcom/pushpushgo/sdk/push/SubscriptionStatus;
+	public final synthetic fun getSubscriptionStatusFlow ()Lkotlinx/coroutines/flow/StateFlow;
 	public static final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
 	public static synthetic fun handleBackgroundNotificationClick$default (Landroid/content/Intent;IILjava/lang/Object;)V
 	public static final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/push/PushNotifications;
@@ -85,6 +87,16 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 
 public abstract interface class com/pushpushgo/sdk/push/PushNotificationsErrorCallback {
 	public abstract fun onError (Ljava/lang/Throwable;)V
+}
+
+public final class com/pushpushgo/sdk/push/SubscriptionStatus : java/lang/Enum {
+	public static final field NOTIFICATIONS_DISABLED Lcom/pushpushgo/sdk/push/SubscriptionStatus;
+	public static final field PENDING Lcom/pushpushgo/sdk/push/SubscriptionStatus;
+	public static final field SUBSCRIBED Lcom/pushpushgo/sdk/push/SubscriptionStatus;
+	public static final field UNSUBSCRIBED Lcom/pushpushgo/sdk/push/SubscriptionStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/SubscriptionStatus;
+	public static fun values ()[Lcom/pushpushgo/sdk/push/SubscriptionStatus;
 }
 
 public final class com/pushpushgo/sdk/push/dto/PushPushGoNotification {

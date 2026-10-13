@@ -71,7 +71,7 @@ internal class ApiRepository(
     val subscriberId = sharedPref.subscriberId
 
     if (subscriberId == null) {
-      logError("Cannot unregister - empty subscriberId")
+      logDebug("Unregister skipped - not registered")
       return
     }
 

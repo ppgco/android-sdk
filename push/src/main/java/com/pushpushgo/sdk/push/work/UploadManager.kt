@@ -157,7 +157,7 @@ internal class UploadManager(
     val liveActivities = liveActivitySubscriptions.toList()
 
     workManager.enqueueUniqueWork(
-      "$PROJECT_CLEANUP_TAG:${project.projectId}:${subscriberId.orEmpty()}",
+      projectCleanupWorkName(project.projectId, subscriberId),
       ExistingWorkPolicy.REPLACE,
       OneTimeWorkRequestBuilder<ProjectCleanupWorker>()
         .setInputData(
@@ -175,6 +175,19 @@ internal class UploadManager(
         .build(),
     )
   }
+
+  /** Cancels a pending removal of [subscriberId] from [projectId], e.g. once it is in use again. */
+  fun cancelProjectCleanup(
+    projectId: String,
+    subscriberId: String,
+  ) {
+    workManager.cancelUniqueWork(projectCleanupWorkName(projectId, subscriberId))
+  }
+
+  private fun projectCleanupWorkName(
+    projectId: String,
+    subscriberId: String?,
+  ) = "$PROJECT_CLEANUP_TAG:$projectId:${subscriberId.orEmpty()}"
 
   fun cancelAllJobs() {
     workManager.cancelUniqueWork(SYNC_TOKEN_WORK_NAME)

@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
 
     findViewById<Button>(R.id.check).setOnClickListener {
       findViewById<TextView>(R.id.content).text =
-        "Status: " + (if (PushNotifications.isSubscribed()) "subscribed" else "unsubscribed")
+        "Status: " + PushNotifications.getSubscriptionStatus()
     }
 
     findViewById<Button>(R.id.beacons).setOnClickListener {

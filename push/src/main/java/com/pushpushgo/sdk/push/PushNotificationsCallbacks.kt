@@ -6,6 +6,9 @@ import android.content.Intent
 import android.widget.Toast
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 fun interface NotificationClickHandler {
   fun onNotificationClick(
@@ -67,4 +70,12 @@ internal class PushNotificationsCallbacks {
 
   @Volatile
   var errorCallback: PushNotificationsErrorCallback? = null
+
+  private val subscriptionStatus = MutableStateFlow(SubscriptionStatus.UNSUBSCRIBED)
+
+  val subscriptionStatusFlow: StateFlow<SubscriptionStatus> = subscriptionStatus.asStateFlow()
+
+  fun publishSubscriptionStatus(status: SubscriptionStatus) {
+    subscriptionStatus.value = status
+  }
 }

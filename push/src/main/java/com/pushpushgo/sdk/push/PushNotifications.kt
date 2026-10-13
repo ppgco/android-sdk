@@ -17,6 +17,7 @@ import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -129,6 +130,7 @@ object PushNotifications {
       val activeRuntime = requireRuntime()
       activeRuntime.deinitialize()
       runtime = null
+      callbacks.publishSubscriptionStatus(SubscriptionStatus.UNSUBSCRIBED)
     }
   }
 
@@ -241,11 +243,33 @@ object PushNotifications {
   fun getApiKey(): String = requireRuntime().getApiKey()
 
   /**
-   * Returns `true` when the device is registered as a subscriber of the current project.
+   * Returns the push subscription status of the device in the current project.
    *
-   * While the notification permission is revoked this returns `false`, even if the user subscribed
-   * earlier: the SDK unregisters the device and registers it again once the permission is granted
-   * back. Only [unsubscribe] cancels the subscription for good.
+   * The status is computed from the stored subscription and the current notification settings, so
+   * it reflects a revoked notification permission right away - also offline.
+   */
+  @JvmStatic
+  fun getSubscriptionStatus(): SubscriptionStatus = requireRuntime().getSubscriptionStatus()
+
+  /**
+   * The push subscription status as a flow: emits the current status when collected and then every
+   * change - including the ones the SDK makes in the background, such as registering the device
+   * after [switchProject] or after the notification permission is granted back.
+   *
+   * Changes of the notification settings made outside the app are picked up when an activity of the
+   * app is resumed. The flow is process-wide: it keeps working across [switchProject] and
+   * [deinitialize], and holds [SubscriptionStatus.UNSUBSCRIBED] while the SDK is not initialized.
+   */
+  @get:JvmSynthetic
+  val subscriptionStatusFlow: StateFlow<SubscriptionStatus>
+    get() = callbacks.subscriptionStatusFlow
+
+  /**
+   * Returns `true` when the device receives notifications from the current project, i.e. the
+   * status is [SubscriptionStatus.SUBSCRIBED].
+   *
+   * Returns `false` while the notification permission is revoked, even if the user subscribed
+   * earlier - see [getSubscriptionStatus] to tell the cases apart.
    */
   @JvmStatic
   fun isSubscribed(): Boolean = requireRuntime().isSubscribed()
@@ -270,6 +294,12 @@ object PushNotifications {
 
   /**
    * Unsubscribes the device from notifications.
+   *
+   * The user's choice is stored right away and the status becomes [SubscriptionStatus.UNSUBSCRIBED],
+   * also without network: if the subscriber cannot be removed from the API right now, it is removed
+   * in the background. Notifications sent before the subscriber is removed - e.g. queued while the
+   * device was offline - can still be delivered and displayed.
+   * Call it whenever the user turns notifications off in the app, whatever the current status.
    */
   @JvmSynthetic
   suspend fun unsubscribe() {

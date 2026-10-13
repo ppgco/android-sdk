@@ -66,6 +66,17 @@ internal class SharedPreferencesHelper(
       sharedPreferences.edit { putBoolean(IS_SUBSCRIBED, value) }
     }
 
+  /** Whether [subscriptionRequested] was ever stored, as opposed to defaulting to `false`. */
+  fun isSubscriptionRequestStored(): Boolean = sharedPreferences.contains(IS_SUBSCRIBED)
+
+  /**
+   * Stores [subscriptionRequested] on disk before returning, so the user's choice survives the
+   * process being killed right after. Performs disk I/O - call off the main thread.
+   */
+  fun storeSubscriptionRequestedNow(value: Boolean) {
+    sharedPreferences.edit(commit = true) { putBoolean(IS_SUBSCRIBED, value) }
+  }
+
   /**
    * Project the persisted subscription state (subscriber, token, Live Activity subscriptions)
    * belongs to, with the credentials needed to remove it from that project. `null` for state

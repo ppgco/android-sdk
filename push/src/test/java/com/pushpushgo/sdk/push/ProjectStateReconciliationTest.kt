@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.push
 
+import android.Manifest
 import android.app.Application
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
@@ -33,6 +34,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import retrofit2.Response
 
 @RunWith(AndroidJUnit4::class)
@@ -54,6 +56,7 @@ class ProjectStateReconciliationTest {
     preferences.clearProjectData()
     liveActivityPersistence = LiveActivityPersistence(application)
     liveActivityPersistence.clearAll()
+    shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
     apiService = mockk(relaxed = true)
     mockkObject(ApiService.Companion)
@@ -135,6 +138,50 @@ class ProjectStateReconciliationTest {
     assertTrue(runtime.isSubscribed())
     assertEquals(config.projectId, preferences.projectOwner?.projectId)
     assertTrue(cleanupWork().isEmpty())
+  }
+
+  @Test
+  fun `registered device without a stored subscription request stays subscribed after the update`() {
+    // SDK 3.x registered on token refresh without storing the request, or counted a missing request
+    // as given (defaultIsSubscribed)
+    preferences.subscriberId = "sub-1"
+
+    val runtime = startRuntime()
+
+    assertTrue(preferences.subscriptionRequested)
+    assertEquals(SubscriptionStatus.SUBSCRIBED, runtime.getSubscriptionStatus())
+    assertTrue(cleanupWork().isEmpty())
+  }
+
+  @Test
+  fun `stored opt-out of a registered device stays an opt-out after the update`() {
+    preferences.subscriberId = "sub-1"
+    preferences.subscriptionRequested = false
+
+    val runtime = startRuntime()
+
+    assertFalse(preferences.subscriptionRequested)
+    assertEquals(SubscriptionStatus.UNSUBSCRIBED, runtime.getSubscriptionStatus())
+  }
+
+  @Test
+  fun `device without a registration stays unsubscribed after the update`() {
+    val runtime = startRuntime()
+
+    assertFalse(preferences.subscriptionRequested)
+    assertEquals(SubscriptionStatus.UNSUBSCRIBED, runtime.getSubscriptionStatus())
+  }
+
+  @Test
+  fun `missing subscription request is adopted only for state saved before SDK 4`() {
+    // State with a project owner was written by SDK 4, which always stores the request
+    preferences.projectOwner = config
+    preferences.subscriberId = "sub-1"
+
+    val runtime = startRuntime()
+
+    assertFalse(preferences.subscriptionRequested)
+    assertEquals(SubscriptionStatus.UNSUBSCRIBED, runtime.getSubscriptionStatus())
   }
 
   @Test

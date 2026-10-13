@@ -90,6 +90,17 @@ class SharedPreferencesHelperTest {
   }
 
   @Test
+  fun `subscription request tells a stored opt-out from a missing value`() {
+    assertFalse(prefs.isSubscriptionRequestStored())
+    assertFalse(prefs.subscriptionRequested)
+
+    prefs.storeSubscriptionRequestedNow(false)
+
+    assertTrue(prefs.isSubscriptionRequestStored())
+    assertFalse(prefs.subscriptionRequested)
+  }
+
+  @Test
   fun `project owner is absent until it is set`() {
     assertNull(prefs.projectOwner)
   }

@@ -31,10 +31,24 @@
   - `subscribeAsync()` / `unsubscribeAsync()` (Java-friendly `CompletableFuture`)
 - Removed `subscribeNow()`, `unsubscribeNow()`, `subscribeNowFuture()`, and
   `unsubscribeNowFuture()`; use the unified methods above.
-- `isSubscribed()` now returns `true` only while the device is registered in the
-  current project. When the notification permission is revoked, the SDK unregisters
-  the device but keeps the user's subscription and registers the device again once
-  the permission is granted back; only `unsubscribe()` cancels it for good.
+- Added `getSubscriptionStatus()` returning `SubscriptionStatus`: `UNSUBSCRIBED`,
+  `SUBSCRIBED`, `NOTIFICATIONS_DISABLED` (the user subscribed, but notifications are
+  disabled) or `PENDING` (the user subscribed, registration in progress). The status
+  reflects the notification settings right away, also offline.
+- Added `subscriptionStatusFlow` (Kotlin `StateFlow`), which emits the current
+  status and every change, including registrations the SDK finishes in the
+  background, e.g. after `switchProject`.
+- `isSubscribed()` now returns `true` only while the status is `SUBSCRIBED`: the
+  device is registered in the current project and notifications are enabled.
+- When notifications are disabled, the SDK unregisters the device but keeps the
+  user's subscription and registers the device again once they are enabled back;
+  only `unsubscribe()` cancels the subscription for good. Notification settings are
+  checked whenever an activity of the app is resumed.
+- `unsubscribe()` no longer fails without network: the user's choice is stored
+  right away and a subscriber that cannot be removed is removed in the background.
+- Updating from SDK 3.x keeps devices that are registered but have no stored
+  subscription (registered on push token refresh, or counted as subscribed through
+  `defaultIsSubscribed`) subscribed. A stored opt-out stays an opt-out.
 
 #### Async API changes
 - **Removed Guava `ListenableFuture` from the public API**.
