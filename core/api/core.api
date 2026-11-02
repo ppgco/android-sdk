@@ -28,15 +28,7 @@ public abstract interface class com/pushpushgo/sdk/core/api/PushSubscriptionProv
 	public abstract fun isNotificationChannelEnabled ()Z
 	public abstract fun isSubscribed ()Z
 	public abstract fun isSubscriptionRequested ()Z
-	public abstract fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract class com/pushpushgo/sdk/core/api/PushSubscriptionProviderJavaAdapter : com/pushpushgo/sdk/core/api/PushSubscriptionProvider {
-	public fun <init> ()V
-	public fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun subscribeAsync ()Ljava/util/concurrent/CompletableFuture;
-	public fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun unsubscribeAsync ()Ljava/util/concurrent/CompletableFuture;
+	public abstract fun subscribe ()V
+	public abstract fun unsubscribe ()V
 }
 

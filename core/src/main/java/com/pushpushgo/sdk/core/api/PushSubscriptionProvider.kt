@@ -4,20 +4,20 @@ interface PushSubscriptionProvider {
   /**
    * Requests push notifications for the user.
    *
-   * This updates the user's preference to receive notifications and is idempotent.
+   * This stores the user's preference to receive notifications right away and is idempotent. The
+   * device is registered in the background, so [isSubscribed] may still return `false` right after
+   * this call.
    *
-   * A Java adapter is provided via [PushSubscriptionProviderJavaAdapter.subscribeAsync].
+   * @throws IllegalStateException if notifications are disabled.
    */
-  suspend fun subscribe()
+  fun subscribe()
 
   /**
    * Stops requesting push notifications for the user.
    *
-   * This updates the user's preference not to receive notifications and is idempotent.
-   *
-   * A Java adapter is provided via [PushSubscriptionProviderJavaAdapter.unsubscribeAsync].
+   * This stores the user's preference not to receive notifications right away and is idempotent.
    */
-  suspend fun unsubscribe()
+  fun unsubscribe()
 
   /** Returns whether the user has requested push notifications. */
   fun isSubscriptionRequested(): Boolean

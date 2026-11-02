@@ -39,6 +39,9 @@
   - A default implementation is provided by the PushPushGo Push Notifications SDK.
   - A custom implementation may be provided by the consumer.
 - The push subscription provider can no longer be changed after initialization.
+- `PushSubscriptionProvider.subscribe()` / `unsubscribe()` are synchronous. The
+  subscribe action shows its success message once the choice is stored; the device
+  is registered in the background.
 - Removed legacy push integration APIs:
   - `setPushNotificationSubscriber(...)`
 

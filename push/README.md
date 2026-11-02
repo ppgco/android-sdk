@@ -409,14 +409,18 @@ PushNotifications.isSubscriptionRequested() // The user's latest explicit choice
 PushNotifications.isSubscribed() // Whether a backend subscription is confirmed
 ```
 
-From Java, use `subscribeAsync()` and `unsubscribeAsync()`. Both return a
-`CompletableFuture`.
+`subscribe()` and `unsubscribe()` store the user's choice right away, also
+without network. The SDK registers or removes the subscriber in the background
+and retries once the network is available. Failures are reported to the error
+callback (`setErrorCallback`).
+
+The device may not be registered yet when `subscribe()` returns - follow the
+subscription status below to know when it is.
 
 Call `unsubscribe()` whenever the user turns notifications off in your app,
-whatever the current status. The choice is stored right away, also without
-network: if the subscriber cannot be removed from PushPushGo at that moment, the
-SDK retains its ID as the last confirmed backend state and removes it in the
-background.
+whatever the current status. Regular notifications stop being displayed right
+away. If the subscriber cannot be removed from PushPushGo at that moment, the SDK
+retains its ID as the last confirmed backend state until it is removed.
 
 #### Subscription status
 
@@ -469,9 +473,8 @@ from `isSubscribed()`.
 On Android 13 (API 33) and newer, push subscription requires the
 `POST_NOTIFICATIONS` permission to be granted by the user.
 
-If the permission is not granted, `subscribe()` (and its Java wrapper,
-`subscribeAsync()`) throws an exception without changing
-`isSubscriptionRequested()`.
+If the permission is not granted, `subscribe()` throws an
+`IllegalStateException` without changing `isSubscriptionRequested()`.
 
 The application is responsible for requesting the permission before calling
 `subscribe()`.
@@ -503,6 +506,10 @@ val beacon =
 
 PushNotifications.sendBeacon(beacon)
 ```
+
+Beacons require a confirmed subscription. Right after `subscribe()`, wait for
+`SubscriptionStatus.Subscribed` (see [Subscription status](#subscription-status))
+before sending a beacon.
 
 ## Live Activities
 

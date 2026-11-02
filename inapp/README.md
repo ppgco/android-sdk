@@ -272,7 +272,11 @@ InAppMessages.initialize(
 )
 ```
 
-A custom implementation may also be supplied.
+A custom implementation may also be supplied. Its `subscribe()` and
+`unsubscribe()` are synchronous: they store the user's choice, and `subscribe()`
+throws when the subscription cannot be requested (e.g. notifications are
+disabled). `isSubscribed()` reports a confirmed subscription, so it may become
+`true` only after the device is registered in the background.
 
 ---
 

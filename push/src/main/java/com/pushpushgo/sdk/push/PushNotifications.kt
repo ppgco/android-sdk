@@ -260,8 +260,8 @@ object PushNotifications {
   /**
    * The push subscription status as a flow: emits the current status when collected and then every
    * distinct confirmed backend-state change - including the ones the SDK makes in the background,
-   * such as registering the device after [switchProject] or after notification permission is
-   * granted back.
+   * such as registering the device after [subscribe], after [switchProject] or after notification
+   * permission is granted back.
    *
    * Changes of the notification settings made outside the app are picked up when an activity of the
    * app is resumed. The flow is process-wide: it keeps working across [switchProject] and
@@ -301,59 +301,34 @@ object PushNotifications {
   /**
    * Subscribes the device to notifications.
    *
-   * If notifications are disabled, an [IllegalStateException] is thrown without changing the
-   * user's subscription choice. After notification permission is validated, the choice is stored
-   * before contacting the API, so it remains requested if registration fails and can be reconciled
-   * later.
+   * The user's choice is stored right away and the device is registered in the background. If it
+   * cannot be registered now - e.g. while offline - the SDK retries once the network is available
+   * and on a later start. Failures are reported to the error callback. Follow
+   * [subscriptionStatusFlow] (Java: [setSubscriptionStatusCallback]) to know when the subscription
+   * is confirmed.
    *
-   * @throws IllegalStateException
+   * Request the notification permission before calling this method.
+   *
+   * @throws IllegalStateException if notifications are disabled. The user's choice is not changed
+   * then.
    */
-  @JvmSynthetic
-  suspend fun subscribe() {
+  @JvmStatic
+  fun subscribe() {
     requireRuntime().subscribe()
   }
 
   /**
    * Unsubscribes the device from notifications.
    *
-   * The user's choice is stored right away. If the subscriber cannot be removed from the API right
-   * now, its ID is retained as the last confirmed backend state and removal is scheduled in the
-   * background. Notifications sent before the subscriber is removed - e.g. queued while the device
-   * was offline - can still be delivered and displayed.
+   * The user's choice is stored right away and regular notifications stop being displayed
+   * immediately. The subscriber is removed in the background - [getSubscriptionStatus] keeps
+   * reporting it until the removal is confirmed, e.g. while the device is offline.
    * Call it whenever the user turns notifications off in the app, whatever the current status.
    */
-  @JvmSynthetic
-  suspend fun unsubscribe() {
+  @JvmStatic
+  fun unsubscribe() {
     requireRuntime().unsubscribe()
   }
-
-  /**
-   * Subscribes the device to notifications asynchronously.
-   *
-   * Java-friendly wrapper for [subscribe].
-   *
-   * @returns [CompletableFuture]
-   */
-  @JvmStatic
-  fun subscribeAsync(): CompletableFuture<Void?> =
-    asyncScope.future {
-      subscribe()
-      null
-    }
-
-  /**
-   * Unsubscribes the device from notifications asynchronously.
-   *
-   * Java-friendly wrapper for [unsubscribe].
-   *
-   * @returns [CompletableFuture]
-   */
-  @JvmStatic
-  fun unsubscribeAsync(): CompletableFuture<Void?> =
-    asyncScope.future {
-      unsubscribe()
-      null
-    }
 
   /**
    * Checks whether the given notification intent belongs to PushPushGo.

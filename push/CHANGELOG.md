@@ -26,9 +26,13 @@
   - `createSubscriber()`
   - `registerSubscriber()`
   - `unregisterSubscriber(...)`
-- Introduced a unified subscription API:
-  - `subscribe()` / `unsubscribe()` (Kotlin coroutines)
-  - `subscribeAsync()` / `unsubscribeAsync()` (Java-friendly `CompletableFuture`)
+- Introduced a unified subscription API: `subscribe()` / `unsubscribe()`. Both are
+  synchronous and only store the user's
+  choice. The SDK registers or removes the subscriber in the background and
+  retries once the network is available. Failures are reported to the error
+  callback.
+- `subscribe()` throws `IllegalStateException` when notifications are disabled,
+  without changing the user's choice.
 - Added `getSubscriptionStatus()` returning the sealed `SubscriptionStatus`:
   `Unsubscribed` or `Subscribed(subscriberId, projectId)`. It represents only the backend state
   last confirmed by the SDK, independently of user intent and notification permission.
@@ -45,16 +49,17 @@
   only `unsubscribe()` cancels the subscription for good. Notification settings are
   checked whenever an activity of the app is resumed.
 - `unsubscribe()` stores the user's choice right away, also without network, and
-  removal is retried in the background after a transient failure.
+  regular notifications stop being displayed immediately.
 - Updating from SDK 3.x keeps devices that are registered but have no stored
   subscription (registered on push token refresh, or counted as subscribed through
   `defaultIsSubscribed`) subscribed. A stored opt-out stays an opt-out.
 
 #### Async API changes
 - **Removed Guava `ListenableFuture` from the public API**.
-- All async operations now use:
+- The remaining async operations (`switchProject`, `deinitialize`, `sendBeacon`
+  and the Live Activity subscription) use:
   - `suspend` functions for Kotlin consumers
-  - `CompletableFuture` for Java consumers
+  - `CompletableFuture` (`*Async` methods) for Java consumers
 
 #### Notification model
 - Replaced `PPGoNotification` with **`PushPushGoNotification`**.
@@ -112,6 +117,7 @@
 #### Live Activities
 - Live Activity APIs moved from `PushPushGo` to the
   `PushNotifications.liveActivities` facade.
+- Subscribing to a Live Activity no longer requires a push subscription.
 
 #### Public configuration API
 - The following configuration properties are no longer publicly mutable and must be set via explicit setter methods:
@@ -123,6 +129,8 @@
 #### Core dependency
 - The SDK now depends on a shared internal **core** module.
 - The SDK provides an implementation of the core module’s `PushSubscriptionProvider` interface, which can be reused by other PushPushGo SDKs to interact with push functionality.
+- `PushSubscriptionProvider.subscribe()` / `unsubscribe()` are synchronous, like
+  their `PushNotifications` counterparts.
 
 ---
 
