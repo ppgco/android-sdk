@@ -279,9 +279,8 @@ The switch happens locally right away and does not depend on the network:
   notifications of the previous project that were displayed before the switch.
 
 Switching to the configuration the SDK already uses has no effect. Switch calls
-run one after another, so switching twice in a row is safe. If the previous
-project is still registering the device, the next switch waits for that request
-to finish.
+run one after another, so switching twice in a row is safe. If a subscription or
+Live Activity request is still in progress, the switch waits for it to finish.
 
 If you use the InAppMessages SDK too, switch it as well with
 `InAppMessages.switchProject(config)`.
@@ -440,8 +439,9 @@ val status by PushNotifications.subscriptionStatusFlow.collectAsStateWithLifecyc
 PushNotifications.subscriptionStatusFlow.first { it is SubscriptionStatus.Subscribed }
 ```
 
-Java callers can observe future status changes with a callback. Use
-`getSubscriptionStatus()` separately when the current status is needed:
+Java callers can use a callback instead. Like the flow, it receives the current
+status right away and then every change. Until `initialize()`, the status is
+`Unsubscribed`:
 
 ```java
 PushNotifications.setSubscriptionStatusCallback(status -> {
@@ -497,9 +497,25 @@ val beacon =
 PushNotifications.sendBeacon(beacon)
 ```
 
-Beacons require a confirmed subscription. Right after `subscribe()`, wait for
-`SubscriptionStatus.Subscribed` (see [Subscription status](#subscription-status))
-before sending a beacon.
+Send beacons once the device is subscribed: on `SubscriptionStatus.Subscribed`
+(see [Subscription status](#subscription-status)) or when `isSubscribed()` returns
+`true`. Beacons sent before that, or after `unsubscribe()`, are discarded.
+`unsubscribe()` and switching projects also drop beacons that are still queued. The SDK
+sends beacons in the background, in order, and retries them while offline:
+
+```kotlin
+PushNotifications.subscriptionStatusFlow
+  .filterIsInstance<SubscriptionStatus.Subscribed>()
+  .collect { PushNotifications.sendBeacon(profileBeacon()) }
+```
+
+```java
+PushNotifications.setSubscriptionStatusCallback(status -> {
+    if (status instanceof SubscriptionStatus.Subscribed) {
+        PushNotifications.sendBeacon(profileBeacon());
+    }
+});
+```
 
 ## Live Activities
 

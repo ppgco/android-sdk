@@ -13,6 +13,9 @@ import androidx.work.workDataOf
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.utils.logDebug
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.BEACON
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.BEACON_PAYLOAD
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.BEACON_SUBSCRIBER_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_BUTTON_ID
 import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_CAMPAIGN
@@ -40,6 +43,9 @@ internal class UploadManager(
     internal const val PERIODIC_TOKEN_SYNC_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token-periodic"
     internal const val PROJECT_CLEANUP_TAG = "com.pushpushgo.sdk.push.work:project-cleanup"
     internal const val SUBSCRIPTION_RECONCILE_WORK_NAME = "com.pushpushgo.sdk.push.work:reconcile-subscription"
+    private const val BEACON_WORK_NAME = "com.pushpushgo.sdk.push.work:beacon"
+
+    internal fun beaconWorkName(projectId: String) = "$BEACON_WORK_NAME:$projectId"
   }
 
   private val workManager = WorkManager.getInstance(context)
@@ -138,6 +144,37 @@ internal class UploadManager(
         .setConstraints(networkConstraints)
         .build(),
     )
+  }
+
+  /**
+   * Enqueues [payload] for [subscriberId] at the end of the project's beacon chain, so beacons are
+   * sent in order. [UploadWorker] discards it once [subscriberId] is no longer the active subscriber.
+   */
+  fun enqueueBeacon(
+    subscriberId: String,
+    payload: String,
+  ) {
+    workManager.enqueueUniqueWork(
+      beaconWorkName(config.projectId),
+      ExistingWorkPolicy.APPEND_OR_REPLACE,
+      OneTimeWorkRequestBuilder<UploadWorker>()
+        .setInputData(
+          workDataOf(
+            TYPE to BEACON,
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
+            BEACON_SUBSCRIBER_ID to subscriberId,
+            BEACON_PAYLOAD to payload,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  fun cancelBeacons(projectId: String) {
+    workManager.cancelUniqueWork(beaconWorkName(projectId))
   }
 
   /**

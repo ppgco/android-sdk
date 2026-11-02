@@ -15,53 +15,43 @@ import kotlin.concurrent.thread
 @RunWith(AndroidJUnit4::class)
 class PushNotificationsCallbacksTest {
   @Test
-  fun `flow and callback receive the same distinct statuses in order`() {
+  fun `callback receives the current status and then distinct changes in order`() {
     val callbacks = PushNotificationsCallbacks()
-    val received = mutableListOf<Pair<SubscriptionStatus, SubscriptionStatus>>()
-    callbacks.subscriptionStatusCallback =
-      SubscriptionStatusCallback { status ->
-        received += status to callbacks.subscriptionStatusFlow.value
-      }
+    val received = mutableListOf<SubscriptionStatus>()
+    callbacks.subscriptionStatusCallback = SubscriptionStatusCallback(received::add)
 
-    callbacks.publishSubscriptionStatus(SubscriptionStatus.Unsubscribed)
-    callbacks.publishSubscriptionStatus(SubscriptionStatus.Subscribed("sub-1", "project-1"))
-    callbacks.publishSubscriptionStatus(SubscriptionStatus.Subscribed("sub-1", "project-1"))
-    callbacks.publishSubscriptionStatus(SubscriptionStatus.Subscribed("sub-2", "project-1"))
+    listOf(
+      SubscriptionStatus.Subscribed("sub-1", "project-1"),
+      SubscriptionStatus.Subscribed("sub-1", "project-1"),
+      SubscriptionStatus.Subscribed("sub-2", "project-1"),
+    ).forEach {
+      callbacks.publishSubscriptionStatus(it)
+      shadowOf(Looper.getMainLooper()).idle()
+    }
 
     assertEquals(
       listOf(
-        SubscriptionStatus.Subscribed("sub-1", "project-1") to
-          SubscriptionStatus.Subscribed("sub-1", "project-1"),
-        SubscriptionStatus.Subscribed("sub-2", "project-1") to
-          SubscriptionStatus.Subscribed("sub-2", "project-1"),
+        SubscriptionStatus.Unsubscribed,
+        SubscriptionStatus.Subscribed("sub-1", "project-1"),
+        SubscriptionStatus.Subscribed("sub-2", "project-1"),
       ),
       received,
     )
   }
 
   @Test
-  fun `new callback receives only future status changes and null removes it`() {
+  fun `callback set later receives the current status and null removes it`() {
     val callbacks = PushNotificationsCallbacks()
     callbacks.publishSubscriptionStatus(SubscriptionStatus.Subscribed("sub-1", "project-1"))
     val received = mutableListOf<SubscriptionStatus>()
-    callbacks.subscriptionStatusCallback = SubscriptionStatusCallback(received::add)
 
-    callbacks.publishSubscriptionStatus(SubscriptionStatus.Subscribed("sub-1", "project-1"))
-    callbacks.publishSubscriptionStatus(SubscriptionStatus.Subscribed("sub-2", "project-1"))
+    callbacks.subscriptionStatusCallback = SubscriptionStatusCallback(received::add)
+    shadowOf(Looper.getMainLooper()).idle()
     callbacks.subscriptionStatusCallback = null
     callbacks.publishSubscriptionStatus(SubscriptionStatus.Unsubscribed)
+    shadowOf(Looper.getMainLooper()).idle()
 
-    assertEquals(listOf(SubscriptionStatus.Subscribed("sub-2", "project-1")), received)
-  }
-
-  @Test
-  fun `callback exception does not escape publication`() {
-    val callbacks = PushNotificationsCallbacks()
-    callbacks.subscriptionStatusCallback = SubscriptionStatusCallback { throw IllegalStateException("callback failed") }
-
-    callbacks.publishSubscriptionStatus(SubscriptionStatus.Subscribed("sub-1", "project-1"))
-
-    assertEquals(SubscriptionStatus.Subscribed("sub-1", "project-1"), callbacks.subscriptionStatusFlow.value)
+    assertEquals(listOf(SubscriptionStatus.Subscribed("sub-1", "project-1")), received)
   }
 
   @Test
@@ -79,6 +69,8 @@ class PushNotificationsCallbacksTest {
     callbacks.invalidProjectIdHandler = InvalidProjectIdHandler { _, _, _ -> record("invalid-project") }
     callbacks.errorCallback = PushNotificationsErrorCallback { record("error") }
     callbacks.subscriptionStatusCallback = SubscriptionStatusCallback { record("subscription") }
+    shadowOf(Looper.getMainLooper()).idle()
+    received.clear()
 
     thread {
       callbacks.notifyNotificationClick(context, "https://example.com", 0)

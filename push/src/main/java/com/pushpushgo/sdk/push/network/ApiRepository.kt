@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.exception.PushPushException
+import com.pushpushgo.sdk.push.exception.isSubscriberInvalid
 import com.pushpushgo.sdk.push.network.data.InstallationMetadata
 import com.pushpushgo.sdk.push.network.data.LiveActivityEndpoint
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventDto
@@ -18,8 +19,6 @@ import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.osVersion
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
 
 internal class ApiRepository(
   private val context: Context,
@@ -28,8 +27,6 @@ internal class ApiRepository(
   private val config: Config,
 ) {
   companion object {
-    private const val INACTIVE_SUBSCRIBER_MESSAGE = "Cannot perform operation on inactive subscriber"
-    private const val FOREIGN_SUBSCRIBER_MESSAGE = "Subscriber not belongs to given project"
     private const val LIVE_ACTIVITY_NOT_FOUND_MESSAGE = "Live notification not found"
     private const val LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE = "Live notification subscriber not found"
   }
@@ -93,33 +90,10 @@ internal class ApiRepository(
         subscriberId = subscriberId,
       )
     } catch (exception: PushPushException) {
-      val isAlreadyUnregistered =
-        exception.statusCode == 404 ||
-          (exception.statusCode == 400 && exception.message == INACTIVE_SUBSCRIBER_MESSAGE) ||
-          (exception.statusCode == 403 && exception.message == FOREIGN_SUBSCRIBER_MESSAGE)
-
-      if (!isAlreadyUnregistered) throw exception
+      if (!exception.isSubscriberInvalid()) throw exception
 
       logDebug("Subscriber is already unregistered")
     }
-  }
-
-  suspend fun sendBeacon(beacon: String) {
-    check(sharedPref.subscriptionRequested) {
-      "Cannot send beacon - subscription not requested"
-    }
-
-    val subscriberId =
-      checkNotNull(sharedPref.subscriberId) {
-        "Cannot send beacon - unsubscribed"
-      }
-
-    apiService.sendBeacon(
-      token = config.apiKey,
-      projectId = config.projectId,
-      subscriberId = subscriberId,
-      beacon = beacon.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()),
-    )
   }
 
   /**

@@ -234,19 +234,25 @@ object PushNotifications {
    * permission is granted back.
    *
    * Changes of the notification settings made outside the app are picked up when an activity of the
-   * app is resumed. The flow is process-wide: it keeps working across [switchProject] and holds
-   * [SubscriptionStatus.Unsubscribed] while the SDK is not initialized.
+   * app is resumed. Before [initialize] the SDK does not know the status yet, so the flow holds
+   * [SubscriptionStatus.Unsubscribed] until initialization publishes the actual status. The flow
+   * is process-wide and keeps working across [switchProject].
    */
   @get:JvmSynthetic
   val subscriptionStatusFlow: StateFlow<SubscriptionStatus>
     get() = callbacks.subscriptionStatusFlow
 
   /**
-   * Sets the process-wide Java-friendly callback for future confirmed subscription status changes.
+   * The push subscription status as a callback: receives the current status when set and then every
+   * distinct confirmed backend-state change - including the ones the SDK makes in the background,
+   * such as registering the device after [subscribe], after [switchProject] or after notification
+   * permission is granted back. The callback is invoked on the main thread.
    *
-   * The callback may be set before [initialize] and survives [switchProject]. Use
-   * [getSubscriptionStatus] to obtain the current status. The SDK invokes the callback on the main
-   * thread. Pass `null` to remove the callback.
+   * Changes of the notification settings made outside the app are picked up when an activity of the
+   * app is resumed. Before [initialize] the SDK does not know the status yet, so a callback set
+   * earlier receives [SubscriptionStatus.Unsubscribed] and then the actual status once the SDK is
+   * initialized. The callback is process-wide and keeps working across [switchProject]. Pass
+   * `null` to remove it.
    */
   @JvmStatic
   fun setSubscriptionStatusCallback(callback: SubscriptionStatusCallback?) {
@@ -331,6 +337,7 @@ object PushNotifications {
    * or resumed from the background.
    */
   @JvmStatic
+  @JvmOverloads
   fun handleBackgroundNotificationClick(
     intent: Intent?,
     overrideFlags: Int = Intent.FLAG_ACTIVITY_NEW_TASK,
@@ -342,23 +349,18 @@ object PushNotifications {
   fun areNotificationsEnabled(): Boolean = requireRuntime().areNotificationsEnabled()
 
   /**
-   * Sends a beacon created with [BeaconBuilder].
+   * Sends a beacon created with [BeaconBuilder] to the subscriber of the current project.
+   *
+   * Call it once the device is subscribed: when [subscriptionStatusFlow] (Java:
+   * [setSubscriptionStatusCallback]) reports [SubscriptionStatus.Subscribed], or when [isSubscribed]
+   * returns `true`. A beacon sent before that is discarded.
+   *
+   * The beacon is sent in the background, in order, and retried while offline.
    */
   @JvmStatic
-  @JvmSynthetic
-  suspend fun sendBeacon(beacon: Beacon) {
+  fun sendBeacon(beacon: Beacon) {
     requireRuntime().sendBeacon(beacon)
   }
-
-  /**
-   * Sends a beacon asynchronously.
-   */
-  @JvmStatic
-  fun sendBeaconAsync(beacon: Beacon): CompletableFuture<Void?> =
-    asyncScope.future {
-      sendBeacon(beacon)
-      null
-    }
 
   @JvmStatic
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = requireRuntime().getPushSubscriptionProvider()

@@ -7,12 +7,10 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.pushpushgo.sdk.push.Beacon
 import com.pushpushgo.sdk.push.BeaconBuilder
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.sample.push.hms.R
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -112,8 +110,8 @@ class BeaconActivity : AppCompatActivity(R.layout.activity_beacon) {
   }
 
   private fun sendBeacon(beacon: Beacon) {
-    lifecycleScope.launch {
-      PushNotifications.sendBeacon(beacon)
-    }
+    if (!PushNotifications.isSubscribed()) return Timber.w("Subscribe to notifications before sending beacons")
+
+    PushNotifications.sendBeacon(beacon)
   }
 }

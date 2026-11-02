@@ -22,6 +22,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import retrofit2.Response
+import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 @org.robolectric.annotation.Config(sdk = [33])
@@ -40,6 +41,7 @@ class UploadWorkerTest {
 
   @After
   fun tearDown() {
+    SharedPreferencesHelper(getApplicationContext()).clearProjectData()
     unmockkObject(ApiService.Companion)
   }
 
@@ -104,4 +106,60 @@ class UploadWorkerTest {
       assertTrue(result is ListenableWorker.Result.Success)
       coVerify(exactly = 0) { apiService.updateSubscriberToken(any(), any(), any(), any()) }
     }
+
+  @Test
+  fun `beacon is discarded when its subscriber is no longer active`() =
+    runBlocking {
+      setActiveSubscriber("new-subscriber")
+
+      val result = beaconWorker(subscriberId = "S").doWork()
+
+      assertTrue(result is ListenableWorker.Result.Success)
+      coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
+    }
+
+  @Test
+  fun `beacon is discarded when the subscription is no longer requested`() =
+    runBlocking {
+      setActiveSubscriber("S")
+      SharedPreferencesHelper(getApplicationContext()).subscriptionRequested = false
+
+      val result = beaconWorker(subscriberId = "S").doWork()
+
+      assertTrue(result is ListenableWorker.Result.Success)
+      coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
+    }
+
+  @Test
+  fun `beacon is retried after a network error`() =
+    runBlocking {
+      setActiveSubscriber("S")
+      coEvery { apiService.sendBeacon(any(), any(), any(), any()) } throws IOException("offline")
+
+      val result = beaconWorker(subscriberId = "S").doWork()
+
+      assertTrue(result is ListenableWorker.Result.Retry)
+    }
+
+  private fun setActiveSubscriber(subscriberId: String) {
+    SharedPreferencesHelper(getApplicationContext()).apply {
+      projectOwner = config
+      this.subscriberId = subscriberId
+      subscriptionRequested = true
+    }
+  }
+
+  private fun beaconWorker(subscriberId: String): UploadWorker =
+    TestListenableWorkerBuilder<UploadWorker>(
+      context = getApplicationContext(),
+      inputData =
+        workDataOf(
+          UploadWorker.TYPE to UploadWorker.BEACON,
+          UploadWorker.WORK_PROJECT_ID to config.projectId,
+          UploadWorker.WORK_API_KEY to config.apiKey,
+          UploadWorker.WORK_API_URL to config.apiUrl,
+          UploadWorker.BEACON_SUBSCRIBER_ID to subscriberId,
+          UploadWorker.BEACON_PAYLOAD to "{}",
+        ),
+    ).build()
 }

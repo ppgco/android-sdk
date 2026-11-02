@@ -61,6 +61,7 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final fun getSubscriberId ()Ljava/lang/String;
 	public static final fun getSubscriptionStatus ()Lcom/pushpushgo/sdk/push/SubscriptionStatus;
 	public final synthetic fun getSubscriptionStatusFlow ()Lkotlinx/coroutines/flow/StateFlow;
+	public static final fun handleBackgroundNotificationClick (Landroid/content/Intent;)V
 	public static final fun handleBackgroundNotificationClick (Landroid/content/Intent;I)V
 	public static synthetic fun handleBackgroundNotificationClick$default (Landroid/content/Intent;IILjava/lang/Object;)V
 	public static final fun initialize (Landroid/app/Application;)Lcom/pushpushgo/sdk/push/PushNotifications;
@@ -70,8 +71,7 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final fun isPushPushGoNotification (Ljava/util/Map;)Z
 	public static final fun isSubscribed ()Z
 	public static final fun isSubscriptionRequested ()Z
-	public static final synthetic fun sendBeacon (Lcom/pushpushgo/sdk/push/Beacon;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun sendBeaconAsync (Lcom/pushpushgo/sdk/push/Beacon;)Ljava/util/concurrent/CompletableFuture;
+	public static final fun sendBeacon (Lcom/pushpushgo/sdk/push/Beacon;)V
 	public static final fun setCustomClickIntentFlags (I)V
 	public static final fun setErrorCallback (Lcom/pushpushgo/sdk/push/PushNotificationsErrorCallback;)V
 	public static final fun setInvalidProjectIdHandler (Lcom/pushpushgo/sdk/push/InvalidProjectIdHandler;)V

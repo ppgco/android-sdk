@@ -40,8 +40,8 @@
   unsubscribe choice.
 - Added `subscriptionStatusFlow` (Kotlin `StateFlow`), which emits the current
   status and every distinct confirmed-state change, including subscriber ID changes.
-- Added `setSubscriptionStatusCallback(...)` for Java callers to observe future confirmed-state
-  changes. Use `getSubscriptionStatus()` to obtain the current status.
+- Added `setSubscriptionStatusCallback(...)` (Java callback), which receives the current
+  status and every distinct confirmed-state change, including subscriber ID changes.
 - `isSubscribed()` now reports only confirmed backend state. It remains `true` while
   a failed or in-progress removal retains the subscriber ID.
 - As in 3.x, when notifications are disabled, the SDK unsubscribes the device but keeps
@@ -57,8 +57,8 @@
 
 #### Async API changes
 - **Removed Guava `ListenableFuture` from the public API**.
-- The remaining async operations (`switchProject`, `sendBeacon`
-  and the Live Activity subscription) use:
+- The remaining async operations (`switchProject` and the Live Activity
+  subscription) use:
   - `suspend` functions for Kotlin consumers
   - `CompletableFuture` (`*Async` methods) for Java consumers
 
@@ -87,8 +87,13 @@
 - Introduced `BeaconTagStrategy` enum (`APPEND`, `REWRITE`); string-based strategies are no longer supported.
 - Removed `setCustomId(Int?)` method; custom IDs must now be provided using `setCustomId(String?)`.
 - Replace `PushPushGo.getInstance().createBeacon()...send()` with
-  `BeaconBuilder()...build()` followed by `PushNotifications.sendBeacon(...)` or
-  `PushNotifications.sendBeaconAsync(...)`.
+  `BeaconBuilder()...build()` followed by `PushNotifications.sendBeacon(...)`.
+- The SDK sends beacons in the background to the current subscriber, in order, and
+  retries them while offline.
+- Send beacons once the device is subscribed (on `SubscriptionStatus.Subscribed` or
+  when `isSubscribed()` is `true`).
+- Beacons sent after `unsubscribe()` are discarded, and `unsubscribe()` or a project switch
+  drops beacons that are still queued.
 
 #### Project migration API
 - Removed `migrateToNewProject(...)`.
@@ -125,8 +130,6 @@
 #### Core dependency
 - The SDK now depends on a shared internal **core** module.
 - The SDK provides an implementation of the core module’s `PushSubscriptionProvider` interface, which can be reused by other PushPushGo SDKs to interact with push functionality.
-- `PushSubscriptionProvider.subscribe()` / `unsubscribe()` are synchronous, like
-  their `PushNotifications` counterparts.
 
 ---
 

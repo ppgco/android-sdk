@@ -116,16 +116,6 @@ class ApiRepositoryTest {
     }
 
   @Test
-  fun `sendBeacon throws when unsubscribed`() =
-    runBlocking {
-      val failure = runCatching { repository.sendBeacon("{}") }.exceptionOrNull()
-
-      assertEquals(IllegalStateException::class.java, failure?.javaClass)
-      assertEquals("Cannot send beacon - subscription not requested", failure?.message)
-      coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
-    }
-
-  @Test
   fun `subscribeToLiveActivity sends the platform push token without a push registration`() =
     runBlocking {
       mockkStatic(PUSH_TOKEN_UTILS)

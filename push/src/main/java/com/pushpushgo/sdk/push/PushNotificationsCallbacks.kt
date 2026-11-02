@@ -36,7 +36,7 @@ fun interface PushNotificationsErrorCallback {
   fun onError(throwable: Throwable)
 }
 
-/** Receives confirmed backend subscription status changes on the main thread. */
+/** Receives the current subscription status and its changes on the main thread. */
 fun interface SubscriptionStatusCallback {
   fun onSubscriptionStatusChanged(status: SubscriptionStatus)
 }
@@ -84,12 +84,19 @@ internal class PushNotificationsCallbacks {
   @Volatile
   var errorCallback: PushNotificationsErrorCallback? = null
 
-  @Volatile
-  var subscriptionStatusCallback: SubscriptionStatusCallback? = null
-
   private val subscriptionStatus = MutableStateFlow<SubscriptionStatus>(SubscriptionStatus.Unsubscribed)
 
   val subscriptionStatusFlow: StateFlow<SubscriptionStatus> = subscriptionStatus.asStateFlow()
+
+  @Volatile
+  var subscriptionStatusCallback: SubscriptionStatusCallback? = null
+    set(callback) {
+      field = callback
+      callback ?: return
+      dispatchToMain("Subscription status callback") {
+        callback.onSubscriptionStatusChanged(subscriptionStatus.value)
+      }
+    }
 
   fun notifyNotificationClick(
     context: Context,

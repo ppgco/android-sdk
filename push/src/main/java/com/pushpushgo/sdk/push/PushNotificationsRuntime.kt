@@ -202,11 +202,17 @@ internal class PushNotificationsRuntime(
     }
   }
 
-  suspend fun sendBeacon(beacon: Beacon) {
-    operationMutex.withLock {
-      assertActive()
-      apiRepository.sendBeacon(beacon.payload)
+  fun sendBeacon(beacon: Beacon) {
+    assertActive()
+
+    if (!sharedPreferencesHelper.subscriptionRequested) {
+      return logWarning("Beacon discarded - the device is not subscribed")
     }
+
+    val subscriberId =
+      getSubscriberId() ?: return logWarning("Beacon discarded - the device is not subscribed")
+
+    uploadManager.enqueueBeacon(subscriberId, beacon.payload)
   }
 
   private suspend fun registerLocked() {
@@ -225,6 +231,7 @@ internal class PushNotificationsRuntime(
   private suspend fun unregisterLocked() {
     apiRepository.unregisterSubscriber()
     uploadManager.cancelAllJobs()
+    uploadManager.cancelBeacons(config.projectId)
   }
 
   /**
@@ -271,6 +278,7 @@ internal class PushNotificationsRuntime(
     }
 
     uploadManager.cancelAllJobs()
+    uploadManager.cancelBeacons(owner.projectId)
     discardPersistedLiveActivities()
 
     sharedPreferencesHelper.clearProjectData()
