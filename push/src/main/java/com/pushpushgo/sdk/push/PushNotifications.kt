@@ -418,6 +418,10 @@ object PushNotifications {
   @JvmStatic
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = requireRuntime().getPushSubscriptionProvider()
 
+  internal suspend fun reconcileSubscription() {
+    runtime?.reconcile()
+  }
+
   private fun requireRuntime(): PushNotificationsRuntime = checkNotNull(runtime) { "PushNotifications SDK is not initialized" }
 
   private inline fun <T> withLifecycleLock(block: () -> T): T {

@@ -16,6 +16,7 @@ import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.work.UploadManager
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -339,6 +340,55 @@ class PushNotificationsLifecycleTest {
       coVerify(exactly = 1) { apiService.registerSubscriber(otherConfig.apiKey, otherConfig.projectId, any()) }
       assertEquals("new-sub", PushNotifications.getSubscriberId())
       assertEquals(1, cleanupWork().size)
+    }
+
+  @Test
+  fun `unsubscribe followed by switchProject while offline removes the previous subscriber later`() =
+    runBlocking {
+      setSubscribed()
+      givenNotificationsEnabled()
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
+
+      PushNotifications.unsubscribe()
+      PushNotifications.switchProject(otherConfig)
+
+      assertEquals(otherConfig.projectId, PushNotifications.getProjectId())
+      assertFalse(PushNotifications.isSubscribed())
+      assertFalse(preferences.subscriptionRequested)
+
+      clearMocks(apiService, answers = false, recordedCalls = true, childMocks = false, exclusionRules = false)
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
+      runCleanupWork()
+
+      coVerify(timeout = 5_000) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "sub-123") }
+      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `subscribe followed by switchProject leaves the device registered only in the new project`() =
+    runBlocking {
+      givenNotificationsEnabled()
+      val registeredProjects = CopyOnWriteArrayList<String>()
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
+        val projectId = secondArg<String>()
+        registeredProjects += projectId
+        TokenResponse(id = if (projectId == config.projectId) "old-sub" else "new-sub")
+      }
+
+      PushNotifications.subscribe()
+      PushNotifications.switchProject(otherConfig)
+
+      awaitTrue("Device should register in the new project") {
+        PushNotifications.subscriptionStatusFlow.value == SubscriptionStatus.Subscribed("new-sub", otherConfig.projectId)
+      }
+      assertEquals(1, registeredProjects.count { it == otherConfig.projectId })
+      // The previous project registers only when its reconciliation took the lock before the switch
+      if (config.projectId in registeredProjects) {
+        runCleanupWork()
+        coVerify(timeout = 5_000) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "old-sub") }
+      } else {
+        assertTrue(cleanupWork().isEmpty())
+      }
     }
 
   @Test

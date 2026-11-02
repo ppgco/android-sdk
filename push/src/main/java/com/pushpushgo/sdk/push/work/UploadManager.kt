@@ -39,6 +39,7 @@ internal class UploadManager(
     internal const val SYNC_TOKEN_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token"
     internal const val PERIODIC_TOKEN_SYNC_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token-periodic"
     internal const val PROJECT_CLEANUP_TAG = "com.pushpushgo.sdk.push.work:project-cleanup"
+    internal const val SUBSCRIPTION_RECONCILE_WORK_NAME = "com.pushpushgo.sdk.push.work:reconcile-subscription"
   }
 
   private val workManager = WorkManager.getInstance(context)
@@ -188,6 +189,23 @@ internal class UploadManager(
     projectId: String,
     subscriberId: String?,
   ) = "$PROJECT_CLEANUP_TAG:$projectId:${subscriberId.orEmpty()}"
+
+  /**
+   * Enqueues a [SubscriptionReconcileWorker] that runs once the network is available. [cancelAllJobs]
+   * leaves it alone.
+   */
+  fun scheduleSubscriptionReconcile() {
+    logDebug("Subscription reconciliation enqueued")
+
+    workManager.enqueueUniqueWork(
+      SUBSCRIPTION_RECONCILE_WORK_NAME,
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<SubscriptionReconcileWorker>()
+        .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
 
   fun cancelAllJobs() {
     workManager.cancelUniqueWork(SYNC_TOKEN_WORK_NAME)

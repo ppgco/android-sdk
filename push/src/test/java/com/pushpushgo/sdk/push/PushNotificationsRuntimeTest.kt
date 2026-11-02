@@ -13,6 +13,7 @@ import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
+import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.work.UploadManager
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -22,18 +23,17 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -63,7 +63,10 @@ class PushNotificationsRuntimeTest {
     apiService = mockk(relaxed = true)
     mockkObject(ApiService.Companion)
     every { ApiService.fromConfig(any()) } returns apiService
+    coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "sub-123")
     coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
+    mockkStatic(PUSH_TOKEN_UTILS, LOG_UTILS)
+    coEvery { getPlatformPushToken(any()) } returns "push-token"
 
     callbacks = PushNotificationsCallbacks()
     runtime = PushNotificationsRuntime(application, config, callbacks)
@@ -77,14 +80,101 @@ class PushNotificationsRuntimeTest {
 
     WorkManagerTestInitHelper.closeWorkDatabase()
     unmockkObject(ApiService.Companion)
+    unmockkStatic(PUSH_TOKEN_UTILS, LOG_UTILS)
   }
 
   @Test
-  fun `losing notification permission unregisters the device but keeps the subscription request`() =
+  fun `subscribe throws when notifications are disabled without changing the request`() {
+    shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+
+    val failure = assertThrows(IllegalStateException::class.java) { runtime.subscribe() }
+
+    assertEquals("Cannot subscribe because notifications are disabled", failure.message)
+    assertFalse(preferences.subscriptionRequested)
+    coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+  }
+
+  @Test
+  fun `subscribe stores the request and registers the device in the background`() {
+    grantNotifications()
+
+    runtime.subscribe()
+
+    assertTrue(preferences.subscriptionRequested)
+    awaitTrue("Registration should be published") {
+      callbacks.subscriptionStatusFlow.value == SubscriptionStatus.Subscribed("sub-123", config.projectId)
+    }
+    coVerify(exactly = 1) { apiService.registerSubscriber(config.apiKey, config.projectId, any()) }
+    assertTrue(uniqueWork(UploadManager.PERIODIC_TOKEN_SYNC_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
+  }
+
+  @Test
+  fun `subscribe again after a failed removal keeps the retained subscriber`() =
+    runBlocking {
+      grantNotifications()
+      preferences.subscriberId = "sub-123"
+      preferences.subscriptionRequested = false
+      runtime.uploadManager.schedulePeriodicTokenSync("sub-123")
+
+      runtime.subscribe()
+      runtime.reconcile()
+
+      assertTrue(preferences.subscriptionRequested)
+      assertEquals("sub-123", preferences.subscriberId)
+      assertTrue(uniqueWork(UploadManager.PERIODIC_TOKEN_SYNC_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
+      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `unsubscribe stores the choice and removes the subscriber in the background`() {
+    grantNotifications()
+    setSubscribed()
+
+    runtime.unsubscribe()
+
+    assertFalse(preferences.subscriptionRequested)
+    coVerify(timeout = 5_000) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "sub-123") }
+    awaitTrue("Subscriber should be removed") { preferences.subscriberId == null }
+  }
+
+  @Test
+  fun `reconcile registers a requested subscription`() =
+    runBlocking {
+      grantNotifications()
+      preferences.subscriptionRequested = true
+
+      runtime.reconcile()
+
+      coVerify(exactly = 1) { apiService.registerSubscriber(config.apiKey, config.projectId, any()) }
+      assertEquals("sub-123", preferences.subscriberId)
+      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), callbacks.subscriptionStatusFlow.value)
+      assertTrue(uniqueWork(UploadManager.PERIODIC_TOKEN_SYNC_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
+    }
+
+  @Test
+  fun `reconcile removes a subscriber that is no longer requested`() =
+    runBlocking {
+      grantNotifications()
+      preferences.subscriberId = "sub-123"
+      preferences.subscriptionRequested = false
+      runtime.uploadManager.schedulePeriodicTokenSync("sub-123")
+
+      runtime.reconcile()
+
+      coVerify(exactly = 1) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "sub-123") }
+      assertNull(preferences.subscriberId)
+      assertFalse(preferences.subscriptionRequested)
+      assertTrue(uniqueWork(UploadManager.PERIODIC_TOKEN_SYNC_WORK_NAME).all { it.state == WorkInfo.State.CANCELLED })
+    }
+
+  @Test
+  fun `reconcile removes the subscriber but keeps the request when notifications are disabled`() =
     runBlocking {
       setSubscribed()
+      shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-      runtime.unregisterKeepingRequest()
+      runtime.reconcile()
 
       coVerify(exactly = 1) { apiService.unregisterSubscriber(any(), config.projectId, "sub-123") }
       assertNull(preferences.subscriberId)
@@ -93,9 +183,29 @@ class PushNotificationsRuntimeTest {
     }
 
   @Test
-  fun `permission removal keeps confirmed state until backend confirmation`() =
+  fun `reconcile does nothing while the registration matches the request and permission`() =
+    runBlocking {
+      grantNotifications()
+      setSubscribed()
+      runtime.reconcile()
+
+      preferences.subscriberId = null
+      preferences.subscriptionRequested = false
+      runtime.reconcile()
+
+      shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+      preferences.subscriptionRequested = true
+      runtime.reconcile()
+
+      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `removal keeps the subscriber until the backend confirms it`() =
     runBlocking {
       setSubscribed()
+      preferences.subscriptionRequested = false
       val removalStarted = CompletableDeferred<Unit>()
       val finishRemoval = CompletableDeferred<Unit>()
       coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
@@ -104,97 +214,162 @@ class PushNotificationsRuntimeTest {
         Response.success(null)
       }
 
-      val removal = launch(start = CoroutineStart.UNDISPATCHED) { runtime.unregisterKeepingRequest() }
+      val removal = launch(start = CoroutineStart.UNDISPATCHED) { runtime.reconcile() }
       removalStarted.await()
 
-      assertTrue(preferences.subscriptionRequested)
       assertEquals("sub-123", preferences.subscriberId)
       assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
 
       finishRemoval.complete(Unit)
       removal.join()
 
-      assertTrue(preferences.subscriptionRequested)
       assertNull(preferences.subscriberId)
       assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
     }
 
   @Test
-  fun `failed permission removal retains intent and confirmed subscriber for retry`() =
-    runBlocking {
-      setSubscribed()
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
-
-      val failure = runCatching { runtime.unregisterKeepingRequest() }.exceptionOrNull()
-
-      assertTrue(failure is IOException)
-      assertTrue(preferences.subscriptionRequested)
-      assertEquals("sub-123", preferences.subscriberId)
-      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
-    }
-
-  @Test
-  fun `unsubscribe cancels the subscription request`() =
-    runBlocking {
-      setSubscribed()
-
-      runtime.unsubscribe()
-
-      coVerify(exactly = 1) { apiService.unregisterSubscriber(any(), config.projectId, "sub-123") }
-      assertNull(preferences.subscriberId)
-      assertFalse(preferences.subscriptionRequested)
-      assertFalse(runtime.isSubscribed())
-    }
-
-  @Test
-  fun `subscribe does not store the request when notification permission is disabled`() =
-    runBlocking {
-      shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
-
-      val failure = runCatching { runtime.subscribe() }.exceptionOrNull()
-
-      assertEquals(IllegalStateException::class.java, failure?.javaClass)
-      assertFalse(preferences.subscriptionRequested)
-      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
-    }
-
-  @Test
-  fun `subscribe stores the request before registration failure`() =
-    runBlocking {
-      grantNotifications()
-      val expected = IOException("offline")
-      mockkStatic(PUSH_TOKEN_UTILS)
-      coEvery { getPlatformPushToken(any()) } returns "push-token"
-      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
-        assertTrue(preferences.subscriptionRequested)
-        throw expected
-      }
-
-      try {
-        val actual = runCatching { runtime.subscribe() }.exceptionOrNull()
-
-        assertSame(expected, actual)
-        assertTrue(preferences.subscriptionRequested)
-        assertNull(preferences.subscriberId)
-      } finally {
-        unmockkStatic(PUSH_TOKEN_UTILS)
-      }
-    }
-
-  @Test
-  fun `subscribe is idempotent when a subscriber already exists`() =
+  fun `failed removal keeps the subscriber, its status and token sync`() =
     runBlocking {
       grantNotifications()
       preferences.subscriberId = "sub-123"
       preferences.subscriptionRequested = false
+      runtime.uploadManager.schedulePeriodicTokenSync("sub-123")
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
 
-      runtime.subscribe()
-      runtime.subscribe()
+      val failure = runCatching { runtime.reconcile() }.exceptionOrNull()
 
-      assertTrue(preferences.subscriptionRequested)
+      assertTrue("Expected IOException, got: $failure", failure is IOException)
       assertEquals("sub-123", preferences.subscriberId)
-      assertTrue(cleanupWork().none { it.state == WorkInfo.State.ENQUEUED })
-      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), callbacks.subscriptionStatusFlow.value)
+      assertTrue(uniqueWork(UploadManager.PERIODIC_TOKEN_SYNC_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
+    }
+
+  @Test
+  fun `transient failure is reported and retried by the reconcile work`() {
+    grantNotifications()
+    preferences.subscriptionRequested = true
+    val error = IOException("offline")
+    coEvery { apiService.registerSubscriber(any(), any(), any()) } throws error
+
+    runtime.requestReconcile()
+
+    awaitTrue("Reconcile work should be enqueued") {
+      reconcileWork().any { it.state == WorkInfo.State.ENQUEUED }
+    }
+    verify(exactly = 1) { logError("Subscription reconciliation failed", error) }
+    assertNull(preferences.subscriberId)
+  }
+
+  @Test
+  fun `rejected request is only reported`() {
+    grantNotifications()
+    preferences.subscriptionRequested = true
+    val error = PushPushException("Bad request", 400)
+    coEvery { apiService.registerSubscriber(any(), any(), any()) } throws error
+
+    runtime.requestReconcile()
+
+    verify(timeout = 5_000) { logError("Subscription reconciliation failed", error) }
+    assertTrue("Retrying a rejected request does not help", reconcileWork().isEmpty())
+  }
+
+  @Test
+  fun `unsubscribe offline keeps the subscriber and retries the removal with the reconcile work`() {
+    grantNotifications()
+    setSubscribed()
+    coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
+
+    runtime.unsubscribe()
+
+    assertFalse(preferences.subscriptionRequested)
+    awaitTrue("Reconcile work should be enqueued") {
+      reconcileWork().any { it.state == WorkInfo.State.ENQUEUED }
+    }
+    assertEquals("sub-123", preferences.subscriberId)
+    assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), callbacks.subscriptionStatusFlow.value)
+    assertTrue(cleanupWork().isEmpty())
+  }
+
+  @Test
+  fun `concurrent reconciles register the device once`() =
+    runBlocking {
+      grantNotifications()
+      preferences.subscriptionRequested = true
+      val finishRegistration = CompletableDeferred<Unit>()
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
+        finishRegistration.await()
+        TokenResponse(id = "sub-123")
+      }
+
+      val first = launch(start = CoroutineStart.UNDISPATCHED) { runtime.reconcile() }
+      val second = launch(start = CoroutineStart.UNDISPATCHED) { runtime.reconcile() }
+      finishRegistration.complete(Unit)
+      joinAll(first, second)
+
+      coVerify(exactly = 1) { apiService.registerSubscriber(any(), any(), any()) }
+      assertTrue(runtime.isSubscribed())
+    }
+
+  @Test
+  fun `unsubscribe before the registration finishes ends without a subscriber`() =
+    runBlocking {
+      grantNotifications()
+      val registrationStarted = CompletableDeferred<Unit>()
+      val finishRegistration = CompletableDeferred<Unit>()
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
+        registrationStarted.complete(Unit)
+        finishRegistration.await()
+        TokenResponse(id = "sub-123")
+      }
+
+      runtime.subscribe()
+      registrationStarted.await()
+      runtime.unsubscribe()
+      finishRegistration.complete(Unit)
+
+      coVerify(timeout = 5_000) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "sub-123") }
+      awaitTrue("Unsubscribed status should be published") {
+        callbacks.subscriptionStatusFlow.value == SubscriptionStatus.Unsubscribed && preferences.subscriberId == null
+      }
+      assertFalse(preferences.subscriptionRequested)
+      coVerify(exactly = 1) { apiService.registerSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `reconcile on a released runtime does nothing`() =
+    runBlocking {
+      grantNotifications()
+      preferences.subscriberId = "sub-123"
+      preferences.subscriptionRequested = false
+      runtime.release()
+
+      runtime.reconcile()
+
+      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
+      assertEquals("sub-123", preferences.subscriberId)
+      assertEquals(SubscriptionStatus.Unsubscribed, callbacks.subscriptionStatusFlow.value)
+    }
+
+  @Test
+  fun `runtime restart retries a failed requested subscription`() =
+    runBlocking {
+      grantNotifications()
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } throws IOException("offline")
+
+      runtime.subscribe()
+      coVerify(timeout = 5_000) { apiService.registerSubscriber(any(), config.projectId, any()) }
+      runtime.release()
+      assertTrue(preferences.subscriptionRequested)
+      assertNull(preferences.subscriberId)
+
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "sub-after-restart")
+      runtime = PushNotificationsRuntime(application, config, callbacks)
+      runtime.start()
+
+      awaitTrue("Restarted runtime should register the device") { preferences.subscriberId != null }
+      assertTrue(preferences.subscriptionRequested)
+      assertEquals("sub-after-restart", preferences.subscriberId)
+      coVerify(exactly = 2) { apiService.registerSubscriber(any(), config.projectId, any()) }
     }
 
   @Test
@@ -208,7 +383,7 @@ class PushNotificationsRuntimeTest {
     assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
     assertFalse(runtime.isSubscribed())
 
-    // Revoked while still registered - before the checker unregisters the device, e.g. offline
+    // Revoked while still registered - before the removal is confirmed, e.g. offline
     preferences.subscriberId = "sub-123"
     shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
     assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
@@ -259,114 +434,6 @@ class PushNotificationsRuntimeTest {
   }
 
   @Test
-  fun `unsubscribe without network retains the subscriber and schedules background removal`() =
-    runBlocking {
-      grantNotifications()
-      setSubscribed()
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
-        assertFalse(preferences.subscriptionRequested)
-        throw IOException("offline")
-      }
-
-      runtime.unsubscribe()
-
-      assertFalse(preferences.subscriptionRequested)
-      assertEquals("sub-123", preferences.subscriberId)
-      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), callbacks.subscriptionStatusFlow.value)
-      val cleanup = cleanupWork().single()
-      assertEquals(WorkInfo.State.ENQUEUED, cleanup.state)
-    }
-
-  @Test
-  fun `unsubscribe online removes the subscriber right away`() =
-    runBlocking {
-      setSubscribed()
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
-        assertFalse(preferences.subscriptionRequested)
-        Response.success(null)
-      }
-
-      runtime.unsubscribe()
-
-      coVerify(exactly = 1) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "sub-123") }
-      assertNull(preferences.subscriberId)
-      assertTrue(cleanupWork().isEmpty())
-    }
-
-  @Test
-  fun `unsubscribe rejected by the API still stores the choice`() =
-    runBlocking {
-      setSubscribed()
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws PushPushException("Unauthorized", 401)
-
-      runtime.unsubscribe()
-
-      assertFalse(preferences.subscriptionRequested)
-      assertEquals("sub-123", preferences.subscriberId)
-      assertTrue("Retrying a rejected request does not help", cleanupWork().isEmpty())
-    }
-
-  @Test
-  fun `unsubscribe while not registered cancels the request without calling the API`() =
-    runBlocking {
-      // e.g. the permission is revoked and the device was already unregistered
-      preferences.subscriptionRequested = true
-
-      runtime.unsubscribe()
-
-      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
-      assertFalse(preferences.subscriptionRequested)
-      assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
-    }
-
-  @Test
-  fun `subscribing again restores intent without registering the retained subscriber again`() =
-    runBlocking {
-      grantNotifications()
-      setSubscribed()
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
-      runtime.unsubscribe()
-
-      runtime.subscribe()
-
-      assertTrue(preferences.subscriptionRequested)
-      assertEquals("sub-123", preferences.subscriberId)
-      assertTrue(uniqueWork(UploadManager.SYNC_TOKEN_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
-      assertTrue(uniqueWork(UploadManager.PERIODIC_TOKEN_SYNC_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
-      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
-    }
-
-  @Test
-  fun `runtime restart retries a failed requested subscription`() =
-    runBlocking {
-      grantNotifications()
-      mockkStatic(PUSH_TOKEN_UTILS)
-      coEvery { getPlatformPushToken(any()) } returns "push-token"
-      coEvery { apiService.registerSubscriber(any(), any(), any()) } throws IOException("offline")
-
-      try {
-        runCatching { runtime.subscribe() }
-        assertTrue(preferences.subscriptionRequested)
-        assertNull(preferences.subscriberId)
-
-        runtime.release()
-        coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "sub-after-restart")
-        runtime = PushNotificationsRuntime(application, config, callbacks)
-        runtime.start()
-
-        withTimeout(5_000) {
-          while (preferences.subscriberId == null) delay(10)
-        }
-
-        assertTrue(preferences.subscriptionRequested)
-        assertEquals("sub-after-restart", preferences.subscriberId)
-        coVerify(exactly = 2) { apiService.registerSubscriber(any(), config.projectId, any()) }
-      } finally {
-        unmockkStatic(PUSH_TOKEN_UTILS)
-      }
-    }
-
-  @Test
   fun `deinitialize after losing notification permission does not call the API`() =
     runBlocking {
       preferences.subscriberId = null
@@ -378,38 +445,25 @@ class PushNotificationsRuntimeTest {
       assertFalse(preferences.subscriptionRequested)
     }
 
-  @Test
-  fun `concurrent registration attempts register the device once`() =
-    runBlocking {
-      preferences.subscriptionRequested = true
-      shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
-      mockkStatic(PUSH_TOKEN_UTILS)
-      coEvery { getPlatformPushToken(any()) } returns "push-token"
-      val finishRegistration = CompletableDeferred<Unit>()
-      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
-        finishRegistration.await()
-        TokenResponse(id = "sub-123")
-      }
-
-      try {
-        val first = launch(start = CoroutineStart.UNDISPATCHED) { runtime.subscribe() }
-        val second = launch(start = CoroutineStart.UNDISPATCHED) { runtime.subscribe() }
-        finishRegistration.complete(Unit)
-        joinAll(first, second)
-      } finally {
-        unmockkStatic(PUSH_TOKEN_UTILS)
-      }
-
-      coVerify(exactly = 1) { apiService.registerSubscriber(any(), any(), any()) }
-      assertTrue(runtime.isSubscribed())
-    }
-
   private fun grantNotifications() {
     shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
   }
 
+  private fun awaitTrue(
+    message: String,
+    condition: () -> Boolean,
+  ) {
+    val deadline = System.currentTimeMillis() + 5_000
+    while (!condition() && System.currentTimeMillis() < deadline) {
+      Thread.sleep(10)
+    }
+    assertTrue(message, condition())
+  }
+
   private fun cleanupWork(): List<WorkInfo> =
     WorkManager.getInstance(application).getWorkInfosByTag(UploadManager.PROJECT_CLEANUP_TAG).get()
+
+  private fun reconcileWork(): List<WorkInfo> = uniqueWork(UploadManager.SUBSCRIPTION_RECONCILE_WORK_NAME)
 
   private fun uniqueWork(name: String): List<WorkInfo> = WorkManager.getInstance(application).getWorkInfosForUniqueWork(name).get()
 
@@ -420,5 +474,6 @@ class PushNotificationsRuntimeTest {
 
   private companion object {
     const val PUSH_TOKEN_UTILS = "com.pushpushgo.sdk.push.utils.PushTokenUtilsKt"
+    const val LOG_UTILS = "com.pushpushgo.sdk.push.utils.LogUtilsKt"
   }
 }
