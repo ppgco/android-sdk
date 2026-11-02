@@ -69,7 +69,7 @@ class ProjectStateReconciliationTest {
 
   @After
   fun tearDown() {
-    runBlocking { runCatching { runtime?.deinitialize() } }
+    runBlocking { runCatching { runtime?.release() } }
     preferences.clearProjectData()
 
     WorkManagerTestInitHelper.closeWorkDatabase()

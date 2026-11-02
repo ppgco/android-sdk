@@ -64,7 +64,7 @@ class PushNotificationDelegateTest {
 
   @After
   fun tearDown() {
-    runBlocking { PushNotifications.deinitialize() }
+    runBlocking { PushNotifications.reset() }
     WorkManagerTestInitHelper.closeWorkDatabase()
   }
 

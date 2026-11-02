@@ -106,7 +106,7 @@ class SharedPreferencesHelperTest {
   }
 
   @Test
-  fun `clear project data removes project state and preserves installation settings`() {
+  fun `clear project data removes project state and preserves the subscription request and installation settings`() {
     prefs.subscriberId = "sub-123"
     prefs.lastToken = "token-abc"
     prefs.subscriptionRequested = true
@@ -120,10 +120,10 @@ class SharedPreferencesHelperTest {
 
     assertNull(prefs.subscriberId)
     assertNull(prefs.lastToken)
-    assertFalse(prefs.subscriptionRequested)
     assertNull(prefs.projectOwner)
     assertEquals("", prefs.getLiveActivitySubscriberId("live-1"))
     assertEquals(-1, prefs.getNotificationId("notification-1"))
+    assertTrue(prefs.subscriptionRequested)
     assertEquals(42, prefs.customIntentFlags)
     assertEquals(installationId, prefs.installationId)
   }

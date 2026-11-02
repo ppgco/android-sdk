@@ -75,8 +75,8 @@ class PushNotificationsRuntimeTest {
   @After
   fun tearDown() {
     preferences.clearProjectData()
-    // Some tests deinitialize the runtime themselves
-    runBlocking { runCatching { runtime.deinitialize() } }
+    // Some tests release the runtime themselves
+    runBlocking { runCatching { runtime.release() } }
 
     WorkManagerTestInitHelper.closeWorkDatabase()
     unmockkObject(ApiService.Companion)
@@ -432,18 +432,6 @@ class PushNotificationsRuntimeTest {
       runBlocking { startedRuntime.release() }
     }
   }
-
-  @Test
-  fun `deinitialize after losing notification permission does not call the API`() =
-    runBlocking {
-      preferences.subscriberId = null
-      preferences.subscriptionRequested = true
-
-      runtime.deinitialize()
-
-      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
-      assertFalse(preferences.subscriptionRequested)
-    }
 
   private fun grantNotifications() {
     shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)

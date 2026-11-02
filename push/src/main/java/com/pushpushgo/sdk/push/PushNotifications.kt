@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.push
 
 import android.app.Application
 import android.content.Intent
+import androidx.annotation.VisibleForTesting
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
 import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
@@ -116,36 +117,6 @@ object PushNotifications {
     }
 
   /**
-   * Unsubscribes the current project, clears its persisted state, and releases the SDK runtime.
-   *
-   * Live Activities are removed first, followed by the current push subscription. If any step
-   * fails, the SDK remains initialized and the error is returned. Live Activities already removed
-   * stay removed.
-   *
-   * After this method completes, [initialize] may be called again. To move the SDK to another
-   * project without turning it off, use [switchProject] - it does not depend on the network.
-   */
-  @JvmSynthetic
-  suspend fun deinitialize() {
-    lifecycleMutex.withLock {
-      val activeRuntime = requireRuntime()
-      activeRuntime.deinitialize()
-      runtime = null
-      callbacks.publishSubscriptionStatus(SubscriptionStatus.Unsubscribed)
-    }
-  }
-
-  /**
-   * Java-friendly wrapper for [deinitialize].
-   */
-  @JvmStatic
-  fun deinitializeAsync(): CompletableFuture<Void?> =
-    asyncScope.future {
-      deinitialize()
-      null
-    }
-
-  /**
    * Moves the SDK to the project described by [config].
    *
    * The switch happens locally right away and does not depend on the network: the subscriber of
@@ -201,7 +172,7 @@ object PushNotifications {
   /**
    * Sets the process-wide notification click handler.
    *
-   * The handler may be configured before [initialize] and survives [deinitialize]. Pass `null` to
+   * The handler may be configured before [initialize] and survives [switchProject]. Pass `null` to
    * restore the default handler. The SDK invokes the handler on the main thread.
    */
   @JvmStatic
@@ -214,7 +185,7 @@ object PushNotifications {
    * currently initialized.
    *
    * The handler is process-wide, may be configured before [initialize], and survives
-   * [deinitialize]. Pass `null` to restore the default handler, which logs the mismatch. The SDK
+   * [switchProject]. Pass `null` to restore the default handler, which logs the mismatch. The SDK
    * invokes the handler on the main thread.
    */
   @JvmStatic
@@ -225,7 +196,7 @@ object PushNotifications {
   /**
    * Sets the process-wide SDK error callback.
    *
-   * The callback may be configured before [initialize], survives [deinitialize], and is invoked on
+   * The callback may be configured before [initialize], survives [switchProject], and is invoked on
    * the main thread. Pass `null` to disable it.
    */
   @JvmStatic
@@ -263,8 +234,8 @@ object PushNotifications {
    * permission is granted back.
    *
    * Changes of the notification settings made outside the app are picked up when an activity of the
-   * app is resumed. The flow is process-wide: it keeps working across [switchProject] and
-   * [deinitialize], and holds [SubscriptionStatus.Unsubscribed] while the SDK is not initialized.
+   * app is resumed. The flow is process-wide: it keeps working across [switchProject] and holds
+   * [SubscriptionStatus.Unsubscribed] while the SDK is not initialized.
    */
   @get:JvmSynthetic
   val subscriptionStatusFlow: StateFlow<SubscriptionStatus>
@@ -394,6 +365,15 @@ object PushNotifications {
 
   internal suspend fun reconcileSubscription() {
     runtime?.reconcile()
+  }
+
+  @VisibleForTesting
+  internal suspend fun reset() {
+    lifecycleMutex.withLock {
+      runtime?.release()
+      runtime = null
+      callbacks.publishSubscriptionStatus(SubscriptionStatus.Unsubscribed)
+    }
   }
 
   private fun requireRuntime(): PushNotificationsRuntime = checkNotNull(runtime) { "PushNotifications SDK is not initialized" }

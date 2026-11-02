@@ -57,7 +57,7 @@
 
 #### Async API changes
 - **Removed Guava `ListenableFuture` from the public API**.
-- The remaining async operations (`switchProject`, `deinitialize`, `sendBeacon`
+- The remaining async operations (`switchProject`, `sendBeacon`
   and the Live Activity subscription) use:
   - `suspend` functions for Kotlin consumers
   - `CompletableFuture` (`*Async` methods) for Java consumers
@@ -75,8 +75,7 @@
   - `InvalidProjectIdHandler`
 - Added `setErrorCallback(PushNotificationsErrorCallback)` to observe errors of the
   work the SDK does in the background.
-- Callbacks can be configured before initialization and survive deinitialization
-  and project switches.
+- Callbacks can be configured before initialization and survive project switches.
 - Passing `null` to a callback setter restores its default behavior.
 
 #### Beacon
@@ -102,11 +101,6 @@
   callback.
 - Initializing an initialized SDK with a different configuration throws
   `IllegalStateException`.
-- `PushNotifications.deinitialize()` turns the SDK off completely. It
-  removes Live Activities first, then unsubscribes the current
-  subscriber and clears its persisted project data. If any step fails, the SDK
-  remains initialized and the operation fails. Live Activities already removed
-  stay removed.
 - The SDK remembers which project its persisted subscription belongs to. When it
   is initialized with a configuration of another project (e.g. after an app
   restart), it no longer adopts the previous project's subscriber: that subscriber

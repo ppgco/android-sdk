@@ -47,7 +47,7 @@ internal class PushNotificationsRuntime(
   private val operationMutex = Mutex()
 
   @Volatile
-  private var isDeinitialized = false
+  private var isReleased = false
 
   val sharedPreferencesHelper = SharedPreferencesHelper(application)
   private val apiService = ApiService.fromConfig(config)
@@ -126,7 +126,7 @@ internal class PushNotificationsRuntime(
   fun isSubscribed(): Boolean = sharedPreferencesHelper.subscriberId != null
 
   private fun publishSubscriptionStatus() {
-    if (!isDeinitialized) callbacks.publishSubscriptionStatus(getSubscriptionStatus())
+    if (!isReleased) callbacks.publishSubscriptionStatus(getSubscriptionStatus())
   }
 
   fun getSubscriberId(): String? = sharedPreferencesHelper.subscriberId
@@ -168,13 +168,12 @@ internal class PushNotificationsRuntime(
   /**
    * Brings the backend registration in line with the user's subscription request and the
    * notification permission. Decides on the state found under the operation lock, so
-   * reconciliations, project switches and deinitialization act one after another. A released
-   * runtime is left alone.
+   * reconciliations and project switches act one after another. A released runtime is left alone.
    */
   suspend fun reconcile() {
     try {
       operationMutex.withLock {
-        if (isDeinitialized) return
+        if (isReleased) return
 
         val shouldBeRegistered = sharedPreferencesHelper.subscriptionRequested && areNotificationsEnabled(application)
         val isRegistered = sharedPreferencesHelper.subscriberId != null
@@ -197,28 +196,7 @@ internal class PushNotificationsRuntime(
     operationMutex.withLock {
       assertActive()
 
-      isDeinitialized = true
-      notificationStatusChecker.stop()
-      sdkScope.cancel()
-    }
-  }
-
-  suspend fun deinitialize() {
-    operationMutex.withLock {
-      assertActive()
-
-      liveActivities.deinitialize()
-
-      if (sharedPreferencesHelper.subscriberId != null) {
-        unregisterLocked()
-      } else {
-        uploadManager.cancelAllJobs()
-      }
-
-      sharedPreferencesHelper.clearProjectData()
-      liveActivities.clearProjectData()
-
-      isDeinitialized = true
+      isReleased = true
       notificationStatusChecker.stop()
       sdkScope.cancel()
     }
@@ -295,9 +273,7 @@ internal class PushNotificationsRuntime(
     uploadManager.cancelAllJobs()
     discardPersistedLiveActivities()
 
-    val subscriptionRequested = sharedPreferencesHelper.subscriptionRequested
     sharedPreferencesHelper.clearProjectData()
-    sharedPreferencesHelper.subscriptionRequested = subscriptionRequested
   }
 
   private fun discardPersistedLiveActivities() {
@@ -314,7 +290,7 @@ internal class PushNotificationsRuntime(
   }
 
   private fun assertActive() {
-    check(!isDeinitialized) { "PushNotifications is deinitialized" }
+    check(!isReleased) { "This instance has been released" }
   }
 
   fun handleBackgroundNotificationClick(

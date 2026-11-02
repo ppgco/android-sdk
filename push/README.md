@@ -313,16 +313,6 @@ does and registers the device in the initialized project once notifications are
 enabled. The state stays consistent, but the user ends up back in the
 initialized project.
 
-#### Turning the SDK off
-
-`PushNotifications.deinitialize()` (Java: `deinitializeAsync()`) unsubscribes
-the device and releases the SDK completely. It removes Live Activities first,
-then unsubscribes any confirmed current subscriber and clears persisted project
-data, including the subscription request. If any step fails, the SDK remains
-initialized and the operation throws an exception. Live Activities already
-removed stay removed. Call `initialize(...)` to start the SDK again; it will not
-automatically restore the cleared subscription request.
-
 #### Persisted state
 
 The SDK keeps its state (subscriber, push token, the user's subscription and the
@@ -522,6 +512,10 @@ liveActivities.subscribe("liveNotificationId")
 // ...
 liveActivities.unsubscribe("liveNotificationId")
 ```
+
+Live Activity subscriptions are independent of the push subscription:
+`PushNotifications.unsubscribe()` does not affect the Live Activities the user
+follows.
 
 For the full integration guide (clicks, deep links, analytics, rendering
 features) see [LIVE_ACTIVITIES.md](LIVE_ACTIVITIES.md).

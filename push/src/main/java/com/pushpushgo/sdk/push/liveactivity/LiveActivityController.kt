@@ -76,18 +76,6 @@ internal class LiveActivityController(
     }
   }
 
-  fun clearProjectData() {
-    persistence.clearAll()
-  }
-
-  suspend fun deinitialize() {
-    val liveActivities = sharedPref.getLiveActivitySubscriptions()
-
-    for (liveActivityId in liveActivities.keys) {
-      unsubscribe(liveActivityId)
-    }
-  }
-
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36
 
   fun getActiveActivities(): List<LiveActivity> = manager?.getActiveActivities() ?: emptyList()

@@ -78,11 +78,7 @@ class PushNotificationsLifecycleTest {
     PushNotifications.setErrorCallback(null)
     PushNotifications.setSubscriptionStatusCallback(null)
 
-    if (PushNotifications.isInitialized()) {
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
-      PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
-      runBlocking { PushNotifications.deinitialize() }
-    }
+    runBlocking { PushNotifications.reset() }
 
     WorkManagerTestInitHelper.closeWorkDatabase()
     unmockkObject(ApiService.Companion)
@@ -90,101 +86,35 @@ class PushNotificationsLifecycleTest {
   }
 
   @Test
-  fun `deinitialize unsubscribes clears project data and releases runtime`() =
+  fun `cached live activities facade rejects calls after switchProject`() =
     runBlocking {
-      setSubscribed()
-      preferences.setLiveActivitySubscriberId("live-1", "live-sub-1")
-      LiveActivityPersistence(application).addActiveId("live-1")
-
-      PushNotifications.deinitialize()
-
-      coVerify(exactly = 1) {
-        apiService.unsubscribeLiveActivity(match { "/live-1/subscribers/live-sub-1" in it }, any())
-      }
-      coVerify(exactly = 1) { apiService.unregisterSubscriber(any(), config.projectId, "sub-123") }
-      assertFalse(PushNotifications.isInitialized())
-      assertNull(preferences.subscriberId)
-      assertTrue(LiveActivityPersistence(application).getActiveIds().isEmpty())
-    }
-
-  @Test
-  fun `deinitialize preserves state and runtime when unsubscribe fails`() =
-    runBlocking {
-      setSubscribed()
-      preferences.setLiveActivitySubscriberId("live-1", "live-sub-1")
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
-
-      val failure = runCatching { PushNotifications.deinitialize() }.exceptionOrNull()
-
-      assertTrue("Expected IOException, got: $failure", failure is IOException)
-      assertTrue("SDK should remain initialized", PushNotifications.isInitialized())
-      assertEquals("Subscriber ID should be preserved", "sub-123", preferences.subscriberId)
-      assertEquals(
-        "Removed Live Activity subscription should stay removed",
-        "",
-        preferences.getLiveActivitySubscriberId("live-1"),
-      )
-    }
-
-  @Test
-  fun `deinitialize removes a confirmed subscriber when subscription is not requested`() =
-    runBlocking {
-      preferences.subscriberId = "retained-sub-123"
-      preferences.subscriptionRequested = false
-
-      PushNotifications.deinitialize()
-
-      coVerify(exactly = 1) {
-        apiService.unregisterSubscriber(config.apiKey, config.projectId, "retained-sub-123")
-      }
-      assertFalse(PushNotifications.isInitialized())
-      assertNull(preferences.subscriberId)
-      assertFalse(preferences.subscriptionRequested)
-    }
-
-  @Test
-  fun `deinitialize preserves opted out subscriber and intent when removal fails`() =
-    runBlocking {
-      preferences.subscriberId = "retained-sub-123"
-      preferences.subscriptionRequested = false
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
-
-      val failure = runCatching { PushNotifications.deinitialize() }.exceptionOrNull()
-
-      assertTrue("Expected IOException, got: $failure", failure is IOException)
-      assertTrue("SDK should remain initialized", PushNotifications.isInitialized())
-      assertEquals("retained-sub-123", preferences.subscriberId)
-      assertFalse(preferences.subscriptionRequested)
-    }
-
-  @Test
-  fun `cached live activities facade rejects calls after deinitialize`() =
-    runBlocking {
-      preferences.subscriptionRequested = false
-
       val liveActivities = PushNotifications.liveActivities
 
-      PushNotifications.deinitialize()
+      PushNotifications.switchProject(otherConfig)
 
       val subscribeFailure = runCatching { liveActivities.subscribe("live-1") }.exceptionOrNull()
       val queryFailure = runCatching { liveActivities.getSubscriberId("live-1") }.exceptionOrNull()
 
-      assertEquals("PushNotifications is deinitialized", subscribeFailure?.message)
-      assertEquals("PushNotifications is deinitialized", queryFailure?.message)
+      assertEquals("This instance has been released", subscribeFailure?.message)
+      assertEquals("This instance has been released", queryFailure?.message)
       coVerify(exactly = 0) { apiService.subscribeLiveActivity(any(), any(), any()) }
     }
 
   @Test
-  fun `initialize is rejected while deinitialize is in progress`() =
+  fun `initialize is rejected while switchProject is in progress`() =
     runBlocking {
-      setSubscribed()
-      val finishUnregister = CompletableDeferred<Unit>()
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
-        finishUnregister.await()
-        Response.success(null)
+      givenNotificationsEnabled()
+      val registrationStarted = CompletableDeferred<Unit>()
+      val finishRegistration = CompletableDeferred<Unit>()
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
+        registrationStarted.complete(Unit)
+        finishRegistration.await()
+        TokenResponse(id = "sub-123")
       }
+      PushNotifications.subscribe()
+      registrationStarted.await()
 
-      val deinitialize = launch(start = CoroutineStart.UNDISPATCHED) { PushNotifications.deinitialize() }
+      val projectSwitch = launch(start = CoroutineStart.UNDISPATCHED) { PushNotifications.switchProject(otherConfig) }
 
       val failure =
         try {
@@ -192,33 +122,12 @@ class PushNotificationsLifecycleTest {
             PushNotifications.initialize(application, config)
           }
         } finally {
-          finishUnregister.complete(Unit)
+          finishRegistration.complete(Unit)
         }
 
-      deinitialize.join()
+      projectSwitch.join()
 
       assertEquals("PushNotifications lifecycle mutation is in progress", failure.message)
-    }
-
-  @Test
-  fun `callback survives deinitialize and is used by the next runtime`() =
-    runBlocking {
-      var callbackArguments: Triple<String, String, String>? = null
-      PushNotifications.setInvalidProjectIdHandler { pushProjectId, pushSubscriberId, currentProjectId ->
-        callbackArguments = Triple(pushProjectId, pushSubscriberId, currentProjectId)
-      }
-
-      preferences.subscriptionRequested = false
-      PushNotifications.deinitialize()
-      PushNotifications.initialize(application, otherConfig)
-
-      PushNotifications.handleBackgroundNotificationClick(
-        Intent()
-          .putExtra(PushNotificationDelegate.PROJECT_ID_EXTRA, config.projectId)
-          .putExtra(PushNotificationDelegate.SUBSCRIBER_ID_EXTRA, "subscriber"),
-      )
-
-      assertEquals(Triple(config.projectId, "subscriber", otherConfig.projectId), callbackArguments)
     }
 
   @Test
@@ -251,8 +160,7 @@ class PushNotificationsLifecycleTest {
   @Test
   fun `callback set before initialization receives only initialized runtime status`() =
     runBlocking {
-      preferences.subscriptionRequested = false
-      PushNotifications.deinitialize()
+      PushNotifications.reset()
       preferences.subscriberId = "sub-before-init"
       val received = mutableListOf<SubscriptionStatus>()
 
@@ -406,7 +314,7 @@ class PushNotificationsLifecycleTest {
     assertEquals(otherConfig.projectId, PushNotifications.getProjectId())
     assertTrue(cleanupWork().isEmpty())
     assertEquals(
-      "PushNotifications is deinitialized",
+      "This instance has been released",
       runCatching { previousLiveActivities.getSubscriberId("live-1") }.exceptionOrNull()?.message,
     )
 
@@ -433,21 +341,9 @@ class PushNotificationsLifecycleTest {
     }
 
   @Test
-  fun `deinitialize publishes unsubscribed status`() =
-    runBlocking {
-      setSubscribed()
-      givenNotificationsEnabled()
-      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), PushNotifications.getSubscriptionStatus())
-
-      PushNotifications.deinitialize()
-
-      assertEquals(SubscriptionStatus.Unsubscribed, PushNotifications.subscriptionStatusFlow.value)
-    }
-
-  @Test
   fun `switchProject requires an initialized SDK`() =
     runBlocking {
-      PushNotifications.deinitialize()
+      PushNotifications.reset()
 
       val failure = runCatching { PushNotifications.switchProject(otherConfig) }.exceptionOrNull()
 

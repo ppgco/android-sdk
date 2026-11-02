@@ -196,7 +196,6 @@ internal class SharedPreferencesHelper(
       remove(SUBSCRIBER_ID)
       remove(LAST_FCM_TOKEN)
       remove(LAST_HCM_TOKEN)
-      remove(IS_SUBSCRIBED)
       remove(OWNER_PROJECT_ID)
       remove(OWNER_API_KEY)
       remove(OWNER_API_URL)

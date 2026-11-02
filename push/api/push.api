@@ -50,8 +50,6 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final field INSTANCE Lcom/pushpushgo/sdk/push/PushNotifications;
 	public static final field VERSION Ljava/lang/String;
 	public static final fun areNotificationsEnabled ()Z
-	public final synthetic fun deinitialize (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun deinitializeAsync ()Ljava/util/concurrent/CompletableFuture;
 	public static final fun getApiKey ()Ljava/lang/String;
 	public static final fun getCustomClickIntentFlags ()I
 	public static final fun getLiveActivities ()Lcom/pushpushgo/sdk/push/liveactivity/LiveActivities;
