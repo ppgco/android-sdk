@@ -67,6 +67,9 @@ liveActivities.unsubscribe("<liveNotificationId>")
   Java callers can use `subscribeAsync` and `unsubscribeAsync`, which return a
   `CompletableFuture`.
 - Subscribing to an already running activity renders its current state at once.
+- `subscribe` throws an `IllegalStateException` (`subscribeAsync` fails with it)
+  if notifications are disabled. Request the notification permission before
+  subscribing - it is required even if the device is not subscribed to push.
 
 ### 2. Handle clicks
 

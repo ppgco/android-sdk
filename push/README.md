@@ -533,5 +533,9 @@ Live Activity subscriptions are independent of the push subscription:
 `PushNotifications.unsubscribe()` does not affect the Live Activities the user
 follows.
 
+They still require the notification permission: if it is not granted,
+`liveActivities.subscribe()` throws an `IllegalStateException`. Request the permission before
+subscribing.
+
 For the full integration guide (clicks, deep links, analytics, rendering
 features) see [LIVE_ACTIVITIES.md](LIVE_ACTIVITIES.md).

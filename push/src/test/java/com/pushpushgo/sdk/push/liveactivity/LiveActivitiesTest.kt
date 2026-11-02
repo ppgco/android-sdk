@@ -1,11 +1,16 @@
 package com.pushpushgo.sdk.push.liveactivity
 
+import android.Manifest
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import androidx.core.app.NotificationManagerCompat
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.PushNotificationsRuntime
+import com.pushpushgo.sdk.push.liveactivity.notification.LiveActivityNotificationChannel
 import com.pushpushgo.sdk.push.network.FakeApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.testConfig
@@ -15,8 +20,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -33,6 +40,7 @@ class LiveActivitiesTest {
     preferences = SharedPreferencesHelper(application)
     preferences.clearProjectData()
     LiveActivityPersistence(application).clearAll()
+    shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
   }
 
   @After
@@ -51,6 +59,36 @@ class LiveActivitiesTest {
       assertEquals(1, apiService.liveActivitySubscribeRequests.size)
       assertEquals(FakeApiService.LIVE_ACTIVITY_SUBSCRIBER_ID, liveActivitySubscriberId)
       assertEquals(FakeApiService.LIVE_ACTIVITY_SUBSCRIBER_ID, liveActivities.getSubscriberId("live-1"))
+    }
+
+  @Test
+  fun `subscribe fails without notification permission and does not register the device`() =
+    runTest {
+      shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+      val liveActivities = createRuntime().liveActivities
+
+      assertFailsWith<IllegalStateException> { liveActivities.subscribe("live-1") }
+
+      assertTrue(apiService.liveActivitySubscribeRequests.isEmpty())
+      assertEquals("", liveActivities.getSubscriberId("live-1"))
+    }
+
+  @Test
+  fun `subscribe fails when the live activity channel is disabled and does not register the device`() =
+    runTest {
+      val liveActivities = createRuntime().liveActivities
+      NotificationManagerCompat.from(application).createNotificationChannel(
+        NotificationChannel(
+          LiveActivityNotificationChannel.getChannelId(application),
+          "Live Activities",
+          NotificationManager.IMPORTANCE_NONE,
+        ),
+      )
+
+      assertFailsWith<IllegalStateException> { liveActivities.subscribe("live-1") }
+
+      assertTrue(apiService.liveActivitySubscribeRequests.isEmpty())
+      assertEquals("", liveActivities.getSubscriberId("live-1"))
     }
 
   @Test
