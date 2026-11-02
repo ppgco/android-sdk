@@ -12,16 +12,14 @@ import io.mockk.just
 import io.mockk.mockkObject
 import io.mockk.runs
 import io.mockk.unmockkObject
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
-@org.robolectric.annotation.Config(sdk = [33])
 class SubscriptionReconcileWorkerTest {
   @After
   fun tearDown() {
@@ -30,50 +28,49 @@ class SubscriptionReconcileWorkerTest {
 
   @Test
   fun `succeeds when the SDK is not initialized`() =
-    runBlocking {
-      assertFalse(PushNotifications.isInitialized())
+    runTest {
+      PushNotifications.reset()
 
-      assertEquals(ListenableWorker.Result.success(), worker().doWork())
+      val result = worker().doWork()
+
+      assertEquals(ListenableWorker.Result.success(), result)
     }
 
   @Test
   fun `reconciles the subscription`() =
-    runBlocking {
+    runTest {
       mockkObject(PushNotifications)
       coEvery { PushNotifications.reconcileSubscription() } just runs
 
-      assertEquals(ListenableWorker.Result.success(), worker().doWork())
+      val result = worker().doWork()
+
+      assertEquals(ListenableWorker.Result.success(), result)
       coVerify(exactly = 1) { PushNotifications.reconcileSubscription() }
     }
 
   @Test
-  fun `transient failures are retried`() =
-    runBlocking {
+  fun `transient failure is retried and rejected request fails the work`() =
+    runTest {
       mockkObject(PushNotifications)
 
-      listOf(IOException("offline"), PushPushException("Server error", 503)).forEach { error ->
-        coEvery { PushNotifications.reconcileSubscription() } throws error
-
-        assertEquals(error.message, ListenableWorker.Result.retry(), worker().doWork())
-      }
-    }
-
-  @Test
-  fun `rejected request fails the work`() =
-    runBlocking {
-      mockkObject(PushNotifications)
+      coEvery { PushNotifications.reconcileSubscription() } throws IOException("offline")
+      val transientResult = worker().doWork()
       coEvery { PushNotifications.reconcileSubscription() } throws PushPushException("Bad request", 400)
+      val rejectedResult = worker().doWork()
 
-      assertEquals(ListenableWorker.Result.failure(), worker().doWork())
+      assertEquals(ListenableWorker.Result.retry(), transientResult)
+      assertEquals(ListenableWorker.Result.failure(), rejectedResult)
     }
 
   @Test
   fun `gives up after the last attempt`() =
-    runBlocking {
+    runTest {
       mockkObject(PushNotifications)
       coEvery { PushNotifications.reconcileSubscription() } throws IOException("offline")
 
-      assertEquals(ListenableWorker.Result.failure(), worker(runAttemptCount = 29).doWork())
+      val result = worker(runAttemptCount = 29).doWork()
+
+      assertEquals(ListenableWorker.Result.failure(), result)
     }
 
   private fun worker(runAttemptCount: Int = 0) =

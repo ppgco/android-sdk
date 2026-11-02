@@ -6,48 +6,43 @@ import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
 import com.pushpushgo.sdk.push.data.EventType
-import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
+import com.pushpushgo.sdk.push.network.FakeApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.testConfig
-import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
-import retrofit2.Response
 import java.io.IOException
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-@org.robolectric.annotation.Config(sdk = [33])
 class UploadWorkerTest {
   private val config = testConfig()
 
-  private lateinit var apiService: ApiService
+  private val apiService = FakeApiService()
 
   @Before
   fun setUp() {
-    apiService = mockk()
-    mockkObject(ApiService.Companion)
-    every { ApiService.fromConfig(any()) } returns apiService
-    coEvery { apiService.sendEvent(any(), any(), any()) } returns Response.success(null)
+    mockkObject(DefaultApiServiceFactory)
+    every { DefaultApiServiceFactory.create(config) } returns apiService
   }
 
   @After
   fun tearDown() {
     SharedPreferencesHelper(getApplicationContext()).clearProjectData()
-    unmockkObject(ApiService.Companion)
+    unmockkObject(DefaultApiServiceFactory)
   }
 
   @Test
   fun `event work sends the persisted event payload`() =
-    runBlocking {
+    runTest {
       val worker =
         TestListenableWorkerBuilder<UploadWorker>(
           context = getApplicationContext(),
@@ -66,27 +61,18 @@ class UploadWorkerTest {
 
       val result = worker.doWork()
 
-      assertTrue(result is ListenableWorker.Result.Success)
-      coVerify(exactly = 1) {
-        apiService.sendEvent(
-          token = config.apiKey,
-          projectId = config.projectId,
-          event =
-            match {
-              it.type == EventType.CLICKED.value &&
-                it.payload.button == 2 &&
-                it.payload.campaign == "campaign" &&
-                it.payload.subscriber == "subscriberId"
-            },
-        )
-      }
+      assertEquals(ListenableWorker.Result.success(), result)
+      val event = apiService.sentEvents.single()
+      assertEquals(EventType.CLICKED.value, event.type)
+      assertEquals(2, event.payload.button)
+      assertEquals("campaign", event.payload.campaign)
+      assertEquals("subscriberId", event.payload.subscriber)
     }
 
   @Test
   fun `token sync skips a subscriber that is no longer active`() =
-    runBlocking {
+    runTest {
       SharedPreferencesHelper(getApplicationContext()).subscriberId = "current-subscriber"
-
       val worker =
         TestListenableWorkerBuilder<UploadWorker>(
           context = getApplicationContext(),
@@ -103,42 +89,42 @@ class UploadWorkerTest {
 
       val result = worker.doWork()
 
-      assertTrue(result is ListenableWorker.Result.Success)
-      coVerify(exactly = 0) { apiService.updateSubscriberToken(any(), any(), any(), any()) }
+      assertEquals(ListenableWorker.Result.success(), result)
+      assertTrue(apiService.updatedTokens.isEmpty())
     }
 
   @Test
   fun `beacon is discarded when its subscriber is no longer active`() =
-    runBlocking {
+    runTest {
       setActiveSubscriber("new-subscriber")
 
       val result = beaconWorker(subscriberId = "S").doWork()
 
-      assertTrue(result is ListenableWorker.Result.Success)
-      coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
+      assertEquals(ListenableWorker.Result.success(), result)
+      assertTrue(apiService.sentBeacons.isEmpty())
     }
 
   @Test
   fun `beacon is discarded when the subscription is no longer requested`() =
-    runBlocking {
+    runTest {
       setActiveSubscriber("S")
       SharedPreferencesHelper(getApplicationContext()).subscriptionRequested = false
 
       val result = beaconWorker(subscriberId = "S").doWork()
 
-      assertTrue(result is ListenableWorker.Result.Success)
-      coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
+      assertEquals(ListenableWorker.Result.success(), result)
+      assertTrue(apiService.sentBeacons.isEmpty())
     }
 
   @Test
   fun `beacon is retried after a network error`() =
-    runBlocking {
+    runTest {
       setActiveSubscriber("S")
-      coEvery { apiService.sendBeacon(any(), any(), any(), any()) } throws IOException("offline")
+      apiService.exception = IOException("offline")
 
       val result = beaconWorker(subscriberId = "S").doWork()
 
-      assertTrue(result is ListenableWorker.Result.Retry)
+      assertEquals(ListenableWorker.Result.retry(), result)
     }
 
   private fun setActiveSubscriber(subscriberId: String) {

@@ -10,10 +10,11 @@ import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.Payload
 import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
 import com.pushpushgo.sdk.push.push.areNotificationsEnabled
-import com.pushpushgo.sdk.push.utils.getPlatformPushToken
+import com.pushpushgo.sdk.push.utils.PlatformPushTokenProvider
 import com.pushpushgo.sdk.push.utils.isSameProjectAs
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
@@ -75,7 +76,7 @@ internal class UploadWorker(
           return@coroutineScope Result.failure()
         }
 
-      val apiService = ApiService.fromConfig(config)
+      val apiService = DefaultApiServiceFactory.create(config)
 
       try {
         when (type) {
@@ -208,7 +209,7 @@ internal class UploadWorker(
       return logDebug("Token sync skipped - subscription is not currently requested or notifications are disabled")
     }
 
-    val token = pushToken ?: getPlatformPushToken(context)
+    val token = pushToken ?: PlatformPushTokenProvider(context).getToken()
 
     if (token.isBlank()) {
       return logError("Cannot sync token - empty subscriberId")

@@ -1,6 +1,5 @@
 package com.pushpushgo.sdk.push.network
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.pushpushgo.sdk.core.api.Config
@@ -14,17 +13,17 @@ import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
 import com.pushpushgo.sdk.push.network.data.TokenRequest
 import com.pushpushgo.sdk.push.utils.PlatformType
-import com.pushpushgo.sdk.push.utils.getPlatformPushToken
+import com.pushpushgo.sdk.push.utils.PushTokenProvider
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.osVersion
 
 internal class ApiRepository(
-  private val context: Context,
   private val apiService: ApiService,
   private val sharedPref: SharedPreferencesHelper,
   private val config: Config,
+  private val pushTokenProvider: PushTokenProvider,
 ) {
   companion object {
     private const val LIVE_ACTIVITY_NOT_FOUND_MESSAGE = "Live notification not found"
@@ -34,7 +33,7 @@ internal class ApiRepository(
   suspend fun registerToken(token: String?) {
     logDebug("registerToken invoked: $token")
 
-    val tokenToRegister = token ?: getPlatformPushToken(context)
+    val tokenToRegister = token ?: pushTokenProvider.getToken()
 
     require(tokenToRegister.isNotBlank()) { "Cannot register subscriber with an empty push token" }
 
@@ -216,7 +215,7 @@ internal class ApiRepository(
       endpoint =
         LiveActivityEndpoint(
           transport = transport,
-          pushToken = getPlatformPushToken(context),
+          pushToken = pushTokenProvider.getToken(),
         ),
     )
   }

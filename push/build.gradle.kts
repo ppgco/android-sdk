@@ -87,6 +87,8 @@ dependencies {
   compileOnly(libs.hms.push)
 
   testImplementation(libs.junit)
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.coroutines.test)
   testImplementation(libs.mockk)
   testImplementation(libs.json)
   testImplementation(libs.androidx.test.junit)

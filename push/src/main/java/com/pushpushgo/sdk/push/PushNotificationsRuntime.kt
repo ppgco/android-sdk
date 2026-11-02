@@ -11,19 +11,23 @@ import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.liveactivity.LiveActivities
 import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
 import com.pushpushgo.sdk.push.network.ApiRepository
-import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.ApiServiceFactory
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.push.areNotificationsEnabled
 import com.pushpushgo.sdk.push.push.createNotificationChannel
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.subscription.DefaultPushSubscriptionProvider
+import com.pushpushgo.sdk.push.utils.PlatformPushTokenProvider
+import com.pushpushgo.sdk.push.utils.PushTokenProvider
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.isSameProjectAs
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.logWarning
 import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,6 +40,9 @@ internal class PushNotificationsRuntime(
   val application: Application,
   val config: Config,
   private val callbacks: PushNotificationsCallbacks,
+  apiServiceFactory: ApiServiceFactory = DefaultApiServiceFactory,
+  pushTokenProvider: PushTokenProvider = PlatformPushTokenProvider(application),
+  dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
   init {
     check(WorkManager.isInitialized()) {
@@ -43,15 +50,15 @@ internal class PushNotificationsRuntime(
     }
   }
 
-  private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  private val sdkScope = CoroutineScope(SupervisorJob() + dispatcher)
   private val operationMutex = Mutex()
 
   @Volatile
   private var isReleased = false
 
   val sharedPreferencesHelper = SharedPreferencesHelper(application)
-  private val apiService = ApiService.fromConfig(config)
-  val apiRepository = ApiRepository(application, apiService, sharedPreferencesHelper, config)
+  private val apiService = apiServiceFactory.create(config)
+  val apiRepository = ApiRepository(apiService, sharedPreferencesHelper, config, pushTokenProvider)
   val uploadManager = UploadManager(application, config)
   val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager, callbacks)
 

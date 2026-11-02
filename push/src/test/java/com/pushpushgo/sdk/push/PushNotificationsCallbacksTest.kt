@@ -4,13 +4,12 @@ import android.content.Context
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Assert.assertEquals
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.LooperMode
 import java.util.Collections
 import kotlin.concurrent.thread
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class PushNotificationsCallbacksTest {
@@ -51,11 +50,10 @@ class PushNotificationsCallbacksTest {
     callbacks.publishSubscriptionStatus(SubscriptionStatus.Unsubscribed)
     shadowOf(Looper.getMainLooper()).idle()
 
-    assertEquals(listOf(SubscriptionStatus.Subscribed("sub-1", "project-1")), received)
+    assertEquals(listOf<SubscriptionStatus>(SubscriptionStatus.Subscribed("sub-1", "project-1")), received)
   }
 
   @Test
-  @LooperMode(LooperMode.Mode.PAUSED)
   fun `public callbacks triggered on a worker are delivered on the main thread`() {
     val callbacks = PushNotificationsCallbacks()
     val context = ApplicationProvider.getApplicationContext<Context>()

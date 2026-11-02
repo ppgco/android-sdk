@@ -6,9 +6,10 @@ import androidx.work.WorkerParameters
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.network.ApiRepository
-import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.areNotificationsEnabled
+import com.pushpushgo.sdk.push.utils.PlatformPushTokenProvider
 import com.pushpushgo.sdk.push.utils.isSameProjectAs
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
@@ -43,7 +44,8 @@ internal class ProjectCleanupWorker(
 
   override suspend fun doWork(): Result {
     val config = readConfig() ?: return Result.failure()
-    val apiRepository = ApiRepository(applicationContext, ApiService.fromConfig(config), sharedPreferencesHelper, config)
+    val apiRepository =
+      ApiRepository(DefaultApiServiceFactory.create(config), sharedPreferencesHelper, config, PlatformPushTokenProvider(applicationContext))
 
     return try {
       inputData.getString(SUBSCRIBER_ID)?.let { removeSubscriber(config, apiRepository, it) }

@@ -1,36 +1,31 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 internal class LiveActivityPayloadParserTest {
   @Test
-  fun `isLiveActivityPush returns true for live notification push`() {
+  fun `isLiveActivityPush recognises only live notification pushes`() {
     assertTrue(LiveActivityPayloadParser.isLiveActivityPush(mapOf("type" to "live_notification")))
-  }
-
-  @Test
-  fun `isLiveActivityPush returns false for regular push`() {
     assertFalse(LiveActivityPayloadParser.isLiveActivityPush(mapOf("type" to "notification")))
     assertFalse(LiveActivityPayloadParser.isLiveActivityPush(emptyMap()))
   }
 
   @Test
   fun `parsePush parses full start envelope`() {
-    val push = LiveActivityPayloadParser.parsePush(buildStartEnvelope())
+    val push = assertNotNull(LiveActivityPayloadParser.parsePush(buildStartEnvelope()))
 
-    assertNotNull(push)
-    assertEquals("match-001", push!!.id)
+    assertEquals("match-001", push.id)
     assertEquals("proj-1", push.projectId)
     assertEquals("sub-1", push.subscriberId)
     assertEquals(LiveActivityEvent.START, push.event)
     assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, push.template)
 
-    val config = push.configuration!!
+    val config = assertNotNull(push.configuration)
     assertEquals("Premier League", config.content.title)
     assertEquals("Arsenal", config.content.homeTeamName)
     assertEquals("Chelsea", config.content.awayTeamName)
@@ -38,13 +33,13 @@ internal class LiveActivityPayloadParserTest {
     assertEquals("https://match/1", config.url)
     assertEquals(120, config.timeoutMinutes)
 
-    val liveData = push.liveData!!
+    val liveData = assertNotNull(push.liveData)
     assertEquals(2, liveData.homeTeamScore)
     assertEquals(1, liveData.awayTeamScore)
     assertEquals(MatchPhase.SECOND_HALF, liveData.status)
     assertNotNull(liveData.statusChangedAt)
 
-    val hot = push.hotMessage!!
+    val hot = assertNotNull(push.hotMessage)
     assertEquals("h1", hot.id)
     assertEquals("GOAL!", hot.text)
     assertEquals(1_709_398_800_000L, hot.expiresAtMs) // epoch seconds -> millis
@@ -53,18 +48,20 @@ internal class LiveActivityPayloadParserTest {
   @Test
   fun `parsePush returns null without liveNotificationId`() {
     val data = buildStartEnvelope().toMutableMap().apply { remove("liveNotificationId") }
+
     assertNull(LiveActivityPayloadParser.parsePush(data))
   }
 
   @Test
   fun `parsePush returns null for unknown event`() {
     val data = buildStartEnvelope().toMutableMap().apply { this["event"] = "bogus" }
+
     assertNull(LiveActivityPayloadParser.parsePush(data))
   }
 
   @Test
   fun `parseConfiguration parses statusLabels actions and android colors`() {
-    val config = LiveActivityPayloadParser.parseConfiguration(CONFIG_JSON)!!
+    val config = assertNotNull(LiveActivityPayloadParser.parseConfiguration(CONFIG_JSON))
 
     assertEquals("1st Half", config.label(MatchPhase.FIRST_HALF))
     assertEquals("Match", config.label(MatchPhase.PENALTY_SHOOTOUT)) // OTHER fallback
@@ -75,19 +72,23 @@ internal class LiveActivityPayloadParserTest {
     assertEquals("https://x", config.actions[1].url)
     assertEquals(LiveActivityActionType.CLOSE, config.actions[2].type)
 
-    val design = config.design!!
+    val design = assertNotNull(config.design)
     assertTrue(design.hasTrackerIcon)
+    val progressBarColor = assertNotNull(design.progressBarColor)
     // lightMode is a plain string, darkMode is an object {hex} — both supported
-    assertEquals("#4CAF50", design.progressBarColor!!.lightMode.hex)
-    assertEquals("#2E7D32", design.progressBarColor!!.darkMode.hex)
+    assertEquals("#4CAF50", progressBarColor.lightMode.hex)
+    assertEquals("#2E7D32", progressBarColor.darkMode.hex)
   }
 
   @Test
   fun `parseLiveData maps unknown status to OTHER`() {
     val liveData =
-      LiveActivityPayloadParser.parseLiveData(
-        """{"homeTeamScore":0,"awayTeamScore":0,"status":"WHO_KNOWS"}""",
-      )!!
+      assertNotNull(
+        LiveActivityPayloadParser.parseLiveData(
+          """{"homeTeamScore":0,"awayTeamScore":0,"status":"WHO_KNOWS"}""",
+        ),
+      )
+
     assertEquals(MatchPhase.OTHER, liveData.status)
     assertEquals("0:0", liveData.scoreText)
     assertNull(liveData.statusChangedAt)

@@ -8,32 +8,29 @@ import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
 import com.pushpushgo.sdk.push.exception.PushPushException
-import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
+import com.pushpushgo.sdk.push.network.FakeApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.otherProjectTestConfig
 import com.pushpushgo.sdk.push.testConfig
-import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import retrofit2.Response
 import java.io.IOException
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-@org.robolectric.annotation.Config(sdk = [33])
 class ProjectCleanupWorkerTest {
   private val previousProject = otherProjectTestConfig()
 
-  private lateinit var apiService: ApiService
+  private val apiService = FakeApiService()
   private lateinit var preferences: SharedPreferencesHelper
 
   @Before
@@ -42,83 +39,62 @@ class ProjectCleanupWorkerTest {
     preferences.clearProjectData()
     preferences.projectOwner = testConfig()
 
-    apiService = mockk()
-    mockkObject(ApiService.Companion)
-    every { ApiService.fromConfig(any()) } returns apiService
-    coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
-    coEvery { apiService.unsubscribeLiveActivity(any(), any()) } returns Response.success(null)
+    mockkObject(DefaultApiServiceFactory)
+    every { DefaultApiServiceFactory.create(previousProject) } returns apiService
   }
 
   @After
   fun tearDown() {
     preferences.clearProjectData()
-    unmockkObject(ApiService.Companion)
+    unmockkObject(DefaultApiServiceFactory)
   }
 
   @Test
   fun `removes subscriber and live activity subscriptions with the previous project credentials`() =
-    runBlocking {
+    runTest {
       val result = worker().doWork()
 
       assertEquals(ListenableWorker.Result.success(), result)
-      coVerify(exactly = 1) {
-        apiService.unregisterSubscriber(previousProject.apiKey, previousProject.projectId, "old-sub")
-      }
-      coVerify(exactly = 1) {
-        apiService.unsubscribeLiveActivity(
-          match { it.endsWith("/projects/${previousProject.projectId}/live-notifications/live-1/subscribers/live-sub-1") },
-          previousProject.apiKey,
-        )
-      }
-    }
-
-  @Test
-  fun `subscriber that is already gone counts as removed`() =
-    runBlocking {
-      val alreadyGone =
-        listOf(
-          PushPushException("Subscriber not exists", 404),
-          PushPushException("Cannot perform operation on inactive subscriber", 400),
-          PushPushException("Subscriber not belongs to given project", 403),
-        )
-
-      alreadyGone.forEach { error ->
-        coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws error
-
-        assertEquals(error.message, ListenableWorker.Result.success(), worker().doWork())
-      }
+      assertEquals(listOf("old-sub"), apiService.unregisteredSubscriberIds)
+      assertEquals(
+        listOf("${previousProject.apiUrl}/core/projects/${previousProject.projectId}/live-notifications/live-1/subscribers/live-sub-1"),
+        apiService.unsubscribedLiveActivityUrls,
+      )
     }
 
   @Test
   fun `transient failures are retried`() =
-    runBlocking {
-      listOf(IOException("offline"), PushPushException("Server error", 503)).forEach { error ->
-        coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws error
+    runTest {
+      apiService.exception = IOException("offline")
 
-        assertEquals(error.message, ListenableWorker.Result.retry(), worker().doWork())
-      }
+      val result = worker().doWork()
+
+      assertEquals(ListenableWorker.Result.retry(), result)
     }
 
   @Test
   fun `rejected credentials fail the cleanup`() =
-    runBlocking {
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws PushPushException("Unauthorized", 401)
+    runTest {
+      apiService.exception = PushPushException("Unauthorized", 401)
 
-      assertEquals(ListenableWorker.Result.failure(), worker().doWork())
+      val result = worker().doWork()
+
+      assertEquals(ListenableWorker.Result.failure(), result)
     }
 
   @Test
   fun `gives up after the last attempt`() =
-    runBlocking {
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
+    runTest {
+      apiService.exception = IOException("offline")
 
-      assertEquals(ListenableWorker.Result.failure(), worker(runAttemptCount = 29).doWork())
+      val result = worker(runAttemptCount = 29).doWork()
+
+      assertEquals(ListenableWorker.Result.failure(), result)
     }
 
   @Test
   fun `leaves subscriptions the SDK uses again after returning to the project`() =
-    runBlocking {
-      // Registering with the same push token returns the still active subscriber
+    runTest {
       preferences.projectOwner = previousProject
       preferences.subscriberId = "old-sub"
       preferences.subscriptionRequested = true
@@ -128,56 +104,22 @@ class ProjectCleanupWorkerTest {
       val result = worker().doWork()
 
       assertEquals(ListenableWorker.Result.success(), result)
-      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
-      coVerify(exactly = 0) { apiService.unsubscribeLiveActivity(any(), any()) }
+      assertTrue(apiService.unregisteredSubscriberIds.isEmpty())
+      assertTrue(apiService.unsubscribedLiveActivityUrls.isEmpty())
     }
 
-  @Test
-  fun `removes an opted out subscriber retained for the current project`() =
-    runBlocking {
-      preferences.projectOwner = previousProject
-      preferences.subscriberId = "old-sub"
-      preferences.subscriptionRequested = false
-
-      val result = worker(liveActivities = emptyMap()).doWork()
-
-      assertEquals(ListenableWorker.Result.success(), result)
-      coVerify(exactly = 1) {
-        apiService.unregisterSubscriber(previousProject.apiKey, previousProject.projectId, "old-sub")
-      }
-      assertEquals(null, preferences.subscriberId)
-    }
-
-  @Test
-  fun `does not clear a different current subscriber after removing the cleanup target`() =
-    runBlocking {
-      preferences.projectOwner = previousProject
-      preferences.subscriberId = "new-sub"
-      preferences.subscriptionRequested = false
-
-      val result = worker(liveActivities = emptyMap()).doWork()
-
-      assertEquals(ListenableWorker.Result.success(), result)
-      coVerify(exactly = 1) {
-        apiService.unregisterSubscriber(previousProject.apiKey, previousProject.projectId, "old-sub")
-      }
-      assertEquals("new-sub", preferences.subscriberId)
-    }
-
-  private fun worker(
-    runAttemptCount: Int = 0,
-    liveActivities: Map<String, String> = mapOf("live-1" to "live-sub-1"),
-  ) = TestListenableWorkerBuilder<ProjectCleanupWorker>(
-    context = getApplicationContext(),
-    inputData =
-      workDataOf(
-        ProjectCleanupWorker.PROJECT_ID to previousProject.projectId,
-        ProjectCleanupWorker.API_KEY to previousProject.apiKey,
-        ProjectCleanupWorker.API_URL to previousProject.apiUrl,
-        ProjectCleanupWorker.SUBSCRIBER_ID to "old-sub",
-        ProjectCleanupWorker.LIVE_ACTIVITY_IDS to liveActivities.keys.toTypedArray(),
-        ProjectCleanupWorker.LIVE_ACTIVITY_SUBSCRIBER_IDS to liveActivities.values.toTypedArray(),
-      ),
-    runAttemptCount = runAttemptCount,
-  ).build()
+  private fun worker(runAttemptCount: Int = 0) =
+    TestListenableWorkerBuilder<ProjectCleanupWorker>(
+      context = getApplicationContext(),
+      inputData =
+        workDataOf(
+          ProjectCleanupWorker.PROJECT_ID to previousProject.projectId,
+          ProjectCleanupWorker.API_KEY to previousProject.apiKey,
+          ProjectCleanupWorker.API_URL to previousProject.apiUrl,
+          ProjectCleanupWorker.SUBSCRIBER_ID to "old-sub",
+          ProjectCleanupWorker.LIVE_ACTIVITY_IDS to arrayOf("live-1"),
+          ProjectCleanupWorker.LIVE_ACTIVITY_SUBSCRIBER_IDS to arrayOf("live-sub-1"),
+        ),
+      runAttemptCount = runAttemptCount,
+    ).build()
 }

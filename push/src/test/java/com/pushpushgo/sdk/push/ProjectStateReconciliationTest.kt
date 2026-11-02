@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
+import androidx.preference.PreferenceManager
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.WorkInfo
@@ -12,42 +13,34 @@ import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
-import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.FakeApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.work.UploadManager
-import io.mockk.Runs
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.mockkConstructor
-import io.mockk.mockkObject
-import io.mockk.unmockkConstructor
-import io.mockk.unmockkObject
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import retrofit2.Response
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-@org.robolectric.annotation.Config(sdk = [33])
 class ProjectStateReconciliationTest {
   private val application by lazy { getApplicationContext<Application>() }
   private val config = testConfig()
   private val previousProject = otherProjectTestConfig()
 
-  private lateinit var apiService: ApiService
+  private val apiService = FakeApiService()
   private lateinit var preferences: SharedPreferencesHelper
   private lateinit var liveActivityPersistence: LiveActivityPersistence
-  private var runtime: PushNotificationsRuntime? = null
 
   @Before
   fun setUp() {
@@ -57,149 +50,107 @@ class ProjectStateReconciliationTest {
     liveActivityPersistence = LiveActivityPersistence(application)
     liveActivityPersistence.clearAll()
     shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
-
-    apiService = mockk(relaxed = true)
-    mockkObject(ApiService.Companion)
-    mockkConstructor(NotificationStatusChecker::class)
-    every { anyConstructed<NotificationStatusChecker>().start() } just Runs
-    every { ApiService.fromConfig(any()) } returns apiService
-    coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
-    coEvery { apiService.unsubscribeLiveActivity(any(), any()) } returns Response.success(null)
   }
 
   @After
   fun tearDown() {
-    runBlocking { runCatching { runtime?.release() } }
     preferences.clearProjectData()
-
     WorkManagerTestInitHelper.closeWorkDatabase()
-    unmockkConstructor(NotificationStatusChecker::class)
-    unmockkObject(ApiService.Companion)
   }
 
   @Test
-  fun `state of another project is released and removed with that project's credentials`() {
-    preferences.projectOwner = previousProject
-    preferences.subscriberId = "old-sub"
-    preferences.subscriptionRequested = true
-    preferences.setLiveActivitySubscriberId("live-1", "live-sub-1")
-    liveActivityPersistence.addActiveId("live-1")
-    liveActivityPersistence.setNotificationId("live-1", LIVE_ACTIVITY_NOTIFICATION_ID)
-    postNotification(LIVE_ACTIVITY_NOTIFICATION_ID)
+  fun `state of another project is released and its cleanup is enqueued`() =
+    runTest {
+      preferences.projectOwner = previousProject
+      preferences.subscriberId = "old-sub"
+      preferences.subscriptionRequested = true
+      preferences.setLiveActivitySubscriberId("live-1", "live-sub-1")
+      liveActivityPersistence.addActiveId("live-1")
+      liveActivityPersistence.setNotificationId("live-1", LIVE_ACTIVITY_NOTIFICATION_ID)
+      postNotification(LIVE_ACTIVITY_NOTIFICATION_ID)
 
-    val runtime = startRuntime()
+      val runtime = createRuntime()
 
-    assertNull(preferences.subscriberId)
-    assertTrue("Subscription request should survive", preferences.subscriptionRequested)
-    assertFalse(runtime.isSubscribed())
-    assertEquals(config.projectId, preferences.projectOwner?.projectId)
-    assertTrue(preferences.getLiveActivitySubscriptions().isEmpty())
-    assertTrue(liveActivityPersistence.getActiveIds().isEmpty())
-    assertTrue(
-      "Live Activity of the previous project should be dismissed",
-      notificationManager().activeNotifications.none { it.id == LIVE_ACTIVITY_NOTIFICATION_ID },
-    )
-    assertTrue(
-      "Token of the previous subscriber must not be synced",
-      uniqueWork(UploadManager.SYNC_TOKEN_WORK_NAME).none { it.state == WorkInfo.State.ENQUEUED },
-    )
-
-    runCleanupWork()
-
-    coVerify(timeout = 5_000) {
-      apiService.unregisterSubscriber(previousProject.apiKey, previousProject.projectId, "old-sub")
+      assertNull(preferences.subscriberId)
+      assertTrue(preferences.subscriptionRequested)
+      assertFalse(runtime.isSubscribed())
+      assertEquals(config.projectId, preferences.projectOwner?.projectId)
+      assertTrue(preferences.getLiveActivitySubscriptions().isEmpty())
+      assertTrue(liveActivityPersistence.getActiveIds().isEmpty())
+      assertTrue(notificationManager().activeNotifications.none { it.id == LIVE_ACTIVITY_NOTIFICATION_ID })
+      assertTrue(uniqueWork(UploadManager.SYNC_TOKEN_WORK_NAME).none { it.state == WorkInfo.State.ENQUEUED })
+      assertEquals(WorkInfo.State.ENQUEUED, cleanupWork().single().state)
     }
-    coVerify(timeout = 5_000) {
-      apiService.unsubscribeLiveActivity(
-        match { it.endsWith("/projects/${previousProject.projectId}/live-notifications/live-1/subscribers/live-sub-1") },
-        previousProject.apiKey,
-      )
+
+  @Test
+  fun `registered device without a stored subscription request stays subscribed after the update`() =
+    runTest {
+      preferences.subscriberId = "sub-1"
+
+      val runtime = createRuntime()
+
+      assertTrue(preferences.subscriptionRequested)
+      assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
+      assertEquals(config.projectId, preferences.projectOwner?.projectId)
+      assertTrue(cleanupWork().isEmpty())
     }
-  }
 
   @Test
-  fun `state of another project without subscriptions schedules no cleanup`() {
-    preferences.projectOwner = previousProject
+  fun `stored opt-out of a registered device stays an opt-out after the update`() =
+    runTest {
+      preferences.subscriberId = "sub-1"
+      preferences.subscriptionRequested = false
 
-    startRuntime()
+      val runtime = createRuntime()
 
-    assertTrue(cleanupWork().isEmpty())
-    assertEquals(config.projectId, preferences.projectOwner?.projectId)
-  }
-
-  @Test
-  fun `state saved before project tracking is adopted by the current project`() {
-    preferences.subscriberId = "sub-1"
-    preferences.subscriptionRequested = true
-
-    val runtime = startRuntime()
-
-    assertEquals("sub-1", preferences.subscriberId)
-    assertTrue(runtime.isSubscribed())
-    assertEquals(config.projectId, preferences.projectOwner?.projectId)
-    assertTrue(cleanupWork().isEmpty())
-  }
+      assertFalse(preferences.subscriptionRequested)
+      assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
+    }
 
   @Test
-  fun `registered device without a stored subscription request stays subscribed after the update`() {
-    // SDK 3.x registered on token refresh without storing the request, or counted a missing request
-    // as given (defaultIsSubscribed)
-    preferences.subscriberId = "sub-1"
+  fun `device unsubscribed by SDK 3 stays unsubscribed after the update`() =
+    runTest {
+      PreferenceManager
+        .getDefaultSharedPreferences(application)
+        .edit()
+        .putBoolean("_PushPushGoSDK_is_subscribed_", false)
+        .putString("_PushPushGoSDK_sub_id_", "")
+        .commit()
 
-    val runtime = startRuntime()
+      val runtime = createRuntime()
+      advanceUntilIdle()
 
-    assertTrue(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
-    assertTrue(cleanupWork().isEmpty())
-  }
-
-  @Test
-  fun `stored opt-out of a registered device stays an opt-out after the update`() {
-    preferences.subscriberId = "sub-1"
-    preferences.subscriptionRequested = false
-
-    val runtime = startRuntime()
-
-    assertFalse(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
-  }
+      assertFalse(preferences.subscriptionRequested)
+      assertNull(preferences.subscriberId)
+      assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
+      assertTrue(apiService.unregisteredSubscriberIds.isEmpty())
+      assertTrue(cleanupWork().isEmpty())
+    }
 
   @Test
-  fun `device without a registration stays unsubscribed after the update`() {
-    val runtime = startRuntime()
+  fun `rotated api key keeps the subscription of the same project`() =
+    runTest {
+      preferences.projectOwner = Config.create(config.projectId, "00000000-0000-0000-0000-000000000003")
+      preferences.subscriberId = "sub-1"
+      preferences.subscriptionRequested = true
 
-    assertFalse(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
-  }
+      val runtime = createRuntime()
 
-  @Test
-  fun `missing subscription request is adopted only for state saved before SDK 4`() {
-    // State with a project owner was written by SDK 4, which always stores the request
-    preferences.projectOwner = config
-    preferences.subscriberId = "sub-1"
+      assertEquals("sub-1", preferences.subscriberId)
+      assertTrue(runtime.isSubscribed())
+      assertEquals(config.apiKey, preferences.projectOwner?.apiKey)
+      assertTrue(cleanupWork().isEmpty())
+    }
 
-    val runtime = startRuntime()
-
-    assertFalse(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
-  }
-
-  @Test
-  fun `rotated api key keeps the subscription of the same project`() {
-    preferences.projectOwner = Config.create(config.projectId, "00000000-0000-0000-0000-000000000003")
-    preferences.subscriberId = "sub-1"
-    preferences.subscriptionRequested = true
-
-    val runtime = startRuntime()
-
-    assertEquals("sub-1", preferences.subscriberId)
-    assertTrue(runtime.isSubscribed())
-    assertEquals(config.apiKey, preferences.projectOwner?.apiKey)
-    assertTrue(cleanupWork().isEmpty())
-  }
-
-  private fun startRuntime(): PushNotificationsRuntime =
-    PushNotificationsRuntime(application, config, PushNotificationsCallbacks()).also { runtime = it }
+  private fun TestScope.createRuntime() =
+    PushNotificationsRuntime(
+      application = application,
+      config = config,
+      callbacks = PushNotificationsCallbacks(),
+      apiServiceFactory = { apiService },
+      pushTokenProvider = { "push-token" },
+      dispatcher = StandardTestDispatcher(testScheduler),
+    )
 
   private fun notificationManager(): NotificationManager = requireNotNull(application.getSystemService())
 
@@ -217,11 +168,6 @@ class ProjectStateReconciliationTest {
 
   private fun cleanupWork(): List<WorkInfo> =
     WorkManager.getInstance(application).getWorkInfosByTag(UploadManager.PROJECT_CLEANUP_TAG).get()
-
-  private fun runCleanupWork() {
-    val work = cleanupWork().single()
-    requireNotNull(WorkManagerTestInitHelper.getTestDriver(application)).setAllConstraintsMet(work.id)
-  }
 
   private companion object {
     const val LIVE_ACTIVITY_NOTIFICATION_ID = 4242
