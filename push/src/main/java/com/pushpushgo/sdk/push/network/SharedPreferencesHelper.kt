@@ -51,10 +51,10 @@ internal class SharedPreferencesHelper(
     )
 
   /**
-   * Whether the user asked to receive notifications. Set by a successful subscribe and cleared only
-   * by an explicit unsubscribe - losing the notification permission keeps it, so the device can be
-   * registered again once the permission is granted back. Being registered is tracked separately
-   * by [subscriberId]. SDK 3.x stored the same meaning under this key.
+   * Whether the user asked to receive notifications. Set immediately by an explicit subscribe and
+   * cleared immediately by an explicit unsubscribe - losing the notification permission keeps it,
+   * so the device can be registered again once the permission is granted back. Being registered is
+   * tracked separately by [subscriberId]. SDK 3.x stored the same meaning under this key.
    */
   var subscriptionRequested
     get() =
@@ -68,14 +68,6 @@ internal class SharedPreferencesHelper(
 
   /** Whether [subscriptionRequested] was ever stored, as opposed to defaulting to `false`. */
   fun isSubscriptionRequestStored(): Boolean = sharedPreferences.contains(IS_SUBSCRIBED)
-
-  /**
-   * Stores [subscriptionRequested] on disk before returning, so the user's choice survives the
-   * process being killed right after. Performs disk I/O - call off the main thread.
-   */
-  fun storeSubscriptionRequestedNow(value: Boolean) {
-    sharedPreferences.edit(commit = true) { putBoolean(IS_SUBSCRIBED, value) }
-  }
 
   /**
    * Project the persisted subscription state (subscriber, token, Live Activity subscriptions)

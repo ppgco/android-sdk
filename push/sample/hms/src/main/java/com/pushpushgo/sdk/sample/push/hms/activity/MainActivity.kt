@@ -15,6 +15,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.SubscriptionStatus
 import com.pushpushgo.sdk.sample.push.hms.R
 import kotlinx.coroutines.launch
 
@@ -45,8 +46,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     findViewById<Button>(R.id.check).setOnClickListener {
+      val status =
+        when (val status = PushNotifications.getSubscriptionStatus()) {
+          SubscriptionStatus.Unsubscribed -> "Unsubscribed"
+          is SubscriptionStatus.Subscribed -> "Subscribed: ${status.subscriberId} (${status.projectId})"
+        }
       findViewById<TextView>(R.id.content).text =
-        "Status: " + PushNotifications.getSubscriptionStatus()
+        "Requested: ${PushNotifications.isSubscriptionRequested()}\nStatus: $status"
     }
 
     findViewById<Button>(R.id.beacons).setOnClickListener {

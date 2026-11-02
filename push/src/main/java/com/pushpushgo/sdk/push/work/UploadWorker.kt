@@ -12,6 +12,7 @@ import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
+import com.pushpushgo.sdk.push.push.areNotificationsEnabled
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
@@ -163,6 +164,10 @@ internal class UploadWorker(
     // no longer uses - it may belong to another project.
     if (subscriberId != sharedPreferencesHelper.subscriberId) {
       return logDebug("Token sync skipped - subscriber is no longer active")
+    }
+
+    if (!sharedPreferencesHelper.subscriptionRequested || !areNotificationsEnabled(context)) {
+      return logDebug("Token sync skipped - subscription is not currently requested or notifications are disabled")
     }
 
     val token = pushToken ?: getPlatformPushToken(context)

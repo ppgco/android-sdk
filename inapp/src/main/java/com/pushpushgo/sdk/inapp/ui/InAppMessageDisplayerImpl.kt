@@ -474,8 +474,8 @@ internal class InAppMessageDisplayerImpl(
               return@launch
             }
 
-            if (pushSubscriptionProvider.isSubscribed()) {
-              Log.i(InAppMessages.TAG, "[Displayer] Already subscribed to notifications, skipping")
+            if (pushSubscriptionProvider.isSubscriptionRequested()) {
+              Log.i(InAppMessages.TAG, "[Displayer] Subscription already requested, skipping")
               return@launch
             }
 

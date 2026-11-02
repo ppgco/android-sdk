@@ -5,6 +5,7 @@ import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
 import com.pushpushgo.sdk.push.PushNotifications
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.pushpushgo.sdk.push.push.isNotificationChannelEnabled as isPushNotificationChannelEnabled
 
 class DefaultPushSubscriptionProvider internal constructor(
   private val application: Application,
@@ -21,11 +22,11 @@ class DefaultPushSubscriptionProvider internal constructor(
     }
   }
 
+  override fun isSubscriptionRequested(): Boolean = PushNotifications.isSubscriptionRequested()
+
   override fun isSubscribed(): Boolean = PushNotifications.isSubscribed()
 
   override fun getPushToken(): String? = PushNotifications.getPushToken()
 
-  override fun isNotificationChannelEnabled(): Boolean =
-    com.pushpushgo.sdk.push.push
-      .isNotificationChannelEnabled(application)
+  override fun isNotificationChannelEnabled(): Boolean = isPushNotificationChannelEnabled(application)
 }

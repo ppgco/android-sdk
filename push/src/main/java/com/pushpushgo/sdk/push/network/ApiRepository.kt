@@ -105,6 +105,10 @@ internal class ApiRepository(
   }
 
   suspend fun sendBeacon(beacon: String) {
+    check(sharedPref.subscriptionRequested) {
+      "Cannot send beacon - subscription not requested"
+    }
+
     val subscriberId =
       checkNotNull(sharedPref.subscriberId) {
         "Cannot send beacon - unsubscribed"

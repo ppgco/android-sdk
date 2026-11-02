@@ -14,7 +14,7 @@
 #### SDK entry point & initialization
 - **Replaced `PushPushGo` with `PushNotifications`** as the main public API.
 - `PushNotifications` is now a process-wide object; replace
-  `PushNotifications.getInstance().method()` with `PushNotifications.method()`.
+  `PushPushGo.getInstance().method()` with `PushNotifications.method()`.
 - Initialization is now explicit:
   - `PushNotifications.initialize(Application)`
   - `PushNotifications.initialize(Application, Config)`
@@ -29,23 +29,23 @@
 - Introduced a unified subscription API:
   - `subscribe()` / `unsubscribe()` (Kotlin coroutines)
   - `subscribeAsync()` / `unsubscribeAsync()` (Java-friendly `CompletableFuture`)
-- Removed `subscribeNow()`, `unsubscribeNow()`, `subscribeNowFuture()`, and
-  `unsubscribeNowFuture()`; use the unified methods above.
-- Added `getSubscriptionStatus()` returning `SubscriptionStatus`: `UNSUBSCRIBED`,
-  `SUBSCRIBED`, `NOTIFICATIONS_DISABLED` (the user subscribed, but notifications are
-  disabled) or `PENDING` (the user subscribed, registration in progress). The status
-  reflects the notification settings right away, also offline.
+- Added `getSubscriptionStatus()` returning the sealed `SubscriptionStatus`:
+  `Unsubscribed` or `Subscribed(subscriberId, projectId)`. It represents only the backend state
+  last confirmed by the SDK, independently of user intent and notification permission.
+- Added `isSubscriptionRequested()` for the user's persisted explicit subscribe or
+  unsubscribe choice.
 - Added `subscriptionStatusFlow` (Kotlin `StateFlow`), which emits the current
-  status and every change, including registrations the SDK finishes in the
-  background, e.g. after `switchProject`.
-- `isSubscribed()` now returns `true` only while the status is `SUBSCRIBED`: the
-  device is registered in the current project and notifications are enabled.
+  status and every distinct confirmed-state change, including subscriber ID changes.
+- Added `setSubscriptionStatusCallback(...)` for Java callers to observe future confirmed-state
+  changes. Use `getSubscriptionStatus()` to obtain the current status.
+- `isSubscribed()` now reports only confirmed backend state. It remains `true` while
+  a failed or in-progress removal retains the subscriber ID.
 - When notifications are disabled, the SDK unregisters the device but keeps the
   user's subscription and registers the device again once they are enabled back;
   only `unsubscribe()` cancels the subscription for good. Notification settings are
   checked whenever an activity of the app is resumed.
-- `unsubscribe()` no longer fails without network: the user's choice is stored
-  right away and a subscriber that cannot be removed is removed in the background.
+- `unsubscribe()` stores the user's choice right away, also without network, and
+  removal is retried in the background after a transient failure.
 - Updating from SDK 3.x keeps devices that are registered but have no stored
   subscription (registered on push token refresh, or counted as subscribed through
   `defaultIsSubscribed`) subscribed. A stored opt-out stays an opt-out.
@@ -80,7 +80,7 @@
   - `set(key, Char)`
 - Introduced `BeaconTagStrategy` enum (`APPEND`, `REWRITE`); string-based strategies are no longer supported.
 - Removed `setCustomId(Int?)` method; custom IDs must now be provided using `setCustomId(String?)`.
-- Replace `PushNotifications.getInstance().createBeacon()...send()` with
+- Replace `PushPushGo.getInstance().createBeacon()...send()` with
   `BeaconBuilder()...build()` followed by `PushNotifications.sendBeacon(...)` or
   `PushNotifications.sendBeaconAsync(...)`.
 
@@ -90,11 +90,10 @@
   `PushNotifications.switchProjectAsync(config)` (Java) to move an initialized SDK
   to another project. The switch happens locally and returns right away, even
   offline: the previous project's subscriber and Live Activity subscriptions are
-  removed in the background, and a user who was subscribed is subscribed to the
-  new project in the background. A failed subscription is reported to the error
-  callback and retried while the app is in the foreground.
-- Initializing an initialized SDK with a different configuration still throws
-  `IllegalStateException`; its message now points to `switchProject(...)`.
+  removed in the background. A failed subscription is reported to the error
+  callback.
+- Initializing an initialized SDK with a different configuration throws
+  `IllegalStateException`.
 - `PushNotifications.deinitialize()` turns the SDK off completely. It
   removes Live Activities first, then unsubscribes the current
   subscriber and clears its persisted project data. If any step fails, the SDK
@@ -104,20 +103,20 @@
   is initialized with a configuration of another project (e.g. after an app
   restart), it no longer adopts the previous project's subscriber: that subscriber
   and its Live Activity subscriptions are removed in the background with the
-  previous project's credentials (retried until the API is reachable), local state
-  is cleared, and the user's subscription is kept, so the device registers in the
-  new project once notifications are enabled.
+  previous project's credentials (with bounded retries for transient failures),
+  local state is cleared, and the user's subscription is kept, so the device
+  registers in the new project once notifications are enabled.
 - Live Activity pushes of a project other than the initialized one are reported to
   `InvalidProjectIdHandler` instead of being displayed, like regular pushes.
 
 #### Live Activities
-- Live Activity APIs moved from `PushNotifications` to the
+- Live Activity APIs moved from `PushPushGo` to the
   `PushNotifications.liveActivities` facade.
 
 #### Public configuration API
 - The following configuration properties are no longer publicly mutable and must be set via explicit setter methods:
-  - `notificationClickHandler`
-  - `invalidProjectIdHandler`
+  - `notificationHandler`
+  - `onInvalidProjectIdHandler`
   - `customClickIntentFlags`
 - `defaultIsSubscribed` and `setDefaultIsSubscribed(...)` were removed from the public API.
 
@@ -132,11 +131,10 @@
 - This release **requires code changes** and is not source-compatible with `3.x`.
 - Migrate:
   - `PushPushGo` → `PushNotifications`
-  - `PushNotifications.getInstance().method()` → `PushNotifications.method()`
+  - `PushPushGo.getInstance().method()` → `PushNotifications.method()`
   - `ListenableFuture` → `CompletableFuture`
   - Legacy subscription calls → new unified subscription API
-  - `migrateToNewProject(...)` → `deinitialize()`, then `initialize(...)`, followed by an
-    explicit `subscribe()`
+  - `migrateToNewProject(...)` → `switchProject(...)`
   - Direct Live Activity methods → `PushNotifications.liveActivities`
   - `createBeacon()...send()` → `BeaconBuilder()...build()` followed by `sendBeacon(...)`
   - String-based tag strategies (e.g. `"append"`, `"rewrite"`) → `BeaconTagStrategy.APPEND` / `BeaconTagStrategy.REWRITE`

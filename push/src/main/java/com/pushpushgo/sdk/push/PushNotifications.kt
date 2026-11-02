@@ -88,11 +88,6 @@ object PushNotifications {
    * Calling this method again with an equal configuration has no effect. To move an initialized
    * SDK to another project, use [switchProject].
    *
-   * If the persisted subscription belongs to another project - e.g. the app switched projects
-   * before a restart and now initializes the SDK with a different configuration - that
-   * subscription is removed in the background and the device registers in this project once
-   * notifications are enabled, as long as the user subscribed before.
-   *
    * @throws IllegalStateException if the SDK is already initialized with a different configuration.
    */
   @JvmStatic
@@ -103,7 +98,10 @@ object PushNotifications {
     withLifecycleLock {
       val activeRuntime = runtime
       if (activeRuntime == null) {
-        runtime = PushNotificationsRuntime(application, config, callbacks)
+        PushNotificationsRuntime(application, config, callbacks).also {
+          runtime = it
+          it.start()
+        }
       } else {
         check(activeRuntime.config == config) {
           "PushNotifications SDK is already initialized with a different configuration. " +
@@ -130,7 +128,7 @@ object PushNotifications {
       val activeRuntime = requireRuntime()
       activeRuntime.deinitialize()
       runtime = null
-      callbacks.publishSubscriptionStatus(SubscriptionStatus.UNSUBSCRIBED)
+      callbacks.publishSubscriptionStatus(SubscriptionStatus.Unsubscribed)
     }
   }
 
@@ -153,12 +151,6 @@ object PushNotifications {
    * and the SDK starts working with [config]. Pushes the previous project sends in the meantime go
    * to [InvalidProjectIdHandler] instead of being displayed.
    *
-   * The method returns right after the local switch. If the user was subscribed and notifications
-   * are enabled, the device is then subscribed to the new project in the background, so
-   * [isSubscribed] turns `true` once that completes. A failed subscription is reported to the error
-   * callback and retried while the app is in the foreground. If the user was not subscribed, call
-   * [subscribe] when needed.
-   *
    * Switching to the configuration the SDK already uses has no effect. Switches run one after
    * another: if the previous project is still registering the device, the switch waits for that
    * request to finish, so its result never mixes with the new project's state. Handlers and the
@@ -174,10 +166,10 @@ object PushNotifications {
       if (activeRuntime.config == config) return
 
       activeRuntime.release()
-      runtime =
-        PushNotificationsRuntime(activeRuntime.application, config, callbacks).apply {
-          subscribeIfRequestedInBackground()
-        }
+      PushNotificationsRuntime(activeRuntime.application, config, callbacks).also {
+        runtime = it
+        it.start()
+      }
     }
   }
 
@@ -243,33 +235,52 @@ object PushNotifications {
   fun getApiKey(): String = requireRuntime().getApiKey()
 
   /**
-   * Returns the push subscription status of the device in the current project.
+   * Returns the backend subscription state last confirmed by the SDK for the current project.
    *
-   * The status is computed from the stored subscription and the current notification settings, so
-   * it reflects a revoked notification permission right away - also offline.
+   * A subscribed status contains the confirmed subscriber ID. User intent and notification
+   * permission are exposed separately by [isSubscriptionRequested] and [areNotificationsEnabled].
    */
   @JvmStatic
   fun getSubscriptionStatus(): SubscriptionStatus = requireRuntime().getSubscriptionStatus()
 
   /**
+   * Returns whether the user most recently requested a subscription through [subscribe].
+   *
+   * This intent is independent of notification permission and confirmed backend state.
+   */
+  @JvmStatic
+  fun isSubscriptionRequested(): Boolean = requireRuntime().isSubscriptionRequested()
+
+  /**
    * The push subscription status as a flow: emits the current status when collected and then every
-   * change - including the ones the SDK makes in the background, such as registering the device
-   * after [switchProject] or after the notification permission is granted back.
+   * distinct confirmed backend-state change - including the ones the SDK makes in the background,
+   * such as registering the device after [switchProject] or after notification permission is
+   * granted back.
    *
    * Changes of the notification settings made outside the app are picked up when an activity of the
    * app is resumed. The flow is process-wide: it keeps working across [switchProject] and
-   * [deinitialize], and holds [SubscriptionStatus.UNSUBSCRIBED] while the SDK is not initialized.
+   * [deinitialize], and holds [SubscriptionStatus.Unsubscribed] while the SDK is not initialized.
    */
   @get:JvmSynthetic
   val subscriptionStatusFlow: StateFlow<SubscriptionStatus>
     get() = callbacks.subscriptionStatusFlow
 
   /**
-   * Returns `true` when the device receives notifications from the current project, i.e. the
-   * status is [SubscriptionStatus.SUBSCRIBED].
+   * Sets the process-wide Java-friendly callback for future confirmed subscription status changes.
    *
-   * Returns `false` while the notification permission is revoked, even if the user subscribed
-   * earlier - see [getSubscriptionStatus] to tell the cases apart.
+   * The callback may be set before [initialize] and survives [switchProject]. Use
+   * [getSubscriptionStatus] to obtain the current status. Pass `null` to remove the callback.
+   */
+  @JvmStatic
+  fun setSubscriptionStatusCallback(callback: SubscriptionStatusCallback?) {
+    callbacks.subscriptionStatusCallback = callback
+  }
+
+  /**
+   * Returns `true` when the SDK has a confirmed backend subscription in the current project.
+   *
+   * This value is independent of the user's current intent and notification permission. For
+   * example, it remains `true` while removal after [unsubscribe] is pending.
    */
   @JvmStatic
   fun isSubscribed(): Boolean = requireRuntime().isSubscribed()
@@ -283,7 +294,10 @@ object PushNotifications {
   /**
    * Subscribes the device to notifications.
    *
-   * If notifications are disabled, an [IllegalStateException] is thrown.
+   * If notifications are disabled, an [IllegalStateException] is thrown without changing the
+   * user's subscription choice. After notification permission is validated, the choice is stored
+   * before contacting the API, so it remains requested if registration fails and can be reconciled
+   * later.
    *
    * @throws IllegalStateException
    */
@@ -295,10 +309,10 @@ object PushNotifications {
   /**
    * Unsubscribes the device from notifications.
    *
-   * The user's choice is stored right away and the status becomes [SubscriptionStatus.UNSUBSCRIBED],
-   * also without network: if the subscriber cannot be removed from the API right now, it is removed
-   * in the background. Notifications sent before the subscriber is removed - e.g. queued while the
-   * device was offline - can still be delivered and displayed.
+   * The user's choice is stored right away. If the subscriber cannot be removed from the API right
+   * now, its ID is retained as the last confirmed backend state and removal is scheduled in the
+   * background. Notifications sent before the subscriber is removed - e.g. queued while the device
+   * was offline - can still be delivered and displayed.
    * Call it whenever the user turns notifications off in the app, whatever the current status.
    */
   @JvmSynthetic
@@ -377,8 +391,6 @@ object PushNotifications {
 
   /**
    * Sends a beacon created with [BeaconBuilder].
-   *
-   * @throws IllegalStateException if the device is not subscribed.
    */
   @JvmStatic
   @JvmSynthetic
@@ -388,9 +400,6 @@ object PushNotifications {
 
   /**
    * Sends a beacon asynchronously.
-   *
-   * Java-friendly wrapper for [sendBeacon]. The future completes exceptionally if the device is
-   * not subscribed.
    */
   @JvmStatic
   fun sendBeaconAsync(beacon: Beacon): CompletableFuture<Void?> =

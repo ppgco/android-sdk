@@ -1,5 +1,7 @@
 package com.pushpushgo.sdk.push.work
 
+import android.Manifest
+import android.app.Application
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
@@ -22,6 +24,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import retrofit2.Response
 import java.io.IOException
 
@@ -118,7 +121,9 @@ class ProjectCleanupWorkerTest {
       // Registering with the same push token returns the still active subscriber
       preferences.projectOwner = previousProject
       preferences.subscriberId = "old-sub"
+      preferences.subscriptionRequested = true
       preferences.setLiveActivitySubscriberId("live-1", "live-sub-1")
+      shadowOf(getApplicationContext<Application>()).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
       val result = worker().doWork()
 
@@ -127,18 +132,52 @@ class ProjectCleanupWorkerTest {
       coVerify(exactly = 0) { apiService.unsubscribeLiveActivity(any(), any()) }
     }
 
-  private fun worker(runAttemptCount: Int = 0) =
-    TestListenableWorkerBuilder<ProjectCleanupWorker>(
-      context = getApplicationContext(),
-      inputData =
-        workDataOf(
-          ProjectCleanupWorker.PROJECT_ID to previousProject.projectId,
-          ProjectCleanupWorker.API_KEY to previousProject.apiKey,
-          ProjectCleanupWorker.API_URL to previousProject.apiUrl,
-          ProjectCleanupWorker.SUBSCRIBER_ID to "old-sub",
-          ProjectCleanupWorker.LIVE_ACTIVITY_IDS to arrayOf("live-1"),
-          ProjectCleanupWorker.LIVE_ACTIVITY_SUBSCRIBER_IDS to arrayOf("live-sub-1"),
-        ),
-      runAttemptCount = runAttemptCount,
-    ).build()
+  @Test
+  fun `removes an opted out subscriber retained for the current project`() =
+    runBlocking {
+      preferences.projectOwner = previousProject
+      preferences.subscriberId = "old-sub"
+      preferences.subscriptionRequested = false
+
+      val result = worker(liveActivities = emptyMap()).doWork()
+
+      assertEquals(ListenableWorker.Result.success(), result)
+      coVerify(exactly = 1) {
+        apiService.unregisterSubscriber(previousProject.apiKey, previousProject.projectId, "old-sub")
+      }
+      assertEquals(null, preferences.subscriberId)
+    }
+
+  @Test
+  fun `does not clear a different current subscriber after removing the cleanup target`() =
+    runBlocking {
+      preferences.projectOwner = previousProject
+      preferences.subscriberId = "new-sub"
+      preferences.subscriptionRequested = false
+
+      val result = worker(liveActivities = emptyMap()).doWork()
+
+      assertEquals(ListenableWorker.Result.success(), result)
+      coVerify(exactly = 1) {
+        apiService.unregisterSubscriber(previousProject.apiKey, previousProject.projectId, "old-sub")
+      }
+      assertEquals("new-sub", preferences.subscriberId)
+    }
+
+  private fun worker(
+    runAttemptCount: Int = 0,
+    liveActivities: Map<String, String> = mapOf("live-1" to "live-sub-1"),
+  ) = TestListenableWorkerBuilder<ProjectCleanupWorker>(
+    context = getApplicationContext(),
+    inputData =
+      workDataOf(
+        ProjectCleanupWorker.PROJECT_ID to previousProject.projectId,
+        ProjectCleanupWorker.API_KEY to previousProject.apiKey,
+        ProjectCleanupWorker.API_URL to previousProject.apiUrl,
+        ProjectCleanupWorker.SUBSCRIBER_ID to "old-sub",
+        ProjectCleanupWorker.LIVE_ACTIVITY_IDS to liveActivities.keys.toTypedArray(),
+        ProjectCleanupWorker.LIVE_ACTIVITY_SUBSCRIBER_IDS to liveActivities.values.toTypedArray(),
+      ),
+    runAttemptCount = runAttemptCount,
+  ).build()
 }

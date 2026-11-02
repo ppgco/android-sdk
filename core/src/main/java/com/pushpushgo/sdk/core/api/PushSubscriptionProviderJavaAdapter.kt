@@ -7,23 +7,25 @@ import kotlin.coroutines.resumeWithException
 
 abstract class PushSubscriptionProviderJavaAdapter : PushSubscriptionProvider {
   /**
-   * Subscribes to the underlying push provider.
-   * Must complete when registration finishes and be idempotent.
+   * Requests push notifications for the user.
+   *
+   * This updates the user's preference to receive notifications and is idempotent.
    */
-  abstract fun subscribeFuture(): CompletableFuture<Void?>
+  abstract fun subscribeAsync(): CompletableFuture<Void?>
 
   /**
-   * Unsubscribes from the underlying push provider.
-   * Must complete when unregistration finishes and be idempotent.
+   * Stops requesting push notifications for the user.
+   *
+   * This updates the user's preference not to receive notifications and is idempotent.
    */
-  abstract fun unsubscribeFuture(): CompletableFuture<Void?>
+  abstract fun unsubscribeAsync(): CompletableFuture<Void?>
 
   override suspend fun subscribe() {
-    subscribeFuture().await()
+    subscribeAsync().await()
   }
 
   override suspend fun unsubscribe() {
-    unsubscribeFuture().await()
+    unsubscribeAsync().await()
   }
 }
 

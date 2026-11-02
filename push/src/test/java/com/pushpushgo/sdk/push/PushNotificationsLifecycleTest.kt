@@ -15,16 +15,12 @@ import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.work.UploadManager
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkConstructor
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
-import io.mockk.unmockkConstructor
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.CompletableDeferred
@@ -64,8 +60,6 @@ class PushNotificationsLifecycleTest {
 
     apiService = mockk(relaxed = true)
     mockkObject(ApiService.Companion)
-    mockkConstructor(NotificationStatusChecker::class)
-    every { anyConstructed<NotificationStatusChecker>().start() } just Runs
     every { ApiService.fromConfig(any()) } returns apiService
     coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
     coEvery { apiService.unsubscribeLiveActivity(any(), any()) } returns Response.success(null)
@@ -80,14 +74,15 @@ class PushNotificationsLifecycleTest {
     PushNotifications.setNotificationClickHandler(null)
     PushNotifications.setInvalidProjectIdHandler(null)
     PushNotifications.setErrorCallback(null)
+    PushNotifications.setSubscriptionStatusCallback(null)
 
     if (PushNotifications.isInitialized()) {
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
       PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
       runBlocking { PushNotifications.deinitialize() }
     }
 
     WorkManagerTestInitHelper.closeWorkDatabase()
-    unmockkConstructor(NotificationStatusChecker::class)
     unmockkObject(ApiService.Companion)
     unmockkStatic(PUSH_TOKEN_UTILS)
   }
@@ -130,16 +125,34 @@ class PushNotificationsLifecycleTest {
     }
 
   @Test
-  fun `deinitialize skips unregister and clears stale subscriber when not subscribed`() =
+  fun `deinitialize removes a confirmed subscriber when subscription is not requested`() =
     runBlocking {
-      preferences.subscriberId = "stale-sub-123"
+      preferences.subscriberId = "retained-sub-123"
       preferences.subscriptionRequested = false
 
       PushNotifications.deinitialize()
 
-      coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
+      coVerify(exactly = 1) {
+        apiService.unregisterSubscriber(config.apiKey, config.projectId, "retained-sub-123")
+      }
       assertFalse(PushNotifications.isInitialized())
       assertNull(preferences.subscriberId)
+      assertFalse(preferences.subscriptionRequested)
+    }
+
+  @Test
+  fun `deinitialize preserves opted out subscriber and intent when removal fails`() =
+    runBlocking {
+      preferences.subscriberId = "retained-sub-123"
+      preferences.subscriptionRequested = false
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
+
+      val failure = runCatching { PushNotifications.deinitialize() }.exceptionOrNull()
+
+      assertTrue("Expected IOException, got: $failure", failure is IOException)
+      assertTrue("SDK should remain initialized", PushNotifications.isInitialized())
+      assertEquals("retained-sub-123", preferences.subscriberId)
+      assertFalse(preferences.subscriptionRequested)
     }
 
   @Test
@@ -222,6 +235,53 @@ class PushNotificationsLifecycleTest {
   }
 
   @Test
+  fun `public intent getter is independent of confirmed state and permission`() {
+    preferences.subscriptionRequested = false
+    preferences.subscriberId = "sub-123"
+    shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+
+    assertFalse(PushNotifications.isSubscriptionRequested())
+    assertTrue(PushNotifications.isSubscribed())
+    assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), PushNotifications.getSubscriptionStatus())
+    assertEquals("sub-123", PushNotifications.getSubscriberId())
+  }
+
+  @Test
+  fun `callback set before initialization receives only initialized runtime status`() =
+    runBlocking {
+      preferences.subscriptionRequested = false
+      PushNotifications.deinitialize()
+      preferences.subscriberId = "sub-before-init"
+      val received = mutableListOf<SubscriptionStatus>()
+
+      PushNotifications.setSubscriptionStatusCallback(received::add)
+      assertTrue(received.isEmpty())
+      PushNotifications.initialize(application, config)
+
+      assertEquals(listOf(SubscriptionStatus.Subscribed("sub-before-init", config.projectId)), received)
+    }
+
+  @Test
+  fun `status callback follows project switch and new subscriber id`() =
+    runBlocking {
+      setSubscribed()
+      givenNotificationsEnabled()
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "new-sub")
+      val received = CopyOnWriteArrayList<SubscriptionStatus>()
+      PushNotifications.setSubscriptionStatusCallback(received::add)
+
+      PushNotifications.switchProject(otherConfig)
+
+      awaitTrue("Callback should receive the new project's subscriber: $received") {
+        received.lastOrNull() == SubscriptionStatus.Subscribed("new-sub", otherConfig.projectId)
+      }
+      assertEquals(
+        listOf(SubscriptionStatus.Subscribed("new-sub", otherConfig.projectId)),
+        received,
+      )
+    }
+
+  @Test
   fun `switchProject switches locally while offline and removes the previous subscriber later`() =
     runBlocking {
       setSubscribed()
@@ -266,13 +326,13 @@ class PushNotificationsLifecycleTest {
 
         assertEquals(otherConfig.projectId, PushNotifications.getProjectId())
         assertFalse("Subscription should still be in progress", PushNotifications.isSubscribed())
-        assertEquals(SubscriptionStatus.PENDING, PushNotifications.subscriptionStatusFlow.value)
+        assertEquals(SubscriptionStatus.Unsubscribed, PushNotifications.subscriptionStatusFlow.value)
       } finally {
         finishRegistration.complete(Unit)
       }
 
       awaitTrue("Flow should report the registration done in the background") {
-        PushNotifications.subscriptionStatusFlow.value == SubscriptionStatus.SUBSCRIBED
+        PushNotifications.subscriptionStatusFlow.value == SubscriptionStatus.Subscribed("new-sub", otherConfig.projectId)
       }
       assertTrue(PushNotifications.isSubscribed())
       coVerify(exactly = 1) { apiService.registerSubscriber(otherConfig.apiKey, otherConfig.projectId, any()) }
@@ -326,11 +386,11 @@ class PushNotificationsLifecycleTest {
     runBlocking {
       setSubscribed()
       givenNotificationsEnabled()
-      assertEquals(SubscriptionStatus.SUBSCRIBED, PushNotifications.getSubscriptionStatus())
+      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), PushNotifications.getSubscriptionStatus())
 
       PushNotifications.deinitialize()
 
-      assertEquals(SubscriptionStatus.UNSUBSCRIBED, PushNotifications.subscriptionStatusFlow.value)
+      assertEquals(SubscriptionStatus.Unsubscribed, PushNotifications.subscriptionStatusFlow.value)
     }
 
   @Test

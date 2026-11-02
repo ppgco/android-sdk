@@ -149,7 +149,7 @@ class ProjectStateReconciliationTest {
     val runtime = startRuntime()
 
     assertTrue(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.SUBSCRIBED, runtime.getSubscriptionStatus())
+    assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
     assertTrue(cleanupWork().isEmpty())
   }
 
@@ -161,7 +161,7 @@ class ProjectStateReconciliationTest {
     val runtime = startRuntime()
 
     assertFalse(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.UNSUBSCRIBED, runtime.getSubscriptionStatus())
+    assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
   }
 
   @Test
@@ -169,7 +169,7 @@ class ProjectStateReconciliationTest {
     val runtime = startRuntime()
 
     assertFalse(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.UNSUBSCRIBED, runtime.getSubscriptionStatus())
+    assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
   }
 
   @Test
@@ -181,7 +181,7 @@ class ProjectStateReconciliationTest {
     val runtime = startRuntime()
 
     assertFalse(preferences.subscriptionRequested)
-    assertEquals(SubscriptionStatus.UNSUBSCRIBED, runtime.getSubscriptionStatus())
+    assertEquals(SubscriptionStatus.Subscribed("sub-1", config.projectId), runtime.getSubscriptionStatus())
   }
 
   @Test

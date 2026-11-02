@@ -2,27 +2,32 @@ package com.pushpushgo.sdk.core.api
 
 interface PushSubscriptionProvider {
   /**
-   * Subscribes to the underlying push provider.
-   * Must complete when registration finishes and be idempotent.
+   * Requests push notifications for the user.
    *
-   * A Java adapter is provided via [PushSubscriptionProviderJavaAdapter.subscribeFuture].
+   * This updates the user's preference to receive notifications and is idempotent.
+   *
+   * A Java adapter is provided via [PushSubscriptionProviderJavaAdapter.subscribeAsync].
    */
   suspend fun subscribe()
 
   /**
-   * Unsubscribes from the underlying push provider.
-   * Must complete when unregistration finishes and be idempotent.
+   * Stops requesting push notifications for the user.
    *
-   * A Java adapter is provided via [PushSubscriptionProviderJavaAdapter.unsubscribeFuture].
+   * This updates the user's preference not to receive notifications and is idempotent.
+   *
+   * A Java adapter is provided via [PushSubscriptionProviderJavaAdapter.unsubscribeAsync].
    */
   suspend fun unsubscribe()
 
+  /** Returns whether the user has requested push notifications. */
+  fun isSubscriptionRequested(): Boolean
+
+  /** Returns whether the user is currently subscribed to push notifications. */
   fun isSubscribed(): Boolean
 
+  /** Returns the push token for the user's device, if available. */
   fun getPushToken(): String?
 
-  /**
-   * Returns whether the notification channel used by underlying provider is enabled.
-   */
+  /** Returns whether the notification channel for push notifications is enabled. */
   fun isNotificationChannelEnabled(): Boolean
 }

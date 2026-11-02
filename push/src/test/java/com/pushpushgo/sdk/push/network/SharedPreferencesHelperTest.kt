@@ -94,7 +94,7 @@ class SharedPreferencesHelperTest {
     assertFalse(prefs.isSubscriptionRequestStored())
     assertFalse(prefs.subscriptionRequested)
 
-    prefs.storeSubscriptionRequestedNow(false)
+    prefs.subscriptionRequested = false
 
     assertTrue(prefs.isSubscriptionRequestStored())
     assertFalse(prefs.subscriptionRequested)

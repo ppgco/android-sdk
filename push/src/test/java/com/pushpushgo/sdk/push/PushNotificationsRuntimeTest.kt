@@ -14,27 +14,26 @@ import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import com.pushpushgo.sdk.push.work.UploadManager
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkConstructor
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
-import io.mockk.unmockkConstructor
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -63,8 +62,6 @@ class PushNotificationsRuntimeTest {
 
     apiService = mockk(relaxed = true)
     mockkObject(ApiService.Companion)
-    mockkConstructor(NotificationStatusChecker::class)
-    every { anyConstructed<NotificationStatusChecker>().start() } just Runs
     every { ApiService.fromConfig(any()) } returns apiService
     coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
 
@@ -79,7 +76,6 @@ class PushNotificationsRuntimeTest {
     runBlocking { runCatching { runtime.deinitialize() } }
 
     WorkManagerTestInitHelper.closeWorkDatabase()
-    unmockkConstructor(NotificationStatusChecker::class)
     unmockkObject(ApiService.Companion)
   }
 
@@ -97,6 +93,47 @@ class PushNotificationsRuntimeTest {
     }
 
   @Test
+  fun `permission removal keeps confirmed state until backend confirmation`() =
+    runBlocking {
+      setSubscribed()
+      val removalStarted = CompletableDeferred<Unit>()
+      val finishRemoval = CompletableDeferred<Unit>()
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
+        removalStarted.complete(Unit)
+        finishRemoval.await()
+        Response.success(null)
+      }
+
+      val removal = launch(start = CoroutineStart.UNDISPATCHED) { runtime.unregisterKeepingRequest() }
+      removalStarted.await()
+
+      assertTrue(preferences.subscriptionRequested)
+      assertEquals("sub-123", preferences.subscriberId)
+      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
+
+      finishRemoval.complete(Unit)
+      removal.join()
+
+      assertTrue(preferences.subscriptionRequested)
+      assertNull(preferences.subscriberId)
+      assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
+    }
+
+  @Test
+  fun `failed permission removal retains intent and confirmed subscriber for retry`() =
+    runBlocking {
+      setSubscribed()
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
+
+      val failure = runCatching { runtime.unregisterKeepingRequest() }.exceptionOrNull()
+
+      assertTrue(failure is IOException)
+      assertTrue(preferences.subscriptionRequested)
+      assertEquals("sub-123", preferences.subscriberId)
+      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
+    }
+
+  @Test
   fun `unsubscribe cancels the subscription request`() =
     runBlocking {
       setSubscribed()
@@ -110,22 +147,99 @@ class PushNotificationsRuntimeTest {
     }
 
   @Test
-  fun `status tells apart why the device does not receive notifications`() {
+  fun `subscribe does not store the request when notification permission is disabled`() =
+    runBlocking {
+      shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+
+      val failure = runCatching { runtime.subscribe() }.exceptionOrNull()
+
+      assertEquals(IllegalStateException::class.java, failure?.javaClass)
+      assertFalse(preferences.subscriptionRequested)
+      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `subscribe stores the request before registration failure`() =
+    runBlocking {
+      grantNotifications()
+      val expected = IOException("offline")
+      mockkStatic(PUSH_TOKEN_UTILS)
+      coEvery { getPlatformPushToken(any()) } returns "push-token"
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } coAnswers {
+        assertTrue(preferences.subscriptionRequested)
+        throw expected
+      }
+
+      try {
+        val actual = runCatching { runtime.subscribe() }.exceptionOrNull()
+
+        assertSame(expected, actual)
+        assertTrue(preferences.subscriptionRequested)
+        assertNull(preferences.subscriberId)
+      } finally {
+        unmockkStatic(PUSH_TOKEN_UTILS)
+      }
+    }
+
+  @Test
+  fun `subscribe is idempotent when a subscriber already exists`() =
+    runBlocking {
+      grantNotifications()
+      preferences.subscriberId = "sub-123"
+      preferences.subscriptionRequested = false
+
+      runtime.subscribe()
+      runtime.subscribe()
+
+      assertTrue(preferences.subscriptionRequested)
+      assertEquals("sub-123", preferences.subscriberId)
+      assertTrue(cleanupWork().none { it.state == WorkInfo.State.ENQUEUED })
+      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `status represents confirmed backend state independently of intent and permission`() {
     grantNotifications()
     setSubscribed()
-    assertStatus(SubscriptionStatus.SUBSCRIBED)
+    assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
     assertTrue(runtime.isSubscribed())
 
     preferences.subscriberId = null
-    assertStatus(SubscriptionStatus.PENDING)
+    assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
+    assertFalse(runtime.isSubscribed())
 
     // Revoked while still registered - before the checker unregisters the device, e.g. offline
     preferences.subscriberId = "sub-123"
     shadowOf(application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
-    assertStatus(SubscriptionStatus.NOTIFICATIONS_DISABLED)
+    assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
+    assertTrue(runtime.isSubscribed())
 
     preferences.subscriptionRequested = false
-    assertStatus(SubscriptionStatus.UNSUBSCRIBED)
+    assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
+    assertTrue(runtime.isSubscribed())
+  }
+
+  @Test
+  fun `subscription request getter is independent of confirmed backend state`() {
+    preferences.subscriptionRequested = true
+    preferences.subscriberId = null
+
+    assertTrue(runtime.isSubscriptionRequested())
+    assertFalse(runtime.isSubscribed())
+
+    preferences.subscriptionRequested = false
+    preferences.subscriberId = "sub-123"
+
+    assertFalse(runtime.isSubscriptionRequested())
+    assertTrue(runtime.isSubscribed())
+  }
+
+  @Test
+  fun `status getter does not publish persisted changes`() {
+    preferences.subscriberId = "sub-123"
+
+    assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), runtime.getSubscriptionStatus())
+    assertEquals(SubscriptionStatus.Unsubscribed, callbacks.subscriptionStatusFlow.value)
   }
 
   @Test
@@ -137,38 +251,40 @@ class PushNotificationsRuntimeTest {
     val startedRuntime = PushNotificationsRuntime(application, config, startedCallbacks)
 
     try {
-      assertEquals(SubscriptionStatus.SUBSCRIBED, startedCallbacks.subscriptionStatusFlow.value)
+      startedRuntime.start()
+      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), startedCallbacks.subscriptionStatusFlow.value)
     } finally {
       runBlocking { startedRuntime.release() }
     }
   }
 
   @Test
-  fun `unsubscribe without network stores the choice and removes the subscriber in the background`() =
+  fun `unsubscribe without network retains the subscriber and schedules background removal`() =
     runBlocking {
       grantNotifications()
       setSubscribed()
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
+        assertFalse(preferences.subscriptionRequested)
+        throw IOException("offline")
+      }
 
       runtime.unsubscribe()
 
       assertFalse(preferences.subscriptionRequested)
-      assertNull(preferences.subscriberId)
-      assertEquals(SubscriptionStatus.UNSUBSCRIBED, callbacks.subscriptionStatusFlow.value)
+      assertEquals("sub-123", preferences.subscriberId)
+      assertEquals(SubscriptionStatus.Subscribed("sub-123", config.projectId), callbacks.subscriptionStatusFlow.value)
       val cleanup = cleanupWork().single()
       assertEquals(WorkInfo.State.ENQUEUED, cleanup.state)
-
-      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } returns Response.success(null)
-      requireNotNull(WorkManagerTestInitHelper.getTestDriver(application)).setAllConstraintsMet(cleanup.id)
-
-      // Once in unsubscribe, once more by the cleanup work with the same project's credentials
-      coVerify(exactly = 2, timeout = 5_000) { apiService.unregisterSubscriber(config.apiKey, config.projectId, "sub-123") }
     }
 
   @Test
   fun `unsubscribe online removes the subscriber right away`() =
     runBlocking {
       setSubscribed()
+      coEvery { apiService.unregisterSubscriber(any(), any(), any()) } coAnswers {
+        assertFalse(preferences.subscriptionRequested)
+        Response.success(null)
+      }
 
       runtime.unsubscribe()
 
@@ -186,7 +302,7 @@ class PushNotificationsRuntimeTest {
       runtime.unsubscribe()
 
       assertFalse(preferences.subscriptionRequested)
-      assertNull(preferences.subscriberId)
+      assertEquals("sub-123", preferences.subscriberId)
       assertTrue("Retrying a rejected request does not help", cleanupWork().isEmpty())
     }
 
@@ -200,29 +316,54 @@ class PushNotificationsRuntimeTest {
 
       coVerify(exactly = 0) { apiService.unregisterSubscriber(any(), any(), any()) }
       assertFalse(preferences.subscriptionRequested)
-      assertEquals(SubscriptionStatus.UNSUBSCRIBED, runtime.getSubscriptionStatus())
+      assertEquals(SubscriptionStatus.Unsubscribed, runtime.getSubscriptionStatus())
     }
 
   @Test
-  fun `subscribing again cancels the background removal of the same subscriber`() =
+  fun `subscribing again restores intent without registering the retained subscriber again`() =
     runBlocking {
       grantNotifications()
       setSubscribed()
       coEvery { apiService.unregisterSubscriber(any(), any(), any()) } throws IOException("offline")
       runtime.unsubscribe()
 
-      // The API returns the subscriber that is still active for this push token
+      runtime.subscribe()
+
+      assertTrue(preferences.subscriptionRequested)
+      assertEquals("sub-123", preferences.subscriberId)
+      assertTrue(uniqueWork(UploadManager.SYNC_TOKEN_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
+      assertTrue(uniqueWork(UploadManager.PERIODIC_TOKEN_SYNC_WORK_NAME).any { it.state == WorkInfo.State.ENQUEUED })
+      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
+    }
+
+  @Test
+  fun `runtime restart retries a failed requested subscription`() =
+    runBlocking {
+      grantNotifications()
       mockkStatic(PUSH_TOKEN_UTILS)
       coEvery { getPlatformPushToken(any()) } returns "push-token"
-      coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "sub-123")
+      coEvery { apiService.registerSubscriber(any(), any(), any()) } throws IOException("offline")
+
       try {
-        runtime.subscribe()
+        runCatching { runtime.subscribe() }
+        assertTrue(preferences.subscriptionRequested)
+        assertNull(preferences.subscriberId)
+
+        runtime.release()
+        coEvery { apiService.registerSubscriber(any(), any(), any()) } returns TokenResponse(id = "sub-after-restart")
+        runtime = PushNotificationsRuntime(application, config, callbacks)
+        runtime.start()
+
+        withTimeout(5_000) {
+          while (preferences.subscriberId == null) delay(10)
+        }
+
+        assertTrue(preferences.subscriptionRequested)
+        assertEquals("sub-after-restart", preferences.subscriberId)
+        coVerify(exactly = 2) { apiService.registerSubscriber(any(), config.projectId, any()) }
       } finally {
         unmockkStatic(PUSH_TOKEN_UTILS)
       }
-
-      assertEquals(WorkInfo.State.CANCELLED, cleanupWork().single().state)
-      assertEquals(SubscriptionStatus.SUBSCRIBED, callbacks.subscriptionStatusFlow.value)
     }
 
   @Test
@@ -251,9 +392,8 @@ class PushNotificationsRuntimeTest {
       }
 
       try {
-        // e.g. switchProject and the notification status checker of the new runtime
-        val first = launch(start = CoroutineStart.UNDISPATCHED) { runtime.subscribeIfRequested() }
-        val second = launch(start = CoroutineStart.UNDISPATCHED) { runtime.subscribeIfRequested() }
+        val first = launch(start = CoroutineStart.UNDISPATCHED) { runtime.subscribe() }
+        val second = launch(start = CoroutineStart.UNDISPATCHED) { runtime.subscribe() }
         finishRegistration.complete(Unit)
         joinAll(first, second)
       } finally {
@@ -264,46 +404,14 @@ class PushNotificationsRuntimeTest {
       assertTrue(runtime.isSubscribed())
     }
 
-  @Test
-  fun `subscription waits until notifications are enabled and is not an error`() =
-    runBlocking {
-      preferences.subscriptionRequested = true
-      val errors = mutableListOf<Throwable>()
-      PushNotifications.setErrorCallback { errors += it }
-
-      try {
-        runtime.subscribeIfRequested()
-      } finally {
-        PushNotifications.setErrorCallback(null)
-      }
-
-      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
-      assertTrue("Subscription request should survive", preferences.subscriptionRequested)
-      assertTrue("Disabled notifications are not an error, got: $errors", errors.isEmpty())
-    }
-
-  @Test
-  fun `user who did not subscribe is not subscribed`() =
-    runBlocking {
-      shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
-
-      runtime.subscribeIfRequested()
-
-      coVerify(exactly = 0) { apiService.registerSubscriber(any(), any(), any()) }
-    }
-
   private fun grantNotifications() {
     shadowOf(application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
   }
 
-  private fun assertStatus(expected: SubscriptionStatus) {
-    assertEquals(expected, runtime.getSubscriptionStatus())
-    assertEquals("Flow should follow the status", expected, callbacks.subscriptionStatusFlow.value)
-    assertEquals(expected == SubscriptionStatus.SUBSCRIBED, runtime.isSubscribed())
-  }
-
   private fun cleanupWork(): List<WorkInfo> =
     WorkManager.getInstance(application).getWorkInfosByTag(UploadManager.PROJECT_CLEANUP_TAG).get()
+
+  private fun uniqueWork(name: String): List<WorkInfo> = WorkManager.getInstance(application).getWorkInfosForUniqueWork(name).get()
 
   private fun setSubscribed() {
     preferences.subscriberId = "sub-123"

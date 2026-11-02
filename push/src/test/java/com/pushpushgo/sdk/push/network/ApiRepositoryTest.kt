@@ -117,7 +117,7 @@ class ApiRepositoryTest {
       val failure = runCatching { repository.sendBeacon("{}") }.exceptionOrNull()
 
       assertEquals(IllegalStateException::class.java, failure?.javaClass)
-      assertEquals("Cannot send beacon - unsubscribed", failure?.message)
+      assertEquals("Cannot send beacon - subscription not requested", failure?.message)
       coVerify(exactly = 0) { apiService.sendBeacon(any(), any(), any(), any()) }
     }
 

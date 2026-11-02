@@ -71,12 +71,14 @@ public final class com/pushpushgo/sdk/push/PushNotifications {
 	public static final fun isPushPushGoNotification (Landroid/content/Intent;)Z
 	public static final fun isPushPushGoNotification (Ljava/util/Map;)Z
 	public static final fun isSubscribed ()Z
+	public static final fun isSubscriptionRequested ()Z
 	public static final synthetic fun sendBeacon (Lcom/pushpushgo/sdk/push/Beacon;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun sendBeaconAsync (Lcom/pushpushgo/sdk/push/Beacon;)Ljava/util/concurrent/CompletableFuture;
 	public static final fun setCustomClickIntentFlags (I)V
 	public static final fun setErrorCallback (Lcom/pushpushgo/sdk/push/PushNotificationsErrorCallback;)V
 	public static final fun setInvalidProjectIdHandler (Lcom/pushpushgo/sdk/push/InvalidProjectIdHandler;)V
 	public static final fun setNotificationClickHandler (Lcom/pushpushgo/sdk/push/NotificationClickHandler;)V
+	public static final fun setSubscriptionStatusCallback (Lcom/pushpushgo/sdk/push/SubscriptionStatusCallback;)V
 	public final synthetic fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun subscribeAsync ()Ljava/util/concurrent/CompletableFuture;
 	public final synthetic fun switchProject (Lcom/pushpushgo/sdk/core/api/Config;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -89,14 +91,31 @@ public abstract interface class com/pushpushgo/sdk/push/PushNotificationsErrorCa
 	public abstract fun onError (Ljava/lang/Throwable;)V
 }
 
-public final class com/pushpushgo/sdk/push/SubscriptionStatus : java/lang/Enum {
-	public static final field NOTIFICATIONS_DISABLED Lcom/pushpushgo/sdk/push/SubscriptionStatus;
-	public static final field PENDING Lcom/pushpushgo/sdk/push/SubscriptionStatus;
-	public static final field SUBSCRIBED Lcom/pushpushgo/sdk/push/SubscriptionStatus;
-	public static final field UNSUBSCRIBED Lcom/pushpushgo/sdk/push/SubscriptionStatus;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/SubscriptionStatus;
-	public static fun values ()[Lcom/pushpushgo/sdk/push/SubscriptionStatus;
+public abstract interface class com/pushpushgo/sdk/push/SubscriptionStatus {
+}
+
+public final class com/pushpushgo/sdk/push/SubscriptionStatus$Subscribed : com/pushpushgo/sdk/push/SubscriptionStatus {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/pushpushgo/sdk/push/SubscriptionStatus$Subscribed;
+	public static synthetic fun copy$default (Lcom/pushpushgo/sdk/push/SubscriptionStatus$Subscribed;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/pushpushgo/sdk/push/SubscriptionStatus$Subscribed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProjectId ()Ljava/lang/String;
+	public final fun getSubscriberId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/pushpushgo/sdk/push/SubscriptionStatus$Unsubscribed : com/pushpushgo/sdk/push/SubscriptionStatus {
+	public static final field INSTANCE Lcom/pushpushgo/sdk/push/SubscriptionStatus$Unsubscribed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/pushpushgo/sdk/push/SubscriptionStatusCallback {
+	public abstract fun onSubscriptionStatusChanged (Lcom/pushpushgo/sdk/push/SubscriptionStatus;)V
 }
 
 public final class com/pushpushgo/sdk/push/dto/PushPushGoNotification {
@@ -428,6 +447,7 @@ public final class com/pushpushgo/sdk/push/subscription/DefaultPushSubscriptionP
 	public fun getPushToken ()Ljava/lang/String;
 	public fun isNotificationChannelEnabled ()Z
 	public fun isSubscribed ()Z
+	public fun isSubscriptionRequested ()Z
 	public fun subscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun unsubscribe (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
