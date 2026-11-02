@@ -68,8 +68,7 @@ object PushNotifications {
     get() = requireRuntime().liveActivities
 
   @JvmStatic
-  val customClickIntentFlags: Int
-    get() = requireRuntime().customClickIntentFlags
+  fun getCustomClickIntentFlags(): Int = requireRuntime().customClickIntentFlags
 
   @JvmStatic
   fun isInitialized(): Boolean = runtime != null

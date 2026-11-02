@@ -487,7 +487,7 @@ internal class PushNotificationDelegate(
       logDebug("launcher intenet flags before override: $flags")
 
       if (PushNotifications.isInitialized()) {
-        val customFlags = PushNotifications.customClickIntentFlags
+        val customFlags = PushNotifications.getCustomClickIntentFlags()
         logDebug("launcher intent flags restored: $customFlags")
         if (customFlags > 0) {
           flags = customFlags

@@ -14,9 +14,11 @@
   there is no `getInstance()`; call `InAppMessages.showMessagesOnRoute(...)`,
   `InAppMessages.showMessagesOnTrigger(...)` and `InAppMessages.switchProject(...)`
   directly. Use `InAppMessages.isInitialized()` to check whether it is initialized.
-- Initialization is now explicit and standardized:
-  - `InAppMessages.initialize(Application, PushSubscriptionProvider)`
-  - `InAppMessages.initialize(Application, Config, PushSubscriptionProvider)`
+- Initialization takes a `Config`, or reads it from `AndroidManifest.xml`, instead of
+  separate `projectId`, `apiKey`, `debug` and `baseUrl` parameters. The push
+  subscription provider and the custom code handler are optional:
+  - `InAppMessages.initialize(Application, PushSubscriptionProvider?, CustomCodeHandler?)`
+  - `InAppMessages.initialize(Application, Config, PushSubscriptionProvider?, CustomCodeHandler?)`
 - Initializing an initialized SDK with a different configuration throws
   `IllegalStateException` instead of silently keeping the configuration of the
   previous project.

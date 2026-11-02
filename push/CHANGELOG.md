@@ -44,10 +44,11 @@
   changes. Use `getSubscriptionStatus()` to obtain the current status.
 - `isSubscribed()` now reports only confirmed backend state. It remains `true` while
   a failed or in-progress removal retains the subscriber ID.
-- When notifications are disabled, the SDK unregisters the device but keeps the
-  user's subscription and registers the device again once they are enabled back;
-  only `unsubscribe()` cancels the subscription for good. Notification settings are
-  checked whenever an activity of the app is resumed.
+- As in 3.x, when notifications are disabled, the SDK unsubscribes the device but keeps
+  the user's subscription intent (`isSubscriptionRequested()`), and subscribes the device
+  again once they are enabled back; only `unsubscribe()` clears the intent. Notification
+  settings are now checked whenever an activity of the app is resumed, instead of every
+  10 seconds while the app is in the foreground.
 - `unsubscribe()` stores the user's choice right away, also without network, and
   regular notifications stop being displayed immediately.
 - Updating from SDK 3.x keeps devices that are registered but have no stored
@@ -69,10 +70,11 @@
 - Renamed handlers:
   - `setNotificationHandler(...)` → `setNotificationClickHandler(...)`
   - `setOnInvalidProjectIdHandler(...)` → `setInvalidProjectIdHandler(...)`
-- Handler and error callback APIs now use named SAM interfaces:
+- Handlers now use named SAM interfaces instead of Kotlin function types:
   - `NotificationClickHandler`
   - `InvalidProjectIdHandler`
-  - `PushNotificationsErrorCallback`
+- Added `setErrorCallback(PushNotificationsErrorCallback)` to observe errors of the
+  work the SDK does in the background.
 - Callbacks can be configured before initialization and survive deinitialization
   and project switches.
 - Passing `null` to a callback setter restores its default behavior.
@@ -93,8 +95,9 @@
 - Removed `migrateToNewProject(...)`.
 - Added `PushNotifications.switchProject(config)` (Kotlin) and
   `PushNotifications.switchProjectAsync(config)` (Java) to move an initialized SDK
-  to another project. The switch happens locally and returns right away, even
-  offline: the previous project's subscriber and Live Activity subscriptions are
+  to another project. The switch happens locally and does not call the API, so it
+  works offline; it only waits for a registration request that is already in
+  progress. The previous project's subscriber and Live Activity subscriptions are
   removed in the background. A failed subscription is reported to the error
   callback.
 - Initializing an initialized SDK with a different configuration throws
@@ -123,7 +126,6 @@
 - The following configuration properties are no longer publicly mutable and must be set via explicit setter methods:
   - `notificationHandler`
   - `onInvalidProjectIdHandler`
-  - `customClickIntentFlags`
 - `defaultIsSubscribed` and `setDefaultIsSubscribed(...)` were removed from the public API.
 
 #### Core dependency
