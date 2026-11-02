@@ -21,7 +21,6 @@ class LiveActivities internal constructor(
   private val scope: CoroutineScope,
   apiRepository: ApiRepository,
   sharedPreferencesHelper: SharedPreferencesHelper,
-  getSubscriberId: () -> String?,
   callbacks: PushNotificationsCallbacks,
   private val operationMutex: Mutex,
   private val assertActive: () -> Unit,
@@ -32,7 +31,6 @@ class LiveActivities internal constructor(
       scope = scope,
       apiRepository = apiRepository,
       sharedPref = sharedPreferencesHelper,
-      getSubscriberId = getSubscriberId,
       callbacks = callbacks,
     )
 

@@ -65,7 +65,6 @@ internal class PushNotificationsRuntime(
       scope = sdkScope,
       apiRepository = apiRepository,
       sharedPreferencesHelper = sharedPreferencesHelper,
-      getSubscriberId = { getSubscriberId() },
       callbacks = callbacks,
       operationMutex = operationMutex,
       assertActive = ::assertActive,
