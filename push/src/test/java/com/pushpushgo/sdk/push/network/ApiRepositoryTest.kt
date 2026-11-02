@@ -3,11 +3,15 @@ package com.pushpushgo.sdk.push.network
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.pushpushgo.sdk.push.exception.PushPushException
+import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeResponse
 import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.testConfig
+import com.pushpushgo.sdk.push.utils.getPlatformPushToken
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -122,6 +126,28 @@ class ApiRepositoryTest {
     }
 
   @Test
+  fun `subscribeToLiveActivity sends the platform push token without a push registration`() =
+    runBlocking {
+      mockkStatic(PUSH_TOKEN_UTILS)
+      try {
+        coEvery { getPlatformPushToken(any()) } returns "push-token"
+        coEvery { apiService.subscribeLiveActivity(any(), any(), any()) } returns
+          LiveActivitySubscribeResponse(id = "live-sub-1")
+
+        val liveActivitySubscriberId = repository.subscribeToLiveActivity("live-1")
+
+        assertNull(prefs.lastToken)
+        assertNull(prefs.subscriberId)
+        assertEquals("live-sub-1", liveActivitySubscriberId)
+        coVerify(exactly = 1) {
+          apiService.subscribeLiveActivity(any(), any(), match { it.endpoint.pushToken == "push-token" })
+        }
+      } finally {
+        unmockkStatic(PUSH_TOKEN_UTILS)
+      }
+    }
+
+  @Test
   fun `unsubscribeFromLiveActivity treats missing live notification as success`() =
     runBlocking {
       coEvery { apiService.unsubscribeLiveActivity(any(), any()) } throws
@@ -150,4 +176,8 @@ class ApiRepositoryTest {
 
       assertSame(expected, actual)
     }
+
+  private companion object {
+    const val PUSH_TOKEN_UTILS = "com.pushpushgo.sdk.push.utils.PushTokenUtilsKt"
+  }
 }

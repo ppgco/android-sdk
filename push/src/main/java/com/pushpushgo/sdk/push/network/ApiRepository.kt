@@ -124,8 +124,7 @@ internal class ApiRepository(
 
   /**
    * Registers this device as a subscriber of the given live notification and
-   * returns the backend-assigned LA subscriber id. The device must already be a
-   * registered push subscriber (a non-empty subscriberId / push token).
+   * returns the backend-assigned LA subscriber id.
    */
   suspend fun subscribeToLiveActivity(liveNotificationId: String): String {
     val response =
@@ -227,7 +226,7 @@ internal class ApiRepository(
   private fun liveActivitySubscribersUrl(liveNotificationId: String): String =
     "${config.apiUrl}/core/projects/${config.projectId}/live-notifications/$liveNotificationId/subscribers"
 
-  private fun buildLiveActivitySubscribeRequest(): LiveActivitySubscribeRequest {
+  private suspend fun buildLiveActivitySubscribeRequest(): LiveActivitySubscribeRequest {
     val transport =
       when (getPlatformType()) {
         PlatformType.FCM -> "FCM"
@@ -243,7 +242,7 @@ internal class ApiRepository(
       endpoint =
         LiveActivityEndpoint(
           transport = transport,
-          pushToken = sharedPref.lastToken.orEmpty(),
+          pushToken = getPlatformPushToken(context),
         ),
     )
   }

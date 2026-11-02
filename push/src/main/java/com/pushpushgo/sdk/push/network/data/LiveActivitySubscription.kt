@@ -3,11 +3,6 @@ package com.pushpushgo.sdk.push.network.data
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-/**
- * Body sent when registering or updating a Live Activity (live notification)
- * subscriber on the backend `/core/.../live-notifications/{id}/subscribers`
- * endpoints. The same shape is reused for the endpoint-update (PUT) call.
- */
 @JsonClass(generateAdapter = true)
 internal data class LiveActivitySubscribeRequest(
   @Json(name = "installationId")

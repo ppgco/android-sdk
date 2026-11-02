@@ -85,8 +85,8 @@ class LiveActivities internal constructor(
   /**
    * Subscribes this device to a backend Live Activity.
    *
-   * The device must already be a registered push subscriber. Returns the backend
-   * Live Activity subscriber ID, which is persisted for later [unsubscribe] calls.
+   * Returns the backend Live Activity subscriber ID, which is persisted for later
+   * [unsubscribe] calls.
    *
    * @param liveNotificationId backend ID of the Live Activity to follow
    * @return the assigned Live Activity subscriber ID
