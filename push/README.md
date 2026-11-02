@@ -395,7 +395,7 @@ PushNotifications.unsubscribe()
 
 PushNotifications.getSubscriptionStatus()
 PushNotifications.isSubscriptionRequested() // The user's latest explicit choice
-PushNotifications.isSubscribed() // Whether a backend subscription is confirmed
+PushNotifications.isSubscribed() // Whether the device is registered in PushPushGo
 ```
 
 `subscribe()` and `unsubscribe()` store the user's choice right away, also
@@ -409,27 +409,26 @@ subscription status below to know when it is.
 Call `unsubscribe()` whenever the user turns notifications off in your app,
 whatever the current status. Regular notifications stop being displayed right
 away. If the subscriber cannot be removed from PushPushGo at that moment, the SDK
-retains its ID as the last confirmed backend state until it is removed.
+keeps reporting the device as registered until it is removed.
 
 #### Subscription status
 
-`getSubscriptionStatus()` represents only the backend state last confirmed by
-the SDK:
+`getSubscriptionStatus()` tells whether the device is registered in PushPushGo:
 
 | Status | Meaning |
 |---|---|
-| `SubscriptionStatus.Unsubscribed` | The SDK has no confirmed backend subscription. |
-| `SubscriptionStatus.Subscribed(subscriberId, projectId)` | The SDK has a confirmed backend subscription with these subscriber and project IDs. |
+| `SubscriptionStatus.Unsubscribed` | The device is not registered in PushPushGo. |
+| `SubscriptionStatus.Subscribed(subscriberId, projectId)` | The device is registered in PushPushGo with these subscriber and project IDs. |
 
 The status is independent of the user's intent and notification permission. For
 example, after an offline `unsubscribe()`, `isSubscriptionRequested()` is
 `false` while `getSubscriptionStatus()` remains `Subscribed(existingId, projectId)` until
-backend removal is confirmed. `getSubscriberId()` agrees with the ID carried by
+the device is removed from PushPushGo. `getSubscriberId()` agrees with the ID carried by
 `Subscribed`.
 
 To follow changes the SDK makes in the background, collect
 `subscriptionStatusFlow` (Kotlin). It emits the current status and then every
-distinct confirmed-state change, including subscriber ID changes:
+registration change, including subscriber ID changes:
 
 ```kotlin
 // Compose
@@ -477,7 +476,7 @@ comes back to the app.
 
 If notifications are disabled while the user requested a subscription, the SDK
 unregisters the device but keeps `isSubscriptionRequested()` true. The status
-remains `Subscribed(id, projectId)` until backend removal succeeds and then becomes
+remains `Subscribed(id, projectId)` until the device is removed from PushPushGo and then becomes
 `Unsubscribed`. Once notifications are enabled again, the device is registered
 automatically and the new `Subscribed(id, projectId)` is published. Only `unsubscribe()`
 changes the user's intent to false.

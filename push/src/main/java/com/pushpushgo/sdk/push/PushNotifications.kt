@@ -119,17 +119,12 @@ object PushNotifications {
   /**
    * Moves the SDK to the project described by [config].
    *
-   * The switch happens locally right away and does not depend on the network: the subscriber of
-   * the current project and its Live Activity subscriptions are removed in the background with the
-   * current project's credentials (retried until the API is reachable), local state is cleared,
-   * and the SDK starts working with [config]. Pushes the previous project sends in the meantime go
-   * to [InvalidProjectIdHandler] instead of being displayed.
+   * The switch is local and does not need network. The previous project's subscriber is removed
+   * and, if the user requested a subscription and notifications are enabled, the device is
+   * subscribed to the new project, both in the background. Handlers and callbacks stay in place.
    *
-   * Switching to the configuration the SDK already uses has no effect. Switches run one after
-   * another: if the previous project is still registering the device, the switch waits for that
-   * request to finish, so its result never mixes with the new project's state. Handlers and the
-   * error callback stay in place. The SDK does not remember [config] across app restarts -
-   * initialize it with the configuration of the current project on the next start.
+   * The SDK does not remember [config] across app restarts - initialize it with the selected
+   * configuration on the next start.
    *
    * @throws IllegalStateException if the SDK is not initialized.
    */
@@ -211,48 +206,39 @@ object PushNotifications {
   fun getApiKey(): String = requireRuntime().getApiKey()
 
   /**
-   * Returns the backend subscription state last confirmed by the SDK for the current project.
+   * Returns whether the device is registered in PushPushGo.
    *
-   * A subscribed status contains the confirmed subscriber ID. User intent and notification
-   * permission are exposed separately by [isSubscriptionRequested] and [areNotificationsEnabled].
+   * The status is independent of the user's choice and the notification permission: e.g. after an
+   * offline [unsubscribe] it stays [SubscriptionStatus.Subscribed] until the device is removed from
+   * PushPushGo. Use [isSubscriptionRequested] for the user's choice.
    */
   @JvmStatic
   fun getSubscriptionStatus(): SubscriptionStatus = requireRuntime().getSubscriptionStatus()
 
   /**
-   * Returns whether the user most recently requested a subscription through [subscribe].
+   * Returns the user's latest choice: `true` after [subscribe], `false` after [unsubscribe].
    *
-   * This intent is independent of notification permission and confirmed backend state.
+   * Use it, together with [areNotificationsEnabled], for a notifications toggle in your app.
    */
   @JvmStatic
   fun isSubscriptionRequested(): Boolean = requireRuntime().isSubscriptionRequested()
 
   /**
-   * The push subscription status as a flow: emits the current status when collected and then every
-   * distinct confirmed backend-state change - including the ones the SDK makes in the background,
-   * such as registering the device after [subscribe], after [switchProject] or after notification
-   * permission is granted back.
+   * The subscription status as a flow. Emits the current status and then every registration
+   * change, including the ones the SDK makes in the background.
    *
-   * Changes of the notification settings made outside the app are picked up when an activity of the
-   * app is resumed. Before [initialize] the SDK does not know the status yet, so the flow holds
-   * [SubscriptionStatus.Unsubscribed] until initialization publishes the actual status. The flow
-   * is process-wide and keeps working across [switchProject].
+   * The status is [SubscriptionStatus.Unsubscribed] until [initialize].
    */
   @get:JvmSynthetic
   val subscriptionStatusFlow: StateFlow<SubscriptionStatus>
     get() = callbacks.subscriptionStatusFlow
 
   /**
-   * The push subscription status as a callback: receives the current status when set and then every
-   * distinct confirmed backend-state change - including the ones the SDK makes in the background,
-   * such as registering the device after [subscribe], after [switchProject] or after notification
-   * permission is granted back. The callback is invoked on the main thread.
+   * Sets the subscription status callback, the Java alternative to [subscriptionStatusFlow].
+   * Receives the current status right away and then every registration change, on the main thread.
    *
-   * Changes of the notification settings made outside the app are picked up when an activity of the
-   * app is resumed. Before [initialize] the SDK does not know the status yet, so a callback set
-   * earlier receives [SubscriptionStatus.Unsubscribed] and then the actual status once the SDK is
-   * initialized. The callback is process-wide and keeps working across [switchProject]. Pass
-   * `null` to remove it.
+   * The status is [SubscriptionStatus.Unsubscribed] until [initialize]. Pass `null` to remove the
+   * callback.
    */
   @JvmStatic
   fun setSubscriptionStatusCallback(callback: SubscriptionStatusCallback?) {
@@ -260,10 +246,9 @@ object PushNotifications {
   }
 
   /**
-   * Returns `true` when the SDK has a confirmed backend subscription in the current project.
-   *
-   * This value is independent of the user's current intent and notification permission. For
-   * example, it remains `true` while removal after [unsubscribe] is pending.
+   * Returns whether the device is registered in PushPushGo, i.e. [getSubscriptionStatus] is
+   * [SubscriptionStatus.Subscribed]. Do not use it for the user's choice - see
+   * [isSubscriptionRequested].
    */
   @JvmStatic
   fun isSubscribed(): Boolean = requireRuntime().isSubscribed()
@@ -277,16 +262,15 @@ object PushNotifications {
   /**
    * Subscribes the device to notifications.
    *
-   * The user's choice is stored right away and the device is registered in the background. If it
-   * cannot be registered now - e.g. while offline - the SDK retries once the network is available
-   * and on a later start. Failures are reported to the error callback. Follow
-   * [subscriptionStatusFlow] (Java: [setSubscriptionStatusCallback]) to know when the subscription
-   * is confirmed.
+   * Stores the user's choice right away, also without network, and registers the device in the
+   * background, retrying once the network is available. Failures are reported to the error
+   * callback. The device may not be registered yet when this method returns - follow
+   * [subscriptionStatusFlow] (Java: [setSubscriptionStatusCallback]) to know when it is.
    *
    * Request the notification permission before calling this method.
    *
-   * @throws IllegalStateException if notifications are disabled. The user's choice is not changed
-   * then.
+   * @throws IllegalStateException if notifications are disabled, without changing
+   * [isSubscriptionRequested].
    */
   @JvmStatic
   fun subscribe() {
@@ -296,10 +280,11 @@ object PushNotifications {
   /**
    * Unsubscribes the device from notifications.
    *
-   * The user's choice is stored right away and regular notifications stop being displayed
-   * immediately. The subscriber is removed in the background - [getSubscriptionStatus] keeps
-   * reporting it until the removal is confirmed, e.g. while the device is offline.
-   * Call it whenever the user turns notifications off in the app, whatever the current status.
+   * Stores the user's choice right away, also without network, and regular notifications stop
+   * being displayed. The subscriber is removed in the background; until then
+   * [getSubscriptionStatus] keeps reporting the device as registered.
+   *
+   * Call it whenever the user turns notifications off in your app, whatever the current status.
    */
   @JvmStatic
   fun unsubscribe() {
@@ -349,13 +334,12 @@ object PushNotifications {
   fun areNotificationsEnabled(): Boolean = requireRuntime().areNotificationsEnabled()
 
   /**
-   * Sends a beacon created with [BeaconBuilder] to the subscriber of the current project.
+   * Sends a beacon created with [BeaconBuilder].
    *
-   * Call it once the device is subscribed: when [subscriptionStatusFlow] (Java:
-   * [setSubscriptionStatusCallback]) reports [SubscriptionStatus.Subscribed], or when [isSubscribed]
-   * returns `true`. A beacon sent before that is discarded.
-   *
-   * The beacon is sent in the background, in order, and retried while offline.
+   * Send beacons once the device is subscribed: on [SubscriptionStatus.Subscribed] or when
+   * [isSubscribed] returns `true`. Beacons sent before that, or after [unsubscribe], are discarded.
+   * [unsubscribe] and [switchProject] also drop beacons that are still queued. The SDK sends beacons
+   * in the background, in order, and retries them while offline.
    */
   @JvmStatic
   fun sendBeacon(beacon: Beacon) {

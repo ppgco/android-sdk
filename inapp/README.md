@@ -202,25 +202,6 @@ fun MyScreen(currentRoute: String) {
 }
 ```
 
-### Activity-based Integration
-
-If you're using a more traditional Activity-based navigation:
-
-```kotlin
-class MainActivity : AppCompatActivity() {
-    override fun onResume() {
-        super.onResume()
-        // Use this helper to bind messages to the current Activity
-        InAppMessageHelper.setCurrentActivity(this, "main_activity_route")
-    }
-    
-    override fun onPause() {
-        super.onPause()
-        InAppMessageHelper.clearCurrentActivity()
-    }
-}
-```
-
 ## Triggering Messages
 
 Messages can be triggered based on custom events in your application:

@@ -1,12 +1,13 @@
 # Changelog
 
-## [4.0.0] – Breaking release
+## [4.0.0] - Breaking release
 
 ### Breaking changes
 
 #### Distribution
 - The SDK has migrated from JitPack to Maven Central.
 - The JitPack Maven repository (`https://jitpack.io`) can be removed from your Gradle configuration.
+- The package changed from `com.pushpushgo.inappmessages` to `com.pushpushgo.sdk.inapp`.
 
 #### SDK entry point & initialization
 - **Replaced `InAppMessagesSDK` with `InAppMessages`** as the main public API.
@@ -20,40 +21,28 @@
   - `InAppMessages.initialize(Application, PushSubscriptionProvider?, CustomCodeHandler?)`
   - `InAppMessages.initialize(Application, Config, PushSubscriptionProvider?, CustomCodeHandler?)`
 - Initializing an initialized SDK with a different configuration throws
-  `IllegalStateException` instead of silently keeping the configuration of the
-  previous project.
+  `IllegalStateException`.
 
 #### Project switching
-- Added `InAppMessages.switchProject(config)` to move an initialized SDK to another
-  project: the displayed message of the previous project is hidden, messages of
-  the new project are fetched and shown on the current route, and dismissed
-  messages stay dismissed.
-- Cached messages are stored per project, so the SDK never falls back to messages
-  of another project, even offline. The message cache of previous SDK versions is
-  dropped once.
+- Added `InAppMessages.switchProject(config)` to move an initialized SDK to another project.
 
 #### Core dependency
 - The SDK now depends on a shared internal **core** module.
 
 #### Push notifications integration
-- Push subscription handling is no longer embedded in the InAppMessages SDK.
-- Optional integration with push notifications is now performed via the provided `PushSubscriptionProvider` interface.
-  - A default implementation is provided by the PushPushGo Push Notifications SDK.
-  - A custom implementation may be provided by the consumer.
+- Replaced `PushNotificationSubscriber` with `PushSubscriptionProvider`.
+- The SDK no longer finds the PushPushGo Push Notifications SDK automatically. Pass
+  `PushNotifications.getPushSubscriptionProvider()`, or your own implementation, to
+  `initialize(...)`.
 - The push subscription provider can no longer be changed after initialization.
-- `PushSubscriptionProvider.subscribe()` / `unsubscribe()` are synchronous. The
-  subscribe action shows its success message once the choice is stored; the device
-  is registered in the background.
 - Removed legacy push integration APIs:
   - `setPushNotificationSubscriber(...)`
 
 #### Message display API
 - Removed:
   - `showActiveMessages(...)`
-- Introduced explicit message display APIs:
-  - `showMessagesOnRoute(route: String)`
-  - `showMessagesOnTrigger(trigger: Trigger)`
-- Replaced string-based trigger handling with a strongly typed model:
+- Added `showMessagesOnRoute(route: String)`.
+- `showMessagesOnTrigger(key, value)` now takes a `Trigger`:
   - `Trigger.key(String)`
   - `Trigger.keyValue(String, String)`
 
@@ -69,10 +58,14 @@
 
 ### Migration guide
 
-- This release **requires code changes** and is not source-compatible with `3.x`.
-- Migrate:
-  - `InAppMessagesSDK` → `InAppMessages`
-  - Legacy push subscription handling → `PushSubscriptionProvider`
-  - `showActiveMessages(...)` → route- or trigger-based APIs
-  - String-based triggers → `Trigger`
-  - JS action handling → `CustomCodeHandler` passed during initialization
+This release **requires code changes** and is not source-compatible with `3.x`.
+
+| 3.x | 4.0.0 |
+|---|---|
+| `com.pushpushgo.inappmessages.*` | `com.pushpushgo.sdk.inapp.*` |
+| `InAppMessagesSDK.getInstance().method()` | `InAppMessages.method()` |
+| `projectId`, `apiKey`, `debug`, `baseUrl` parameters | `Config` or `AndroidManifest.xml` |
+| `PushNotificationSubscriber`, `setPushNotificationSubscriber(...)` | `PushSubscriptionProvider` passed to `initialize(...)` |
+| `showActiveMessages(route)` | `showMessagesOnRoute(route)` |
+| `showMessagesOnTrigger(key, value)` | `showMessagesOnTrigger(Trigger.keyValue(key, value))` |
+| `setJsActionHandler(...)` | `CustomCodeHandler` passed to `initialize(...)` |
