@@ -77,7 +77,7 @@ internal class PushNotificationDelegate(
     val initializedProjectId = PushNotifications.getProjectId()
     when {
       pushProjectId != initializedProjectId ->
-        callbacks.invalidProjectIdHandler.onInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
+        callbacks.notifyInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
       isLiveActivityPush -> processLiveActivityPush(pushMessage, context)
       else -> processPushMessage(pushMessage, context)
     }

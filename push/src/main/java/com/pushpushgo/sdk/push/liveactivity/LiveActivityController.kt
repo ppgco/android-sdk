@@ -138,7 +138,7 @@ internal class LiveActivityController(
     intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
 
     if (openDeepLink && !deepLink.isNullOrBlank()) {
-      callbacks.notificationClickHandler.onNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
+      callbacks.notifyNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
     return deepLink

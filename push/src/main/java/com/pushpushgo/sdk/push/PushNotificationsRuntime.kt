@@ -376,7 +376,7 @@ internal class PushNotificationsRuntime(
     val intentNotificationId = intent.getIntExtra(PushNotificationDelegate.NOTIFICATION_ID_EXTRA, 0)
 
     if (intentProjectId != config.projectId) {
-      return callbacks.invalidProjectIdHandler.onInvalidProjectId(
+      return callbacks.notifyInvalidProjectId(
         intentProjectId.orEmpty(),
         intentSubscriberId,
         config.projectId,
@@ -387,7 +387,7 @@ internal class PushNotificationsRuntime(
 
     // TODO Remove duplicated code
     val notify = deserializeNotificationData(intent.extras)
-    callbacks.notificationClickHandler.onNotificationClick(
+    callbacks.notifyNotificationClick(
       application,
       notify?.redirectLink ?: intentLink,
       overrideFlags,

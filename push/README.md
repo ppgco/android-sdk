@@ -11,6 +11,7 @@ Android SDK for integrating push notifications into your application. Supports b
 - [Configuration](#configuration)
   - [AndroidManifest.xml](#androidmanifestxml)
   - [Application initialization](#application-initialization)
+  - [Callback execution](#callback-execution)
   - [Notification UI customization](#notification-ui-customization)
 - [Handling notification clicks](#handling-notification-clicks)
 - [Basic usage](#basic-usage)
@@ -333,6 +334,12 @@ call `unsubscribe()`. If your app uses
 Auto Backup, restoring
 the default preferences on another device carries over the subscriber of the
 original device.
+
+### Callback execution
+
+The SDK delivers notification-click, invalid-project, error, and subscription-status callbacks on
+Android's main thread. Keep callback work short and move blocking or long-running work to a
+background thread.
 
 ### Notification UI customization
 

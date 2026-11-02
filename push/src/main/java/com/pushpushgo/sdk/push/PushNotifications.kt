@@ -59,6 +59,10 @@ object PushNotifications {
   internal val errorCallback: PushNotificationsErrorCallback?
     get() = callbacks.errorCallback
 
+  internal fun notifyError(throwable: Throwable) {
+    callbacks.notifyError(throwable)
+  }
+
   @JvmStatic
   val liveActivities: LiveActivities
     get() = requireRuntime().liveActivities
@@ -199,7 +203,7 @@ object PushNotifications {
    * Sets the process-wide notification click handler.
    *
    * The handler may be configured before [initialize] and survives [deinitialize]. Pass `null` to
-   * restore the default handler.
+   * restore the default handler. The SDK invokes the handler on the main thread.
    */
   @JvmStatic
   fun setNotificationClickHandler(handler: NotificationClickHandler?) {
@@ -211,7 +215,8 @@ object PushNotifications {
    * currently initialized.
    *
    * The handler is process-wide, may be configured before [initialize], and survives
-   * [deinitialize]. Pass `null` to restore the default handler, which logs the mismatch.
+   * [deinitialize]. Pass `null` to restore the default handler, which logs the mismatch. The SDK
+   * invokes the handler on the main thread.
    */
   @JvmStatic
   fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler?) {
@@ -221,7 +226,8 @@ object PushNotifications {
   /**
    * Sets the process-wide SDK error callback.
    *
-   * The callback may be configured before [initialize], survives [deinitialize]. Pass `null` to disable it.
+   * The callback may be configured before [initialize], survives [deinitialize], and is invoked on
+   * the main thread. Pass `null` to disable it.
    */
   @JvmStatic
   fun setErrorCallback(callback: PushNotificationsErrorCallback?) {
@@ -269,7 +275,8 @@ object PushNotifications {
    * Sets the process-wide Java-friendly callback for future confirmed subscription status changes.
    *
    * The callback may be set before [initialize] and survives [switchProject]. Use
-   * [getSubscriptionStatus] to obtain the current status. Pass `null` to remove the callback.
+   * [getSubscriptionStatus] to obtain the current status. The SDK invokes the callback on the main
+   * thread. Pass `null` to remove the callback.
    */
   @JvmStatic
   fun setSubscriptionStatusCallback(callback: SubscriptionStatusCallback?) {

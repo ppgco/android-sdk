@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push
 import android.Manifest
 import android.app.Application
 import android.content.Intent
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.WorkInfo
@@ -414,8 +415,10 @@ class PushNotificationsLifecycleTest {
   ) {
     val deadline = System.currentTimeMillis() + 5_000
     while (!condition() && System.currentTimeMillis() < deadline) {
+      shadowOf(Looper.getMainLooper()).idle()
       Thread.sleep(20)
     }
+    shadowOf(Looper.getMainLooper()).idle()
     assertTrue(message, condition())
   }
 
