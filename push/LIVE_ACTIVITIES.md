@@ -16,7 +16,6 @@ progress bar with break indicators.
 |---|---|
 | Android 16 (API 36) device | On older devices Live Activity pushes are ignored — check `liveActivities.isSupported()` |
 | PushNotifications SDK integrated | Push notifications must already work (see the [README](README.md)) |
-| Registered subscriber | Call `subscribe()` before subscribing to a Live Activity |
 | `POST_NOTIFICATIONS` granted | Standard runtime notification permission |
 | FCM | Live Activity pushes are delivered as FCM data messages |
 
@@ -54,7 +53,6 @@ notification campaign        (PUT /live-data),                 │
 ```kotlin
 val liveActivities = PushNotifications.liveActivities
 
-// The device must already be a registered push subscriber.
 if (liveActivities.isSupported()) {
     val laSubscriberId = liveActivities.subscribe("<liveNotificationId>")
     // subscribed; laSubscriberId is also persisted by the SDK
@@ -69,6 +67,9 @@ liveActivities.unsubscribe("<liveNotificationId>")
   Java callers can use `subscribeAsync` and `unsubscribeAsync`, which return a
   `CompletableFuture`.
 - Subscribing to an already running activity renders its current state at once.
+- `subscribe` throws an `IllegalStateException` (`subscribeAsync` fails with it)
+  if notifications are disabled. Request the notification permission before
+  subscribing - it is required even if the device is not subscribed to push.
 
 ### 2. Handle clicks
 

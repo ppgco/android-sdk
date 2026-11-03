@@ -1,12 +1,13 @@
 # Changelog
 
-## [4.0.0] – Breaking release
+## [4.0.0] - Breaking release
 
 ### Breaking changes
 
 #### Distribution
 - The SDK has migrated from JitPack to Maven Central.
 - The JitPack Maven repository (`https://jitpack.io`) can be removed from your Gradle configuration.
+- The package changed from `com.pushpushgo.sdk` to `com.pushpushgo.sdk.push`.
 
 #### Min SDK Version
 - Minimum Android SDK version increased from 23 to 26.
@@ -14,47 +15,42 @@
 #### SDK entry point & initialization
 - **Replaced `PushPushGo` with `PushNotifications`** as the main public API.
 - `PushNotifications` is now a process-wide object; replace
-  `PushNotifications.getInstance().method()` with `PushNotifications.method()`.
+  `PushPushGo.getInstance().method()` with `PushNotifications.method()`.
 - Initialization is now explicit:
   - `PushNotifications.initialize(Application)`
   - `PushNotifications.initialize(Application, Config)`
-- WorkManager must be initialized before the SDK. AndroidX Startup handles this automatically unless
-  the application disables WorkManager's automatic initializer.
+- Initializing an initialized SDK with a different configuration throws
+  `IllegalStateException`.
+- Requires WorkManager, which AndroidX Startup initializes automatically unless
+  the application disables its initializer.
 
 #### Subscription API redesign
 - Removed legacy subscription methods:
   - `createSubscriber()`
   - `registerSubscriber()`
   - `unregisterSubscriber(...)`
-- Introduced a unified subscription API:
-  - `subscribe()` / `unsubscribe()` (Kotlin coroutines)
-  - `subscribeAsync()` / `unsubscribeAsync()` (Java-friendly `CompletableFuture`)
-- Removed `subscribeNow()`, `unsubscribeNow()`, `subscribeNowFuture()`, and
-  `unsubscribeNowFuture()`; use the unified methods above.
-- Added `getSubscriptionStatus()` returning `SubscriptionStatus`: `UNSUBSCRIBED`,
-  `SUBSCRIBED`, `NOTIFICATIONS_DISABLED` (the user subscribed, but notifications are
-  disabled) or `PENDING` (the user subscribed, registration in progress). The status
-  reflects the notification settings right away, also offline.
-- Added `subscriptionStatusFlow` (Kotlin `StateFlow`), which emits the current
-  status and every change, including registrations the SDK finishes in the
-  background, e.g. after `switchProject`.
-- `isSubscribed()` now returns `true` only while the status is `SUBSCRIBED`: the
-  device is registered in the current project and notifications are enabled.
-- When notifications are disabled, the SDK unregisters the device but keeps the
-  user's subscription and registers the device again once they are enabled back;
-  only `unsubscribe()` cancels the subscription for good. Notification settings are
-  checked whenever an activity of the app is resumed.
-- `unsubscribe()` no longer fails without network: the user's choice is stored
-  right away and a subscriber that cannot be removed is removed in the background.
-- Updating from SDK 3.x keeps devices that are registered but have no stored
-  subscription (registered on push token refresh, or counted as subscribed through
-  `defaultIsSubscribed`) subscribed. A stored opt-out stays an opt-out.
+- Introduced a unified subscription API: `subscribe()` / `unsubscribe()`. Both are
+  synchronous; registration happens in the background and failures are reported
+  to the error callback.
+- `subscribe()` throws `IllegalStateException` when notifications are disabled.
+- Added `getSubscriptionStatus()` returning the sealed `SubscriptionStatus`:
+  `Unsubscribed` or `Subscribed(subscriberId, projectId)`.
+- Added `isSubscriptionRequested()` for the user's persisted subscribe or
+  unsubscribe choice.
+- Observe subscription status changes with `subscriptionStatusFlow` (Kotlin) or
+  `setSubscriptionStatusCallback(...)` (Java).
+- `isSubscribed()` now reports only the subscription confirmed by the backend.
+- `defaultIsSubscribed` and `setDefaultIsSubscribed(...)` were removed.
+- Existing 3.x subscriptions are preserved on upgrade.
 
 #### Async API changes
 - **Removed Guava `ListenableFuture` from the public API**.
-- All async operations now use:
+- `getPushToken()` is now synchronous and returns `String?`: the token the SDK has
+  stored, or `null` if none yet.
+- The remaining async operations (`switchProject` and the Live Activity
+  subscription) use:
   - `suspend` functions for Kotlin consumers
-  - `CompletableFuture` for Java consumers
+  - `CompletableFuture` (`*Async` methods) for Java consumers
 
 #### Notification model
 - Replaced `PPGoNotification` with **`PushPushGoNotification`**.
@@ -64,12 +60,14 @@
 - Renamed handlers:
   - `setNotificationHandler(...)` → `setNotificationClickHandler(...)`
   - `setOnInvalidProjectIdHandler(...)` → `setInvalidProjectIdHandler(...)`
-- Handler and error callback APIs now use named SAM interfaces:
+- Handlers now use named SAM interfaces instead of Kotlin function types:
   - `NotificationClickHandler`
   - `InvalidProjectIdHandler`
-  - `PushNotificationsErrorCallback`
-- Callbacks can be configured before initialization and survive deinitialization
-  and project switches.
+- The `notificationHandler` and `onInvalidProjectIdHandler` properties are no
+  longer public; use the setters.
+- Added `setErrorCallback(PushNotificationsErrorCallback)` to observe errors of the
+  work the SDK does in the background.
+- Callbacks can be configured before initialization and survive project switches.
 - Passing `null` to a callback setter restores its default behavior.
 
 #### Beacon
@@ -80,64 +78,52 @@
   - `set(key, Char)`
 - Introduced `BeaconTagStrategy` enum (`APPEND`, `REWRITE`); string-based strategies are no longer supported.
 - Removed `setCustomId(Int?)` method; custom IDs must now be provided using `setCustomId(String?)`.
-- Replace `PushNotifications.getInstance().createBeacon()...send()` with
-  `BeaconBuilder()...build()` followed by `PushNotifications.sendBeacon(...)` or
-  `PushNotifications.sendBeaconAsync(...)`.
+- Replace `PushPushGo.getInstance().createBeacon()...send()` with
+  `BeaconBuilder()...build()` followed by `PushNotifications.sendBeacon(...)`.
+- Send beacons once the device is subscribed (on `SubscriptionStatus.Subscribed` or
+  when `isSubscribed()` is `true`).
 
 #### Project migration API
 - Removed `migrateToNewProject(...)`.
 - Added `PushNotifications.switchProject(config)` (Kotlin) and
   `PushNotifications.switchProjectAsync(config)` (Java) to move an initialized SDK
-  to another project. The switch happens locally and returns right away, even
-  offline: the previous project's subscriber and Live Activity subscriptions are
-  removed in the background, and a user who was subscribed is subscribed to the
-  new project in the background. A failed subscription is reported to the error
-  callback and retried while the app is in the foreground.
-- Initializing an initialized SDK with a different configuration still throws
-  `IllegalStateException`; its message now points to `switchProject(...)`.
-- `PushNotifications.deinitialize()` turns the SDK off completely. It
-  removes Live Activities first, then unsubscribes the current
-  subscriber and clears its persisted project data. If any step fails, the SDK
-  remains initialized and the operation fails. Live Activities already removed
-  stay removed.
-- The SDK remembers which project its persisted subscription belongs to. When it
-  is initialized with a configuration of another project (e.g. after an app
-  restart), it no longer adopts the previous project's subscriber: that subscriber
-  and its Live Activity subscriptions are removed in the background with the
-  previous project's credentials (retried until the API is reachable), local state
-  is cleared, and the user's subscription is kept, so the device registers in the
-  new project once notifications are enabled.
+  to another project. The switch does not need network access: the device
+  registers in the new project and the previous project's subscriber is removed
+  once the network is available.
+- Initializing the SDK with another project's configuration (e.g. after an app
+  update) moves the device to the new project instead of reusing the previous
+  project's subscriber.
 - Live Activity pushes of a project other than the initialized one are reported to
   `InvalidProjectIdHandler` instead of being displayed, like regular pushes.
 
 #### Live Activities
-- Live Activity APIs moved from `PushNotifications` to the
+- Live Activity APIs moved from `PushPushGo` to the
   `PushNotifications.liveActivities` facade.
-
-#### Public configuration API
-- The following configuration properties are no longer publicly mutable and must be set via explicit setter methods:
-  - `notificationClickHandler`
-  - `invalidProjectIdHandler`
-  - `customClickIntentFlags`
-- `defaultIsSubscribed` and `setDefaultIsSubscribed(...)` were removed from the public API.
+- Subscribing to a Live Activity requires notification permission instead of a
+  registered push subscriber.
 
 #### Core dependency
 - The SDK now depends on a shared internal **core** module.
-- The SDK provides an implementation of the core module’s `PushSubscriptionProvider` interface, which can be reused by other PushPushGo SDKs to interact with push functionality.
 
 ---
 
 ### Migration guide
 
-- This release **requires code changes** and is not source-compatible with `3.x`.
-- Migrate:
-  - `PushPushGo` → `PushNotifications`
-  - `PushNotifications.getInstance().method()` → `PushNotifications.method()`
-  - `ListenableFuture` → `CompletableFuture`
-  - Legacy subscription calls → new unified subscription API
-  - `migrateToNewProject(...)` → `deinitialize()`, then `initialize(...)`, followed by an
-    explicit `subscribe()`
-  - Direct Live Activity methods → `PushNotifications.liveActivities`
-  - `createBeacon()...send()` → `BeaconBuilder()...build()` followed by `sendBeacon(...)`
-  - String-based tag strategies (e.g. `"append"`, `"rewrite"`) → `BeaconTagStrategy.APPEND` / `BeaconTagStrategy.REWRITE`
-  - Integer-based custom IDs → string-based custom IDs
+This release **requires code changes** and is not source-compatible with `3.x`.
+
+| 3.x | 4.0.0 |
+|---|---|
+| `com.pushpushgo.sdk.*` | `com.pushpushgo.sdk.push.*` |
+| `PushPushGo.getInstance().method()` | `PushNotifications.method()` |
+| `createSubscriber()` / `registerSubscriber()` | `subscribe()` |
+| `unregisterSubscriber(...)` | `unsubscribe()` |
+| `defaultIsSubscribed` | removed |
+| `getPushToken()` (`ListenableFuture<String>`) | `getPushToken()` (`String?`) |
+| `migrateToNewProject(...)` | `switchProject(...)` / `switchProjectAsync(...)` |
+| Live Activity methods on `PushPushGo` | `PushNotifications.liveActivities` |
+| `PPGoNotification` | `PushPushGoNotification` |
+| `setNotificationHandler(...)` | `setNotificationClickHandler(...)` |
+| `setOnInvalidProjectIdHandler(...)` | `setInvalidProjectIdHandler(...)` |
+| `createBeacon()...send()` | `BeaconBuilder()...build()` + `sendBeacon(...)` |
+| `appendTag(..., strategy = "append" / "rewrite")` | `BeaconTagStrategy.APPEND` / `BeaconTagStrategy.REWRITE` |
+| `setCustomId(Int?)` | `setCustomId(String?)` |

@@ -2,6 +2,7 @@ package com.pushpushgo.sdk.push
 
 import android.app.Application
 import android.content.Intent
+import androidx.annotation.VisibleForTesting
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.core.api.PushSubscriptionProvider
 import com.pushpushgo.sdk.core.internal.ManifestConfigProvider
@@ -59,13 +60,16 @@ object PushNotifications {
   internal val errorCallback: PushNotificationsErrorCallback?
     get() = callbacks.errorCallback
 
+  internal fun notifyError(throwable: Throwable) {
+    callbacks.notifyError(throwable)
+  }
+
   @JvmStatic
   val liveActivities: LiveActivities
     get() = requireRuntime().liveActivities
 
   @JvmStatic
-  val customClickIntentFlags: Int
-    get() = requireRuntime().customClickIntentFlags
+  fun getCustomClickIntentFlags(): Int = requireRuntime().customClickIntentFlags
 
   @JvmStatic
   fun isInitialized(): Boolean = runtime != null
@@ -88,11 +92,6 @@ object PushNotifications {
    * Calling this method again with an equal configuration has no effect. To move an initialized
    * SDK to another project, use [switchProject].
    *
-   * If the persisted subscription belongs to another project - e.g. the app switched projects
-   * before a restart and now initializes the SDK with a different configuration - that
-   * subscription is removed in the background and the device registers in this project once
-   * notifications are enabled, as long as the user subscribed before.
-   *
    * @throws IllegalStateException if the SDK is already initialized with a different configuration.
    */
   @JvmStatic
@@ -103,7 +102,10 @@ object PushNotifications {
     withLifecycleLock {
       val activeRuntime = runtime
       if (activeRuntime == null) {
-        runtime = PushNotificationsRuntime(application, config, callbacks)
+        PushNotificationsRuntime(application, config, callbacks).also {
+          runtime = it
+          it.start()
+        }
       } else {
         check(activeRuntime.config == config) {
           "PushNotifications SDK is already initialized with a different configuration. " +
@@ -115,55 +117,14 @@ object PushNotifications {
     }
 
   /**
-   * Unsubscribes the current project, clears its persisted state, and releases the SDK runtime.
-   *
-   * Live Activities are removed first, followed by the current push subscription. If any step
-   * fails, the SDK remains initialized and the error is returned. Live Activities already removed
-   * stay removed.
-   *
-   * After this method completes, [initialize] may be called again. To move the SDK to another
-   * project without turning it off, use [switchProject] - it does not depend on the network.
-   */
-  @JvmSynthetic
-  suspend fun deinitialize() {
-    lifecycleMutex.withLock {
-      val activeRuntime = requireRuntime()
-      activeRuntime.deinitialize()
-      runtime = null
-      callbacks.publishSubscriptionStatus(SubscriptionStatus.UNSUBSCRIBED)
-    }
-  }
-
-  /**
-   * Java-friendly wrapper for [deinitialize].
-   */
-  @JvmStatic
-  fun deinitializeAsync(): CompletableFuture<Void?> =
-    asyncScope.future {
-      deinitialize()
-      null
-    }
-
-  /**
    * Moves the SDK to the project described by [config].
    *
-   * The switch happens locally right away and does not depend on the network: the subscriber of
-   * the current project and its Live Activity subscriptions are removed in the background with the
-   * current project's credentials (retried until the API is reachable), local state is cleared,
-   * and the SDK starts working with [config]. Pushes the previous project sends in the meantime go
-   * to [InvalidProjectIdHandler] instead of being displayed.
+   * The switch is local and does not need network. The previous project's subscriber is removed
+   * and, if the user requested a subscription and notifications are enabled, the device is
+   * subscribed to the new project, both in the background. Handlers and callbacks stay in place.
    *
-   * The method returns right after the local switch. If the user was subscribed and notifications
-   * are enabled, the device is then subscribed to the new project in the background, so
-   * [isSubscribed] turns `true` once that completes. A failed subscription is reported to the error
-   * callback and retried while the app is in the foreground. If the user was not subscribed, call
-   * [subscribe] when needed.
-   *
-   * Switching to the configuration the SDK already uses has no effect. Switches run one after
-   * another: if the previous project is still registering the device, the switch waits for that
-   * request to finish, so its result never mixes with the new project's state. Handlers and the
-   * error callback stay in place. The SDK does not remember [config] across app restarts -
-   * initialize it with the configuration of the current project on the next start.
+   * The SDK does not remember [config] across app restarts - initialize it with the selected
+   * configuration on the next start.
    *
    * @throws IllegalStateException if the SDK is not initialized.
    */
@@ -174,10 +135,10 @@ object PushNotifications {
       if (activeRuntime.config == config) return
 
       activeRuntime.release()
-      runtime =
-        PushNotificationsRuntime(activeRuntime.application, config, callbacks).apply {
-          subscribeIfRequestedInBackground()
-        }
+      PushNotificationsRuntime(activeRuntime.application, config, callbacks).also {
+        runtime = it
+        it.start()
+      }
     }
   }
 
@@ -206,8 +167,8 @@ object PushNotifications {
   /**
    * Sets the process-wide notification click handler.
    *
-   * The handler may be configured before [initialize] and survives [deinitialize]. Pass `null` to
-   * restore the default handler.
+   * The handler may be configured before [initialize] and survives [switchProject]. Pass `null` to
+   * restore the default handler. The SDK invokes the handler on the main thread.
    */
   @JvmStatic
   fun setNotificationClickHandler(handler: NotificationClickHandler?) {
@@ -219,7 +180,8 @@ object PushNotifications {
    * currently initialized.
    *
    * The handler is process-wide, may be configured before [initialize], and survives
-   * [deinitialize]. Pass `null` to restore the default handler, which logs the mismatch.
+   * [switchProject]. Pass `null` to restore the default handler, which logs the mismatch. The SDK
+   * invokes the handler on the main thread.
    */
   @JvmStatic
   fun setInvalidProjectIdHandler(handler: InvalidProjectIdHandler?) {
@@ -229,7 +191,8 @@ object PushNotifications {
   /**
    * Sets the process-wide SDK error callback.
    *
-   * The callback may be configured before [initialize], survives [deinitialize]. Pass `null` to disable it.
+   * The callback may be configured before [initialize], survives [switchProject], and is invoked on
+   * the main thread. Pass `null` to disable it.
    */
   @JvmStatic
   fun setErrorCallback(callback: PushNotificationsErrorCallback?) {
@@ -243,33 +206,49 @@ object PushNotifications {
   fun getApiKey(): String = requireRuntime().getApiKey()
 
   /**
-   * Returns the push subscription status of the device in the current project.
+   * Returns whether the device is registered in PushPushGo.
    *
-   * The status is computed from the stored subscription and the current notification settings, so
-   * it reflects a revoked notification permission right away - also offline.
+   * The status is independent of the user's choice and the notification permission: e.g. after an
+   * offline [unsubscribe] it stays [SubscriptionStatus.Subscribed] until the device is removed from
+   * PushPushGo. Use [isSubscriptionRequested] for the user's choice.
    */
   @JvmStatic
   fun getSubscriptionStatus(): SubscriptionStatus = requireRuntime().getSubscriptionStatus()
 
   /**
-   * The push subscription status as a flow: emits the current status when collected and then every
-   * change - including the ones the SDK makes in the background, such as registering the device
-   * after [switchProject] or after the notification permission is granted back.
+   * Returns the user's latest choice: `true` after [subscribe], `false` after [unsubscribe].
    *
-   * Changes of the notification settings made outside the app are picked up when an activity of the
-   * app is resumed. The flow is process-wide: it keeps working across [switchProject] and
-   * [deinitialize], and holds [SubscriptionStatus.UNSUBSCRIBED] while the SDK is not initialized.
+   * Use it, together with [areNotificationsEnabled], for a notifications toggle in your app.
+   */
+  @JvmStatic
+  fun isSubscriptionRequested(): Boolean = requireRuntime().isSubscriptionRequested()
+
+  /**
+   * The subscription status as a flow. Emits the current status and then every registration
+   * change, including the ones the SDK makes in the background.
+   *
+   * The status is [SubscriptionStatus.Unsubscribed] until [initialize].
    */
   @get:JvmSynthetic
   val subscriptionStatusFlow: StateFlow<SubscriptionStatus>
     get() = callbacks.subscriptionStatusFlow
 
   /**
-   * Returns `true` when the device receives notifications from the current project, i.e. the
-   * status is [SubscriptionStatus.SUBSCRIBED].
+   * Sets the subscription status callback, the Java alternative to [subscriptionStatusFlow].
+   * Receives the current status right away and then every registration change, on the main thread.
    *
-   * Returns `false` while the notification permission is revoked, even if the user subscribed
-   * earlier - see [getSubscriptionStatus] to tell the cases apart.
+   * The status is [SubscriptionStatus.Unsubscribed] until [initialize]. Pass `null` to remove the
+   * callback.
+   */
+  @JvmStatic
+  fun setSubscriptionStatusCallback(callback: SubscriptionStatusCallback?) {
+    callbacks.subscriptionStatusCallback = callback
+  }
+
+  /**
+   * Returns whether the device is registered in PushPushGo, i.e. [getSubscriptionStatus] is
+   * [SubscriptionStatus.Subscribed]. Do not use it for the user's choice - see
+   * [isSubscriptionRequested].
    */
   @JvmStatic
   fun isSubscribed(): Boolean = requireRuntime().isSubscribed()
@@ -283,56 +262,34 @@ object PushNotifications {
   /**
    * Subscribes the device to notifications.
    *
-   * If notifications are disabled, an [IllegalStateException] is thrown.
+   * Stores the user's choice right away, also without network, and registers the device in the
+   * background, retrying once the network is available. Failures are reported to the error
+   * callback. The device may not be registered yet when this method returns - follow
+   * [subscriptionStatusFlow] (Java: [setSubscriptionStatusCallback]) to know when it is.
    *
-   * @throws IllegalStateException
+   * Request the notification permission before calling this method.
+   *
+   * @throws IllegalStateException if notifications are disabled, without changing
+   * [isSubscriptionRequested].
    */
-  @JvmSynthetic
-  suspend fun subscribe() {
+  @JvmStatic
+  fun subscribe() {
     requireRuntime().subscribe()
   }
 
   /**
    * Unsubscribes the device from notifications.
    *
-   * The user's choice is stored right away and the status becomes [SubscriptionStatus.UNSUBSCRIBED],
-   * also without network: if the subscriber cannot be removed from the API right now, it is removed
-   * in the background. Notifications sent before the subscriber is removed - e.g. queued while the
-   * device was offline - can still be delivered and displayed.
-   * Call it whenever the user turns notifications off in the app, whatever the current status.
+   * Stores the user's choice right away, also without network, and regular notifications stop
+   * being displayed. The subscriber is removed in the background; until then
+   * [getSubscriptionStatus] keeps reporting the device as registered.
+   *
+   * Call it whenever the user turns notifications off in your app, whatever the current status.
    */
-  @JvmSynthetic
-  suspend fun unsubscribe() {
+  @JvmStatic
+  fun unsubscribe() {
     requireRuntime().unsubscribe()
   }
-
-  /**
-   * Subscribes the device to notifications asynchronously.
-   *
-   * Java-friendly wrapper for [subscribe].
-   *
-   * @returns [CompletableFuture]
-   */
-  @JvmStatic
-  fun subscribeAsync(): CompletableFuture<Void?> =
-    asyncScope.future {
-      subscribe()
-      null
-    }
-
-  /**
-   * Unsubscribes the device from notifications asynchronously.
-   *
-   * Java-friendly wrapper for [unsubscribe].
-   *
-   * @returns [CompletableFuture]
-   */
-  @JvmStatic
-  fun unsubscribeAsync(): CompletableFuture<Void?> =
-    asyncScope.future {
-      unsubscribe()
-      null
-    }
 
   /**
    * Checks whether the given notification intent belongs to PushPushGo.
@@ -365,6 +322,7 @@ object PushNotifications {
    * or resumed from the background.
    */
   @JvmStatic
+  @JvmOverloads
   fun handleBackgroundNotificationClick(
     intent: Intent?,
     overrideFlags: Int = Intent.FLAG_ACTIVITY_NEW_TASK,
@@ -378,29 +336,31 @@ object PushNotifications {
   /**
    * Sends a beacon created with [BeaconBuilder].
    *
-   * @throws IllegalStateException if the device is not subscribed.
+   * Send beacons once the device is subscribed: on [SubscriptionStatus.Subscribed] or when
+   * [isSubscribed] returns `true`. Beacons sent before that, or after [unsubscribe], are discarded.
+   * [unsubscribe] and [switchProject] also drop beacons that are still queued. The SDK sends beacons
+   * in the background, in order, and retries them while offline.
    */
   @JvmStatic
-  @JvmSynthetic
-  suspend fun sendBeacon(beacon: Beacon) {
+  fun sendBeacon(beacon: Beacon) {
     requireRuntime().sendBeacon(beacon)
   }
 
-  /**
-   * Sends a beacon asynchronously.
-   *
-   * Java-friendly wrapper for [sendBeacon]. The future completes exceptionally if the device is
-   * not subscribed.
-   */
-  @JvmStatic
-  fun sendBeaconAsync(beacon: Beacon): CompletableFuture<Void?> =
-    asyncScope.future {
-      sendBeacon(beacon)
-      null
-    }
-
   @JvmStatic
   fun getPushSubscriptionProvider(): PushSubscriptionProvider = requireRuntime().getPushSubscriptionProvider()
+
+  internal suspend fun reconcileSubscription() {
+    runtime?.reconcile()
+  }
+
+  @VisibleForTesting
+  internal suspend fun reset() {
+    lifecycleMutex.withLock {
+      runtime?.release()
+      runtime = null
+      callbacks.publishSubscriptionStatus(SubscriptionStatus.Unsubscribed)
+    }
+  }
 
   private fun requireRuntime(): PushNotificationsRuntime = checkNotNull(runtime) { "PushNotifications SDK is not initialized" }
 

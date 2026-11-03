@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.pushpushgo.sdk.push.BeaconBuilder;
 import com.pushpushgo.sdk.push.PushNotifications;
+import com.pushpushgo.sdk.push.SubscriptionStatus;
 import com.pushpushgo.sdk.sample.push.java.R;
 
 public class MainActivity extends AppCompatActivity {
@@ -16,15 +17,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        PushNotifications.sendBeaconAsync(
-                new BeaconBuilder()
-                        .appendTag("jacek")
-                        .appendTag("sabina", "dziewczyna")
-                        .set("see_invoice", true)
-                        .setCustomId("CRMID200")
-                        .removeTag("marek", "janek")
-                        .build()
-        );
+        PushNotifications.setSubscriptionStatusCallback(status -> {
+            if (status instanceof SubscriptionStatus.Subscribed) {
+                PushNotifications.sendBeacon(
+                        new BeaconBuilder()
+                                .appendTag("newsletter")
+                                .appendTag("premium", "plan")
+                                .set("see_invoice", true)
+                                .setCustomId("user-123")
+                                .removeTag("trial", "plan")
+                                .build()
+                );
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        PushNotifications.setSubscriptionStatusCallback(null);
+        super.onDestroy();
     }
 
     @Override

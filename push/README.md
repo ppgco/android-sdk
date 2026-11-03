@@ -11,6 +11,7 @@ Android SDK for integrating push notifications into your application. Supports b
 - [Configuration](#configuration)
   - [AndroidManifest.xml](#androidmanifestxml)
   - [Application initialization](#application-initialization)
+  - [Callback execution](#callback-execution)
   - [Notification UI customization](#notification-ui-customization)
 - [Handling notification clicks](#handling-notification-clicks)
 - [Basic usage](#basic-usage)
@@ -266,22 +267,20 @@ The switch happens locally right away and does not depend on the network:
 - The subscriber of the previous project and its Live Activity subscriptions are
   removed in the background with the previous project's credentials, retried
   until the API is reachable, also after an app restart.
-- `switchProject` returns right after the local switch. If the user was
-  subscribed and notifications are enabled, the device is then subscribed to
-  the new project in the background: the status is `PENDING` until that
-  completes and then `SUBSCRIBED` - collect `subscriptionStatusFlow` to know
+- `switchProject` returns right after the local switch. If the user requested a
+  subscription and notifications are enabled, the device is then subscribed to
+  the new project in the background: the status is `Unsubscribed` until that
+  completes and then `Subscribed(newSubscriberId, newProjectId)` - collect `subscriptionStatusFlow` to know
   when. A failed subscription is reported to the error callback
-  (`setErrorCallback`) and retried while the app is in the foreground.
-- If the user was not subscribed, call `subscribe()` when needed.
+  (`setErrorCallback`).
 - Handlers and the error callback stay in place.
 - Pushes the previous project sends until its subscriber is removed go to
   `InvalidProjectIdHandler` instead of being displayed. So do clicks on
   notifications of the previous project that were displayed before the switch.
 
 Switching to the configuration the SDK already uses has no effect. Switch calls
-run one after another, so switching twice in a row is safe. If the previous
-project is still registering the device, the next switch waits for that request
-to finish.
+run one after another, so switching twice in a row is safe. If a subscription or
+Live Activity request is still in progress, the switch waits for it to finish.
 
 If you use the InAppMessages SDK too, switch it as well with
 `InAppMessages.switchProject(config)`.
@@ -313,26 +312,23 @@ does and registers the device in the initialized project once notifications are
 enabled. The state stays consistent, but the user ends up back in the
 initialized project.
 
-#### Turning the SDK off
-
-`PushNotifications.deinitialize()` (Java: `deinitializeAsync()`) unsubscribes
-the device and releases the SDK completely. It removes Live Activities first,
-then unsubscribes the current subscriber and clears persisted project data. If
-any step fails, the SDK remains initialized and the operation throws an
-exception. Live Activities already removed stay removed. Call `initialize(...)`
-to start the SDK again.
-
 #### Persisted state
 
 The SDK keeps its state (subscriber, push token, the user's subscription and the
 project they belong to) in the app's default `SharedPreferences`, under keys
 prefixed with `_PushPushGoSDK_`. Do not remove these keys, e.g. by clearing the
 default preferences on logout: the SDK would consider the user unsubscribed,
-while the device would stay registered in PushPushGo and keep receiving
-notifications. To turn notifications off, call `unsubscribe()`. If your app uses
+while the device would stay registered in PushPushGo. To turn notifications off,
+call `unsubscribe()`. If your app uses
 Auto Backup, restoring
 the default preferences on another device carries over the subscriber of the
 original device.
+
+### Callback execution
+
+The SDK delivers notification-click, invalid-project, error, and subscription-status callbacks on
+Android's main thread. Keep callback work short and move blocking or long-running work to a
+background thread.
 
 ### Notification UI customization
 
@@ -398,69 +394,92 @@ PushNotifications.subscribe()
 PushNotifications.unsubscribe()
 
 PushNotifications.getSubscriptionStatus()
-PushNotifications.isSubscribed() // getSubscriptionStatus() == SUBSCRIBED
+PushNotifications.isSubscriptionRequested() // The user's latest explicit choice
+PushNotifications.isSubscribed() // Whether the device is registered in PushPushGo
 ```
 
-From Java, use `subscribeAsync()` and `unsubscribeAsync()`. Both return a
-`CompletableFuture`.
+`subscribe()` and `unsubscribe()` store the user's choice right away, also
+without network. The SDK registers or removes the subscriber in the background
+and retries once the network is available. Failures are reported to the error
+callback (`setErrorCallback`).
+
+The device may not be registered yet when `subscribe()` returns - follow the
+subscription status below to know when it is.
 
 Call `unsubscribe()` whenever the user turns notifications off in your app,
-whatever the current status. The choice is stored right away, also without
-network: if the subscriber cannot be removed from PushPushGo at that moment, the
-SDK removes it in the background. Notifications sent before the subscriber is
-removed, e.g. queued while the device was offline, can still be displayed.
+whatever the current status. Regular notifications stop being displayed right
+away. If the subscriber cannot be removed from PushPushGo at that moment, the SDK
+keeps reporting the device as registered until it is removed.
 
 #### Subscription status
 
-`getSubscriptionStatus()` returns one of:
+`getSubscriptionStatus()` tells whether the device is registered in PushPushGo:
 
 | Status | Meaning |
 |---|---|
-| `UNSUBSCRIBED` | The user did not subscribe, or `unsubscribe()` was called. |
-| `SUBSCRIBED` | The device is registered and notifications are enabled. |
-| `NOTIFICATIONS_DISABLED` | The user subscribed, but the notification permission or channel is disabled. The SDK registers the device again once notifications are enabled. |
-| `PENDING` | The user subscribed, but the device is not registered yet - e.g. right after `switchProject` or while PushPushGo is not reachable. The SDK keeps registering it. |
+| `SubscriptionStatus.Unsubscribed` | The device is not registered in PushPushGo. |
+| `SubscriptionStatus.Subscribed(subscriberId, projectId)` | The device is registered in PushPushGo with these subscriber and project IDs. |
 
-The status reflects the notification settings right away, also offline. To
-follow changes the SDK makes in the background, such as finishing a
-registration, collect `subscriptionStatusFlow` (Kotlin). It emits the current
-status when collected and then every change:
+The status is independent of the user's intent and notification permission. For
+example, after an offline `unsubscribe()`, `isSubscriptionRequested()` is
+`false` while `getSubscriptionStatus()` remains `Subscribed(existingId, projectId)` until
+the device is removed from PushPushGo. `getSubscriberId()` agrees with the ID carried by
+`Subscribed`.
+
+To follow changes the SDK makes in the background, collect
+`subscriptionStatusFlow` (Kotlin). It emits the current status and then every
+registration change, including subscriber ID changes:
 
 ```kotlin
 // Compose
 val status by PushNotifications.subscriptionStatusFlow.collectAsStateWithLifecycle()
 
 // Wait until the device is registered, e.g. before sending a beacon
-PushNotifications.subscriptionStatusFlow.first { it == SubscriptionStatus.SUBSCRIBED }
+PushNotifications.subscriptionStatusFlow.first { it is SubscriptionStatus.Subscribed }
 ```
 
-For a notifications toggle in your app, show it as on for `SUBSCRIBED` and
-`PENDING`, offer enabling notifications in the system settings for
-`NOTIFICATIONS_DISABLED`, and show it as off for `UNSUBSCRIBED`.
+Java callers can use a callback instead. Like the flow, it receives the current
+status right away and then every change. Until `initialize()`, the status is
+`Unsubscribed`:
+
+```java
+PushNotifications.setSubscriptionStatusCallback(status -> {
+    if (status instanceof SubscriptionStatus.Subscribed) {
+        SubscriptionStatus.Subscribed subscribed = (SubscriptionStatus.Subscribed) status;
+        String subscriberId = subscribed.getSubscriberId();
+        String projectId = subscribed.getProjectId();
+    }
+});
+```
+
+Pass `null` to remove the callback. For a notifications toggle in your app, use
+`isSubscriptionRequested()` for the user's choice and
+`areNotificationsEnabled()` for notification permission; do not derive intent
+from `isSubscribed()`.
 
 #### Notification permission required
 
 On Android 13 (API 33) and newer, push subscription requires the
 `POST_NOTIFICATIONS` permission to be granted by the user.
 
-If the permission is not granted, `subscribe()` (and its Java wrapper,
-`subscribeAsync()`) throws an exception.
+If the permission is not granted, `subscribe()` throws an
+`IllegalStateException` without changing `isSubscriptionRequested()`.
 
 The application is responsible for requesting the permission before calling
-any subscription methods.
+`subscribe()`.
 
 #### Permission monitoring
 
 The SDK checks the notification settings whenever an activity of your app is
 resumed, so a change made in the system settings is noticed as soon as the user
-comes back to the app. While the app is in the foreground, it repeats the check
-every 10 seconds to retry what failed, e.g. without network.
+comes back to the app.
 
-If notifications are disabled while the user is subscribed, the status becomes
-`NOTIFICATIONS_DISABLED` and the SDK unregisters the device, but remembers that
-the user subscribed: once notifications are enabled back, the device is
-registered again automatically. Only `unsubscribe()` cancels the subscription
-for good.
+If notifications are disabled while the user requested a subscription, the SDK
+unregisters the device but keeps `isSubscriptionRequested()` true. The status
+remains `Subscribed(id, projectId)` until the device is removed from PushPushGo and then becomes
+`Unsubscribed`. Once notifications are enabled again, the device is registered
+automatically and the new `Subscribed(id, projectId)` is published. Only `unsubscribe()`
+changes the user's intent to false.
 
 ### Beacons, tags, and dynamic groups
 
@@ -477,6 +496,26 @@ val beacon =
 PushNotifications.sendBeacon(beacon)
 ```
 
+Send beacons once the device is subscribed: on `SubscriptionStatus.Subscribed`
+(see [Subscription status](#subscription-status)) or when `isSubscribed()` returns
+`true`. Beacons sent before that, or after `unsubscribe()`, are discarded.
+`unsubscribe()` and switching projects also drop beacons that are still queued. The SDK
+sends beacons in the background, in order, and retries them while offline:
+
+```kotlin
+PushNotifications.subscriptionStatusFlow
+  .filterIsInstance<SubscriptionStatus.Subscribed>()
+  .collect { PushNotifications.sendBeacon(profileBeacon()) }
+```
+
+```java
+PushNotifications.setSubscriptionStatusCallback(status -> {
+    if (status instanceof SubscriptionStatus.Subscribed) {
+        PushNotifications.sendBeacon(profileBeacon());
+    }
+});
+```
+
 ## Live Activities
 
 Real-time, continuously updated notifications (Android 16+ Live Updates), e.g.
@@ -488,6 +527,14 @@ liveActivities.subscribe("liveNotificationId")
 // ...
 liveActivities.unsubscribe("liveNotificationId")
 ```
+
+Live Activity subscriptions are independent of the push subscription:
+`PushNotifications.unsubscribe()` does not affect the Live Activities the user
+follows.
+
+They still require the notification permission: if it is not granted,
+`liveActivities.subscribe()` throws an `IllegalStateException`. Request the permission before
+subscribing.
 
 For the full integration guide (clicks, deep links, analytics, rendering
 features) see [LIVE_ACTIVITIES.md](LIVE_ACTIVITIES.md).

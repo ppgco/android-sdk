@@ -5,16 +5,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.testConfig
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-@org.robolectric.annotation.Config(sdk = [33])
 class SharedPreferencesHelperTest {
   private lateinit var prefs: SharedPreferencesHelper
 
@@ -38,7 +38,7 @@ class SharedPreferencesHelperTest {
   }
 
   @Test
-  fun `notification id eviction never deletes subscription state (ISSUE-14)`() {
+  fun `notification id eviction never deletes subscription state`() {
     prefs.subscriberId = "sub-123"
     prefs.lastToken = "token-abc"
     prefs.subscriptionRequested = true
@@ -52,7 +52,7 @@ class SharedPreferencesHelperTest {
   }
 
   @Test
-  fun `notification id eviction is deterministic FIFO (ISSUE-14)`() {
+  fun `notification id eviction is deterministic FIFO`() {
     repeat(1000) { prefs.setNotificationId("k-$it", it) }
     assertEquals(0, prefs.getNotificationId("k-0"))
 
@@ -81,12 +81,14 @@ class SharedPreferencesHelperTest {
   @Test
   fun `project owner keeps the credentials needed to reach its project`() {
     val owner = Config.create("8kp60aqdi49eioqzp0ihiytn", "00000000-0000-0000-0000-000000000001", "https://api.example.com")
+    assertNull(prefs.projectOwner)
 
     prefs.projectOwner = owner
 
-    assertEquals(owner.projectId, prefs.projectOwner?.projectId)
-    assertEquals(owner.apiKey, prefs.projectOwner?.apiKey)
-    assertEquals(owner.apiUrl, prefs.projectOwner?.apiUrl)
+    val stored = assertNotNull(prefs.projectOwner)
+    assertEquals(owner.projectId, stored.projectId)
+    assertEquals(owner.apiKey, stored.apiKey)
+    assertEquals(owner.apiUrl, stored.apiUrl)
   }
 
   @Test
@@ -94,19 +96,14 @@ class SharedPreferencesHelperTest {
     assertFalse(prefs.isSubscriptionRequestStored())
     assertFalse(prefs.subscriptionRequested)
 
-    prefs.storeSubscriptionRequestedNow(false)
+    prefs.subscriptionRequested = false
 
     assertTrue(prefs.isSubscriptionRequestStored())
     assertFalse(prefs.subscriptionRequested)
   }
 
   @Test
-  fun `project owner is absent until it is set`() {
-    assertNull(prefs.projectOwner)
-  }
-
-  @Test
-  fun `clear project data removes project state and preserves installation settings`() {
+  fun `clear project data removes project state and preserves the subscription request and installation settings`() {
     prefs.subscriberId = "sub-123"
     prefs.lastToken = "token-abc"
     prefs.subscriptionRequested = true
@@ -120,10 +117,10 @@ class SharedPreferencesHelperTest {
 
     assertNull(prefs.subscriberId)
     assertNull(prefs.lastToken)
-    assertFalse(prefs.subscriptionRequested)
     assertNull(prefs.projectOwner)
     assertEquals("", prefs.getLiveActivitySubscriberId("live-1"))
     assertEquals(-1, prefs.getNotificationId("notification-1"))
+    assertTrue(prefs.subscriptionRequested)
     assertEquals(42, prefs.customIntentFlags)
     assertEquals(installationId, prefs.installationId)
   }

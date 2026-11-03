@@ -68,12 +68,16 @@ internal class PushNotificationDelegate(
       return logWarning("Push is not from PPGo")
     }
 
+    if (!isLiveActivityPush && !canDeliverRegularPush(context)) {
+      return
+    }
+
     val pushProjectId = pushMessage.data["project"].orEmpty()
     val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
     val initializedProjectId = PushNotifications.getProjectId()
     when {
       pushProjectId != initializedProjectId ->
-        callbacks.invalidProjectIdHandler.onInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
+        callbacks.notifyInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
       isLiveActivityPush -> processLiveActivityPush(pushMessage, context)
       else -> processPushMessage(pushMessage, context)
     }
@@ -97,10 +101,6 @@ internal class PushNotificationDelegate(
     pushMessage: PushMessage,
     context: Context,
   ) {
-    if (!areNotificationsEnabled(context)) {
-      return logWarning("Push notifications are disabled by user")
-    }
-
     if (Looper.myLooper() == Looper.getMainLooper()) {
       // Blocking the main thread would risk an ANR, so integrations that forward
       // messages from the main thread keep the asynchronous path.
@@ -148,7 +148,13 @@ internal class PushNotificationDelegate(
         else -> throw IllegalStateException("Unknown notification type")
       }
 
+    if (!canDeliverRegularPush(context)) return
+
     notificationManager.notify(notificationId, notification)
+    reportDelivered(
+      subscriber = pushMessage.data["subscriber"].orEmpty(),
+      campaign = pushMessage.data["campaign"].orEmpty(),
+    )
     logDebug("Notification sent: $notificationId => $notification")
   }
 
@@ -156,6 +162,7 @@ internal class PushNotificationDelegate(
     logDebug("Refreshed token: $token")
 
     if (!PushNotifications.isInitialized()) return
+    if (!PushNotifications.isSubscriptionRequested()) return
     if (!PushNotifications.isSubscribed()) return
     if (!PushNotifications.areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
 
@@ -193,22 +200,8 @@ internal class PushNotificationDelegate(
     val pushPushNotification = deserializeNotificationData(remoteMessage.data.mapToBundle())
 
     if (pushPushNotification == null) {
-      // Malformed / incomplete inner JSON: still report DELIVERED from the raw
-      // data payload (don't lose the delivery metric) and render a best-effort
-      // notification from the available fields.
-
-      reportDelivered(
-        subscriber = remoteMessage.data["subscriber"].orEmpty(),
-        campaign = remoteMessage.data["campaign"].orEmpty(),
-      )
-
       return getSimpleNotification(context, remoteMessage, notificationId)
     }
-
-    reportDelivered(
-      subscriber = pushPushNotification.subscriber,
-      campaign = pushPushNotification.campaignId,
-    )
 
     return createDataNotification(context, notificationId, pushPushNotification)
   }
@@ -231,6 +224,20 @@ internal class PushNotificationDelegate(
       content = content,
       priority = translateFirebasePriority(remoteMessage.notification?.priority),
     )
+  }
+
+  private fun canDeliverRegularPush(context: Context): Boolean {
+    if (!sharedPreferencesHelper.subscriptionRequested) {
+      logDebug("Regular push ignored because subscription was not requested")
+      return false
+    }
+
+    if (!areNotificationsEnabled(context)) {
+      logDebug("Regular push ignored because notifications are disabled")
+      return false
+    }
+
+    return true
   }
 
   private fun translateFirebasePriority(priority: Int?) =
@@ -480,7 +487,7 @@ internal class PushNotificationDelegate(
       logDebug("launcher intenet flags before override: $flags")
 
       if (PushNotifications.isInitialized()) {
-        val customFlags = PushNotifications.customClickIntentFlags
+        val customFlags = PushNotifications.getCustomClickIntentFlags()
         logDebug("launcher intent flags restored: $customFlags")
         if (customFlags > 0) {
           flags = customFlags

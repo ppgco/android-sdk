@@ -3,8 +3,10 @@ package com.pushpushgo.sdk.push.liveactivity
 import android.app.Application
 import android.content.Intent
 import androidx.annotation.RestrictTo
+import com.pushpushgo.sdk.core.internal.NotificationPermissionProvider
 import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.notification.LiveActivityNotificationChannel
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import kotlinx.coroutines.CoroutineScope
@@ -21,7 +23,6 @@ class LiveActivities internal constructor(
   private val scope: CoroutineScope,
   apiRepository: ApiRepository,
   sharedPreferencesHelper: SharedPreferencesHelper,
-  getSubscriberId: () -> String?,
   callbacks: PushNotificationsCallbacks,
   private val operationMutex: Mutex,
   private val assertActive: () -> Unit,
@@ -32,20 +33,11 @@ class LiveActivities internal constructor(
       scope = scope,
       apiRepository = apiRepository,
       sharedPref = sharedPreferencesHelper,
-      getSubscriberId = getSubscriberId,
       callbacks = callbacks,
     )
 
   internal val handler: LiveActivityHandler?
     get() = controller.handler
-
-  internal fun clearProjectData() {
-    controller.clearProjectData()
-  }
-
-  internal suspend fun deinitialize() {
-    controller.deinitialize()
-  }
 
   init {
     controller.restoreFromPersistence()
@@ -87,16 +79,27 @@ class LiveActivities internal constructor(
   /**
    * Subscribes this device to a backend Live Activity.
    *
-   * The device must already be a registered push subscriber. Returns the backend
-   * Live Activity subscriber ID, which is persisted for later [unsubscribe] calls.
+   * Returns the backend Live Activity subscriber ID, which is persisted for later
+   * [unsubscribe] calls.
+   *
+   * Request the notification permission before calling this method.
    *
    * @param liveNotificationId backend ID of the Live Activity to follow
    * @return the assigned Live Activity subscriber ID
+   * @throws IllegalStateException if notifications are disabled
    */
   @JvmSynthetic
   suspend fun subscribe(liveNotificationId: String): String =
     operationMutex.withLock {
       assertActive()
+
+      val notificationsEnabled =
+        NotificationPermissionProvider.canPostNotifications(application) &&
+          LiveActivityNotificationChannel.isEnabled(application)
+      check(notificationsEnabled) {
+        "Cannot subscribe to Live Activity because notifications are disabled"
+      }
+
       controller.subscribe(liveNotificationId)
     }
 
@@ -105,8 +108,11 @@ class LiveActivities internal constructor(
    *
    * Java-friendly wrapper for [subscribe].
    *
+   * Request the notification permission before calling this method.
+   *
    * @param liveNotificationId backend ID of the Live Activity to follow
-   * @return future with the assigned Live Activity subscriber ID
+   * @return future with the assigned Live Activity subscriber ID; it fails with
+   * [IllegalStateException] if notifications are disabled
    */
   fun subscribeAsync(liveNotificationId: String): CompletableFuture<String> =
     scope.future {

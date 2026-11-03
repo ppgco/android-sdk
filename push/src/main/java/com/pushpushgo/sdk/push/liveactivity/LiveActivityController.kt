@@ -24,7 +24,6 @@ internal class LiveActivityController(
   private val scope: CoroutineScope,
   private val apiRepository: ApiRepository,
   private val sharedPref: SharedPreferencesHelper,
-  private val getSubscriberId: () -> String?,
   private val callbacks: PushNotificationsCallbacks,
 ) {
   private val persistence: LiveActivityPersistence by lazy { LiveActivityPersistence(application) }
@@ -54,13 +53,15 @@ internal class LiveActivityController(
             else -> null // la.ended not reported (no backend enum value)
           }
         if (statisticsType != null) {
+          val laSubscriberId = sharedPref.getLiveActivitySubscriberId(laId)
+
           scope.launch {
             runCatching {
               apiRepository.sendLiveActivityEvent(
                 liveNotificationId = laId,
                 eventType = statisticsType,
                 liveDataVersion = liveDataVersion,
-                subscriberId = getSubscriberId().orEmpty(),
+                subscriberId = laSubscriberId,
               )
             }.onFailure { logError("Failed to send LA statistics event $statisticsType for $laId", it) }
           }
@@ -72,18 +73,6 @@ internal class LiveActivityController(
   fun restoreFromPersistence() {
     if (Build.VERSION.SDK_INT >= 36) {
       manager?.restoreFromPersistence()
-    }
-  }
-
-  fun clearProjectData() {
-    persistence.clearAll()
-  }
-
-  suspend fun deinitialize() {
-    val liveActivities = sharedPref.getLiveActivitySubscriptions()
-
-    for (liveActivityId in liveActivities.keys) {
-      unsubscribe(liveActivityId)
     }
   }
 
@@ -138,7 +127,7 @@ internal class LiveActivityController(
     intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
 
     if (openDeepLink && !deepLink.isNullOrBlank()) {
-      callbacks.notificationClickHandler.onNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
+      callbacks.notifyNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
     return deepLink

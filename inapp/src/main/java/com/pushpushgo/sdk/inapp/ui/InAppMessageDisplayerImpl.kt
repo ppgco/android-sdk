@@ -468,28 +468,22 @@ internal class InAppMessageDisplayerImpl(
         }
 
         InAppActionType.SUBSCRIBE -> {
-          launch {
-            if (pushSubscriptionProvider == null) {
-              Log.e(InAppMessages.TAG, "[Displayer] No PushSubscriptionProvider configured - cannot subscribe to notifications")
-              return@launch
-            }
+          if (pushSubscriptionProvider == null) {
+            Log.e(InAppMessages.TAG, "[Displayer] No PushSubscriptionProvider configured - cannot subscribe to notifications")
+            return
+          }
 
-            if (pushSubscriptionProvider.isSubscribed()) {
-              Log.i(InAppMessages.TAG, "[Displayer] Already subscribed to notifications, skipping")
-              return@launch
-            }
+          if (pushSubscriptionProvider.isSubscriptionRequested()) {
+            Log.i(InAppMessages.TAG, "[Displayer] Subscription already requested, skipping")
+            return
+          }
 
-            try {
-              pushSubscriptionProvider.subscribe()
-            } catch (e: Exception) {
-              Log.e(InAppMessages.TAG, "[Displayer] Error subscribing to notifications", e)
-            }
-
-            if (pushSubscriptionProvider.isSubscribed()) {
-              Toast.makeText(context, "Successfully subscribed to notifications!", Toast.LENGTH_SHORT).show()
-            } else {
-              Toast.makeText(context, "Subscription failed. Enable notifications in settings.", Toast.LENGTH_LONG).show()
-            }
+          try {
+            pushSubscriptionProvider.subscribe()
+            Toast.makeText(context, "Successfully subscribed to notifications!", Toast.LENGTH_SHORT).show()
+          } catch (e: Exception) {
+            Log.e(InAppMessages.TAG, "[Displayer] Error subscribing to notifications", e)
+            Toast.makeText(context, "Subscription failed. Enable notifications in settings.", Toast.LENGTH_LONG).show()
           }
         }
 

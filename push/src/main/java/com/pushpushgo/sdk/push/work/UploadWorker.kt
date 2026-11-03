@@ -10,13 +10,18 @@ import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.Payload
 import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
-import com.pushpushgo.sdk.push.utils.getPlatformPushToken
+import com.pushpushgo.sdk.push.push.areNotificationsEnabled
+import com.pushpushgo.sdk.push.utils.PlatformPushTokenProvider
+import com.pushpushgo.sdk.push.utils.isSameProjectAs
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.osVersion
 import kotlinx.coroutines.coroutineScope
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
 internal class UploadWorker(
   private val context: Context,
@@ -28,8 +33,10 @@ internal class UploadWorker(
     const val EVENT = "event"
     const val SYNC_TOKEN = "sync_token"
     const val SYNC_TOKEN_PERIODIC = "sync_token_periodic"
+    const val BEACON = "beacon"
     private const val MAX_EVENT_ATTEMPTS = 3
     private const val MAX_SYNC_TOKEN_ATTEMPTS = 3
+    private const val MAX_BEACON_ATTEMPTS = 3
 
     const val WORK_PROJECT_ID = "work:project_id"
     const val WORK_API_KEY = "work:api_key"
@@ -37,6 +44,9 @@ internal class UploadWorker(
 
     const val SYNC_TOKEN_TOKEN = "sync_token:token"
     const val SYNC_TOKEN_SUBSCRIBER_ID = "sync_token:subscriber_id"
+
+    const val BEACON_SUBSCRIBER_ID = "beacon:subscriber_id"
+    const val BEACON_PAYLOAD = "beacon:payload"
 
     // EVENT payload keys
     const val EVENT_TYPE = "event_type"
@@ -66,7 +76,7 @@ internal class UploadWorker(
           return@coroutineScope Result.failure()
         }
 
-      val apiService = ApiService.fromConfig(config)
+      val apiService = DefaultApiServiceFactory.create(config)
 
       try {
         when (type) {
@@ -93,12 +103,20 @@ internal class UploadWorker(
               subscriberId = inputData.getString(SYNC_TOKEN_SUBSCRIBER_ID).orEmpty(),
               pushToken = null,
             )
+          BEACON ->
+            sendBeacon(
+              config = config,
+              apiService = apiService,
+              subscriberId = inputData.getString(BEACON_SUBSCRIBER_ID).orEmpty(),
+              payload = inputData.getString(BEACON_PAYLOAD).orEmpty(),
+            )
           else -> return@coroutineScope Result.failure()
         }
       } catch (e: Throwable) {
         logError("UploadWorker error", e)
 
         return@coroutineScope when {
+          type == BEACON -> if (shouldRetry(e, MAX_BEACON_ATTEMPTS)) Result.retry() else Result.success()
           "Please configure FCM keys and senderIds on your " in e.message.orEmpty() -> Result.failure()
           type == EVENT && !shouldRetry(e, MAX_EVENT_ATTEMPTS) -> Result.failure()
           type in setOf(SYNC_TOKEN, SYNC_TOKEN_PERIODIC) && !shouldRetry(e, MAX_SYNC_TOKEN_ATTEMPTS) -> Result.failure()
@@ -149,6 +167,28 @@ internal class UploadWorker(
     )
   }
 
+  private suspend fun sendBeacon(
+    config: Config,
+    apiService: ApiService,
+    subscriberId: String,
+    payload: String,
+  ) {
+    val isSubscriptionRequested = sharedPreferencesHelper.subscriptionRequested
+    val isActiveSubscriber =
+      sharedPreferencesHelper.projectOwner?.isSameProjectAs(config) == true &&
+        sharedPreferencesHelper.subscriberId == subscriberId
+
+    if (!isSubscriptionRequested) return logDebug("Beacon discarded - the user has unsubscribed")
+    if (!isActiveSubscriber) return logDebug("Beacon discarded - the subscriber is no longer active")
+
+    apiService.sendBeacon(
+      token = config.apiKey,
+      projectId = config.projectId,
+      subscriberId = subscriberId,
+      beacon = payload.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()),
+    )
+  }
+
   private suspend fun syncToken(
     config: Config,
     apiService: ApiService,
@@ -165,7 +205,11 @@ internal class UploadWorker(
       return logDebug("Token sync skipped - subscriber is no longer active")
     }
 
-    val token = pushToken ?: getPlatformPushToken(context)
+    if (!sharedPreferencesHelper.subscriptionRequested || !areNotificationsEnabled(context)) {
+      return logDebug("Token sync skipped - subscription is not currently requested or notifications are disabled")
+    }
+
+    val token = pushToken ?: PlatformPushTokenProvider(context).getToken()
 
     if (token.isBlank()) {
       return logError("Cannot sync token - empty subscriberId")

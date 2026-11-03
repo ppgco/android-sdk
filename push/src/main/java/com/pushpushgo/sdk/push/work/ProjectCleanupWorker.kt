@@ -6,8 +6,10 @@ import androidx.work.WorkerParameters
 import com.pushpushgo.sdk.core.api.Config
 import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.network.ApiRepository
-import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
+import com.pushpushgo.sdk.push.push.areNotificationsEnabled
+import com.pushpushgo.sdk.push.utils.PlatformPushTokenProvider
 import com.pushpushgo.sdk.push.utils.isSameProjectAs
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
@@ -42,7 +44,8 @@ internal class ProjectCleanupWorker(
 
   override suspend fun doWork(): Result {
     val config = readConfig() ?: return Result.failure()
-    val apiRepository = ApiRepository(applicationContext, ApiService.fromConfig(config), sharedPreferencesHelper, config)
+    val apiRepository =
+      ApiRepository(DefaultApiServiceFactory.create(config), sharedPreferencesHelper, config, PlatformPushTokenProvider(applicationContext))
 
     return try {
       inputData.getString(SUBSCRIBER_ID)?.let { removeSubscriber(config, apiRepository, it) }
@@ -66,11 +69,22 @@ internal class ProjectCleanupWorker(
     apiRepository: ApiRepository,
     subscriberId: String,
   ) {
-    if (isCurrentProject(config) && sharedPreferencesHelper.subscriberId == subscriberId) {
+    val isCurrentSubscriber =
+      isCurrentProject(config) && sharedPreferencesHelper.subscriberId == subscriberId
+    val isStillDesired =
+      sharedPreferencesHelper.subscriptionRequested && areNotificationsEnabled(applicationContext)
+
+    if (isCurrentSubscriber && isStillDesired) {
       return logDebug("Subscriber $subscriberId is in use again, skipping its removal")
     }
 
     apiRepository.deleteSubscriber(subscriberId)
+
+    // The request may finish after a project switch or a new registration. Clear only the local
+    // state that still represents the subscriber this worker actually removed.
+    if (isCurrentProject(config) && sharedPreferencesHelper.subscriberId == subscriberId) {
+      sharedPreferencesHelper.subscriberId = null
+    }
   }
 
   private suspend fun removeLiveActivitySubscription(

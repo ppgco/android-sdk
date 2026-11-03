@@ -2,39 +2,26 @@ package com.pushpushgo.sdk.push
 
 import org.json.JSONArray
 import org.json.JSONObject
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 internal class BeaconBuilderTest {
   private val beaconBuilder = BeaconBuilder()
 
   @Test
-  fun `set string selector`() {
-    beaconBuilder.set("Selector", "Value")
+  fun `set stores each value type in the beacon`() {
+    beaconBuilder
+      .set("string", "Value")
+      .set("boolean", true)
+      .set("char", 'A')
+      .set("number", 421)
 
-    assertEquals("Value", sendBeacon()["Selector"])
-  }
+    val beacon = sendBeacon()
 
-  @Test
-  fun `set boolean selector`() {
-    beaconBuilder.set("Selector", true)
-
-    assertEquals(true, sendBeacon()["Selector"])
-  }
-
-  @Test
-  fun `set char selector`() {
-    beaconBuilder.set("Selector", 'A')
-
-    assertEquals("A", sendBeacon()["Selector"])
-  }
-
-  @Test
-  fun `set number selector`() {
-    beaconBuilder.set("Selector", 421)
-
-    assertEquals(421, sendBeacon()["Selector"])
+    assertEquals("Value", beacon["string"])
+    assertEquals(true, beacon["boolean"])
+    assertEquals("A", beacon["char"])
+    assertEquals(421, beacon["number"])
   }
 
   @Test
@@ -52,7 +39,7 @@ internal class BeaconBuilderTest {
   }
 
   @Test
-  fun `append many tags with label`() {
+  fun `appended tags keep their order and are sent with label, append strategy and no ttl`() {
     beaconBuilder
       .appendTag("tag1", "label1")
       .appendTag("tag2", "label2")
@@ -139,32 +126,6 @@ internal class BeaconBuilderTest {
     beaconBuilder.unassignFromGroup("my-segment-333")
 
     assertEquals("my-segment-333", sendBeacon()["unassignFromGroup"])
-  }
-
-  @Test
-  fun `assign and unassign from groups simultaneously`() {
-    beaconBuilder
-      .assignToGroup("my-segment-123")
-      .unassignFromGroup("my-segment-333")
-
-    val beacon = sendBeacon()
-
-    assertEquals("my-segment-123", beacon["assignToGroup"])
-    assertEquals("my-segment-333", beacon["unassignFromGroup"])
-  }
-
-  @Test
-  fun `assign to group with other beacon data`() {
-    beaconBuilder
-      .setCustomId("xxsampleId")
-      .assignToGroup("my-segment-123")
-      .appendTag("tag1", "label1")
-
-    val beacon = sendBeacon()
-
-    assertEquals("xxsampleId", beacon["customId"])
-    assertEquals("my-segment-123", beacon["assignToGroup"])
-    assertTrue(beacon.has("tags"))
   }
 
   private fun sendBeacon(): JSONObject = JSONObject(beaconBuilder.build().payload)

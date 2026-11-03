@@ -13,10 +13,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.SubscriptionStatus
 import com.pushpushgo.sdk.sample.push.hms.R
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
   @SuppressLint("SetTextI18n")
@@ -28,25 +27,26 @@ class MainActivity : AppCompatActivity() {
     findViewById<TextView>(R.id.version).text = PushNotifications.VERSION
 
     findViewById<Button>(R.id.register).setOnClickListener {
-      lifecycleScope.launch {
-        try {
-          PushNotifications.subscribe()
-          Toast.makeText(this@MainActivity, "Subscribed!", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-          Toast.makeText(this@MainActivity, "Can't subscribe! ${e.message}", Toast.LENGTH_SHORT).show()
-        }
+      try {
+        PushNotifications.subscribe()
+        Toast.makeText(this, "Subscribed!", Toast.LENGTH_SHORT).show()
+      } catch (e: IllegalStateException) {
+        Toast.makeText(this, "Can't subscribe! ${e.message}", Toast.LENGTH_SHORT).show()
       }
     }
 
     findViewById<Button>(R.id.unregister).setOnClickListener {
-      lifecycleScope.launch {
-        PushNotifications.unsubscribe()
-      }
+      PushNotifications.unsubscribe()
     }
 
     findViewById<Button>(R.id.check).setOnClickListener {
+      val status =
+        when (val status = PushNotifications.getSubscriptionStatus()) {
+          SubscriptionStatus.Unsubscribed -> "Unsubscribed"
+          is SubscriptionStatus.Subscribed -> "Subscribed: ${status.subscriberId} (${status.projectId})"
+        }
       findViewById<TextView>(R.id.content).text =
-        "Status: " + PushNotifications.getSubscriptionStatus()
+        "Requested: ${PushNotifications.isSubscriptionRequested()}\nStatus: $status"
     }
 
     findViewById<Button>(R.id.beacons).setOnClickListener {

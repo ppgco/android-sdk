@@ -3,6 +3,9 @@ package com.pushpushgo.sdk.push
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
@@ -11,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 fun interface NotificationClickHandler {
+  /** Called on the main thread. */
   fun onNotificationClick(
     context: Context,
     url: String,
@@ -19,6 +23,7 @@ fun interface NotificationClickHandler {
 }
 
 fun interface InvalidProjectIdHandler {
+  /** Called on the main thread. */
   fun onInvalidProjectId(
     pushProjectId: String,
     pushSubscriberId: String,
@@ -27,7 +32,13 @@ fun interface InvalidProjectIdHandler {
 }
 
 fun interface PushNotificationsErrorCallback {
+  /** Called on the main thread. */
   fun onError(throwable: Throwable)
+}
+
+/** Receives the current subscription status and its changes on the main thread. */
+fun interface SubscriptionStatusCallback {
+  fun onSubscriptionStatusChanged(status: SubscriptionStatus)
 }
 
 internal class DefaultNotificationClickHandler : NotificationClickHandler {
@@ -62,6 +73,8 @@ internal class DefaultInvalidProjectIdHandler : InvalidProjectIdHandler {
 }
 
 internal class PushNotificationsCallbacks {
+  private val mainHandler = Handler(Looper.getMainLooper())
+
   @Volatile
   var notificationClickHandler: NotificationClickHandler = DefaultNotificationClickHandler()
 
@@ -71,11 +84,77 @@ internal class PushNotificationsCallbacks {
   @Volatile
   var errorCallback: PushNotificationsErrorCallback? = null
 
-  private val subscriptionStatus = MutableStateFlow(SubscriptionStatus.UNSUBSCRIBED)
+  private val subscriptionStatus = MutableStateFlow<SubscriptionStatus>(SubscriptionStatus.Unsubscribed)
 
   val subscriptionStatusFlow: StateFlow<SubscriptionStatus> = subscriptionStatus.asStateFlow()
 
+  @Volatile
+  var subscriptionStatusCallback: SubscriptionStatusCallback? = null
+    set(callback) {
+      field = callback
+      callback ?: return
+      dispatchToMain("Subscription status callback") {
+        callback.onSubscriptionStatusChanged(subscriptionStatus.value)
+      }
+    }
+
+  fun notifyNotificationClick(
+    context: Context,
+    url: String,
+    overrideFlags: Int,
+  ) {
+    val handler = notificationClickHandler
+    dispatchToMain("Notification click handler") {
+      handler.onNotificationClick(context, url, overrideFlags)
+    }
+  }
+
+  fun notifyInvalidProjectId(
+    pushProjectId: String,
+    pushSubscriberId: String,
+    currentProjectId: String,
+  ) {
+    val handler = invalidProjectIdHandler
+    dispatchToMain("Invalid project ID handler") {
+      handler.onInvalidProjectId(pushProjectId, pushSubscriberId, currentProjectId)
+    }
+  }
+
+  fun notifyError(throwable: Throwable) {
+    val callback = errorCallback ?: return
+    dispatchToMain("Error callback") {
+      callback.onError(throwable)
+    }
+  }
+
   fun publishSubscriptionStatus(status: SubscriptionStatus) {
+    if (subscriptionStatus.value == status) return
+
     subscriptionStatus.value = status
+
+    val callback = subscriptionStatusCallback ?: return
+    dispatchToMain("Subscription status callback") {
+      callback.onSubscriptionStatusChanged(status)
+    }
+  }
+
+  private fun dispatchToMain(
+    callbackName: String,
+    callback: () -> Unit,
+  ) {
+    val safeCallback =
+      Runnable {
+        try {
+          callback()
+        } catch (exception: Exception) {
+          Log.e(PushNotifications.TAG, "$callbackName failed", exception)
+        }
+      }
+
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      safeCallback.run()
+    } else {
+      mainHandler.post(safeCallback)
+    }
   }
 }

@@ -5,38 +5,41 @@ import android.app.Application
 import android.app.Notification
 import android.app.NotificationManager
 import android.graphics.Bitmap
-import android.os.Looper
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.pushpushgo.sdk.push.InvalidProjectIdHandler
 import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.PushNotificationsCallbacks
+import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.otherProjectTestConfig
 import com.pushpushgo.sdk.push.testConfig
+import com.pushpushgo.sdk.push.work.UploadManager
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.annotation.Config
 import java.net.UnknownHostException
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [33])
 class PushNotificationDelegateTest {
   private val context: Application = getApplicationContext()
-  private val apiRepository = mockk<ApiRepository>(relaxed = true)
+  private val apiRepository = mockk<ApiRepository>()
+  private val uploadManager = mockk<UploadManager>(relaxUnitFun = true)
+  private val callbacks = PushNotificationsCallbacks()
   private val bitmap = Bitmap.createBitmap(10, 5, Bitmap.Config.ARGB_8888)
   private lateinit var delegate: PushNotificationDelegate
 
@@ -45,20 +48,21 @@ class PushNotificationDelegateTest {
     WorkManagerTestInitHelper.initializeTestWorkManager(context)
     PushNotifications.initialize(application = context, config = testConfig())
     shadowOf(context).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+    PushNotifications.sharedPreferencesHelper.subscriptionRequested = true
     coEvery { apiRepository.getBitmapFromUrl(ICON_URL) } returns null
 
     delegate =
       PushNotificationDelegate(
         sharedPreferencesHelper = PushNotifications.sharedPreferencesHelper,
         apiRepository = apiRepository,
-        uploadManager = mockk(relaxed = true),
-        callbacks = mockk(relaxed = true),
+        uploadManager = uploadManager,
+        callbacks = callbacks,
       )
   }
 
   @After
   fun tearDown() {
-    runBlocking { PushNotifications.deinitialize() }
+    runTest { PushNotifications.reset() }
     WorkManagerTestInitHelper.closeWorkDatabase()
   }
 
@@ -72,16 +76,17 @@ class PushNotificationDelegateTest {
       bitmap
     }
 
-    // Messaging services call onMessageReceived on a worker thread.
     val worker = thread { delegate.onMessageReceived(pushMessage(), context) }
-    pumpMainLooperUntil { downloadStarted.count == 0L }
-    assertEquals("image download did not start", 0L, downloadStarted.count)
-    // The service gets destroyed while the image is still downloading.
+    assertTrue(downloadStarted.await(10, TimeUnit.SECONDS), "image download did not start")
+
     delegate.onDestroy()
     finishDownload.complete(Unit)
-    pumpMainLooperUntil { !worker.isAlive && postedNotifications().isNotEmpty() }
+    worker.join(10_000)
 
     assertEquals(BIG_PICTURE_STYLE, postedNotification().extras.getString(Notification.EXTRA_TEMPLATE))
+    verify(exactly = 1) {
+      uploadManager.sendEvent(EventType.DELIVERED, 0, "campaign-id", "subscriber-id")
+    }
   }
 
   @Test
@@ -109,71 +114,50 @@ class PushNotificationDelegateTest {
   }
 
   @Test
-  fun `live activity push of another project goes to the invalid project handler`() {
-    val otherProjectId = otherProjectTestConfig().projectId
+  fun `regular push is ignored when notifications are disabled`() {
+    shadowOf(context).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-    val invalidProject = deliverLiveActivityPush(projectId = otherProjectId)
+    delegate.onMessageReceived(pushMessage(), context)
 
-    assertEquals(Triple(otherProjectId, "subscriber-id", testConfig().projectId), invalidProject)
+    assertEquals(0, postedNotifications().size)
+    coVerify(exactly = 0) { apiRepository.getBitmapFromUrl(any()) }
+    verify(exactly = 0) { uploadManager.sendEvent(any(), any(), any(), any()) }
   }
 
   @Test
-  fun `live activity push of the current project is not reported as invalid`() {
-    val invalidProject = deliverLiveActivityPush(projectId = testConfig().projectId)
-
-    assertNull(invalidProject)
-  }
-
-  /** Returns the arguments the invalid project handler was called with, `null` if it was not called. */
-  private fun deliverLiveActivityPush(projectId: String): Triple<String, String, String>? {
-    var invalidProject: Triple<String, String, String>? = null
-    val callbacks =
-      PushNotificationsCallbacks().apply {
-        invalidProjectIdHandler =
-          InvalidProjectIdHandler { pushProjectId, pushSubscriberId, currentProjectId ->
-            invalidProject = Triple(pushProjectId, pushSubscriberId, currentProjectId)
-          }
+  fun `live activity push is reported as invalid only when it belongs to another project`() {
+    PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
+    val otherProjectId = otherProjectTestConfig().projectId
+    val invalidProjects = mutableListOf<Triple<String, String, String>>()
+    callbacks.invalidProjectIdHandler =
+      InvalidProjectIdHandler { pushProjectId, pushSubscriberId, currentProjectId ->
+        invalidProjects += Triple(pushProjectId, pushSubscriberId, currentProjectId)
       }
-    val liveActivityDelegate =
-      PushNotificationDelegate(
-        sharedPreferencesHelper = PushNotifications.sharedPreferencesHelper,
-        apiRepository = apiRepository,
-        uploadManager = mockk(relaxed = true),
-        callbacks = callbacks,
-      )
 
-    liveActivityDelegate.onMessageReceived(
-      PushMessage(
-        from = "702491788352",
-        data =
-          mapOf(
-            "type" to "live_notification",
-            "liveNotificationId" to "live-1",
-            "event" to "update",
-            "project" to projectId,
-            "subscriber" to "subscriber-id",
-          ),
-        notification = null,
-      ),
-      context,
-    )
+    delegate.onMessageReceived(liveActivityPush(projectId = otherProjectId), context)
+    delegate.onMessageReceived(liveActivityPush(projectId = testConfig().projectId), context)
 
-    return invalidProject
+    assertEquals(listOf(Triple(otherProjectId, "subscriber-id", testConfig().projectId)), invalidProjects)
   }
+
+  private fun liveActivityPush(projectId: String) =
+    PushMessage(
+      from = "702491788352",
+      data =
+        mapOf(
+          "type" to "live_notification",
+          "liveNotificationId" to "live-1",
+          "event" to "update",
+          "project" to projectId,
+          "subscriber" to "subscriber-id",
+        ),
+      notification = null,
+    )
 
   /** Delivers the message the way a messaging service does (on a worker thread) and waits for the notification. */
   private fun deliver() {
     val worker = thread { delegate.onMessageReceived(pushMessage(), context) }
-    pumpMainLooperUntil { !worker.isAlive && postedNotifications().isNotEmpty() }
-  }
-
-  /** Also runs work dispatched to the main thread, which Robolectric only executes when its looper is idled. */
-  private fun pumpMainLooperUntil(condition: () -> Boolean) {
-    val deadline = System.currentTimeMillis() + 10_000
-    while (!condition() && System.currentTimeMillis() < deadline) {
-      shadowOf(Looper.getMainLooper()).idle()
-      Thread.sleep(20)
-    }
+    worker.join(10_000)
   }
 
   private fun postedNotifications() = shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications

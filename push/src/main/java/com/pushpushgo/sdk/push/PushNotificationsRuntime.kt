@@ -11,33 +11,38 @@ import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.liveactivity.LiveActivities
 import com.pushpushgo.sdk.push.liveactivity.LiveActivityPersistence
 import com.pushpushgo.sdk.push.network.ApiRepository
-import com.pushpushgo.sdk.push.network.ApiService
+import com.pushpushgo.sdk.push.network.ApiServiceFactory
+import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.push.PushNotificationDelegate
 import com.pushpushgo.sdk.push.push.areNotificationsEnabled
 import com.pushpushgo.sdk.push.push.createNotificationChannel
 import com.pushpushgo.sdk.push.push.deserializeNotificationData
 import com.pushpushgo.sdk.push.subscription.DefaultPushSubscriptionProvider
+import com.pushpushgo.sdk.push.utils.PlatformPushTokenProvider
+import com.pushpushgo.sdk.push.utils.PushTokenProvider
 import com.pushpushgo.sdk.push.utils.getPlatformType
 import com.pushpushgo.sdk.push.utils.isSameProjectAs
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.logWarning
 import com.pushpushgo.sdk.push.work.UploadManager
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 internal class PushNotificationsRuntime(
   val application: Application,
   val config: Config,
   private val callbacks: PushNotificationsCallbacks,
+  apiServiceFactory: ApiServiceFactory = DefaultApiServiceFactory,
+  pushTokenProvider: PushTokenProvider = PlatformPushTokenProvider(application),
+  dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
   init {
     check(WorkManager.isInitialized()) {
@@ -45,15 +50,15 @@ internal class PushNotificationsRuntime(
     }
   }
 
-  private val sdkScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  private val sdkScope = CoroutineScope(SupervisorJob() + dispatcher)
   private val operationMutex = Mutex()
 
   @Volatile
-  private var isDeinitialized = false
+  private var isReleased = false
 
   val sharedPreferencesHelper = SharedPreferencesHelper(application)
-  private val apiService = ApiService.fromConfig(config)
-  val apiRepository = ApiRepository(application, apiService, sharedPreferencesHelper, config)
+  private val apiService = apiServiceFactory.create(config)
+  val apiRepository = ApiRepository(apiService, sharedPreferencesHelper, config, pushTokenProvider)
   val uploadManager = UploadManager(application, config)
   val pushNotificationsDelegate = PushNotificationDelegate(sharedPreferencesHelper, apiRepository, uploadManager, callbacks)
 
@@ -68,7 +73,6 @@ internal class PushNotificationsRuntime(
       scope = sdkScope,
       apiRepository = apiRepository,
       sharedPreferencesHelper = sharedPreferencesHelper,
-      getSubscriberId = { getSubscriberId() },
       callbacks = callbacks,
       operationMutex = operationMutex,
       assertActive = ::assertActive,
@@ -82,7 +86,7 @@ internal class PushNotificationsRuntime(
 
     createNotificationChannel(application)
 
-    if (sharedPreferencesHelper.subscriptionRequested) {
+    if (sharedPreferencesHelper.subscriptionRequested && areNotificationsEnabled(application)) {
       val subscriberId = sharedPreferencesHelper.subscriberId
 
       if (subscriberId != null) {
@@ -95,16 +99,12 @@ internal class PushNotificationsRuntime(
   private val notificationStatusChecker =
     NotificationStatusChecker(
       application = application,
-      sdkScope = sdkScope,
-      sharedPreferencesHelper = sharedPreferencesHelper,
-      register = ::registerIfRequested,
-      unregister = ::unregisterKeepingRequest,
-      onChecked = ::publishSubscriptionStatus,
+      onCheck = ::requestReconcile,
     )
 
-  init {
-    notificationStatusChecker.start()
+  fun start() {
     publishSubscriptionStatus()
+    notificationStatusChecker.start()
   }
 
   val customClickIntentFlags: Int
@@ -118,137 +118,80 @@ internal class PushNotificationsRuntime(
 
   fun getApiKey(): String = config.apiKey
 
-  /** Computes the status from the persisted state and the current notification settings. */
+  /** Returns the backend state last confirmed by the SDK. */
   fun getSubscriptionStatus(): SubscriptionStatus =
-    when {
-      !sharedPreferencesHelper.subscriptionRequested -> SubscriptionStatus.UNSUBSCRIBED
-      !areNotificationsEnabled(application) -> SubscriptionStatus.NOTIFICATIONS_DISABLED
-      sharedPreferencesHelper.subscriberId == null -> SubscriptionStatus.PENDING
-      else -> SubscriptionStatus.SUBSCRIBED
-    }.also { status ->
-      // Keeps the flow in line with what callers read, also for changes the SDK has not acted on yet
-      if (!isDeinitialized) callbacks.publishSubscriptionStatus(status)
+    sharedPreferencesHelper.subscriberId?.let {
+      SubscriptionStatus.Subscribed(
+        subscriberId = it,
+        projectId = config.projectId,
+      )
     }
+      ?: SubscriptionStatus.Unsubscribed
 
-  fun isSubscribed(): Boolean = getSubscriptionStatus() == SubscriptionStatus.SUBSCRIBED
+  fun isSubscriptionRequested(): Boolean = sharedPreferencesHelper.subscriptionRequested
+
+  fun isSubscribed(): Boolean = sharedPreferencesHelper.subscriberId != null
 
   private fun publishSubscriptionStatus() {
-    getSubscriptionStatus()
+    if (!isReleased) callbacks.publishSubscriptionStatus(getSubscriptionStatus())
   }
-
-  /** Whether the user's subscription is registered, regardless of the notification settings. */
-  private fun hasActiveRegistration(): Boolean =
-    sharedPreferencesHelper.subscriptionRequested && sharedPreferencesHelper.subscriberId != null
 
   fun getSubscriberId(): String? = sharedPreferencesHelper.subscriberId
 
   fun getPushToken(): String? = sharedPreferencesHelper.lastToken
 
-  suspend fun subscribe() {
-    operationMutex.withLock {
-      assertActive()
+  fun subscribe() {
+    assertActive()
 
-      check(areNotificationsEnabled(application)) {
-        "Cannot subscribe because notifications are disabled"
+    check(areNotificationsEnabled(application)) {
+      "Cannot subscribe because notifications are disabled"
+    }
+
+    sharedPreferencesHelper.subscriptionRequested = true
+    requestReconcile()
+  }
+
+  fun unsubscribe() {
+    assertActive()
+
+    sharedPreferencesHelper.subscriptionRequested = false
+    requestReconcile()
+  }
+
+  /** Runs [reconcile] in the background; a transient failure is retried by SubscriptionReconcileWorker. */
+  fun requestReconcile() {
+    sdkScope.launch {
+      try {
+        reconcile()
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
+        logError("Subscription reconciliation failed", e)
+        if (e.isTransientApiError()) uploadManager.scheduleSubscriptionReconcile()
       }
-
-      subscribeLocked()
     }
   }
 
   /**
-   * Cancels the user's subscription. The choice is stored before anything else and never fails
-   * because of the API: a subscriber that cannot be removed right now is removed in the background.
+   * Brings the backend registration in line with the user's subscription request and the
+   * notification permission. Decides on the state found under the operation lock, so
+   * reconciliations and project switches act one after another. A released runtime is left alone.
    */
-  suspend fun unsubscribe() {
-    operationMutex.withLock {
-      assertActive()
-
-      withContext(Dispatchers.IO) {
-        sharedPreferencesHelper.storeSubscriptionRequestedNow(false)
-      }
-      uploadManager.cancelAllJobs()
-
-      sharedPreferencesHelper.subscriberId?.let { subscriberId ->
-        removeSubscriber(subscriberId)
-        sharedPreferencesHelper.subscriberId = ""
-      }
-    }
-
-    publishSubscriptionStatus()
-  }
-
-  private suspend fun removeSubscriber(subscriberId: String) {
+  suspend fun reconcile() {
     try {
-      apiRepository.deleteSubscriber(subscriberId)
-    } catch (e: CancellationException) {
-      throw e
-    } catch (e: Exception) {
-      if (e.isTransientApiError()) {
-        logWarning("Subscriber $subscriberId cannot be removed now, it will be removed in the background: $e")
-        uploadManager.scheduleProjectCleanup(config, subscriberId, emptyMap())
-      } else {
-        logError("Failed to remove subscriber $subscriberId", e)
+      operationMutex.withLock {
+        if (isReleased) return
+
+        val shouldBeRegistered = sharedPreferencesHelper.subscriptionRequested && areNotificationsEnabled(application)
+        val isRegistered = sharedPreferencesHelper.subscriberId != null
+
+        when {
+          shouldBeRegistered && !isRegistered -> registerLocked()
+          !shouldBeRegistered && isRegistered -> unregisterLocked()
+        }
       }
-    }
-  }
-
-  /**
-   * Unregisters the device but keeps the user's subscription request, so the notification status
-   * checker can register it again once notifications are enabled back.
-   */
-  suspend fun unregisterKeepingRequest() {
-    operationMutex.withLock {
-      assertActive()
-      apiRepository.unregisterSubscriber()
-      uploadManager.cancelAllJobs()
-    }
-
-    publishSubscriptionStatus()
-  }
-
-  /**
-   * Starts [subscribeIfRequested] without waiting for it, e.g. right after a project switch. The
-   * attempt is cancelled when this runtime is released.
-   */
-  fun subscribeIfRequestedInBackground(): Job = sdkScope.launch { subscribeIfRequested() }
-
-  /**
-   * Subscribes the device when the user asked for notifications but it is not registered in this
-   * project. A failure is reported to the error callback rather than thrown; the notification
-   * status checker keeps retrying while the app is in the foreground.
-   */
-  suspend fun subscribeIfRequested() {
-    if (!areNotificationsEnabled(application)) return
-
-    try {
-      registerIfRequested()
-    } catch (e: CancellationException) {
-      throw e
-    } catch (e: Exception) {
-      // A runtime released in the meantime is not an error of the new project
-      if (!isDeinitialized) logError("Subscription to project ${config.projectId} failed, it will be retried", e)
     } finally {
       publishSubscriptionStatus()
-    }
-  }
-
-  /**
-   * Registers the device when the user asked for notifications and it is not registered yet. The
-   * check runs under the operation lock, so a project switch and the notification status checker
-   * running at the same time register the device only once.
-   */
-  private suspend fun registerIfRequested() {
-    operationMutex.withLock {
-      assertActive()
-
-      if (!sharedPreferencesHelper.subscriptionRequested || sharedPreferencesHelper.subscriberId != null) return
-
-      check(areNotificationsEnabled(application)) {
-        "Cannot subscribe because notifications are disabled"
-      }
-
-      subscribeLocked()
     }
   }
 
@@ -260,66 +203,42 @@ internal class PushNotificationsRuntime(
     operationMutex.withLock {
       assertActive()
 
-      isDeinitialized = true
+      isReleased = true
       notificationStatusChecker.stop()
       sdkScope.cancel()
     }
   }
 
-  suspend fun deinitialize() {
-    operationMutex.withLock {
-      assertActive()
+  fun sendBeacon(beacon: Beacon) {
+    assertActive()
 
-      liveActivities.deinitialize()
-
-      // Not isSubscribed(): a registration must be removed also while notifications are disabled
-      if (hasActiveRegistration()) {
-        unsubscribeLocked()
-      } else {
-        uploadManager.cancelAllJobs()
-      }
-
-      sharedPreferencesHelper.clearProjectData()
-      liveActivities.clearProjectData()
-
-      isDeinitialized = true
-      notificationStatusChecker.stop()
-      sdkScope.cancel()
+    if (!sharedPreferencesHelper.subscriptionRequested) {
+      return logWarning("Beacon discarded - the device is not subscribed")
     }
+
+    val subscriberId =
+      getSubscriberId() ?: return logWarning("Beacon discarded - the device is not subscribed")
+
+    uploadManager.enqueueBeacon(subscriberId, beacon.payload)
   }
 
-  suspend fun sendBeacon(beacon: Beacon) {
-    operationMutex.withLock {
-      assertActive()
-      apiRepository.sendBeacon(beacon.payload)
-    }
-  }
+  private suspend fun registerLocked() {
+    apiRepository.registerToken(null)
+    // Before the background work below is scheduled, which can take a moment
+    publishSubscriptionStatus()
 
-  private suspend fun subscribeLocked() {
-    try {
-      apiRepository.registerToken(null)
-      sharedPreferencesHelper.subscriptionRequested = true
-      // Before the background work below is scheduled, which can take a moment
-      publishSubscriptionStatus()
+    val subscriberId = sharedPreferencesHelper.subscriberId ?: return
 
-      val subscriberId = sharedPreferencesHelper.subscriberId
-
-      if (subscriberId != null) {
-        // The API returns the same subscriber for the same push token while it is active, so a
-        // removal scheduled by an earlier unsubscribe must not run for it anymore
-        uploadManager.cancelProjectCleanup(config.projectId, subscriberId)
-        uploadManager.schedulePeriodicTokenSync(subscriberId)
-      }
-    } finally {
-      publishSubscriptionStatus()
-    }
+    // Back in a project whose cleanup is still pending - the API returned the same subscriber
+    uploadManager.cancelProjectCleanup(config.projectId, subscriberId)
+    uploadManager.schedulePeriodicTokenSync(subscriberId)
   }
 
   /** Removes the registration strictly - a failure is thrown and the local state is kept. */
-  private suspend fun unsubscribeLocked() {
+  private suspend fun unregisterLocked() {
     apiRepository.unregisterSubscriber()
     uploadManager.cancelAllJobs()
-    sharedPreferencesHelper.subscriptionRequested = false
+    uploadManager.cancelBeacons(config.projectId)
   }
 
   /**
@@ -366,11 +285,10 @@ internal class PushNotificationsRuntime(
     }
 
     uploadManager.cancelAllJobs()
+    uploadManager.cancelBeacons(owner.projectId)
     discardPersistedLiveActivities()
 
-    val subscriptionRequested = sharedPreferencesHelper.subscriptionRequested
     sharedPreferencesHelper.clearProjectData()
-    sharedPreferencesHelper.subscriptionRequested = subscriptionRequested
   }
 
   private fun discardPersistedLiveActivities() {
@@ -387,7 +305,7 @@ internal class PushNotificationsRuntime(
   }
 
   private fun assertActive() {
-    check(!isDeinitialized) { "PushNotifications is deinitialized" }
+    check(!isReleased) { "This instance has been released" }
   }
 
   fun handleBackgroundNotificationClick(
@@ -404,7 +322,7 @@ internal class PushNotificationsRuntime(
     val intentNotificationId = intent.getIntExtra(PushNotificationDelegate.NOTIFICATION_ID_EXTRA, 0)
 
     if (intentProjectId != config.projectId) {
-      return callbacks.invalidProjectIdHandler.onInvalidProjectId(
+      return callbacks.notifyInvalidProjectId(
         intentProjectId.orEmpty(),
         intentSubscriberId,
         config.projectId,
@@ -415,7 +333,7 @@ internal class PushNotificationsRuntime(
 
     // TODO Remove duplicated code
     val notify = deserializeNotificationData(intent.extras)
-    callbacks.notificationClickHandler.onNotificationClick(
+    callbacks.notifyNotificationClick(
       application,
       notify?.redirectLink ?: intentLink,
       overrideFlags,

@@ -269,7 +269,7 @@ PushNotifications.setCustomClickIntentFlags(
 ```
 
 These flags are applied when the SDK builds the launcher `PendingIntent`
-and can be read back via `PushNotifications.customClickIntentFlags`.
+and can be read back via `PushNotifications.getCustomClickIntentFlags()`.
 
 ---
 

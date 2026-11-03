@@ -2,66 +2,43 @@ package com.pushpushgo.sdk.push.liveactivity
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.work.testing.WorkManagerTestInitHelper
-import com.pushpushgo.sdk.push.PushNotifications
-import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchConfiguration
-import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchContent
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchLiveData
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityEvent
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
-import com.pushpushgo.sdk.push.testConfig
-import io.mockk.MockKAnnotations
-import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Before
-import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
-// Robolectric + SDK init so the manager's logging (which reads the SDK config)
-// works, matching the convention used by the other push module tests.
 @RunWith(AndroidJUnit4::class)
-@org.robolectric.annotation.Config(sdk = [33])
 internal class LiveActivityManagerTest {
-  @MockK(relaxed = true)
-  lateinit var persistence: LiveActivityPersistence
+  private lateinit var persistence: LiveActivityPersistence
 
   private lateinit var manager: LiveActivityManager
 
   @Before
   fun setup() {
-    WorkManagerTestInitHelper.initializeTestWorkManager(getApplicationContext())
-    PushNotifications.initialize(
-      application = getApplicationContext(),
-      config = testConfig(),
-    )
-    MockKAnnotations.init(this)
-    every { persistence.getNotificationId(any()) } returns -1
-    every { persistence.getCreatedAt(any()) } returns 0L
-    every { persistence.rebuild(any()) } returns null
+    persistence = LiveActivityPersistence(getApplicationContext())
     manager = LiveActivityManager(persistence)
   }
 
   @After
   fun tearDown() {
-    PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
-    runBlocking { PushNotifications.deinitialize() }
-    WorkManagerTestInitHelper.closeWorkDatabase()
+    persistence.clearAll()
   }
 
   @Test
   fun `startActivity stores and returns activity`() {
-    val activity = manager.startActivity(startPush())
+    val activity = assertNotNull(manager.startActivity(startPush()))
 
-    assertNotNull(activity)
-    assertEquals("test-la-1", activity!!.id)
+    assertEquals("test-la-1", activity.id)
     assertEquals(LiveActivityStatus.ACTIVE, activity.status)
     assertEquals(2, activity.liveData.homeTeamScore)
     assertEquals("Arsenal", activity.configuration.content.homeTeamName)
@@ -70,6 +47,7 @@ internal class LiveActivityManagerTest {
   @Test
   fun `startActivity returns null without configuration`() {
     val push = startPush().copy(configuration = null, configurationJson = null)
+
     assertNull(manager.startActivity(push))
   }
 
@@ -78,14 +56,14 @@ internal class LiveActivityManagerTest {
     manager.startActivity(startPush())
 
     val updated =
-      manager.updateActivity(
-        updatePush(liveData = liveData(homeScore = 3, status = MatchPhase.SECOND_HALF)),
+      assertNotNull(
+        manager.updateActivity(
+          updatePush(liveData = liveData(homeScore = 3, status = MatchPhase.SECOND_HALF)),
+        ),
       )
 
-    assertNotNull(updated)
-    assertEquals(3, updated!!.liveData.homeTeamScore)
+    assertEquals(3, updated.liveData.homeTeamScore)
     assertEquals(MatchPhase.SECOND_HALF, updated.liveData.status)
-    // configuration preserved from start when update omits it
     assertEquals("Premier League", updated.configuration.content.title)
   }
 
@@ -98,30 +76,64 @@ internal class LiveActivityManagerTest {
   fun `updateActivity returns null for ended activity`() {
     manager.startActivity(startPush())
     manager.endActivity(endPush())
+
     assertNull(manager.updateActivity(updatePush()))
   }
 
   @Test
   fun `endActivity marks status ended`() {
     manager.startActivity(startPush())
-    val ended = manager.endActivity(endPush())
 
-    assertNotNull(ended)
-    assertEquals(LiveActivityStatus.ENDED, ended!!.status)
+    val ended = assertNotNull(manager.endActivity(endPush()))
+
+    assertEquals(LiveActivityStatus.ENDED, ended.status)
   }
 
-  // Helpers
+  @Test
+  fun `started activity is restored by a new manager`() {
+    val started = assertNotNull(manager.startActivity(startPush()))
+    val restartedManager = LiveActivityManager(persistence)
 
-  private fun configuration() =
-    FootballMatchConfiguration(
-      template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
-      content = FootballMatchContent("Premier League", "Arsenal", null, "Chelsea", null),
-      design = null,
-      statusLabels = mapOf("FIRST_HALF" to "1st Half"),
-      actions = emptyList(),
-      timeoutMinutes = 120,
-      url = "https://match/1",
-    )
+    restartedManager.restoreFromPersistence()
+
+    val restored = assertNotNull(restartedManager.getActivity("test-la-1"))
+    assertEquals(LiveActivityStatus.ACTIVE, restored.status)
+    assertEquals(started.configuration, restored.configuration)
+    assertEquals(started.liveData, restored.liveData)
+  }
+
+  @Test
+  fun `restarting an activity keeps its notification id`() {
+    manager.startActivity(startPush())
+    val notificationId = manager.getNotificationId("test-la-1")
+
+    LiveActivityManager(persistence).startActivity(startPush())
+
+    assertEquals(notificationId, persistence.getNotificationId("test-la-1"))
+  }
+
+  @Test
+  fun `ended activity is not restored and is cleared from storage`() {
+    manager.startActivity(startPush())
+    manager.endActivity(endPush())
+    val restartedManager = LiveActivityManager(persistence)
+
+    restartedManager.restoreFromPersistence()
+
+    assertNull(restartedManager.getActivity("test-la-1"))
+    assertNull(persistence.rebuild("test-la-1"))
+    assertEquals(emptySet(), persistence.getActiveIds())
+  }
+
+  @Test
+  fun `removed activity is cleared from storage`() {
+    manager.startActivity(startPush())
+
+    manager.removeActivity("test-la-1")
+
+    assertNull(persistence.rebuild("test-la-1"))
+    assertEquals(emptySet(), persistence.getActiveIds())
+  }
 
   private fun liveData(
     homeScore: Int = 2,
@@ -136,10 +148,10 @@ internal class LiveActivityManagerTest {
       subscriberId = "sub-1",
       template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
       event = LiveActivityEvent.START,
-      configuration = configuration(),
-      configurationJson = "{}",
-      liveData = liveData(),
-      liveDataJson = "{}",
+      configuration = assertNotNull(LiveActivityPayloadParser.parseConfiguration(CONFIGURATION_JSON)),
+      configurationJson = CONFIGURATION_JSON,
+      liveData = assertNotNull(LiveActivityPayloadParser.parseLiveData(LIVE_DATA_JSON)),
+      liveDataJson = LIVE_DATA_JSON,
       hotMessage = null,
     )
 
@@ -158,4 +170,11 @@ internal class LiveActivityManagerTest {
     )
 
   private fun endPush() = updatePush().copy(event = LiveActivityEvent.END)
+
+  private companion object {
+    const val CONFIGURATION_JSON =
+      """{"content":{"title":"Premier League","homeTeamName":"Arsenal","awayTeamName":"Chelsea"},""" +
+        """"statusLabels":{"FIRST_HALF":"1st Half"},"timeout":{"minutes":120},"url":"https://match/1"}"""
+    const val LIVE_DATA_JSON = """{"homeTeamScore":2,"awayTeamScore":1,"status":"FIRST_HALF"}"""
+  }
 }
