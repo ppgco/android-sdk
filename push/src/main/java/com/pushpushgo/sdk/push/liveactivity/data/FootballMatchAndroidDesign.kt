@@ -5,7 +5,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * backend / iOS `design.android` object. All fields are optional so the SDK
  * falls back to built-in defaults when the backend omits them.
  */
-data class FootballMatchAndroidDesign(
+internal data class FootballMatchAndroidDesign(
   val hasTrackerIcon: Boolean,
   val progressBarColor: LiveActivityColorSet?,
   val breakTimeBarColor: LiveActivityColorSet?,

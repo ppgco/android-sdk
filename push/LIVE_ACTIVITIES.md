@@ -6,9 +6,15 @@ notification using the Android 16 `ProgressStyle` (Live Updates) template and
 keeps it up to date from backend pushes, with no polling and no foreground
 service in your app.
 
-The first available template is **`FOOTBALL_MATCH_TRACKING`**: a football match
-tracker with team crests, live score, match phase, a per-second game clock and a
-progress bar with break indicators.
+Available templates:
+
+- **`FOOTBALL_MATCH_TRACKING`**: a football match tracker with team crests, live
+  score, match phase, a per-second game clock and a progress bar with break
+  indicators.
+
+The SDK renders every template on its own, so a template added in a newer SDK
+version only needs a dependency update — no app code changes. Older SDK
+versions ignore templates they don't support.
 
 ## Requirements
 
@@ -133,16 +139,28 @@ PushNotifications.setNotificationClickHandler { context, url, overrideFlags ->
 | `liveActivities.unsubscribe(id): Unit` | Suspends while unsubscribing the device |
 | `liveActivities.unsubscribeAsync(id): CompletableFuture<Void?>` | Java-friendly asynchronous unsubscription wrapper |
 | `liveActivities.getSubscriberId(id): String` | Persisted LA subscriber id (empty if not subscribed) |
-| `liveActivities.getActiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities |
+| `liveActivities.getActiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities of every template (`id`, `template`, `status`, `createdAt`, `updatedAt`) |
 | `liveActivities.isActive(id): Boolean` | Whether a given activity is currently active |
 | `liveActivities.handleClick(intent, openDeepLink = true): String?` | Click analytics + deep link handling (see above) |
 
 All Live Activity APIs are safe to call on any API level; on devices below
 API 36 they degrade gracefully (no rendering).
 
+`LiveActivityTemplate` is not an enum: new templates are added in minor
+releases. When you match on it, handle other values too:
+
+```kotlin
+when (activity.template) {
+  LiveActivityTemplate.FOOTBALL_MATCH_TRACKING -> …
+  else -> … // templates added in newer SDK versions
+}
+```
+
 ## What the notification shows
 
 Everything below is driven by the campaign configuration — no app code needed.
+
+### Football match (`FOOTBALL_MATCH_TRACKING`)
 
 - **Title**: `Home Team - Away Team`; the large icon alternates between the two
   team crests every few seconds.

@@ -73,12 +73,13 @@ internal class LiveActivityController(
   fun restoreFromPersistence() {
     if (Build.VERSION.SDK_INT >= 36) {
       manager?.restoreFromPersistence()
+      handler?.resumeRestoredActivities()
     }
   }
 
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36
 
-  fun getActiveActivities(): List<LiveActivity> = manager?.getActiveActivities() ?: emptyList()
+  fun getActiveActivities(): List<LiveActivity> = manager?.getActiveActivities()?.map { it.toLiveActivity() } ?: emptyList()
 
   fun isActive(id: String): Boolean = manager?.isActivityActive(id) ?: false
 

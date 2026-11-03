@@ -6,7 +6,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * `design` block from the backend is intentionally not modeled here — Android
  * notification actions do not support custom button styling.
  */
-data class LiveActivityAction(
+internal data class LiveActivityAction(
   val type: LiveActivityActionType,
   val name: String,
   val url: String?,

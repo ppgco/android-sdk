@@ -1,8 +1,10 @@
 ﻿package com.pushpushgo.sdk.push.liveactivity
 
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityState
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
+import com.pushpushgo.sdk.push.liveactivity.data.TrackedLiveActivity
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logWarning
 import java.util.concurrent.ConcurrentHashMap
@@ -11,7 +13,7 @@ import kotlin.random.Random
 internal class LiveActivityManager(
   private val persistence: LiveActivityPersistence,
 ) {
-  private val activeActivities = ConcurrentHashMap<String, LiveActivity>()
+  private val activeActivities = ConcurrentHashMap<String, TrackedLiveActivity>()
 
   fun restoreFromPersistence() {
     val ids = persistence.getActiveIds()
@@ -28,20 +30,24 @@ internal class LiveActivityManager(
         persistence.clearActivity(id)
         continue
       }
+      if (rebuilt.isPastAutoEnd(System.currentTimeMillis())) {
+        logDebug("LiveActivityManager: activity $id ended on its own while the app was not running, clearing")
+        persistence.clearActivity(id)
+        continue
+      }
       activeActivities[id] = rebuilt
     }
   }
 
   /**
    * Start (or re-start) an activity from a `start` push. Requires both the
-   * static [LiveActivityPush.configuration] and dynamic [LiveActivityPush.liveData].
+   * static `configuration` and dynamic `liveData` blocks of the push.
    */
-  fun startActivity(push: LiveActivityPush): LiveActivity? {
-    val configuration = push.configuration
+  fun startActivity(push: LiveActivityPush): TrackedLiveActivity? {
+    val state = push.update.toInitialState()
     val configurationJson = push.configurationJson
-    val liveData = push.liveData
     val liveDataJson = push.liveDataJson
-    if (configuration == null || configurationJson == null || liveData == null || liveDataJson == null) {
+    if (state == null || configurationJson == null || liveDataJson == null) {
       logWarning("LiveActivityManager: cannot start activity ${push.id} — missing configuration/liveData")
       return null
     }
@@ -51,14 +57,13 @@ internal class LiveActivityManager(
     val createdAt = persistence.getCreatedAt(push.id).takeIf { it > 0L } ?: System.currentTimeMillis()
 
     val activity =
-      LiveActivity(
+      TrackedLiveActivity(
         id = push.id,
         projectId = push.projectId,
         subscriberId = push.subscriberId,
         template = push.template,
         status = LiveActivityStatus.ACTIVE,
-        configuration = configuration,
-        liveData = liveData,
+        state = state,
         hotMessage = push.hotMessage,
         createdAt = createdAt,
       )
@@ -79,11 +84,11 @@ internal class LiveActivityManager(
   }
 
   /**
-   * Apply an `update` push: merge new [LiveActivityPush.liveData] (and optional
+   * Apply an `update` push: merge the new `liveData` (and optional
    * configuration / hotMessage) onto the current state, restoring from
    * persistence when the in-memory entry was lost (process death).
    */
-  fun updateActivity(push: LiveActivityPush): LiveActivity? {
+  fun updateActivity(push: LiveActivityPush): TrackedLiveActivity? {
     val current = activeActivities[push.id] ?: persistence.rebuild(push.id)
     if (current == null) {
       logWarning("LiveActivityManager: cannot update unknown activity ${push.id}")
@@ -96,8 +101,7 @@ internal class LiveActivityManager(
 
     val updated =
       current.copy(
-        configuration = push.configuration ?: current.configuration,
-        liveData = push.liveData ?: current.liveData,
+        state = mergeState(current, push),
         hotMessage = push.hotMessage,
         status = LiveActivityStatus.ACTIVE,
         updatedAt = System.currentTimeMillis(),
@@ -120,16 +124,17 @@ internal class LiveActivityManager(
     liveActivityId: String,
     message: String?,
     endAtMs: Long,
-  ): LiveActivity? {
+  ): TrackedLiveActivity? {
     val current = activeActivities[liveActivityId] ?: persistence.rebuild(liveActivityId) ?: return null
-    val updated = current.copy(countdownMessage = message, countdownEndAtMs = endAtMs)
+    val football = current.state as? FootballMatchState ?: return null
+    val updated = current.copy(state = football.copy(countdownMessage = message, countdownEndAtMs = endAtMs))
     activeActivities[liveActivityId] = updated
     persistence.setCountdown(liveActivityId, message, endAtMs)
     return updated
   }
 
   /** Apply an `end` push: merge any final live data and mark the activity ended. */
-  fun endActivity(push: LiveActivityPush): LiveActivity? {
+  fun endActivity(push: LiveActivityPush): TrackedLiveActivity? {
     val current = activeActivities[push.id] ?: persistence.rebuild(push.id)
     if (current == null) {
       logWarning("LiveActivityManager: cannot end unknown activity ${push.id}")
@@ -138,8 +143,7 @@ internal class LiveActivityManager(
 
     val ended =
       current.copy(
-        configuration = push.configuration ?: current.configuration,
-        liveData = push.liveData ?: current.liveData,
+        state = mergeState(current, push),
         hotMessage = push.hotMessage,
         status = LiveActivityStatus.ENDED,
         updatedAt = System.currentTimeMillis(),
@@ -150,6 +154,27 @@ internal class LiveActivityManager(
     push.liveDataJson?.let { persistence.setLiveDataJson(push.id, it) }
 
     logDebug("LiveActivityManager: ended activity ${push.id}")
+    return ended
+  }
+
+  /**
+   * End an activity without a backend `end` push, e.g. when its end time
+   * passed. Returns null when the activity is unknown or already ended.
+   */
+  fun endActivityLocally(id: String): TrackedLiveActivity? {
+    val current = activeActivities[id] ?: persistence.rebuild(id) ?: return null
+    if (current.status == LiveActivityStatus.ENDED) return null
+
+    val ended =
+      current.copy(
+        hotMessage = null,
+        status = LiveActivityStatus.ENDED,
+        updatedAt = System.currentTimeMillis(),
+      )
+    activeActivities[id] = ended
+    persistence.setStatus(id, LiveActivityStatus.ENDED)
+
+    logDebug("LiveActivityManager: ended activity $id locally")
     return ended
   }
 
@@ -165,13 +190,30 @@ internal class LiveActivityManager(
     logDebug("LiveActivityManager: activity $id dismissed by user")
   }
 
-  fun getActivity(id: String): LiveActivity? = activeActivities[id]
+  fun getActivity(id: String): TrackedLiveActivity? = activeActivities[id]
 
   fun getNotificationId(id: String): Int = persistence.getNotificationId(id)
 
-  fun getActiveActivities(): List<LiveActivity> = activeActivities.values.filter { it.status != LiveActivityStatus.ENDED }
+  fun isDismissedByUser(id: String): Boolean = persistence.isDismissedByUser(id)
+
+  fun getActiveActivities(): List<TrackedLiveActivity> = activeActivities.values.filter { it.status != LiveActivityStatus.ENDED }
 
   fun isActivityActive(id: String): Boolean = activeActivities[id]?.status == LiveActivityStatus.ACTIVE
+
+  /**
+   * Merge the push's template-specific blocks onto [current]. A push whose
+   * template differs from the tracked activity's can't be merged, so the
+   * current state is kept.
+   */
+  private fun mergeState(
+    current: TrackedLiveActivity,
+    push: LiveActivityPush,
+  ): LiveActivityState =
+    push.update.mergeInto(current.state) ?: current.state.also {
+      logWarning(
+        "LiveActivityManager: ${push.template.value} push doesn't match ${current.template.value} activity ${push.id}, keeping state",
+      )
+    }
 
   private fun generateNotificationId(): Int = Random.nextInt(100_000, Int.MAX_VALUE)
 }

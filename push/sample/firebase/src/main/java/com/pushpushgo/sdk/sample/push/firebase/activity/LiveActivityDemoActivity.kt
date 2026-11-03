@@ -184,9 +184,7 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
         "No active live activities"
       } else {
         active.joinToString("\n") { la ->
-          val c = la.configuration.content
-          "${la.id}\n  ${c.homeTeamName} ${la.liveData.scoreText} ${c.awayTeamName}" +
-            "\n  status=${la.liveData.status}  active=${liveActivities.isActive(la.id)}"
+          "${la.id}\n  template=${la.template}  status=${la.status}  active=${liveActivities.isActive(la.id)}"
         }
       }
     findViewById<TextView>(R.id.la_status).text = text

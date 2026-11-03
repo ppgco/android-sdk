@@ -9,7 +9,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  *
  * `URL` is kept as a legacy alias of `REDIRECT`.
  */
-enum class LiveActivityActionType(
+internal enum class LiveActivityActionType(
   val value: String,
 ) {
   OPEN_APP("OPEN_APP"),

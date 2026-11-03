@@ -5,7 +5,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * `configuration` field of the `start` push. Mirrors the backend / iOS
  * football match configuration DTO.
  */
-data class FootballMatchConfiguration(
+internal data class FootballMatchConfiguration(
   val template: LiveActivityTemplate,
   val content: FootballMatchContent,
   val design: FootballMatchAndroidDesign?,

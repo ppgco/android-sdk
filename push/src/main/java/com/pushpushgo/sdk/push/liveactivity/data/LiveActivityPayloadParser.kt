@@ -69,18 +69,33 @@ internal object LiveActivityPayloadParser {
     }
   }
 
-  /** Parse the full push envelope. Returns `null` when required fields are missing. */
+  /**
+   * Resolve the envelope's `template` field. A missing value falls back to
+   * [LiveActivityTemplate.FOOTBALL_MATCH_TRACKING] (envelopes predating the
+   * field); an unknown value returns null, so a template this SDK version
+   * can't render is ignored instead of being misread as a football match.
+   */
+  fun resolveTemplate(value: String?): LiveActivityTemplate? =
+    if (value.isNullOrBlank()) {
+      LiveActivityTemplate.FOOTBALL_MATCH_TRACKING
+    } else {
+      LiveActivityTemplate.fromValue(value)
+    }
+
+  /**
+   * Parse the full push envelope. Returns `null` when required fields are
+   * missing or the template is not supported by this SDK version.
+   */
   fun parsePush(data: Map<String, String>): LiveActivityPush? {
     if (!isLiveActivityPush(data)) return null
     val id = data["liveNotificationId"]?.takeIf { it.isNotBlank() } ?: return null
     val event = LiveActivityEvent.fromValue(data["event"].orEmpty()) ?: return null
-    val template =
-      LiveActivityTemplate.fromValue(data["template"])
-        ?: LiveActivityTemplate.FOOTBALL_MATCH_TRACKING
+    val template = resolveTemplate(data["template"]) ?: return null
 
     val configurationJson = data["configuration"]?.takeIf { it.isNotBlank() }
     val liveDataJson = data["liveData"]?.takeIf { it.isNotBlank() }
     val hotMessageJson = data["hotMessage"]?.takeIf { it.isNotBlank() }
+    val update = parseStateUpdate(template, configurationJson, liveDataJson) ?: return null
 
     return LiveActivityPush(
       id = id,
@@ -88,13 +103,33 @@ internal object LiveActivityPayloadParser {
       subscriberId = data["subscriber"].orEmpty(),
       template = template,
       event = event,
-      configuration = configurationJson?.let { parseConfiguration(it) },
+      update = update,
       configurationJson = configurationJson,
-      liveData = liveDataJson?.let { parseLiveData(it) },
       liveDataJson = liveDataJson,
       hotMessage = hotMessageJson?.let { parseHotMessage(it) },
     )
   }
+
+  /**
+   * Parse the template-specific `configuration` / `liveData` blocks. Either
+   * JSON may be null (absent from the push) or invalid; the corresponding
+   * block of the returned update is then null. Returns null for a template
+   * without a parser (every [LiveActivityTemplate.supported] one has one).
+   */
+  fun parseStateUpdate(
+    template: LiveActivityTemplate,
+    configurationJson: String?,
+    liveDataJson: String?,
+  ): LiveActivityStateUpdate? =
+    when (template) {
+      LiveActivityTemplate.FOOTBALL_MATCH_TRACKING ->
+        FootballMatchUpdate(
+          configuration = configurationJson?.let { parseConfiguration(it) },
+          liveData = liveDataJson?.let { parseLiveData(it) },
+        )
+
+      else -> null
+    }
 
   /**
    * Parse the `startPolicy` block of a GET live-notification document into the
@@ -281,7 +316,8 @@ internal data class CountdownInfo(
 
 /**
  * Parsed representation of a live notification push envelope. Carries both the
- * typed models and the raw JSON (needed by persistence to rebuild state).
+ * typed template-specific [update] and the raw JSON (needed by persistence to
+ * rebuild state).
  */
 internal data class LiveActivityPush(
   val id: String,
@@ -289,9 +325,8 @@ internal data class LiveActivityPush(
   val subscriberId: String,
   val template: LiveActivityTemplate,
   val event: LiveActivityEvent,
-  val configuration: FootballMatchConfiguration?,
+  val update: LiveActivityStateUpdate,
   val configurationJson: String?,
-  val liveData: FootballMatchLiveData?,
   val liveDataJson: String?,
   val hotMessage: HotMessage?,
 )

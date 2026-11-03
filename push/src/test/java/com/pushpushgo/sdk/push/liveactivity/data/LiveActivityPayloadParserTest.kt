@@ -3,6 +3,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -25,7 +26,8 @@ internal class LiveActivityPayloadParserTest {
     assertEquals(LiveActivityEvent.START, push.event)
     assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, push.template)
 
-    val config = assertNotNull(push.configuration)
+    val update = assertIs<FootballMatchUpdate>(push.update)
+    val config = assertNotNull(update.configuration)
     assertEquals("Premier League", config.content.title)
     assertEquals("Arsenal", config.content.homeTeamName)
     assertEquals("Chelsea", config.content.awayTeamName)
@@ -33,7 +35,7 @@ internal class LiveActivityPayloadParserTest {
     assertEquals("https://match/1", config.url)
     assertEquals(120, config.timeoutMinutes)
 
-    val liveData = assertNotNull(push.liveData)
+    val liveData = assertNotNull(update.liveData)
     assertEquals(2, liveData.homeTeamScore)
     assertEquals(1, liveData.awayTeamScore)
     assertEquals(MatchPhase.SECOND_HALF, liveData.status)
@@ -43,6 +45,16 @@ internal class LiveActivityPayloadParserTest {
     assertEquals("h1", hot.id)
     assertEquals("GOAL!", hot.text)
     assertEquals(1_709_398_800_000L, hot.expiresAtMs) // epoch seconds -> millis
+  }
+
+  @Test
+  fun `parsePush keeps absent blocks null in the update`() {
+    val data = buildStartEnvelope().toMutableMap().apply { remove("configuration") }
+    val update = assertIs<FootballMatchUpdate>(assertNotNull(LiveActivityPayloadParser.parsePush(data)).update)
+
+    assertNull(update.configuration)
+    assertNotNull(update.liveData)
+    assertNull(update.toInitialState())
   }
 
   @Test
@@ -57,6 +69,32 @@ internal class LiveActivityPayloadParserTest {
     val data = buildStartEnvelope().toMutableMap().apply { this["event"] = "bogus" }
 
     assertNull(LiveActivityPayloadParser.parsePush(data))
+  }
+
+  @Test
+  fun `parsePush defaults to football template when template is missing`() {
+    val data = buildStartEnvelope().toMutableMap().apply { remove("template") }
+    val push = assertNotNull(LiveActivityPayloadParser.parsePush(data))
+
+    assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, push.template)
+  }
+
+  @Test
+  fun `parsePush ignores unsupported template instead of falling back to football`() {
+    val data = buildStartEnvelope().toMutableMap().apply { this["template"] = "SOME_FUTURE_TEMPLATE" }
+
+    assertNull(LiveActivityPayloadParser.parsePush(data))
+  }
+
+  @Test
+  fun `resolveTemplate maps blank to football, known case-insensitively and unknown to null`() {
+    assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, LiveActivityPayloadParser.resolveTemplate(null))
+    assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, LiveActivityPayloadParser.resolveTemplate(" "))
+    assertEquals(
+      LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
+      LiveActivityPayloadParser.resolveTemplate("football_match_tracking"),
+    )
+    assertNull(LiveActivityPayloadParser.resolveTemplate("SOME_FUTURE_TEMPLATE"))
   }
 
   @Test

@@ -6,7 +6,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * as the representative solid color, since [android.app.Notification.ProgressStyle]
  * segments only support solid colors).
  */
-data class LiveActivityColor(
+internal data class LiveActivityColor(
   val hex: String,
 )
 
@@ -14,7 +14,7 @@ data class LiveActivityColor(
  * Light / dark variant pair for a color. Mirrors the backend / iOS
  * `IColorSet` (`{ lightMode, darkMode }`).
  */
-data class LiveActivityColorSet(
+internal data class LiveActivityColorSet(
   val lightMode: LiveActivityColor,
   val darkMode: LiveActivityColor,
 ) {

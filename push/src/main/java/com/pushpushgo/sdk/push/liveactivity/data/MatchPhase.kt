@@ -4,7 +4,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * All possible phases of a football match. Wire values mirror the backend /
  * iOS `MatchPhase` exactly (including the `OTHER` fallback bucket).
  */
-enum class MatchPhase(
+internal enum class MatchPhase(
   val value: String,
 ) {
   PRE_MATCH("PRE_MATCH"),

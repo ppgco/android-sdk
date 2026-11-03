@@ -3,10 +3,11 @@
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
+import com.pushpushgo.sdk.push.liveactivity.data.TrackedLiveActivity
 
 internal class LiveActivityPersistence(
   context: Context,
@@ -111,30 +112,38 @@ internal class LiveActivityPersistence(
   }
 
   /**
-   * Rebuild a [LiveActivity] from persisted JSON (e.g. after process death) so
-   * that subsequent `update` pushes can be merged onto the last known state.
-   * The transient `hotMessage` is intentionally not restored.
+   * Rebuild a [TrackedLiveActivity] from persisted JSON (e.g. after process
+   * death) so that subsequent `update` pushes can be merged onto the last known
+   * state. The transient `hotMessage` is intentionally not restored.
    */
-  fun rebuild(liveActivityId: String): LiveActivity? {
+  fun rebuild(liveActivityId: String): TrackedLiveActivity? {
     val template = getTemplate(liveActivityId) ?: return null
     val status = getStatus(liveActivityId) ?: return null
     val configJson = getConfigurationJson(liveActivityId) ?: return null
     val liveDataJson = getLiveDataJson(liveActivityId) ?: return null
-    val configuration = LiveActivityPayloadParser.parseConfiguration(configJson) ?: return null
-    val liveData = LiveActivityPayloadParser.parseLiveData(liveDataJson) ?: return null
+    val parsed =
+      LiveActivityPayloadParser
+        .parseStateUpdate(template, configJson, liveDataJson)
+        ?.toInitialState() ?: return null
 
-    return LiveActivity(
+    val state =
+      when (parsed) {
+        is FootballMatchState ->
+          parsed.copy(
+            countdownMessage = getCountdownMessage(liveActivityId),
+            countdownEndAtMs = getCountdownEndAt(liveActivityId),
+          )
+      }
+
+    return TrackedLiveActivity(
       id = liveActivityId,
       projectId = getProjectId(liveActivityId),
       subscriberId = getSubscriberId(liveActivityId),
       template = template,
       status = status,
-      configuration = configuration,
-      liveData = liveData,
+      state = state,
       hotMessage = null,
       createdAt = getCreatedAt(liveActivityId),
-      countdownMessage = getCountdownMessage(liveActivityId),
-      countdownEndAtMs = getCountdownEndAt(liveActivityId),
     )
   }
 

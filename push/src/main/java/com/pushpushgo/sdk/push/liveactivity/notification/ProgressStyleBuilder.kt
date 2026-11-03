@@ -13,12 +13,13 @@ import androidx.annotation.RequiresApi
 import com.pushpushgo.sdk.push.R
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchConfiguration
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchLiveData
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
+import com.pushpushgo.sdk.push.liveactivity.data.HotMessage
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityColorSet
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
 
 /**
- * Renders a football match [LiveActivity] into an Android `ProgressStyle`
+ * Renders a football match ([FootballMatchState]) into an Android `ProgressStyle`
  * ongoing notification. Static text/images come from [FootballMatchConfiguration]
  * and the live score / status / minute come from [FootballMatchLiveData].
  */
@@ -42,7 +43,8 @@ internal class ProgressStyleBuilder(
     private const val COLOR_PLAYED = 0xFF4CAF50.toInt()
     private const val COLOR_BREAK = 0xFFFFC107.toInt()
 
-    private fun applyPromotedOngoing(builder: Notification.Builder) {
+    /** Request a promoted ongoing (Live Update) notification where the platform supports it. */
+    internal fun applyPromotedOngoing(builder: Notification.Builder) {
       try {
         val method =
           Notification.Builder::class.java.getMethod(
@@ -57,7 +59,8 @@ internal class ProgressStyleBuilder(
   }
 
   fun buildMatchNotification(
-    activity: LiveActivity,
+    match: FootballMatchState,
+    hotMessage: HotMessage?,
     homeTeamBitmap: Bitmap?,
     awayTeamBitmap: Bitmap?,
     contentIntent: PendingIntent?,
@@ -66,15 +69,15 @@ internal class ProgressStyleBuilder(
     showHotMessage: Boolean,
     largeIconBitmap: Bitmap? = homeTeamBitmap,
   ): Notification {
-    val config = activity.configuration
-    val liveData = activity.liveData
+    val config = match.configuration
+    val liveData = match.liveData
     val channelId = LiveActivityNotificationChannel.getChannelId(context)
 
     val elapsedSeconds = computeElapsedSeconds(liveData)
     val progressStyle = buildProgressStyle(config, liveData, elapsedSeconds)
 
     val contentTitle = teamLine(config)
-    val contentText = buildContentText(activity, elapsedSeconds, showHotMessage)
+    val contentText = buildContentText(match, hotMessage, elapsedSeconds, showHotMessage)
 
     val builder =
       Notification
@@ -101,13 +104,13 @@ internal class ProgressStyleBuilder(
   }
 
   fun buildEndedNotification(
-    activity: LiveActivity,
+    match: FootballMatchState,
     homeTeamBitmap: Bitmap?,
     awayTeamBitmap: Bitmap?,
     contentIntent: PendingIntent?,
   ): Notification {
-    val config = activity.configuration
-    val liveData = activity.liveData
+    val config = match.configuration
+    val liveData = match.liveData
     val channelId = LiveActivityNotificationChannel.getChannelId(context)
 
     // Reuse the live bar so the ended state stays visually consistent (full bar,
@@ -378,23 +381,23 @@ internal class ProgressStyleBuilder(
    * breaks and MATCH_ENDED omit the clock.
    */
   private fun buildContentText(
-    activity: LiveActivity,
+    match: FootballMatchState,
+    hotMessage: HotMessage?,
     elapsedSeconds: Int,
     showHotMessage: Boolean,
   ): String {
-    val hot = activity.hotMessage
-    if (showHotMessage && hot != null) return hot.text
+    if (showHotMessage && hotMessage != null) return hotMessage.text
 
-    val config = activity.configuration
-    val liveData = activity.liveData
+    val config = match.configuration
+    val liveData = match.liveData
     val status = liveData.status
     val label = config.label(status)
 
     if (status == MatchPhase.PRE_MATCH) {
-      val endAt = activity.countdownEndAtMs ?: return label
+      val endAt = match.countdownEndAtMs ?: return label
       val remainingSeconds = ((endAt - System.currentTimeMillis()) / 1000L).toInt()
       if (remainingSeconds <= 0) return label
-      return "${formatClock(remainingSeconds)} \u00b7 ${activity.countdownMessage ?: label}"
+      return "${formatClock(remainingSeconds)} \u00b7 ${match.countdownMessage ?: label}"
     }
 
     val score = "${liveData.homeTeamScore} : ${liveData.awayTeamScore}"

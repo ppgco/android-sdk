@@ -5,7 +5,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * `liveData` field of `start` / `update` pushes. Mirrors the backend / iOS
  * football match live data DTO.
  */
-data class FootballMatchLiveData(
+internal data class FootballMatchLiveData(
   val homeTeamScore: Int,
   val awayTeamScore: Int,
   val status: MatchPhase,

@@ -7,7 +7,7 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * hard expiry). Visibility is the minimum of a local display cap and the
  * backend expiry — matching the iOS behavior.
  */
-data class HotMessage(
+internal data class HotMessage(
   val id: String,
   val text: String,
   /** Hard cutoff as epoch millis, or `null` when the backend sends no expiry. */
