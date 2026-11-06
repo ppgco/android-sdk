@@ -18,22 +18,3 @@ internal data class FootballMatchState(
   override val actions: List<LiveActivityAction>
     get() = configuration.actions
 }
-
-/** [LiveActivityStateUpdate] of the `FOOTBALL_MATCH_TRACKING` template. */
-internal data class FootballMatchUpdate(
-  val configuration: FootballMatchConfiguration?,
-  val liveData: FootballMatchLiveData?,
-) : LiveActivityStateUpdate {
-  override fun toInitialState(): FootballMatchState? {
-    if (configuration == null || liveData == null) return null
-    return FootballMatchState(configuration, liveData)
-  }
-
-  override fun mergeInto(current: LiveActivityState): FootballMatchState? {
-    val football = current as? FootballMatchState ?: return null
-    return football.copy(
-      configuration = configuration ?: football.configuration,
-      liveData = liveData ?: football.liveData,
-    )
-  }
-}

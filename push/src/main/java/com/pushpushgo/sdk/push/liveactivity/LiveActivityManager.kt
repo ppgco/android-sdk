@@ -1,6 +1,7 @@
 ﻿package com.pushpushgo.sdk.push.liveactivity
 
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityState
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
@@ -39,9 +40,9 @@ internal class LiveActivityManager(
    * static `configuration` and dynamic `liveData` blocks of the push.
    */
   fun startActivity(push: LiveActivityPush): TrackedLiveActivity? {
-    val state = push.update.toInitialState()
     val configurationJson = push.configurationJson
     val liveDataJson = push.liveDataJson
+    val state = LiveActivityPayloadParser.parseState(push.template, configurationJson, liveDataJson)
     if (state == null || configurationJson == null || liveDataJson == null) {
       logWarning("LiveActivityManager: cannot start activity ${push.id} — missing configuration/liveData")
       return null
@@ -173,12 +174,15 @@ internal class LiveActivityManager(
   private fun mergeState(
     current: TrackedLiveActivity,
     push: LiveActivityPush,
-  ): LiveActivityState =
-    push.update.mergeInto(current.state) ?: current.state.also {
+  ): LiveActivityState {
+    if (push.template != current.template) {
       logWarning(
         "LiveActivityManager: ${push.template.value} push doesn't match ${current.template.value} activity ${push.id}, keeping state",
       )
+      return current.state
     }
+    return LiveActivityPayloadParser.mergeState(current.state, push.configurationJson, push.liveDataJson)
+  }
 
   private fun generateNotificationId(): Int = Random.nextInt(100_000, Int.MAX_VALUE)
 }

@@ -2,11 +2,8 @@ package com.pushpushgo.sdk.push.liveactivity
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchLiveData
 import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
-import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchUpdate
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityEvent
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
@@ -50,21 +47,14 @@ internal class LiveActivityManagerTest {
 
   @Test
   fun `startActivity returns null without configuration`() {
-    val push = startPush().copy(update = FootballMatchUpdate(null, liveData()), configurationJson = null)
-
-    assertNull(manager.startActivity(push))
+    assertNull(manager.startActivity(startPush().copy(configurationJson = null)))
   }
 
   @Test
   fun `updateActivity merges new live data onto existing state`() {
     manager.startActivity(startPush())
 
-    val updated =
-      assertNotNull(
-        manager.updateActivity(
-          updatePush(liveData = liveData(homeScore = 3, status = MatchPhase.SECOND_HALF)),
-        ),
-      )
+    val updated = assertNotNull(manager.updateActivity(updatePush(liveDataJson(homeScore = 3, status = MatchPhase.SECOND_HALF))))
 
     assertEquals(3, updated.football.liveData.homeTeamScore)
     assertEquals(MatchPhase.SECOND_HALF, updated.football.liveData.status)
@@ -76,7 +66,7 @@ internal class LiveActivityManagerTest {
     manager.startActivity(startPush())
     manager.setCountdown("test-la-1", "Kick-off soon", 1_000L)
 
-    val updated = assertNotNull(manager.updateActivity(updatePush(liveData = liveData(homeScore = 1))))
+    val updated = assertNotNull(manager.updateActivity(updatePush(liveDataJson(homeScore = 1))))
 
     assertEquals(1, updated.football.liveData.homeTeamScore)
     assertEquals("Kick-off soon", updated.football.countdownMessage)
@@ -166,11 +156,11 @@ internal class LiveActivityManagerTest {
     assertEquals(emptySet(), persistence.getActiveIds())
   }
 
-  private fun liveData(
+  private fun liveDataJson(
     homeScore: Int = 2,
     awayScore: Int = 1,
     status: MatchPhase = MatchPhase.FIRST_HALF,
-  ) = FootballMatchLiveData(homeScore, awayScore, status, statusChangedAt = null)
+  ) = """{"homeTeamScore":$homeScore,"awayTeamScore":$awayScore,"status":"${status.value}"}"""
 
   private fun startPush() =
     LiveActivityPush(
@@ -179,26 +169,20 @@ internal class LiveActivityManagerTest {
       subscriberId = "sub-1",
       template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
       event = LiveActivityEvent.START,
-      update =
-        FootballMatchUpdate(
-          configuration = assertNotNull(LiveActivityPayloadParser.parseConfiguration(CONFIGURATION_JSON)),
-          liveData = assertNotNull(LiveActivityPayloadParser.parseLiveData(LIVE_DATA_JSON)),
-        ),
       configurationJson = CONFIGURATION_JSON,
-      liveDataJson = LIVE_DATA_JSON,
+      liveDataJson = liveDataJson(),
       hotMessage = null,
     )
 
-  private fun updatePush(liveData: FootballMatchLiveData = liveData()) =
+  private fun updatePush(liveDataJson: String = liveDataJson()) =
     LiveActivityPush(
       id = "test-la-1",
       projectId = "proj-1",
       subscriberId = "sub-1",
       template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
       event = LiveActivityEvent.UPDATE,
-      update = FootballMatchUpdate(null, liveData),
       configurationJson = null,
-      liveDataJson = "{}",
+      liveDataJson = liveDataJson,
       hotMessage = null,
     )
 
@@ -211,6 +195,5 @@ internal class LiveActivityManagerTest {
     const val CONFIGURATION_JSON =
       """{"content":{"title":"Premier League","homeTeamName":"Arsenal","awayTeamName":"Chelsea"},""" +
         """"statusLabels":{"FIRST_HALF":"1st Half"},"timeout":{"minutes":120},"url":"https://match/1"}"""
-    const val LIVE_DATA_JSON = """{"homeTeamScore":2,"awayTeamScore":1,"status":"FIRST_HALF"}"""
   }
 }

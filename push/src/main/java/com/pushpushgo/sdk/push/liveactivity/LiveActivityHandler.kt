@@ -154,7 +154,7 @@ internal class LiveActivityHandler(
       manager.updateActivity(push) ?: run {
         // Activity not tracked locally — fall back to a fresh start when the
         // push carries a full configuration (otherwise nothing to render).
-        if (push.update.toInitialState() != null) {
+        if (LiveActivityPayloadParser.parseState(push.template, push.configurationJson, push.liveDataJson) != null) {
           logDebug("LiveActivityHandler: activity ${push.id} not found, treating update as start")
           handleStart(push)
         } else {

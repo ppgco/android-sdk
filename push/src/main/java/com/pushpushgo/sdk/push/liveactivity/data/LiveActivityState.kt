@@ -16,19 +16,3 @@ internal sealed interface LiveActivityState {
   /** Call-to-action buttons rendered on the notification. */
   val actions: List<LiveActivityAction>
 }
-
-/**
- * Template-specific blocks parsed from one push. Either block may be absent
- * (an `update` usually carries only `liveData`), so the state is either built
- * from scratch ([toInitialState]) or merged onto the tracked one ([mergeInto]).
- */
-internal sealed interface LiveActivityStateUpdate {
-  /** Full state when the push carried every block a `start` needs, else null. */
-  fun toInitialState(): LiveActivityState?
-
-  /**
-   * Apply this update onto [current]; blocks missing from the push keep their
-   * current value. Returns null when [current] belongs to another template.
-   */
-  fun mergeInto(current: LiveActivityState): LiveActivityState?
-}

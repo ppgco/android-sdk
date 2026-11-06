@@ -6,7 +6,6 @@ package com.pushpushgo.sdk.push.liveactivity.data
  * football match configuration DTO.
  */
 internal data class FootballMatchConfiguration(
-  val template: LiveActivityTemplate,
   val content: FootballMatchContent,
   val design: FootballMatchAndroidDesign?,
   val statusLabels: Map<String, String>,

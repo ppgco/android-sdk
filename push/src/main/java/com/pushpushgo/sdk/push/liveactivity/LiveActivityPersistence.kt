@@ -120,10 +120,7 @@ internal class LiveActivityPersistence(
     val status = getStatus(liveActivityId) ?: return null
     val configJson = getConfigurationJson(liveActivityId) ?: return null
     val liveDataJson = getLiveDataJson(liveActivityId) ?: return null
-    val parsed =
-      LiveActivityPayloadParser
-        .parseStateUpdate(template, configJson, liveDataJson)
-        ?.toInitialState() ?: return null
+    val parsed = LiveActivityPayloadParser.parseState(template, configJson, liveDataJson) ?: return null
 
     val state =
       when (parsed) {
