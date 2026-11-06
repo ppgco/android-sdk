@@ -9,6 +9,7 @@ import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.utils.logError
+import com.pushpushgo.sdk.push.utils.logWarning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -91,8 +92,9 @@ internal class LiveActivityController(
 
   suspend fun unsubscribe(liveActivityId: String) {
     val laSubscriberId = sharedPref.getLiveActivitySubscriberId(liveActivityId)
-    check(laSubscriberId.isNotEmpty()) {
-      "Not subscribed to live activity $liveActivityId"
+    if (laSubscriberId.isEmpty()) {
+      logWarning("Not subscribed to live activity $liveActivityId")
+      return
     }
     apiRepository.unsubscribeFromLiveActivity(liveActivityId, laSubscriberId)
     handler?.removeActivity(liveActivityId)

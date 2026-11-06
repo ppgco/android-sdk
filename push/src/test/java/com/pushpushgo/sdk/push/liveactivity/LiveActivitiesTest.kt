@@ -106,6 +106,16 @@ class LiveActivitiesTest {
       assertTrue(preferences.getLiveActivitySubscriberId("live-1").isEmpty())
     }
 
+  @Test
+  fun `unsubscribe does nothing when the device is not subscribed`() =
+    runTest {
+      val liveActivities = createRuntime().liveActivities
+
+      liveActivities.unsubscribe("live-1")
+
+      assertTrue(apiService.unsubscribedLiveActivityUrls.isEmpty())
+    }
+
   private fun TestScope.createRuntime() =
     PushNotificationsRuntime(
       application = application,

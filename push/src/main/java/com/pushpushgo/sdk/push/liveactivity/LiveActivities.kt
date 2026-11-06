@@ -102,7 +102,7 @@ class LiveActivities internal constructor(
 
   /**
    * Unsubscribes this device from a backend Live Activity previously followed via
-   * [subscribe]. Fails if the device is not subscribed to it.
+   * [subscribe]. Does nothing if the device is not subscribed to it.
    *
    * @param liveNotificationId backend ID of the Live Activity to leave
    */
@@ -116,7 +116,7 @@ class LiveActivities internal constructor(
 
   /**
    * Unsubscribes this device from a backend Live Activity previously followed via
-   * [subscribe]. Fails if the device is not subscribed to it.
+   * [subscribe]. Does nothing if the device is not subscribed to it.
    *
    * Java-friendly wrapper for [unsubscribe].
    *
