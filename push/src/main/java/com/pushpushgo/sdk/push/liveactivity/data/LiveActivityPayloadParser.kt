@@ -53,19 +53,6 @@ internal object LiveActivityPayloadParser {
   }
 
   /**
-   * Resolve the envelope's `template` field. A missing value falls back to
-   * [LiveActivityTemplate.FOOTBALL_MATCH_TRACKING] (envelopes predating the
-   * field); an unknown value returns null, so a template this SDK version
-   * can't render is ignored instead of being misread as a football match.
-   */
-  fun resolveTemplate(value: String?): LiveActivityTemplate? =
-    if (value.isNullOrBlank()) {
-      LiveActivityTemplate.FOOTBALL_MATCH_TRACKING
-    } else {
-      LiveActivityTemplate.fromValue(value)
-    }
-
-  /**
    * Parse the full push envelope. Returns `null` when required fields are
    * missing or the template is not supported by this SDK version.
    */
@@ -73,7 +60,7 @@ internal object LiveActivityPayloadParser {
     if (!isLiveActivityPush(data)) return null
     val id = data["liveNotificationId"]?.takeIf { it.isNotBlank() } ?: return null
     val event = LiveActivityEvent.fromValue(data["event"].orEmpty()) ?: return null
-    val template = resolveTemplate(data["template"]) ?: return null
+    val template = LiveActivityTemplate.fromValue(data["template"]) ?: return null
 
     val configurationJson = data["configuration"]?.takeIf { it.isNotBlank() }
     val liveDataJson = data["liveData"]?.takeIf { it.isNotBlank() }

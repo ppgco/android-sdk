@@ -15,6 +15,7 @@ import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityActionType
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityEvent
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
 import com.pushpushgo.sdk.push.liveactivity.data.TrackedLiveActivity
 import com.pushpushgo.sdk.push.liveactivity.notification.FootballMatchRenderer
@@ -91,7 +92,7 @@ internal class LiveActivityHandler(
     val push = LiveActivityPayloadParser.parsePush(data)
     if (push == null) {
       val template = data["template"]
-      if (LiveActivityPayloadParser.resolveTemplate(template) == null) {
+      if (LiveActivityTemplate.fromValue(template) == null) {
         logWarning("LiveActivityHandler: unsupported template '$template', ignoring push (requires a newer SDK)")
       } else {
         logError("LiveActivityHandler: failed to parse live notification push")

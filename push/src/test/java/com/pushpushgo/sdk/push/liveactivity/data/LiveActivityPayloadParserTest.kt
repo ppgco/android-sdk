@@ -103,11 +103,10 @@ internal class LiveActivityPayloadParserTest {
   }
 
   @Test
-  fun `parsePush defaults to football template when template is missing`() {
+  fun `parsePush ignores a push without template`() {
     val data = buildStartEnvelope().toMutableMap().apply { remove("template") }
-    val push = assertNotNull(LiveActivityPayloadParser.parsePush(data))
 
-    assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, push.template)
+    assertNull(LiveActivityPayloadParser.parsePush(data))
   }
 
   @Test
@@ -115,17 +114,6 @@ internal class LiveActivityPayloadParserTest {
     val data = buildStartEnvelope().toMutableMap().apply { this["template"] = "SOME_FUTURE_TEMPLATE" }
 
     assertNull(LiveActivityPayloadParser.parsePush(data))
-  }
-
-  @Test
-  fun `resolveTemplate maps blank to football, known case-insensitively and unknown to null`() {
-    assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, LiveActivityPayloadParser.resolveTemplate(null))
-    assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, LiveActivityPayloadParser.resolveTemplate(" "))
-    assertEquals(
-      LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
-      LiveActivityPayloadParser.resolveTemplate("football_match_tracking"),
-    )
-    assertNull(LiveActivityPayloadParser.resolveTemplate("SOME_FUTURE_TEMPLATE"))
   }
 
   @Test
