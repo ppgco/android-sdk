@@ -318,8 +318,8 @@ object PushNotifications {
     deserializeNotificationData(notificationData.mapToBundle())?.mapToDto()
 
   /**
-   * Handles a PushPushGo notification click when the application is launched
-   * or resumed from the background.
+   * Handles a PushPushGo notification click, including Live Activity notifications,
+   * when the application is launched or resumed from the background.
    */
   @JvmStatic
   @JvmOverloads

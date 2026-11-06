@@ -7,7 +7,7 @@ import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logWarning
 
-class LiveActivityDismissReceiver : BroadcastReceiver() {
+internal class LiveActivityDismissReceiver : BroadcastReceiver() {
   override fun onReceive(
     context: Context,
     intent: Intent,

@@ -2,10 +2,9 @@ package com.pushpushgo.sdk.push.liveactivity.data
 
 /**
  * Dynamic, real-time state of a football match Live Activity, delivered in the
- * `liveData` field of `start` / `update` pushes. Mirrors the backend / iOS
- * football match live data DTO.
+ * `liveData` field of `start` / `update` pushes.
  */
-data class FootballMatchLiveData(
+internal data class FootballMatchLiveData(
   val homeTeamScore: Int,
   val awayTeamScore: Int,
   val status: MatchPhase,

@@ -75,7 +75,7 @@ class ProjectSwitchTest {
       PushNotifications.switchProject(otherConfig)
 
       assertFailsWith<IllegalStateException> { liveActivities.subscribe("live-1") }
-      assertFailsWith<IllegalStateException> { liveActivities.getSubscriberId("live-1") }
+      assertFailsWith<IllegalStateException> { liveActivities.getActiveLiveActivities() }
       assertTrue(apiService.liveActivitySubscribeRequests.isEmpty())
     }
 
@@ -106,7 +106,7 @@ class ProjectSwitchTest {
 
       assertEquals("sub-123", PushNotifications.getSubscriberId())
       assertTrue(cleanupWork().isEmpty())
-      assertEquals("", liveActivities.getSubscriberId("live-1"))
+      assertEquals(emptyList(), liveActivities.getActiveLiveActivities())
     }
 
   @Test

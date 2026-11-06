@@ -55,6 +55,7 @@
 #### Notification model
 - Replaced `PPGoNotification` with **`PushPushGoNotification`**.
 - All **`PushPushGoNotification`** fields are now non-nullable.
+- Renamed `isPPGoPush(...)` to `isPushPushGoNotification(...)`.
 
 #### Handlers
 - Renamed handlers:
@@ -101,6 +102,28 @@
   `PushNotifications.liveActivities` facade.
 - Subscribing to a Live Activity requires notification permission instead of a
   registered push subscriber.
+- `LiveActivity` exposes only `id` and `template`. It is no longer a data class.
+  Template-specific models (`FootballMatchConfiguration`, `FootballMatchContent`,
+  `FootballMatchLiveData`, `FootballMatchAndroidDesign`, `HotMessage`,
+  `LiveActivityAction`, `LiveActivityActionType`, `LiveActivityColor`,
+  `LiveActivityColorSet`, `MatchPhase`, `LiveActivityEvent`), `LiveActivityStatus`
+  and `LiveActivityDismissReceiver` are no longer public.
+- `LiveActivityTemplate` is a class with constants instead of an enum; handle other
+  values (e.g. an `else` branch) when matching on it.
+- Live Activity clicks are handled by
+  `PushNotifications.handleBackgroundNotificationClick(...)`. For custom routing use
+  `setNotificationClickHandler(...)`.
+- Removed `isLiveActivityActive(...)`, `getLiveActivitySubscriberId(...)` and
+  `simulateLiveActivityPush(...)`. `liveActivities.subscribe(...)` still returns the
+  Live Activity subscriber ID.
+- `liveActivities.unsubscribe(...)` does nothing if the device is not subscribed.
+- Pushes with a missing template, or a template not supported by the SDK version,
+  are ignored instead of being rendered as a football match.
+
+#### InAppMessages integration
+- Removed `PushSubscriptionBridgeManager` and `PushPushGoSubscriptionBridgeManager`.
+- Added `PushNotifications.getPushSubscriptionProvider()`; pass it to the
+  InAppMessages SDK to connect both SDKs.
 
 #### Core dependency
 - The SDK now depends on a shared internal **core** module.
@@ -120,7 +143,16 @@ This release **requires code changes** and is not source-compatible with `3.x`.
 | `defaultIsSubscribed` | removed |
 | `getPushToken()` (`ListenableFuture<String>`) | `getPushToken()` (`String?`) |
 | `migrateToNewProject(...)` | `switchProject(...)` / `switchProjectAsync(...)` |
-| Live Activity methods on `PushPushGo` | `PushNotifications.liveActivities` |
+| `isPPGoPush(...)` | `isPushPushGoNotification(...)` |
+| `PushPushGoSubscriptionBridgeManager` | `getPushSubscriptionProvider()` |
+| `isLiveActivitiesSupported()` | `liveActivities.isSupported()` |
+| `subscribeToLiveActivity(id)` | `liveActivities.subscribe(id)` / `subscribeAsync(id)` |
+| `unsubscribeFromLiveActivity(id)` | `liveActivities.unsubscribe(id)` / `unsubscribeAsync(id)` |
+| `getActiveLiveActivities()` | `liveActivities.getActiveLiveActivities()` |
+| `handleLiveActivityClick(...)` | `handleBackgroundNotificationClick(...)` |
+| `isLiveActivityActive(id)` | `liveActivities.getActiveLiveActivities()` |
+| `getLiveActivitySubscriberId(id)` | removed; `liveActivities.subscribe(...)` returns the ID |
+| `LiveActivity.configuration`, `liveData` and other template data | removed; use `id` and `template` |
 | `PPGoNotification` | `PushPushGoNotification` |
 | `setNotificationHandler(...)` | `setNotificationClickHandler(...)` |
 | `setOnInvalidProjectIdHandler(...)` | `setInvalidProjectIdHandler(...)` |

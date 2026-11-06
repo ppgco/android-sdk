@@ -3,10 +3,11 @@
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
+import com.pushpushgo.sdk.push.liveactivity.data.TrackedLiveActivity
 
 internal class LiveActivityPersistence(
   context: Context,
@@ -17,7 +18,6 @@ internal class LiveActivityPersistence(
     private const val KEY_PREFIX_NOTIFICATION_ID = "notif_id_"
     private const val KEY_PREFIX_STATUS = "status_"
     private const val KEY_PREFIX_TEMPLATE = "template_"
-    private const val KEY_PREFIX_CREATED_AT = "created_at_"
     private const val KEY_PREFIX_DISMISSED = "dismissed_"
     private const val KEY_PREFIX_PROJECT = "project_"
     private const val KEY_PREFIX_SUBSCRIBER = "subscriber_"
@@ -111,40 +111,35 @@ internal class LiveActivityPersistence(
   }
 
   /**
-   * Rebuild a [LiveActivity] from persisted JSON (e.g. after process death) so
-   * that subsequent `update` pushes can be merged onto the last known state.
-   * The transient `hotMessage` is intentionally not restored.
+   * Rebuild a [TrackedLiveActivity] from persisted JSON (e.g. after process
+   * death) so that subsequent `update` pushes can be merged onto the last known
+   * state. The transient `hotMessage` is intentionally not restored.
    */
-  fun rebuild(liveActivityId: String): LiveActivity? {
+  fun rebuild(liveActivityId: String): TrackedLiveActivity? {
     val template = getTemplate(liveActivityId) ?: return null
     val status = getStatus(liveActivityId) ?: return null
     val configJson = getConfigurationJson(liveActivityId) ?: return null
     val liveDataJson = getLiveDataJson(liveActivityId) ?: return null
-    val configuration = LiveActivityPayloadParser.parseConfiguration(configJson) ?: return null
-    val liveData = LiveActivityPayloadParser.parseLiveData(liveDataJson) ?: return null
+    val parsed = LiveActivityPayloadParser.parseState(template, configJson, liveDataJson) ?: return null
 
-    return LiveActivity(
+    val state =
+      when (parsed) {
+        is FootballMatchState ->
+          parsed.copy(
+            countdownMessage = getCountdownMessage(liveActivityId),
+            countdownEndAtMs = getCountdownEndAt(liveActivityId),
+          )
+      }
+
+    return TrackedLiveActivity(
       id = liveActivityId,
       projectId = getProjectId(liveActivityId),
       subscriberId = getSubscriberId(liveActivityId),
       template = template,
       status = status,
-      configuration = configuration,
-      liveData = liveData,
+      state = state,
       hotMessage = null,
-      createdAt = getCreatedAt(liveActivityId),
-      countdownMessage = getCountdownMessage(liveActivityId),
-      countdownEndAtMs = getCountdownEndAt(liveActivityId),
     )
-  }
-
-  fun getCreatedAt(liveActivityId: String): Long = prefs.getLong("$KEY_PREFIX_CREATED_AT$liveActivityId", 0L)
-
-  fun setCreatedAt(
-    liveActivityId: String,
-    createdAt: Long,
-  ) {
-    prefs.edit { putLong("$KEY_PREFIX_CREATED_AT$liveActivityId", createdAt) }
   }
 
   fun isDismissedByUser(liveActivityId: String): Boolean = prefs.getBoolean("$KEY_PREFIX_DISMISSED$liveActivityId", false)
@@ -177,7 +172,6 @@ internal class LiveActivityPersistence(
       remove("$KEY_PREFIX_NOTIFICATION_ID$liveActivityId")
       remove("$KEY_PREFIX_STATUS$liveActivityId")
       remove("$KEY_PREFIX_TEMPLATE$liveActivityId")
-      remove("$KEY_PREFIX_CREATED_AT$liveActivityId")
       remove("$KEY_PREFIX_DISMISSED$liveActivityId")
       remove("$KEY_PREFIX_PROJECT$liveActivityId")
       remove("$KEY_PREFIX_SUBSCRIBER$liveActivityId")

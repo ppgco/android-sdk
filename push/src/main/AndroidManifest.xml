@@ -24,7 +24,7 @@
         </service>
 
         <receiver
-            android:name=".push.liveactivity.LiveActivityDismissReceiver"
+            android:name=".liveactivity.LiveActivityDismissReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.pushpushgo.sdk.push.LIVE_ACTIVITY_DISMISS" />

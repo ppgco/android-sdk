@@ -2,18 +2,19 @@ package com.pushpushgo.sdk.push.liveactivity
 
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchLiveData
+import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityEvent
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
+import com.pushpushgo.sdk.push.liveactivity.data.TrackedLiveActivity
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -40,31 +41,51 @@ internal class LiveActivityManagerTest {
 
     assertEquals("test-la-1", activity.id)
     assertEquals(LiveActivityStatus.ACTIVE, activity.status)
-    assertEquals(2, activity.liveData.homeTeamScore)
-    assertEquals("Arsenal", activity.configuration.content.homeTeamName)
+    assertEquals(2, activity.football.liveData.homeTeamScore)
+    assertEquals("Arsenal", activity.football.configuration.content.homeTeamName)
   }
 
   @Test
   fun `startActivity returns null without configuration`() {
-    val push = startPush().copy(configuration = null, configurationJson = null)
-
-    assertNull(manager.startActivity(push))
+    assertNull(manager.startActivity(startPush().copy(configurationJson = null)))
   }
 
   @Test
   fun `updateActivity merges new live data onto existing state`() {
     manager.startActivity(startPush())
 
-    val updated =
-      assertNotNull(
-        manager.updateActivity(
-          updatePush(liveData = liveData(homeScore = 3, status = MatchPhase.SECOND_HALF)),
-        ),
-      )
+    val updated = assertNotNull(manager.updateActivity(updatePush(liveDataJson(homeScore = 3, status = MatchPhase.SECOND_HALF))))
 
-    assertEquals(3, updated.liveData.homeTeamScore)
-    assertEquals(MatchPhase.SECOND_HALF, updated.liveData.status)
-    assertEquals("Premier League", updated.configuration.content.title)
+    assertEquals(3, updated.football.liveData.homeTeamScore)
+    assertEquals(MatchPhase.SECOND_HALF, updated.football.liveData.status)
+    assertEquals("Premier League", updated.football.configuration.content.title)
+  }
+
+  @Test
+  fun `updateActivity keeps pre-match countdown attached to the state`() {
+    manager.startActivity(startPush())
+    manager.setCountdown("test-la-1", "Kick-off soon", 1_000L)
+
+    val updated = assertNotNull(manager.updateActivity(updatePush(liveDataJson(homeScore = 1))))
+
+    assertEquals(1, updated.football.liveData.homeTeamScore)
+    assertEquals("Kick-off soon", updated.football.countdownMessage)
+    assertEquals(1_000L, updated.football.countdownEndAtMs)
+  }
+
+  @Test
+  fun `setCountdown attaches countdown to football state and persists it`() {
+    manager.startActivity(startPush())
+
+    val activity = assertNotNull(manager.setCountdown("test-la-1", "Kick-off soon", 1_000L))
+    val restartedManager = LiveActivityManager(persistence)
+    restartedManager.restoreFromPersistence()
+
+    assertEquals("Kick-off soon", activity.football.countdownMessage)
+    assertEquals(1_000L, activity.football.countdownEndAtMs)
+    val restored = assertNotNull(restartedManager.getActivity("test-la-1"))
+    assertEquals("Kick-off soon", restored.football.countdownMessage)
+    assertEquals(1_000L, restored.football.countdownEndAtMs)
   }
 
   @Test
@@ -98,8 +119,8 @@ internal class LiveActivityManagerTest {
 
     val restored = assertNotNull(restartedManager.getActivity("test-la-1"))
     assertEquals(LiveActivityStatus.ACTIVE, restored.status)
-    assertEquals(started.configuration, restored.configuration)
-    assertEquals(started.liveData, restored.liveData)
+    assertEquals(started.football.configuration, restored.football.configuration)
+    assertEquals(started.football.liveData, restored.football.liveData)
   }
 
   @Test
@@ -135,11 +156,11 @@ internal class LiveActivityManagerTest {
     assertEquals(emptySet(), persistence.getActiveIds())
   }
 
-  private fun liveData(
+  private fun liveDataJson(
     homeScore: Int = 2,
     awayScore: Int = 1,
     status: MatchPhase = MatchPhase.FIRST_HALF,
-  ) = FootballMatchLiveData(homeScore, awayScore, status, statusChangedAt = null)
+  ) = """{"homeTeamScore":$homeScore,"awayTeamScore":$awayScore,"status":"${status.value}"}"""
 
   private fun startPush() =
     LiveActivityPush(
@@ -148,33 +169,31 @@ internal class LiveActivityManagerTest {
       subscriberId = "sub-1",
       template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
       event = LiveActivityEvent.START,
-      configuration = assertNotNull(LiveActivityPayloadParser.parseConfiguration(CONFIGURATION_JSON)),
       configurationJson = CONFIGURATION_JSON,
-      liveData = assertNotNull(LiveActivityPayloadParser.parseLiveData(LIVE_DATA_JSON)),
-      liveDataJson = LIVE_DATA_JSON,
+      liveDataJson = liveDataJson(),
       hotMessage = null,
     )
 
-  private fun updatePush(liveData: FootballMatchLiveData = liveData()) =
+  private fun updatePush(liveDataJson: String = liveDataJson()) =
     LiveActivityPush(
       id = "test-la-1",
       projectId = "proj-1",
       subscriberId = "sub-1",
       template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
       event = LiveActivityEvent.UPDATE,
-      configuration = null,
       configurationJson = null,
-      liveData = liveData,
-      liveDataJson = "{}",
+      liveDataJson = liveDataJson,
       hotMessage = null,
     )
 
   private fun endPush() = updatePush().copy(event = LiveActivityEvent.END)
 
+  private val TrackedLiveActivity.football: FootballMatchState
+    get() = assertIs(state)
+
   private companion object {
     const val CONFIGURATION_JSON =
       """{"content":{"title":"Premier League","homeTeamName":"Arsenal","awayTeamName":"Chelsea"},""" +
         """"statusLabels":{"FIRST_HALF":"1st Half"},"timeout":{"minutes":120},"url":"https://match/1"}"""
-    const val LIVE_DATA_JSON = """{"homeTeamScore":2,"awayTeamScore":1,"status":"FIRST_HALF"}"""
   }
 }

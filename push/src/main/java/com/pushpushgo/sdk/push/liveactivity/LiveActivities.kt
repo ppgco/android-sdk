@@ -2,7 +2,6 @@ package com.pushpushgo.sdk.push.liveactivity
 
 import android.app.Application
 import android.content.Intent
-import androidx.annotation.RestrictTo
 import com.pushpushgo.sdk.core.internal.NotificationPermissionProvider
 import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
@@ -53,38 +52,20 @@ class LiveActivities internal constructor(
    * Returns the currently active Live Activities.
    * Returns an empty list on API < 36.
    */
-  fun getActiveActivities(): List<LiveActivity> {
+  fun getActiveLiveActivities(): List<LiveActivity> {
     assertActive()
-    return controller.getActiveActivities()
+    return controller.getActiveLiveActivities()
   }
 
   /**
-   * Checks whether a specific Live Activity is currently active.
-   * Returns `false` on API < 36.
-   */
-  fun isActive(id: String): Boolean {
-    assertActive()
-    return controller.isActive(id)
-  }
-
-  /**
-   * Simulates a Live Activity push for SDK testing. No-op on API < 36.
-   */
-  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-  fun simulatePush(data: Map<String, String>) {
-    assertActive()
-    controller.simulatePush(data)
-  }
-
-  /**
-   * Subscribes this device to a backend Live Activity.
+   * Subscribes this device to a Live Activity.
    *
-   * Returns the backend Live Activity subscriber ID, which is persisted for later
+   * Returns the assigned Live Activity subscriber ID. The SDK keeps it for later
    * [unsubscribe] calls.
    *
    * Request the notification permission before calling this method.
    *
-   * @param liveNotificationId backend ID of the Live Activity to follow
+   * @param liveNotificationId ID of the Live Activity to follow
    * @return the assigned Live Activity subscriber ID
    * @throws IllegalStateException if notifications are disabled
    */
@@ -104,13 +85,13 @@ class LiveActivities internal constructor(
     }
 
   /**
-   * Subscribes this device to a backend Live Activity.
+   * Subscribes this device to a Live Activity.
    *
    * Java-friendly wrapper for [subscribe].
    *
    * Request the notification permission before calling this method.
    *
-   * @param liveNotificationId backend ID of the Live Activity to follow
+   * @param liveNotificationId ID of the Live Activity to follow
    * @return future with the assigned Live Activity subscriber ID; it fails with
    * [IllegalStateException] if notifications are disabled
    */
@@ -120,10 +101,10 @@ class LiveActivities internal constructor(
     }
 
   /**
-   * Unsubscribes this device from a backend Live Activity previously followed via
-   * [subscribe]. Fails if the device is not subscribed to it.
+   * Unsubscribes this device from a Live Activity previously followed via
+   * [subscribe]. Does nothing if the device is not subscribed to it.
    *
-   * @param liveNotificationId backend ID of the Live Activity to leave
+   * @param liveNotificationId ID of the Live Activity to leave
    */
   @JvmSynthetic
   suspend fun unsubscribe(liveNotificationId: String) {
@@ -134,12 +115,12 @@ class LiveActivities internal constructor(
   }
 
   /**
-   * Unsubscribes this device from a backend Live Activity previously followed via
-   * [subscribe]. Fails if the device is not subscribed to it.
+   * Unsubscribes this device from a Live Activity previously followed via
+   * [subscribe]. Does nothing if the device is not subscribed to it.
    *
    * Java-friendly wrapper for [unsubscribe].
    *
-   * @param liveNotificationId backend ID of the Live Activity to leave
+   * @param liveNotificationId ID of the Live Activity to leave
    */
   fun unsubscribeAsync(liveNotificationId: String): CompletableFuture<Void?> =
     scope.future {
@@ -147,30 +128,12 @@ class LiveActivities internal constructor(
       null
     }
 
-  /**
-   * Returns the persisted Live Activity subscriber ID, or an empty string if this
-   * device is not subscribed to it.
-   */
-  fun getSubscriberId(liveNotificationId: String): String {
-    assertActive()
-    return controller.getSubscriberId(liveNotificationId)
-  }
-
-  /**
-   * Handles a Live Activity notification click. Call from `Activity.onCreate()` or
-   * `Activity.onNewIntent()` alongside background notification click handling.
-   *
-   * Reports click analytics and, unless [openDeepLink] is `false`, opens the carried
-   * deep link through the configured notification click handler.
-   *
-   * @return the deep link, or `null` if this was not a Live Activity click
-   */
-  @JvmOverloads
-  fun handleClick(
+  /** Handles a Live Activity notification click. Returns `false` if [intent] is not one. */
+  internal fun handleClick(
     intent: Intent?,
-    openDeepLink: Boolean = true,
-  ): String? {
+    overrideFlags: Int,
+  ): Boolean {
     assertActive()
-    return controller.handleClick(application, intent, openDeepLink)
+    return controller.handleClick(application, intent, overrideFlags)
   }
 }
