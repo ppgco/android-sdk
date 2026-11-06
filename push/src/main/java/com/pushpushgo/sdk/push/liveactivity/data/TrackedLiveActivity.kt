@@ -14,19 +14,10 @@ internal data class TrackedLiveActivity(
   val status: LiveActivityStatus,
   val state: LiveActivityState,
   val hotMessage: HotMessage?,
-  val createdAt: Long = System.currentTimeMillis(),
-  val updatedAt: Long = System.currentTimeMillis(),
 ) {
   val liveDataVersion: Int
     get() = state.liveDataVersion
 
-  /** Public projection exposed by `LiveActivities.getActiveActivities()`. */
-  fun toLiveActivity(): LiveActivity =
-    LiveActivity(
-      id = id,
-      template = template,
-      status = status,
-      createdAt = createdAt,
-      updatedAt = updatedAt,
-    )
+  /** Public projection exposed by `LiveActivities.getActiveLiveActivities()`. */
+  fun toLiveActivity(): LiveActivity = LiveActivity(id = id, template = template)
 }

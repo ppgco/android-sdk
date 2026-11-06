@@ -18,7 +18,6 @@ internal class LiveActivityPersistence(
     private const val KEY_PREFIX_NOTIFICATION_ID = "notif_id_"
     private const val KEY_PREFIX_STATUS = "status_"
     private const val KEY_PREFIX_TEMPLATE = "template_"
-    private const val KEY_PREFIX_CREATED_AT = "created_at_"
     private const val KEY_PREFIX_DISMISSED = "dismissed_"
     private const val KEY_PREFIX_PROJECT = "project_"
     private const val KEY_PREFIX_SUBSCRIBER = "subscriber_"
@@ -143,17 +142,7 @@ internal class LiveActivityPersistence(
       status = status,
       state = state,
       hotMessage = null,
-      createdAt = getCreatedAt(liveActivityId),
     )
-  }
-
-  fun getCreatedAt(liveActivityId: String): Long = prefs.getLong("$KEY_PREFIX_CREATED_AT$liveActivityId", 0L)
-
-  fun setCreatedAt(
-    liveActivityId: String,
-    createdAt: Long,
-  ) {
-    prefs.edit { putLong("$KEY_PREFIX_CREATED_AT$liveActivityId", createdAt) }
   }
 
   fun isDismissedByUser(liveActivityId: String): Boolean = prefs.getBoolean("$KEY_PREFIX_DISMISSED$liveActivityId", false)
@@ -186,7 +175,6 @@ internal class LiveActivityPersistence(
       remove("$KEY_PREFIX_NOTIFICATION_ID$liveActivityId")
       remove("$KEY_PREFIX_STATUS$liveActivityId")
       remove("$KEY_PREFIX_TEMPLATE$liveActivityId")
-      remove("$KEY_PREFIX_CREATED_AT$liveActivityId")
       remove("$KEY_PREFIX_DISMISSED$liveActivityId")
       remove("$KEY_PREFIX_PROJECT$liveActivityId")
       remove("$KEY_PREFIX_SUBSCRIBER$liveActivityId")

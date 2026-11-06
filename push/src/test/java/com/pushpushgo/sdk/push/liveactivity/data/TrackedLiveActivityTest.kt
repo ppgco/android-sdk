@@ -55,17 +55,12 @@ internal class TrackedLiveActivityTest {
         status = LiveActivityStatus.ACTIVE,
         state = FootballMatchState(configuration(), liveData(), "Kick-off soon", 1_000L),
         hotMessage = HotMessage("h1", "GOAL!", null),
-        createdAt = 10L,
-        updatedAt = 20L,
       )
 
     val public = tracked.toLiveActivity()
 
     assertEquals("la-1", public.id)
     assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, public.template)
-    assertEquals(LiveActivityStatus.ACTIVE, public.status)
-    assertEquals(10L, public.createdAt)
-    assertEquals(20L, public.updatedAt)
   }
 
   private fun configuration() =

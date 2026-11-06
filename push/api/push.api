@@ -138,56 +138,33 @@ public final class com/pushpushgo/sdk/push/exception/PushPushException : java/io
 }
 
 public final class com/pushpushgo/sdk/push/liveactivity/LiveActivities {
-	public final fun getActiveActivities ()Ljava/util/List;
-	public final fun getSubscriberId (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getActiveLiveActivities ()Ljava/util/List;
 	public final fun handleClick (Landroid/content/Intent;)Ljava/lang/String;
 	public final fun handleClick (Landroid/content/Intent;Z)Ljava/lang/String;
 	public static synthetic fun handleClick$default (Lcom/pushpushgo/sdk/push/liveactivity/LiveActivities;Landroid/content/Intent;ZILjava/lang/Object;)Ljava/lang/String;
-	public final fun isActive (Ljava/lang/String;)Z
 	public final fun isSupported ()Z
-	public final fun simulatePush (Ljava/util/Map;)V
 	public final synthetic fun subscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun subscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
 	public final synthetic fun unsubscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun unsubscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
 }
 
-public final class com/pushpushgo/sdk/push/liveactivity/LiveActivityDismissReceiver : android/content/BroadcastReceiver {
-	public fun <init> ()V
-	public fun onReceive (Landroid/content/Context;Landroid/content/Intent;)V
-}
-
 public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivity {
-	public final fun getCreatedAt ()J
 	public final fun getId ()Ljava/lang/String;
-	public final fun getStatus ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
 	public final fun getTemplate ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
-	public final fun getUpdatedAt ()J
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus : java/lang/Enum {
-	public static final field ACTIVE Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
-	public static final field ENDED Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
-	public static final field PAUSED Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public final fun getValue ()Ljava/lang/String;
-	public static fun valueOf (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
-	public static fun values ()[Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityStatus;
 }
 
 public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate {
 	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate$Companion;
 	public static final field FOOTBALL_MATCH_TRACKING Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
 	public fun equals (Ljava/lang/Object;)Z
-	public static final fun fromValue (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
 	public final fun getValue ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate$Companion {
-	public final fun fromValue (Ljava/lang/String;)Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
 }
 
 public final class com/pushpushgo/sdk/push/push/service/FcmMessagingServiceDelegate {

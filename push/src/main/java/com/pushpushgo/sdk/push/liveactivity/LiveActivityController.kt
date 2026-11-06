@@ -78,13 +78,7 @@ internal class LiveActivityController(
 
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36
 
-  fun getActiveActivities(): List<LiveActivity> = manager?.getActiveActivities()?.map { it.toLiveActivity() } ?: emptyList()
-
-  fun isActive(id: String): Boolean = manager?.isActivityActive(id) ?: false
-
-  fun simulatePush(data: Map<String, String>) {
-    handler?.handlePush(data)
-  }
+  fun getActiveLiveActivities(): List<LiveActivity> = manager?.getActiveActivities()?.map { it.toLiveActivity() } ?: emptyList()
 
   suspend fun subscribe(liveActivityId: String): String {
     val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)
@@ -104,8 +98,6 @@ internal class LiveActivityController(
     handler?.removeActivity(liveActivityId)
     sharedPref.removeLiveActivitySubscriberId(liveActivityId)
   }
-
-  fun getSubscriberId(liveNotificationId: String): String = sharedPref.getLiveActivitySubscriberId(liveNotificationId)
 
   /**
    * Handles a Live Activity notification click: reports the click analytics event

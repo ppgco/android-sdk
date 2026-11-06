@@ -58,7 +58,7 @@ class LiveActivitiesTest {
 
       assertEquals(1, apiService.liveActivitySubscribeRequests.size)
       assertEquals(FakeApiService.LIVE_ACTIVITY_SUBSCRIBER_ID, liveActivitySubscriberId)
-      assertEquals(FakeApiService.LIVE_ACTIVITY_SUBSCRIBER_ID, liveActivities.getSubscriberId("live-1"))
+      assertEquals(FakeApiService.LIVE_ACTIVITY_SUBSCRIBER_ID, preferences.getLiveActivitySubscriberId("live-1"))
     }
 
   @Test
@@ -70,7 +70,7 @@ class LiveActivitiesTest {
       assertFailsWith<IllegalStateException> { liveActivities.subscribe("live-1") }
 
       assertTrue(apiService.liveActivitySubscribeRequests.isEmpty())
-      assertEquals("", liveActivities.getSubscriberId("live-1"))
+      assertEquals("", preferences.getLiveActivitySubscriberId("live-1"))
     }
 
   @Test
@@ -88,7 +88,7 @@ class LiveActivitiesTest {
       assertFailsWith<IllegalStateException> { liveActivities.subscribe("live-1") }
 
       assertTrue(apiService.liveActivitySubscribeRequests.isEmpty())
-      assertEquals("", liveActivities.getSubscriberId("live-1"))
+      assertEquals("", preferences.getLiveActivitySubscriberId("live-1"))
     }
 
   @Test
@@ -103,7 +103,7 @@ class LiveActivitiesTest {
         listOf("${config.apiUrl}/core/projects/${config.projectId}/live-notifications/live-1/subscribers/live-sub-1"),
         apiService.unsubscribedLiveActivityUrls,
       )
-      assertTrue(liveActivities.getSubscriberId("live-1").isEmpty())
+      assertTrue(preferences.getLiveActivitySubscriberId("live-1").isEmpty())
     }
 
   private fun TestScope.createRuntime() =

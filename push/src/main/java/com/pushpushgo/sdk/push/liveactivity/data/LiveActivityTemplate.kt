@@ -24,7 +24,6 @@ class LiveActivityTemplate private constructor(
     internal val supported: List<LiveActivityTemplate> = listOf(FOOTBALL_MATCH_TRACKING)
 
     /** The template with the given wire value (case-insensitive), or null when this SDK version doesn't support it. */
-    @JvmStatic
-    fun fromValue(value: String?): LiveActivityTemplate? = supported.firstOrNull { it.value.equals(value, ignoreCase = true) }
+    internal fun fromValue(value: String?): LiveActivityTemplate? = supported.firstOrNull { it.value.equals(value, ignoreCase = true) }
   }
 }

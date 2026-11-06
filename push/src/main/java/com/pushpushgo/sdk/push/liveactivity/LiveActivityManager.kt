@@ -49,7 +49,6 @@ internal class LiveActivityManager(
 
     val existingNotifId = persistence.getNotificationId(push.id)
     val notificationId = if (existingNotifId != -1) existingNotifId else generateNotificationId()
-    val createdAt = persistence.getCreatedAt(push.id).takeIf { it > 0L } ?: System.currentTimeMillis()
 
     val activity =
       TrackedLiveActivity(
@@ -60,7 +59,6 @@ internal class LiveActivityManager(
         status = LiveActivityStatus.ACTIVE,
         state = state,
         hotMessage = push.hotMessage,
-        createdAt = createdAt,
       )
     activeActivities[push.id] = activity
 
@@ -68,7 +66,6 @@ internal class LiveActivityManager(
     persistence.setNotificationId(push.id, notificationId)
     persistence.setStatus(push.id, LiveActivityStatus.ACTIVE)
     persistence.setTemplate(push.id, push.template)
-    persistence.setCreatedAt(push.id, createdAt)
     persistence.setProjectId(push.id, push.projectId)
     persistence.setSubscriberId(push.id, push.subscriberId)
     persistence.setConfigurationJson(push.id, configurationJson)
@@ -99,7 +96,6 @@ internal class LiveActivityManager(
         state = mergeState(current, push),
         hotMessage = push.hotMessage,
         status = LiveActivityStatus.ACTIVE,
-        updatedAt = System.currentTimeMillis(),
       )
     activeActivities[push.id] = updated
 
@@ -141,7 +137,6 @@ internal class LiveActivityManager(
         state = mergeState(current, push),
         hotMessage = push.hotMessage,
         status = LiveActivityStatus.ENDED,
-        updatedAt = System.currentTimeMillis(),
       )
     activeActivities[push.id] = ended
 
@@ -169,8 +164,6 @@ internal class LiveActivityManager(
   fun getNotificationId(id: String): Int = persistence.getNotificationId(id)
 
   fun getActiveActivities(): List<TrackedLiveActivity> = activeActivities.values.filter { it.status != LiveActivityStatus.ENDED }
-
-  fun isActivityActive(id: String): Boolean = activeActivities[id]?.status == LiveActivityStatus.ACTIVE
 
   /**
    * Merge the push's template-specific blocks onto [current]. A push whose
