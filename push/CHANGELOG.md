@@ -55,6 +55,7 @@
 #### Notification model
 - Replaced `PPGoNotification` with **`PushPushGoNotification`**.
 - All **`PushPushGoNotification`** fields are now non-nullable.
+- Renamed `isPPGoPush(...)` to `isPushPushGoNotification(...)`.
 
 #### Handlers
 - Renamed handlers:
@@ -116,8 +117,13 @@
   `simulateLiveActivityPush(...)`. `liveActivities.subscribe(...)` still returns the
   Live Activity subscriber ID.
 - `liveActivities.unsubscribe(...)` does nothing if the device is not subscribed.
-- Pushes of a template not supported by the SDK version are ignored instead of
-  being rendered as a football match.
+- Pushes with a missing template, or a template not supported by the SDK version,
+  are ignored instead of being rendered as a football match.
+
+#### InAppMessages integration
+- Removed `PushSubscriptionBridgeManager` and `PushPushGoSubscriptionBridgeManager`.
+- Added `PushNotifications.getPushSubscriptionProvider()`; pass it to the
+  InAppMessages SDK to connect both SDKs.
 
 #### Core dependency
 - The SDK now depends on a shared internal **core** module.
@@ -137,7 +143,12 @@ This release **requires code changes** and is not source-compatible with `3.x`.
 | `defaultIsSubscribed` | removed |
 | `getPushToken()` (`ListenableFuture<String>`) | `getPushToken()` (`String?`) |
 | `migrateToNewProject(...)` | `switchProject(...)` / `switchProjectAsync(...)` |
-| Live Activity methods on `PushPushGo` | `PushNotifications.liveActivities` |
+| `isPPGoPush(...)` | `isPushPushGoNotification(...)` |
+| `PushPushGoSubscriptionBridgeManager` | `getPushSubscriptionProvider()` |
+| `isLiveActivitiesSupported()` | `liveActivities.isSupported()` |
+| `subscribeToLiveActivity(id)` | `liveActivities.subscribe(id)` / `subscribeAsync(id)` |
+| `unsubscribeFromLiveActivity(id)` | `liveActivities.unsubscribe(id)` / `unsubscribeAsync(id)` |
+| `getActiveLiveActivities()` | `liveActivities.getActiveLiveActivities()` |
 | `handleLiveActivityClick(...)` | `handleBackgroundNotificationClick(...)` |
 | `isLiveActivityActive(id)` | `liveActivities.getActiveLiveActivities()` |
 | `getLiveActivitySubscriberId(id)` | removed; `liveActivities.subscribe(...)` returns the ID |

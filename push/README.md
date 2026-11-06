@@ -536,5 +536,9 @@ They still require the notification permission: if it is not granted,
 `liveActivities.subscribe()` throws an `IllegalStateException`. Request the permission before
 subscribing.
 
+Clicks on Live Activity notifications are handled by the same
+`handleBackgroundNotificationClick` call as regular notifications (see
+[Handling notification clicks](#handling-notification-clicks)).
+
 For the full integration guide (clicks, deep links, analytics, rendering
 features) see [LIVE_ACTIVITIES.md](LIVE_ACTIVITIES.md).
