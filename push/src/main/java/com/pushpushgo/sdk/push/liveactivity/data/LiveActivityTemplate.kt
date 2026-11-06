@@ -1,11 +1,8 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
 /**
- * Live Notification template identifier. Wire values mirror the backend / iOS
- * contract (e.g. `FOOTBALL_MATCH_TRACKING`).
- *
- * Not an enum on purpose: new templates are added in minor releases, so code
- * matching on it should handle other values too (e.g. an `else` branch).
+ * Identifier of a Live Activity template. Code matching on it should handle other
+ * values too (e.g. an `else` branch).
  */
 class LiveActivityTemplate private constructor(
   val value: String,
@@ -23,7 +20,7 @@ class LiveActivityTemplate private constructor(
     /** Templates rendered by this SDK version. */
     internal val supported: List<LiveActivityTemplate> = listOf(FOOTBALL_MATCH_TRACKING)
 
-    /** The template with the given wire value (case-insensitive), or null when this SDK version doesn't support it. */
+    /** The template with the given value (case-insensitive), or null when this SDK version doesn't support it. */
     internal fun fromValue(value: String?): LiveActivityTemplate? = supported.firstOrNull { it.value.equals(value, ignoreCase = true) }
   }
 }

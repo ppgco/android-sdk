@@ -4,23 +4,8 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 
 /**
- * Parses the unified PushPushGo "live notification" push envelope shared by the
- * iOS and Android SDKs.
- *
- * The FCM data message is a flat `Map<String, String>` whose nested objects are
- * delivered as JSON strings:
- * ```
- * type               = "live_notification"
- * liveNotificationId = "<id>"
- * event              = "start" | "update" | "end"
- * template           = "FOOTBALL_MATCH_TRACKING"
- * project            = "<projectId>"
- * subscriber         = "<subscriberId>"
- * configuration      = "{ ...static config... }"   // only on `start`
- * liveData           = "{ ...dynamic state... }"
- * hotMessage         = "{ id, text, timestamp }"    // optional
- * ```
- * The `configuration` / `liveData` JSON mirror the iOS DTOs field-for-field.
+ * Parses the live notification push envelope: a flat `Map<String, String>` whose
+ * nested objects are delivered as JSON strings.
  */
 internal object LiveActivityPayloadParser {
   const val ENVELOPE_TYPE = "live_notification"
@@ -34,15 +19,13 @@ internal object LiveActivityPayloadParser {
   fun isLiveActivityPush(data: Map<String, String>): Boolean = data["type"] == ENVELOPE_TYPE
 
   /**
-   * The only `lifecycle.status` (from the GET live-notification document) that is
-   * currently live and worth rendering on catch-up. The others
-   * (`DRAFT`, `PENDING`, `STOPPED`, `EXPIRED`) are either not started yet or
-   * already over, so there is nothing to show.
+   * The only `lifecycle.status` worth rendering on catch-up: any other means the
+   * activity has not started yet or is already over.
    */
   private const val LIFECYCLE_ONGOING = "ONGOING"
 
   /**
-   * Build a synthetic `start` push envelope from a GET live-notification
+   * Build a synthetic `start` push envelope from a live notification
    * document, so a subscriber that joined after the original `start` push can
    * render the current state. The document's nested `configuration` / `liveData`
    * objects are re-serialized to the JSON-string form the push pipeline expects.
@@ -146,11 +129,8 @@ internal object LiveActivityPayloadParser {
     }
 
   /**
-   * Parse the `startPolicy` block of a GET live-notification document into the
-   * pre-match countdown info. Returns null when the campaign has no countdown
-   * or no scheduled start. `endAtMs` is the `scheduledAt` moment — the backend
-   * sends the `start` push `countdown.seconds` ahead of it, and the client
-   * counts down to zero.
+   * Parse the pre-match countdown info from a live notification document. Returns
+   * null when there is no countdown or no scheduled start.
    */
   fun parseStartPolicy(json: String): CountdownInfo? {
     val root = readJson(json) ?: return null
@@ -188,7 +168,6 @@ internal object LiveActivityPayloadParser {
 
     val statusLabels = parseStatusLabels(root["statusLabels"])
 
-    // Backend sends `actionSet`; the local-simulation envelope uses `actions`.
     val actionsNode = root["actionSet"] ?: root["actions"]
     val actions = (actionsNode as? List<*>)?.mapNotNull { parseAction(it) } ?: emptyList()
 
@@ -228,10 +207,8 @@ internal object LiveActivityPayloadParser {
   }
 
   /**
-   * Parse the `statusLabels` block. The backend now sends a plain array of
-   * labels ordered exactly like [MatchPhase] (index 0 = PRE_MATCH … 15 = OTHER)
-   * to shrink the payload; the local-simulation envelope still sends a keyed
-   * `{phase: label}` object. Both are supported.
+   * Parse the `statusLabels` block: either an array of labels ordered exactly like
+   * [MatchPhase] (index 0 = PRE_MATCH … 15 = OTHER), or a keyed `{phase: label}` object.
    */
   private fun parseStatusLabels(node: Any?): Map<String, String> =
     when (node) {
@@ -319,7 +296,7 @@ internal object LiveActivityPayloadParser {
     }
 }
 
-/** Pre-match countdown extracted from a live notification's `startPolicy`. */
+/** Pre-match countdown of a live notification. */
 internal data class CountdownInfo(
   val message: String?,
   val endAtMs: Long,

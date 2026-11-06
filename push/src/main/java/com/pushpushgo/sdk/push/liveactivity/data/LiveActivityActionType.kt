@@ -1,8 +1,7 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
 /**
- * Type of a Live Activity call-to-action button. Mirrors the backend / iOS
- * `LiveNotificationActionType`:
+ * Type of a Live Activity call-to-action button:
  * - `OPEN_APP` — just launches the host app.
  * - `REDIRECT` — opens a web url or app deep link carried in `url`.
  * - `CLOSE` — dismisses the Live Activity.

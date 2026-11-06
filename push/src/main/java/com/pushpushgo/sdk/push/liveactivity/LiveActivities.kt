@@ -58,14 +58,14 @@ class LiveActivities internal constructor(
   }
 
   /**
-   * Subscribes this device to a backend Live Activity.
+   * Subscribes this device to a Live Activity.
    *
-   * Returns the backend Live Activity subscriber ID, which is persisted for later
+   * Returns the assigned Live Activity subscriber ID. The SDK keeps it for later
    * [unsubscribe] calls.
    *
    * Request the notification permission before calling this method.
    *
-   * @param liveNotificationId backend ID of the Live Activity to follow
+   * @param liveNotificationId ID of the Live Activity to follow
    * @return the assigned Live Activity subscriber ID
    * @throws IllegalStateException if notifications are disabled
    */
@@ -85,13 +85,13 @@ class LiveActivities internal constructor(
     }
 
   /**
-   * Subscribes this device to a backend Live Activity.
+   * Subscribes this device to a Live Activity.
    *
    * Java-friendly wrapper for [subscribe].
    *
    * Request the notification permission before calling this method.
    *
-   * @param liveNotificationId backend ID of the Live Activity to follow
+   * @param liveNotificationId ID of the Live Activity to follow
    * @return future with the assigned Live Activity subscriber ID; it fails with
    * [IllegalStateException] if notifications are disabled
    */
@@ -101,10 +101,10 @@ class LiveActivities internal constructor(
     }
 
   /**
-   * Unsubscribes this device from a backend Live Activity previously followed via
+   * Unsubscribes this device from a Live Activity previously followed via
    * [subscribe]. Does nothing if the device is not subscribed to it.
    *
-   * @param liveNotificationId backend ID of the Live Activity to leave
+   * @param liveNotificationId ID of the Live Activity to leave
    */
   @JvmSynthetic
   suspend fun unsubscribe(liveNotificationId: String) {
@@ -115,12 +115,12 @@ class LiveActivities internal constructor(
   }
 
   /**
-   * Unsubscribes this device from a backend Live Activity previously followed via
+   * Unsubscribes this device from a Live Activity previously followed via
    * [subscribe]. Does nothing if the device is not subscribed to it.
    *
    * Java-friendly wrapper for [unsubscribe].
    *
-   * @param liveNotificationId backend ID of the Live Activity to leave
+   * @param liveNotificationId ID of the Live Activity to leave
    */
   fun unsubscribeAsync(liveNotificationId: String): CompletableFuture<Void?> =
     scope.future {

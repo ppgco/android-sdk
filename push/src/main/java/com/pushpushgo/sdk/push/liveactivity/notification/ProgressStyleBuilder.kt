@@ -181,8 +181,8 @@ internal class ProgressStyleBuilder(
   }
 
   /**
-   * Tracker indicator: the system ⚽ emoji when the backend design requests it
-   * (`design.android.hasTrackerIcon == true`), otherwise a plain dot tinted
+   * Tracker indicator: the system ⚽ emoji when the design requests it
+   * (`hasTrackerIcon`), otherwise a plain dot tinted
    * with the progress bar colour (the system renders no indicator on its own).
    */
   private fun applyTrackerIcon(
@@ -346,7 +346,7 @@ internal class ProgressStyleBuilder(
 
   /**
    * Elapsed match time in seconds. When the clock is running (playing phases and
-   * the generic [MatchPhase.OTHER]) and the backend supplied `statusChangedAt`,
+   * the generic [MatchPhase.OTHER]) and `statusChangedAt` is known,
    * it is `phase base + seconds elapsed since the status change`; otherwise the
    * phase's [MatchPhase.baseMinute] is used (e.g. FULL_TIME = 90:00).
    */

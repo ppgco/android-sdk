@@ -124,9 +124,7 @@ internal class LiveActivityHandler(
         return
       }
 
-    // Pushes don't carry the start policy. For campaigns with a countdown the
-    // `start` push arrives `countdown.seconds` before the scheduled kick-off, so
-    // fetch the document and attach the countdown for the pre-match view.
+    // The pre-match countdown is not part of the push, so fetch it separately.
     if ((activity.state as? FootballMatchState)?.liveData?.status == MatchPhase.PRE_MATCH) {
       activity = fetchCountdown(activity) ?: activity
     }
@@ -260,7 +258,7 @@ internal class LiveActivityHandler(
    * Re-post the notification at [LiveActivityRenderer.nextRefreshAtMs] while
    * the activity is live (e.g. every second so the game clock ticks and the
    * break-bar tracker moves smoothly). Stops when the renderer has nothing
-   * left to refresh. Each tick re-reads the tracked state, so backend updates
+   * left to refresh. Each tick re-reads the tracked state, so newer updates
    * are never overwritten.
    */
   @SuppressLint("MissingPermission")
@@ -375,7 +373,7 @@ internal class LiveActivityHandler(
     )
   }
 
-  /** Map backend [LiveActivityAction]s to notification actions with intents. */
+  /** Map [LiveActivityAction]s to notification actions with intents. */
   private fun buildActions(
     activity: TrackedLiveActivity,
     notificationId: Int,

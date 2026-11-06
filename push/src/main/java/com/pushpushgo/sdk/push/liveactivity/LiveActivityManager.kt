@@ -109,8 +109,8 @@ internal class LiveActivityManager(
   }
 
   /**
-   * Attach the pre-match countdown (from the GET document's `startPolicy`) to a
-   * tracked activity and persist it for process-death rebuilds.
+   * Attach the pre-match countdown to a tracked activity and persist it for
+   * process-death rebuilds.
    */
   fun setCountdown(
     liveActivityId: String,

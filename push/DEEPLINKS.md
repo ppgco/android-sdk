@@ -121,6 +121,9 @@ class MainActivity : AppCompatActivity() {
    depending on the `button` extra).
 5. Clear the `project` extra so the same click is not processed twice.
 
+Live Activity clicks go through the same call; see
+[LIVE_ACTIVITIES.md](LIVE_ACTIVITIES.md).
+
 ---
 
 ## Default behavior (opening the URL)

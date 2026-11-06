@@ -41,9 +41,7 @@ internal class LiveActivityController(
       manager = manager,
       apiRepository = apiRepository,
       onEvent = { eventType, laId, _, _, liveDataVersion ->
-        // Map internal LA lifecycle events to the backend statistics enum
-        // (started / closed / clicked / clicked_1 / clicked_2) and report them
-        // to the dedicated live-notification events endpoint.
+        // Report the lifecycle events that have a statistics type.
         val statisticsType =
           when (eventType) {
             "la.started" -> "started"
@@ -51,7 +49,7 @@ internal class LiveActivityController(
             "la.clicked_1" -> "clicked_1"
             "la.clicked_2" -> "clicked_2"
             "la.dismissed" -> "closed"
-            else -> null // la.ended not reported (no backend enum value)
+            else -> null // la.ended is not reported
           }
         if (statisticsType != null) {
           val laSubscriberId = sharedPref.getLiveActivitySubscriberId(laId)

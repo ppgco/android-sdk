@@ -12,10 +12,6 @@ Available templates:
   score, match phase, a per-second game clock and a progress bar with break
   indicators.
 
-The SDK renders every template on its own, so a template added in a newer SDK
-version only needs a dependency update — no app code changes. Older SDK
-versions ignore templates they don't support.
-
 ## Requirements
 
 | Requirement | Notes |
@@ -68,10 +64,11 @@ if (liveActivities.isSupported()) {
 liveActivities.unsubscribe("<liveNotificationId>")
 ```
 
-- Both methods are suspending (`subscribe` returns the backend LA subscriber id;
-  the SDK persists it, so `unsubscribe` only needs the live notification id).
-  Java callers can use `subscribeAsync` and `unsubscribeAsync`, which return a
+- Both methods are suspending (`subscribe` returns the LA subscriber id; the SDK
+  persists it, so `unsubscribe` only needs the live notification id). Java callers
+  can use `subscribeAsync` and `unsubscribeAsync`, which return a
   `CompletableFuture`.
+- `unsubscribe` does nothing if the device is not subscribed to the activity.
 - Subscribing to an already running activity renders its current state at once.
 - `subscribe` throws an `IllegalStateException` (`subscribeAsync` fails with it)
   if notifications are disabled. Request the notification permission before
@@ -79,39 +76,27 @@ liveActivities.unsubscribe("<liveNotificationId>")
 
 ### 2. Handle clicks
 
-Add this to your launcher (main) activity, next to the existing
-`handleBackgroundNotificationClick` calls:
+Live Activity clicks use the same call as regular pushes. Forward the intent in
+your launcher (main) activity:
 
 ```kotlin
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     // ...
     PushNotifications.handleBackgroundNotificationClick(intent)
-    PushNotifications.liveActivities.handleClick(intent)
 }
 
 override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     PushNotifications.handleBackgroundNotificationClick(intent)
-    PushNotifications.liveActivities.handleClick(intent)
 }
 ```
 
-`liveActivities.handleClick`:
+For a Live Activity click the SDK:
 - reports the click analytics event (notification body and action buttons are
   distinguished automatically),
 - opens the deep link carried by the notification through the SDK's
-  notification click handler — the same routing used for regular push clicks,
-- returns the deep link (or `null` if the intent was not a Live Activity click).
-
-To handle the link yourself, pass `openDeepLink = false`:
-
-```kotlin
-val deepLink = PushNotifications.liveActivities.handleClick(intent, openDeepLink = false)
-if (deepLink != null) {
-    // custom navigation
-}
-```
+  notification click handler — the same routing used for regular push clicks.
 
 ### 3. Deep link routing (optional)
 
@@ -138,21 +123,17 @@ PushNotifications.setNotificationClickHandler { context, url, overrideFlags ->
 | `liveActivities.subscribeAsync(id): CompletableFuture<String>` | Java-friendly asynchronous subscription wrapper |
 | `liveActivities.unsubscribe(id): Unit` | Suspends while unsubscribing the device |
 | `liveActivities.unsubscribeAsync(id): CompletableFuture<Void?>` | Java-friendly asynchronous unsubscription wrapper |
-| `liveActivities.getSubscriberId(id): String` | Persisted LA subscriber id (empty if not subscribed) |
-| `liveActivities.getActiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities of every template (`id`, `template`, `status`, `createdAt`, `updatedAt`) |
-| `liveActivities.isActive(id): Boolean` | Whether a given activity is currently active |
-| `liveActivities.handleClick(intent, openDeepLink = true): String?` | Click analytics + deep link handling (see above) |
+| `liveActivities.getActiveLiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities (`id`, `template`) |
 
 All Live Activity APIs are safe to call on any API level; on devices below
 API 36 they degrade gracefully (no rendering).
 
-`LiveActivityTemplate` is not an enum: new templates are added in minor
-releases. When you match on it, handle other values too:
+When you match on `LiveActivityTemplate`, handle other values too:
 
 ```kotlin
 when (activity.template) {
   LiveActivityTemplate.FOOTBALL_MATCH_TRACKING -> …
-  else -> … // templates added in newer SDK versions
+  else -> …
 }
 ```
 

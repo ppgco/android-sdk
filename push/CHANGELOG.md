@@ -101,16 +101,21 @@
   `PushNotifications.liveActivities` facade.
 - Subscribing to a Live Activity requires notification permission instead of a
   registered push subscriber.
-- `LiveActivity` exposes only the fields shared by every template: `id`,
-  `template`, `status`, `createdAt` and `updatedAt`. It is no longer a data class.
+- `LiveActivity` exposes only `id` and `template`. It is no longer a data class.
   Template-specific models (`FootballMatchConfiguration`, `FootballMatchContent`,
   `FootballMatchLiveData`, `FootballMatchAndroidDesign`, `HotMessage`,
   `LiveActivityAction`, `LiveActivityActionType`, `LiveActivityColor`,
-  `LiveActivityColorSet`, `MatchPhase`, `LiveActivityEvent`) are no longer public.
-- `LiveActivityTemplate` is a class with constants instead of an enum, so new
-  templates can be added in minor releases; handle unknown values (e.g. an `else`
-  branch) when matching on it.
-- `liveActivities.getActiveActivities()` returns activities of every template.
+  `LiveActivityColorSet`, `MatchPhase`, `LiveActivityEvent`), `LiveActivityStatus`
+  and `LiveActivityDismissReceiver` are no longer public.
+- `LiveActivityTemplate` is a class with constants instead of an enum; handle other
+  values (e.g. an `else` branch) when matching on it.
+- Live Activity clicks are handled by
+  `PushNotifications.handleBackgroundNotificationClick(...)`. For custom routing use
+  `setNotificationClickHandler(...)`.
+- Removed `isLiveActivityActive(...)`, `getLiveActivitySubscriberId(...)` and
+  `simulateLiveActivityPush(...)`. `liveActivities.subscribe(...)` still returns the
+  Live Activity subscriber ID.
+- `liveActivities.unsubscribe(...)` does nothing if the device is not subscribed.
 - Pushes of a template not supported by the SDK version are ignored instead of
   being rendered as a football match.
 
@@ -133,7 +138,10 @@ This release **requires code changes** and is not source-compatible with `3.x`.
 | `getPushToken()` (`ListenableFuture<String>`) | `getPushToken()` (`String?`) |
 | `migrateToNewProject(...)` | `switchProject(...)` / `switchProjectAsync(...)` |
 | Live Activity methods on `PushPushGo` | `PushNotifications.liveActivities` |
-| `LiveActivity.configuration` / `liveData` | removed; use `id`, `template` and `status` |
+| `handleLiveActivityClick(...)` | `handleBackgroundNotificationClick(...)` |
+| `isLiveActivityActive(id)` | `liveActivities.getActiveLiveActivities()` |
+| `getLiveActivitySubscriberId(id)` | removed; `liveActivities.subscribe(...)` returns the ID |
+| `LiveActivity.configuration`, `liveData` and other template data | removed; use `id` and `template` |
 | `PPGoNotification` | `PushPushGoNotification` |
 | `setNotificationHandler(...)` | `setNotificationClickHandler(...)` |
 | `setOnInvalidProjectIdHandler(...)` | `setInvalidProjectIdHandler(...)` |
