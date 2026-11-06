@@ -4,10 +4,12 @@ import android.Manifest
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
+import com.pushpushgo.sdk.push.NotificationClickHandler
 import com.pushpushgo.sdk.push.PushNotificationsCallbacks
 import com.pushpushgo.sdk.push.PushNotificationsRuntime
 import com.pushpushgo.sdk.push.liveactivity.notification.LiveActivityNotificationChannel
@@ -116,11 +118,31 @@ class LiveActivitiesTest {
       assertTrue(apiService.unsubscribedLiveActivityUrls.isEmpty())
     }
 
-  private fun TestScope.createRuntime() =
+  @Test
+  fun `background click handling opens the deep link of a live activity click once`() =
+    runTest {
+      val clicks = mutableListOf<Pair<String, Int>>()
+      val callbacks =
+        PushNotificationsCallbacks().apply {
+          notificationClickHandler = NotificationClickHandler { _, url, overrideFlags -> clicks += url to overrideFlags }
+        }
+      val runtime = createRuntime(callbacks)
+      val intent =
+        Intent()
+          .putExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID, "live-1")
+          .putExtra(LiveActivityHandler.EXTRA_DEEP_LINK, "app://match/1")
+
+      runtime.handleBackgroundNotificationClick(intent, Intent.FLAG_ACTIVITY_NEW_TASK)
+      runtime.handleBackgroundNotificationClick(intent, Intent.FLAG_ACTIVITY_NEW_TASK)
+
+      assertEquals(listOf("app://match/1" to Intent.FLAG_ACTIVITY_NEW_TASK), clicks)
+    }
+
+  private fun TestScope.createRuntime(callbacks: PushNotificationsCallbacks = PushNotificationsCallbacks()) =
     PushNotificationsRuntime(
       application = application,
       config = config,
-      callbacks = PushNotificationsCallbacks(),
+      callbacks = callbacks,
       apiServiceFactory = { apiService },
       pushTokenProvider = { "push-token" },
       dispatcher = StandardTestDispatcher(testScheduler),

@@ -128,21 +128,12 @@ class LiveActivities internal constructor(
       null
     }
 
-  /**
-   * Handles a Live Activity notification click. Call from `Activity.onCreate()` or
-   * `Activity.onNewIntent()` alongside background notification click handling.
-   *
-   * Reports click analytics and, unless [openDeepLink] is `false`, opens the carried
-   * deep link through the configured notification click handler.
-   *
-   * @return the deep link, or `null` if this was not a Live Activity click
-   */
-  @JvmOverloads
-  fun handleClick(
+  /** Handles a Live Activity notification click. Returns `false` if [intent] is not one. */
+  internal fun handleClick(
     intent: Intent?,
-    openDeepLink: Boolean = true,
-  ): String? {
+    overrideFlags: Int,
+  ): Boolean {
     assertActive()
-    return controller.handleClick(application, intent, openDeepLink)
+    return controller.handleClick(application, intent, overrideFlags)
   }
 }

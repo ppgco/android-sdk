@@ -139,9 +139,6 @@ public final class com/pushpushgo/sdk/push/exception/PushPushException : java/io
 
 public final class com/pushpushgo/sdk/push/liveactivity/LiveActivities {
 	public final fun getActiveLiveActivities ()Ljava/util/List;
-	public final fun handleClick (Landroid/content/Intent;)Ljava/lang/String;
-	public final fun handleClick (Landroid/content/Intent;Z)Ljava/lang/String;
-	public static synthetic fun handleClick$default (Lcom/pushpushgo/sdk/push/liveactivity/LiveActivities;Landroid/content/Intent;ZILjava/lang/Object;)Ljava/lang/String;
 	public final fun isSupported ()Z
 	public final synthetic fun subscribe (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun subscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;

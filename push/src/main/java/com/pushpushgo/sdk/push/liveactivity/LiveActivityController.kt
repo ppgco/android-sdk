@@ -103,16 +103,15 @@ internal class LiveActivityController(
 
   /**
    * Handles a Live Activity notification click: reports the click analytics event
-   * and, unless [openDeepLink] is false, opens the carried deep link through the
-   * shared notification click handler. Returns the deep link, or `null` when the
-   * intent is not a Live Activity click.
+   * and opens the carried deep link through the shared notification click handler.
+   * Returns `false` when the intent is not a Live Activity click.
    */
   fun handleClick(
     application: Application,
     intent: Intent?,
-    openDeepLink: Boolean,
-  ): String? {
-    val laId = intent?.getStringExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID) ?: return null
+    overrideFlags: Int,
+  ): Boolean {
+    val laId = intent?.getStringExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID) ?: return false
     val deepLink = intent.getStringExtra(LiveActivityHandler.EXTRA_DEEP_LINK)
     val actionIndex = intent.getIntExtra(LiveActivityHandler.EXTRA_ACTION_INDEX, -1)
 
@@ -120,11 +119,11 @@ internal class LiveActivityController(
     intent.removeExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID)
     intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
 
-    if (openDeepLink && !deepLink.isNullOrBlank()) {
-      callbacks.notifyNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (!deepLink.isNullOrBlank()) {
+      callbacks.notifyNotificationClick(application, deepLink, overrideFlags)
     }
 
-    return deepLink
+    return true
   }
 
   /**

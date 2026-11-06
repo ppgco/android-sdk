@@ -312,6 +312,7 @@ internal class PushNotificationsRuntime(
     intent: Intent?,
     overrideFlags: Int,
   ) {
+    if (liveActivities.handleClick(intent, overrideFlags)) return
     if (intent?.hasExtra(PushNotificationDelegate.PROJECT_ID_EXTRA) != true) return
 
     val intentProjectId = intent.getStringExtra(PushNotificationDelegate.PROJECT_ID_EXTRA)
