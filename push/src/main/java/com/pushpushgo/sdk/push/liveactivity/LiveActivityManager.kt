@@ -30,11 +30,6 @@ internal class LiveActivityManager(
         persistence.clearActivity(id)
         continue
       }
-      if (rebuilt.isPastAutoEnd(System.currentTimeMillis())) {
-        logDebug("LiveActivityManager: activity $id ended on its own while the app was not running, clearing")
-        persistence.clearActivity(id)
-        continue
-      }
       activeActivities[id] = rebuilt
     }
   }
@@ -157,27 +152,6 @@ internal class LiveActivityManager(
     return ended
   }
 
-  /**
-   * End an activity without a backend `end` push, e.g. when its end time
-   * passed. Returns null when the activity is unknown or already ended.
-   */
-  fun endActivityLocally(id: String): TrackedLiveActivity? {
-    val current = activeActivities[id] ?: persistence.rebuild(id) ?: return null
-    if (current.status == LiveActivityStatus.ENDED) return null
-
-    val ended =
-      current.copy(
-        hotMessage = null,
-        status = LiveActivityStatus.ENDED,
-        updatedAt = System.currentTimeMillis(),
-      )
-    activeActivities[id] = ended
-    persistence.setStatus(id, LiveActivityStatus.ENDED)
-
-    logDebug("LiveActivityManager: ended activity $id locally")
-    return ended
-  }
-
   fun removeActivity(id: String) {
     activeActivities.remove(id)
     persistence.clearActivity(id)
@@ -193,8 +167,6 @@ internal class LiveActivityManager(
   fun getActivity(id: String): TrackedLiveActivity? = activeActivities[id]
 
   fun getNotificationId(id: String): Int = persistence.getNotificationId(id)
-
-  fun isDismissedByUser(id: String): Boolean = persistence.isDismissedByUser(id)
 
   fun getActiveActivities(): List<TrackedLiveActivity> = activeActivities.values.filter { it.status != LiveActivityStatus.ENDED }
 

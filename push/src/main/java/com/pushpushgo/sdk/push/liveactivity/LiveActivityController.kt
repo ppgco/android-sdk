@@ -73,7 +73,6 @@ internal class LiveActivityController(
   fun restoreFromPersistence() {
     if (Build.VERSION.SDK_INT >= 36) {
       manager?.restoreFromPersistence()
-      handler?.resumeRestoredActivities()
     }
   }
 

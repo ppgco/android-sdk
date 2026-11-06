@@ -121,18 +121,6 @@ internal class LiveActivityManagerTest {
   }
 
   @Test
-  fun `endActivityLocally ends a tracked activity once and persists the status`() {
-    manager.startActivity(startPush())
-
-    val ended = assertNotNull(manager.endActivityLocally("test-la-1"))
-
-    assertEquals(LiveActivityStatus.ENDED, ended.status)
-    assertEquals(LiveActivityStatus.ENDED, persistence.getStatus("test-la-1"))
-    assertNull(manager.endActivityLocally("test-la-1")) // already ended
-    assertNull(manager.endActivityLocally("unknown"))
-  }
-
-  @Test
   fun `started activity is restored by a new manager`() {
     val started = assertNotNull(manager.startActivity(startPush()))
     val restartedManager = LiveActivityManager(persistence)

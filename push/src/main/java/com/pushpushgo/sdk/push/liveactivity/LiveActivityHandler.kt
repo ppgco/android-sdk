@@ -27,12 +27,10 @@ import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.logWarning
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -76,9 +74,6 @@ internal class LiveActivityHandler(
    * clock) stays fresh.
    */
   private val tickerJobs = ConcurrentHashMap<Int, Job>()
-
-  /** Per-activity jobs ending the activity at its [com.pushpushgo.sdk.push.liveactivity.data.LiveActivityState.autoEndAtMs]. */
-  private val autoEndJobs = ConcurrentHashMap<String, Job>()
 
   private fun rendererFor(activity: TrackedLiveActivity): LiveActivityRenderer =
     when (activity.state) {
@@ -129,14 +124,6 @@ internal class LiveActivityHandler(
         return
       }
 
-    // A late `start` (e.g. delivered after the activity's end time) has nothing
-    // left to show.
-    if (activity.isPastAutoEnd(System.currentTimeMillis())) {
-      logDebug("LiveActivityHandler: activity ${activity.id} already ended on its own, not showing it")
-      manager.removeActivity(activity.id)
-      return
-    }
-
     // Pushes don't carry the start policy. For campaigns with a countdown the
     // `start` push arrives `countdown.seconds` before the scheduled kick-off, so
     // fetch the document and attach the countdown for the pre-match view.
@@ -183,25 +170,9 @@ internal class LiveActivityHandler(
     logDebug("LiveActivityHandler: updated notification $notificationId for ${updatedActivity.id}")
   }
 
-  private suspend fun handleEnd(push: LiveActivityPush) {
-    autoEndJobs.remove(push.id)?.cancel()
-    val endedActivity = manager.endActivity(push) ?: return
-    showEnded(endedActivity)
-  }
-
-  /**
-   * End an activity that reached its [com.pushpushgo.sdk.push.liveactivity.data.LiveActivityState.autoEndAtMs]
-   * without a backend `end` push.
-   */
-  private suspend fun endLocally(liveActivityId: String) {
-    val endedActivity = manager.endActivityLocally(liveActivityId) ?: return
-    logDebug("LiveActivityHandler: activity $liveActivityId reached its end, ending it locally")
-    showEnded(endedActivity)
-  }
-
-  /** Show the final notification of an ended activity, then remove it after a delay. */
   @SuppressLint("MissingPermission")
-  private suspend fun showEnded(endedActivity: TrackedLiveActivity) {
+  private suspend fun handleEnd(push: LiveActivityPush) {
+    val endedActivity = manager.endActivity(push) ?: return
     val notificationId = manager.getNotificationId(endedActivity.id)
     if (notificationId == -1) return
 
@@ -259,7 +230,6 @@ internal class LiveActivityHandler(
         showHotMessage = hotMessage != null,
       )
     NotificationManagerCompat.from(context).notify(notificationId, notification)
-    scheduleAutoEnd(activity)
 
     if (hotMessage != null) {
       // Pause the ticker while the hot message is displayed, then revert and resume.
@@ -337,7 +307,6 @@ internal class LiveActivityHandler(
     if (notificationId != -1) {
       cancelTicker(notificationId)
     }
-    autoEndJobs.remove(liveActivityId)?.cancel()
 
     manager.removeActivity(liveActivityId)
 
@@ -346,53 +315,9 @@ internal class LiveActivityHandler(
     }
   }
 
-  /**
-   * (Re)schedule the local end of an activity with an
-   * [com.pushpushgo.sdk.push.liveactivity.data.LiveActivityState.autoEndAtMs];
-   * every update reschedules it, as the end may have moved.
-   */
-  private fun scheduleAutoEnd(activity: TrackedLiveActivity) {
-    autoEndJobs.remove(activity.id)?.cancel()
-    val autoEndAtMs = activity.state.autoEndAtMs ?: return
-
-    val job =
-      scope.launch(start = CoroutineStart.LAZY) {
-        delay((autoEndAtMs - System.currentTimeMillis()).coerceAtLeast(0L))
-        // Unregister first: ending cancels the activity's pending auto-end job.
-        autoEndJobs.remove(activity.id, coroutineContext.job)
-        endLocally(activity.id)
-      }
-    autoEndJobs[activity.id] = job
-    job.start()
-  }
-
-  /**
-   * Re-post restored activities that end on their own, so their refreshes and
-   * local end are scheduled again after the app process was restarted.
-   * Activities that already ended on their own are dropped by
-   * [LiveActivityManager.restoreFromPersistence].
-   */
-  fun resumeRestoredActivities() {
-    for (activity in manager.getActiveActivities()) {
-      if (activity.state.autoEndAtMs == null || manager.isDismissedByUser(activity.id)) continue
-      val notificationId = manager.getNotificationId(activity.id)
-      if (notificationId == -1) continue
-
-      scope.launch {
-        try {
-          notifyActivity(notificationId, activity)
-          logDebug("LiveActivityHandler: resumed notification $notificationId for ${activity.id}")
-        } catch (e: Exception) {
-          logError("LiveActivityHandler: failed to resume live activity ${activity.id}", e)
-        }
-      }
-    }
-  }
-
   fun handleDismiss(liveActivityId: String) {
     val activity = manager.getActivity(liveActivityId)
     manager.markDismissedByUser(liveActivityId)
-    autoEndJobs.remove(liveActivityId)?.cancel()
 
     val notificationId = manager.getNotificationId(liveActivityId)
     if (notificationId != -1) {
@@ -400,8 +325,7 @@ internal class LiveActivityHandler(
       NotificationManagerCompat.from(context).cancel(notificationId)
     }
 
-    // Past its end the notification is removed by the system timeout, not the user.
-    if (activity != null && !activity.isPastAutoEnd(System.currentTimeMillis())) {
+    if (activity != null) {
       onEvent?.invoke("la.dismissed", liveActivityId, activity.projectId, activity.subscriberId, activity.liveDataVersion)
     }
     logDebug("LiveActivityHandler: dismissed $liveActivityId by user")

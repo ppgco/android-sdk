@@ -20,9 +20,6 @@ internal data class TrackedLiveActivity(
   val liveDataVersion: Int
     get() = state.liveDataVersion
 
-  /** Whether the activity already reached its [LiveActivityState.autoEndAtMs] at [nowMs]. */
-  fun isPastAutoEnd(nowMs: Long): Boolean = state.autoEndAtMs?.let { nowMs >= it } ?: false
-
   /** Public projection exposed by `LiveActivities.getActiveActivities()`. */
   fun toLiveActivity(): LiveActivity =
     LiveActivity(

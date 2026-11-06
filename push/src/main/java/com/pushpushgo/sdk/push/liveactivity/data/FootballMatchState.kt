@@ -17,9 +17,6 @@ internal data class FootballMatchState(
 
   override val actions: List<LiveActivityAction>
     get() = configuration.actions
-
-  override val autoEndAtMs: Long?
-    get() = null
 }
 
 /** [LiveActivityStateUpdate] of the `FOOTBALL_MATCH_TRACKING` template. */

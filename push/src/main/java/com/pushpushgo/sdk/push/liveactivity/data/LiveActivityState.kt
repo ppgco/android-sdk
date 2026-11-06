@@ -15,12 +15,6 @@ internal sealed interface LiveActivityState {
 
   /** Call-to-action buttons rendered on the notification. */
   val actions: List<LiveActivityAction>
-
-  /**
-   * Epoch millis at which the SDK ends the activity on its own (for templates
-   * with a fixed end time), or null when only the backend ends it.
-   */
-  val autoEndAtMs: Long?
 }
 
 /**
