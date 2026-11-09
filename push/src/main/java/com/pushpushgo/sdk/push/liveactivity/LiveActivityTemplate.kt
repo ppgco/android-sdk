@@ -1,9 +1,6 @@
 package com.pushpushgo.sdk.push.liveactivity
 
-/**
- * Identifier of a Live Activity template. Code matching on it should handle other
- * values too (e.g. an `else` branch).
- */
+/** Identifier of a Live Activity template. */
 class LiveActivityTemplate private constructor(
   val value: String,
 ) {

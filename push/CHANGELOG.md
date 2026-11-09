@@ -110,8 +110,7 @@
   and `LiveActivityDismissReceiver` are no longer public.
 - `LiveActivity` and `LiveActivityTemplate` moved from
   `com.pushpushgo.sdk.push.liveactivity.data` to `com.pushpushgo.sdk.push.liveactivity`.
-- `LiveActivityTemplate` is a class with constants instead of an enum; handle other
-  values (e.g. an `else` branch) when matching on it.
+- `LiveActivityTemplate` is a class with constants instead of an enum.
 - Live Activity clicks are handled by
   `PushNotifications.handleBackgroundNotificationClick(...)`. For custom routing use
   `setNotificationClickHandler(...)`.

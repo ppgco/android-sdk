@@ -128,15 +128,6 @@ PushNotifications.setNotificationClickHandler { context, url, overrideFlags ->
 All Live Activity APIs are safe to call on any API level; on devices below
 API 36 they degrade gracefully (no rendering).
 
-When you match on `LiveActivityTemplate`, handle other values too:
-
-```kotlin
-when (activity.template) {
-  LiveActivityTemplate.FOOTBALL_MATCH_TRACKING -> …
-  else -> …
-}
-```
-
 ## What the notification shows
 
 Everything below is driven by the campaign configuration — no app code needed.
