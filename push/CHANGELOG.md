@@ -115,8 +115,8 @@
   `PushNotifications.handleBackgroundNotificationClick(...)`. For custom routing use
   `setNotificationClickHandler(...)`.
 - Removed `isLiveActivityActive(...)`, `getLiveActivitySubscriberId(...)` and
-  `simulateLiveActivityPush(...)`. `liveActivities.subscribe(...)` still returns the
-  Live Activity subscriber ID.
+  `simulateLiveActivityPush(...)`. `liveActivities.subscribe(...)` no longer returns
+  the Live Activity subscriber ID; the SDK keeps it internally.
 - `liveActivities.unsubscribe(...)` does nothing if the device is not subscribed.
 - Pushes with a missing template, or a template not supported by the SDK version,
   are ignored instead of being rendered as a football match.
@@ -147,12 +147,12 @@ This release **requires code changes** and is not source-compatible with `3.x`.
 | `isPPGoPush(...)` | `isPushPushGoNotification(...)` |
 | `PushPushGoSubscriptionBridgeManager` | `getPushSubscriptionProvider()` |
 | `isLiveActivitiesSupported()` | `liveActivities.isSupported()` |
-| `subscribeToLiveActivity(id)` | `liveActivities.subscribe(id)` / `subscribeAsync(id)` |
+| `subscribeToLiveActivity(id)` | `liveActivities.subscribe(id)` / `subscribeAsync(id)`, without a return value |
 | `unsubscribeFromLiveActivity(id)` | `liveActivities.unsubscribe(id)` / `unsubscribeAsync(id)` |
 | `getActiveLiveActivities()` | `liveActivities.getActiveLiveActivities()` |
 | `handleLiveActivityClick(...)` | `handleBackgroundNotificationClick(...)` |
 | `isLiveActivityActive(id)` | `liveActivities.getActiveLiveActivities()` |
-| `getLiveActivitySubscriberId(id)` | removed; `liveActivities.subscribe(...)` returns the ID |
+| `getLiveActivitySubscriberId(id)` | removed |
 | `LiveActivity.configuration`, `liveData` and other template data | removed; use `id` and `template` |
 | `PPGoNotification` | `PushPushGoNotification` |
 | `setNotificationHandler(...)` | `setNotificationClickHandler(...)` |

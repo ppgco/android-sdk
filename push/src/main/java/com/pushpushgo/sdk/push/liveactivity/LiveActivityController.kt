@@ -78,13 +78,12 @@ internal class LiveActivityController(
 
   fun getActiveLiveActivities(): List<LiveActivity> = manager?.getActiveActivities()?.map { it.toLiveActivity() } ?: emptyList()
 
-  suspend fun subscribe(liveActivityId: String): String {
+  suspend fun subscribe(liveActivityId: String) {
     val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)
     sharedPref.setLiveActivitySubscriberId(liveActivityId, laSubscriberId)
     // Catch up: render the current state for subscribers that joined after the
     // `start` push was already delivered (no-op if the LA isn't live yet).
     catchUp(liveActivityId)
-    return laSubscriberId
   }
 
   suspend fun unsubscribe(liveActivityId: String) {

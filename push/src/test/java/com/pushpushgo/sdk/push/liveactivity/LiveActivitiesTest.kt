@@ -56,10 +56,9 @@ class LiveActivitiesTest {
     runTest {
       val liveActivities = createRuntime().liveActivities
 
-      val liveActivitySubscriberId = liveActivities.subscribe("live-1")
+      liveActivities.subscribe("live-1")
 
       assertEquals(1, apiService.liveActivitySubscribeRequests.size)
-      assertEquals(FakeApiService.LIVE_ACTIVITY_SUBSCRIBER_ID, liveActivitySubscriberId)
       assertEquals(FakeApiService.LIVE_ACTIVITY_SUBSCRIBER_ID, preferences.getLiveActivitySubscriberId("live-1"))
     }
 

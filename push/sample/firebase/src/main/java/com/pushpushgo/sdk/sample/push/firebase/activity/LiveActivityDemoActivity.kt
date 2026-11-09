@@ -103,8 +103,8 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
     val id = liveNotificationId()
     lifecycleScope.launch {
       try {
-        val laSubscriberId = liveActivities.subscribe(id)
-        toast("Subscribed to $id (laSubscriberId=$laSubscriberId)")
+        liveActivities.subscribe(id)
+        toast("Subscribed to $id")
       } catch (error: Exception) {
         Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.subscribe failed")
         toast("Subscribe failed: ${error.message}")

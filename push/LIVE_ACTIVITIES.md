@@ -56,16 +56,14 @@ notification campaign        (PUT /live-data),                 │
 val liveActivities = PushNotifications.liveActivities
 
 if (liveActivities.isSupported()) {
-    val laSubscriberId = liveActivities.subscribe("<liveNotificationId>")
-    // subscribed; laSubscriberId is also persisted by the SDK
+    liveActivities.subscribe("<liveNotificationId>")
 }
 
 // Later:
 liveActivities.unsubscribe("<liveNotificationId>")
 ```
 
-- Both methods are suspending (`subscribe` returns the LA subscriber id; the SDK
-  persists it, so `unsubscribe` only needs the live notification id). Java callers
+- Both methods are suspending and take only the live notification id. Java callers
   can use `subscribeAsync` and `unsubscribeAsync`, which return a
   `CompletableFuture`.
 - `unsubscribe` does nothing if the device is not subscribed to the activity.
@@ -119,8 +117,8 @@ PushNotifications.setNotificationClickHandler { context, url, overrideFlags ->
 | Method | Description |
 |---|---|
 | `liveActivities.isSupported(): Boolean` | `true` on API 36+ |
-| `liveActivities.subscribe(id): String` | Suspends while subscribing the device and returns the LA subscriber id |
-| `liveActivities.subscribeAsync(id): CompletableFuture<String>` | Java-friendly asynchronous subscription wrapper |
+| `liveActivities.subscribe(id): Unit` | Suspends while subscribing the device |
+| `liveActivities.subscribeAsync(id): CompletableFuture<Void?>` | Java-friendly asynchronous subscription wrapper |
 | `liveActivities.unsubscribe(id): Unit` | Suspends while unsubscribing the device |
 | `liveActivities.unsubscribeAsync(id): CompletableFuture<Void?>` | Java-friendly asynchronous unsubscription wrapper |
 | `liveActivities.getActiveLiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities (`id`, `template`) |

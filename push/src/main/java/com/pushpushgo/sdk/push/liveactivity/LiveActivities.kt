@@ -59,17 +59,13 @@ class LiveActivities internal constructor(
   /**
    * Subscribes this device to a Live Activity.
    *
-   * Returns the assigned Live Activity subscriber ID. The SDK keeps it for later
-   * [unsubscribe] calls.
-   *
    * Request the notification permission before calling this method.
    *
    * @param liveNotificationId ID of the Live Activity to follow
-   * @return the assigned Live Activity subscriber ID
    * @throws IllegalStateException if notifications are disabled
    */
   @JvmSynthetic
-  suspend fun subscribe(liveNotificationId: String): String =
+  suspend fun subscribe(liveNotificationId: String) {
     operationMutex.withLock {
       assertActive()
 
@@ -82,6 +78,7 @@ class LiveActivities internal constructor(
 
       controller.subscribe(liveNotificationId)
     }
+  }
 
   /**
    * Subscribes this device to a Live Activity.
@@ -91,12 +88,13 @@ class LiveActivities internal constructor(
    * Request the notification permission before calling this method.
    *
    * @param liveNotificationId ID of the Live Activity to follow
-   * @return future with the assigned Live Activity subscriber ID; it fails with
+   * @return future that completes once the device is subscribed; it fails with
    * [IllegalStateException] if notifications are disabled
    */
-  fun subscribeAsync(liveNotificationId: String): CompletableFuture<String> =
+  fun subscribeAsync(liveNotificationId: String): CompletableFuture<Void?> =
     scope.future {
       subscribe(liveNotificationId)
+      null
     }
 
   /**
