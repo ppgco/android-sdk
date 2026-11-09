@@ -1,5 +1,6 @@
-package com.pushpushgo.sdk.push.liveactivity.data
+package com.pushpushgo.sdk.push.liveactivity
 
+import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

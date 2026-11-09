@@ -1,4 +1,4 @@
-package com.pushpushgo.sdk.push.liveactivity.data
+package com.pushpushgo.sdk.push.liveactivity
 
 /**
  * Identifier of a Live Activity template. Code matching on it should handle other

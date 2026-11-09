@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Intent
 import com.pushpushgo.sdk.core.internal.NotificationPermissionProvider
 import com.pushpushgo.sdk.push.PushNotificationsCallbacks
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
 import com.pushpushgo.sdk.push.liveactivity.notification.LiveActivityNotificationChannel
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper

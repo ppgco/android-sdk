@@ -15,7 +15,6 @@ import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityActionType
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityEvent
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
 import com.pushpushgo.sdk.push.liveactivity.data.TrackedLiveActivity
 import com.pushpushgo.sdk.push.liveactivity.notification.FootballMatchRenderer

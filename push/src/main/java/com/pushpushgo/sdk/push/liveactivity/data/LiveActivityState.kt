@@ -1,5 +1,7 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityTemplate
+
 /**
  * Template-specific state of a tracked Live Activity: the static configuration
  * plus the latest live data. Each [LiveActivityTemplate] has its own

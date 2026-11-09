@@ -1,5 +1,6 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityTemplate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

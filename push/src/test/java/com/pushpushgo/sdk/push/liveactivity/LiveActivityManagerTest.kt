@@ -6,7 +6,6 @@ import com.pushpushgo.sdk.push.liveactivity.data.FootballMatchState
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityEvent
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPush
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityStatus
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityTemplate
 import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
 import com.pushpushgo.sdk.push.liveactivity.data.TrackedLiveActivity
 import org.junit.After

@@ -108,6 +108,8 @@
   `LiveActivityAction`, `LiveActivityActionType`, `LiveActivityColor`,
   `LiveActivityColorSet`, `MatchPhase`, `LiveActivityEvent`), `LiveActivityStatus`
   and `LiveActivityDismissReceiver` are no longer public.
+- `LiveActivity` and `LiveActivityTemplate` moved from
+  `com.pushpushgo.sdk.push.liveactivity.data` to `com.pushpushgo.sdk.push.liveactivity`.
 - `LiveActivityTemplate` is a class with constants instead of an enum; handle other
   values (e.g. an `else` branch) when matching on it.
 - Live Activity clicks are handled by

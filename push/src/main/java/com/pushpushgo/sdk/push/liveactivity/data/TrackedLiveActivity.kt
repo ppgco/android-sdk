@@ -1,5 +1,8 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
+import com.pushpushgo.sdk.push.liveactivity.LiveActivity
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityTemplate
+
 /**
  * Internal, template-agnostic representation of a tracked Live Activity.
  * Combines the lifecycle fields shared by every template with the

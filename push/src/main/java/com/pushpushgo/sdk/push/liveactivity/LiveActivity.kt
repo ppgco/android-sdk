@@ -1,4 +1,4 @@
-﻿package com.pushpushgo.sdk.push.liveactivity.data
+﻿package com.pushpushgo.sdk.push.liveactivity
 
 /** A Live Activity currently tracked on this device. */
 class LiveActivity internal constructor(

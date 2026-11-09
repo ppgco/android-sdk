@@ -146,22 +146,22 @@ public final class com/pushpushgo/sdk/push/liveactivity/LiveActivities {
 	public final fun unsubscribeAsync (Ljava/lang/String;)Ljava/util/concurrent/CompletableFuture;
 }
 
-public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivity {
+public final class com/pushpushgo/sdk/push/liveactivity/LiveActivity {
 	public final fun getId ()Ljava/lang/String;
-	public final fun getTemplate ()Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+	public final fun getTemplate ()Lcom/pushpushgo/sdk/push/liveactivity/LiveActivityTemplate;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate {
-	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate$Companion;
-	public static final field FOOTBALL_MATCH_TRACKING Lcom/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate;
+public final class com/pushpushgo/sdk/push/liveactivity/LiveActivityTemplate {
+	public static final field Companion Lcom/pushpushgo/sdk/push/liveactivity/LiveActivityTemplate$Companion;
+	public static final field FOOTBALL_MATCH_TRACKING Lcom/pushpushgo/sdk/push/liveactivity/LiveActivityTemplate;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getValue ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/pushpushgo/sdk/push/liveactivity/data/LiveActivityTemplate$Companion {
+public final class com/pushpushgo/sdk/push/liveactivity/LiveActivityTemplate$Companion {
 }
 
 public final class com/pushpushgo/sdk/push/push/service/FcmMessagingServiceDelegate {
