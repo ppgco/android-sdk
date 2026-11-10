@@ -1,10 +1,10 @@
 ﻿package com.pushpushgo.sdk.push.liveactivity.data
 
-enum class LiveActivityStatus(
+/** Lifecycle status of a tracked Live Activity on this device. */
+internal enum class LiveActivityStatus(
   val value: String,
 ) {
   ACTIVE("active"),
-  PAUSED("paused"),
   ENDED("ended"),
   ;
 

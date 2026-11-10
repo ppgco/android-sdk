@@ -1,10 +1,7 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
-/**
- * All possible phases of a football match. Wire values mirror the backend /
- * iOS `MatchPhase` exactly (including the `OTHER` fallback bucket).
- */
-enum class MatchPhase(
+/** All possible phases of a football match, including the `OTHER` fallback bucket. */
+internal enum class MatchPhase(
   val value: String,
 ) {
   PRE_MATCH("PRE_MATCH"),
@@ -25,7 +22,7 @@ enum class MatchPhase(
   OTHER("OTHER"),
   ;
 
-  /** Default display text used when the backend does not override it via `statusLabels`. */
+  /** Default display text used when `statusLabels` does not override it. */
   val displayText: String
     get() =
       when (this) {
@@ -77,9 +74,8 @@ enum class MatchPhase(
         this == EXTRA_TIME_SECOND_HALF_ADDED_TIME
 
   /**
-   * Fallback match minute used to position the progress bar when the backend
-   * does not provide `statusChangedAt` (i.e. when the exact minute cannot be
-   * computed client-side).
+   * Fallback match minute used to position the progress bar when `statusChangedAt`
+   * is missing (i.e. when the exact minute cannot be computed).
    */
   val baseMinute: Int
     get() =
@@ -102,7 +98,7 @@ enum class MatchPhase(
       }
 
   companion object {
-    /** Tolerant lookup — unknown values map to [OTHER] (mirrors iOS fallback). */
+    /** Tolerant lookup — unknown values map to [OTHER]. */
     fun fromValue(value: String?): MatchPhase = entries.firstOrNull { it.value.equals(value, ignoreCase = true) } ?: OTHER
   }
 }

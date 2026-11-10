@@ -4,11 +4,11 @@ import android.app.Application
 import android.content.Intent
 import android.os.Build
 import com.pushpushgo.sdk.push.PushNotificationsCallbacks
-import com.pushpushgo.sdk.push.liveactivity.data.LiveActivity
 import com.pushpushgo.sdk.push.liveactivity.data.LiveActivityPayloadParser
 import com.pushpushgo.sdk.push.network.ApiRepository
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.utils.logError
+import com.pushpushgo.sdk.push.utils.logWarning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -40,9 +40,7 @@ internal class LiveActivityController(
       manager = manager,
       apiRepository = apiRepository,
       onEvent = { eventType, laId, _, _, liveDataVersion ->
-        // Map internal LA lifecycle events to the backend statistics enum
-        // (started / closed / clicked / clicked_1 / clicked_2) and report them
-        // to the dedicated live-notification events endpoint.
+        // Report the lifecycle events that have a statistics type.
         val statisticsType =
           when (eventType) {
             "la.started" -> "started"
@@ -50,7 +48,7 @@ internal class LiveActivityController(
             "la.clicked_1" -> "clicked_1"
             "la.clicked_2" -> "clicked_2"
             "la.dismissed" -> "closed"
-            else -> null // la.ended not reported (no backend enum value)
+            else -> null // la.ended is not reported
           }
         if (statisticsType != null) {
           val laSubscriberId = sharedPref.getLiveActivitySubscriberId(laId)
@@ -78,47 +76,38 @@ internal class LiveActivityController(
 
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36
 
-  fun getActiveActivities(): List<LiveActivity> = manager?.getActiveActivities() ?: emptyList()
+  fun getActiveLiveActivities(): List<LiveActivity> = manager?.getActiveActivities()?.map { it.toLiveActivity() } ?: emptyList()
 
-  fun isActive(id: String): Boolean = manager?.isActivityActive(id) ?: false
-
-  fun simulatePush(data: Map<String, String>) {
-    handler?.handlePush(data)
-  }
-
-  suspend fun subscribe(liveActivityId: String): String {
+  suspend fun subscribe(liveActivityId: String) {
     val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)
     sharedPref.setLiveActivitySubscriberId(liveActivityId, laSubscriberId)
     // Catch up: render the current state for subscribers that joined after the
     // `start` push was already delivered (no-op if the LA isn't live yet).
     catchUp(liveActivityId)
-    return laSubscriberId
   }
 
   suspend fun unsubscribe(liveActivityId: String) {
     val laSubscriberId = sharedPref.getLiveActivitySubscriberId(liveActivityId)
-    check(laSubscriberId.isNotEmpty()) {
-      "Not subscribed to live activity $liveActivityId"
+    if (laSubscriberId.isEmpty()) {
+      logWarning("Not subscribed to live activity $liveActivityId")
+      return
     }
     apiRepository.unsubscribeFromLiveActivity(liveActivityId, laSubscriberId)
     handler?.removeActivity(liveActivityId)
     sharedPref.removeLiveActivitySubscriberId(liveActivityId)
   }
 
-  fun getSubscriberId(liveNotificationId: String): String = sharedPref.getLiveActivitySubscriberId(liveNotificationId)
-
   /**
    * Handles a Live Activity notification click: reports the click analytics event
-   * and, unless [openDeepLink] is false, opens the carried deep link through the
-   * shared notification click handler. Returns the deep link, or `null` when the
-   * intent is not a Live Activity click.
+   * and opens the carried deep link through the shared notification click handler.
+   * Returns `false` when the intent is not a Live Activity click.
    */
   fun handleClick(
     application: Application,
     intent: Intent?,
-    openDeepLink: Boolean,
-  ): String? {
-    val laId = intent?.getStringExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID) ?: return null
+    overrideFlags: Int,
+  ): Boolean {
+    val laId = intent?.getStringExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID) ?: return false
     val deepLink = intent.getStringExtra(LiveActivityHandler.EXTRA_DEEP_LINK)
     val actionIndex = intent.getIntExtra(LiveActivityHandler.EXTRA_ACTION_INDEX, -1)
 
@@ -126,11 +115,11 @@ internal class LiveActivityController(
     intent.removeExtra(LiveActivityHandler.EXTRA_LIVE_ACTIVITY_ID)
     intent.removeExtra(LiveActivityHandler.EXTRA_ACTION_INDEX)
 
-    if (openDeepLink && !deepLink.isNullOrBlank()) {
-      callbacks.notifyNotificationClick(application, deepLink, Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (!deepLink.isNullOrBlank()) {
+      callbacks.notifyNotificationClick(application, deepLink, overrideFlags)
     }
 
-    return deepLink
+    return true
   }
 
   /**

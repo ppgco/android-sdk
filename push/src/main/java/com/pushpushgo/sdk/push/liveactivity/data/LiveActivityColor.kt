@@ -1,20 +1,16 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
 /**
- * A single color value resolved to a hex string. Mirrors the backend / iOS
- * `IColor` type: a solid `hex` or a gradient (for which Android uses `fromHex`
- * as the representative solid color, since [android.app.Notification.ProgressStyle]
- * segments only support solid colors).
+ * A single color value resolved to a hex string: a solid color, or the first color
+ * of a gradient, since [android.app.Notification.ProgressStyle] segments only support
+ * solid colors.
  */
-data class LiveActivityColor(
+internal data class LiveActivityColor(
   val hex: String,
 )
 
-/**
- * Light / dark variant pair for a color. Mirrors the backend / iOS
- * `IColorSet` (`{ lightMode, darkMode }`).
- */
-data class LiveActivityColorSet(
+/** Light / dark variant pair for a color. */
+internal data class LiveActivityColorSet(
   val lightMode: LiveActivityColor,
   val darkMode: LiveActivityColor,
 ) {

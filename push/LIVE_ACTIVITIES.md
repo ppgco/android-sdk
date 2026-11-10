@@ -6,9 +6,11 @@ notification using the Android 16 `ProgressStyle` (Live Updates) template and
 keeps it up to date from backend pushes, with no polling and no foreground
 service in your app.
 
-The first available template is **`FOOTBALL_MATCH_TRACKING`**: a football match
-tracker with team crests, live score, match phase, a per-second game clock and a
-progress bar with break indicators.
+Available templates:
+
+- **`FOOTBALL_MATCH_TRACKING`**: a football match tracker with team crests, live
+  score, match phase, a per-second game clock and a progress bar with break
+  indicators.
 
 ## Requirements
 
@@ -54,18 +56,17 @@ notification campaign        (PUT /live-data),                 │
 val liveActivities = PushNotifications.liveActivities
 
 if (liveActivities.isSupported()) {
-    val laSubscriberId = liveActivities.subscribe("<liveNotificationId>")
-    // subscribed; laSubscriberId is also persisted by the SDK
+    liveActivities.subscribe("<liveNotificationId>")
 }
 
 // Later:
 liveActivities.unsubscribe("<liveNotificationId>")
 ```
 
-- Both methods are suspending (`subscribe` returns the backend LA subscriber id;
-  the SDK persists it, so `unsubscribe` only needs the live notification id).
-  Java callers can use `subscribeAsync` and `unsubscribeAsync`, which return a
+- Both methods are suspending and take only the live notification id. Java callers
+  can use `subscribeAsync` and `unsubscribeAsync`, which return a
   `CompletableFuture`.
+- `unsubscribe` does nothing if the device is not subscribed to the activity.
 - Subscribing to an already running activity renders its current state at once.
 - `subscribe` throws an `IllegalStateException` (`subscribeAsync` fails with it)
   if notifications are disabled. Request the notification permission before
@@ -73,39 +74,27 @@ liveActivities.unsubscribe("<liveNotificationId>")
 
 ### 2. Handle clicks
 
-Add this to your launcher (main) activity, next to the existing
-`handleBackgroundNotificationClick` calls:
+Live Activity clicks use the same call as regular pushes. Forward the intent in
+your launcher (main) activity:
 
 ```kotlin
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     // ...
     PushNotifications.handleBackgroundNotificationClick(intent)
-    PushNotifications.liveActivities.handleClick(intent)
 }
 
 override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     PushNotifications.handleBackgroundNotificationClick(intent)
-    PushNotifications.liveActivities.handleClick(intent)
 }
 ```
 
-`liveActivities.handleClick`:
+For a Live Activity click the SDK:
 - reports the click analytics event (notification body and action buttons are
   distinguished automatically),
 - opens the deep link carried by the notification through the SDK's
-  notification click handler — the same routing used for regular push clicks,
-- returns the deep link (or `null` if the intent was not a Live Activity click).
-
-To handle the link yourself, pass `openDeepLink = false`:
-
-```kotlin
-val deepLink = PushNotifications.liveActivities.handleClick(intent, openDeepLink = false)
-if (deepLink != null) {
-    // custom navigation
-}
-```
+  notification click handler — the same routing used for regular push clicks.
 
 ### 3. Deep link routing (optional)
 
@@ -128,14 +117,11 @@ PushNotifications.setNotificationClickHandler { context, url, overrideFlags ->
 | Method | Description |
 |---|---|
 | `liveActivities.isSupported(): Boolean` | `true` on API 36+ |
-| `liveActivities.subscribe(id): String` | Suspends while subscribing the device and returns the LA subscriber id |
-| `liveActivities.subscribeAsync(id): CompletableFuture<String>` | Java-friendly asynchronous subscription wrapper |
+| `liveActivities.subscribe(id): Unit` | Suspends while subscribing the device |
+| `liveActivities.subscribeAsync(id): CompletableFuture<Void?>` | Java-friendly asynchronous subscription wrapper |
 | `liveActivities.unsubscribe(id): Unit` | Suspends while unsubscribing the device |
 | `liveActivities.unsubscribeAsync(id): CompletableFuture<Void?>` | Java-friendly asynchronous unsubscription wrapper |
-| `liveActivities.getSubscriberId(id): String` | Persisted LA subscriber id (empty if not subscribed) |
-| `liveActivities.getActiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities |
-| `liveActivities.isActive(id): Boolean` | Whether a given activity is currently active |
-| `liveActivities.handleClick(intent, openDeepLink = true): String?` | Click analytics + deep link handling (see above) |
+| `liveActivities.getActiveLiveActivities(): List<LiveActivity>` | Currently tracked (rendered) activities (`id`, `template`) |
 
 All Live Activity APIs are safe to call on any API level; on devices below
 API 36 they degrade gracefully (no rendering).
@@ -143,6 +129,8 @@ API 36 they degrade gracefully (no rendering).
 ## What the notification shows
 
 Everything below is driven by the campaign configuration — no app code needed.
+
+### Football match (`FOOTBALL_MATCH_TRACKING`)
 
 - **Title**: `Home Team - Away Team`; the large icon alternates between the two
   team crests every few seconds.

@@ -1,8 +1,10 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
+import com.pushpushgo.sdk.push.liveactivity.LiveActivityTemplate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -25,7 +27,8 @@ internal class LiveActivityPayloadParserTest {
     assertEquals(LiveActivityEvent.START, push.event)
     assertEquals(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, push.template)
 
-    val config = assertNotNull(push.configuration)
+    val state = assertIs<FootballMatchState>(LiveActivityPayloadParser.parseState(push.template, push.configurationJson, push.liveDataJson))
+    val config = state.configuration
     assertEquals("Premier League", config.content.title)
     assertEquals("Arsenal", config.content.homeTeamName)
     assertEquals("Chelsea", config.content.awayTeamName)
@@ -33,7 +36,7 @@ internal class LiveActivityPayloadParserTest {
     assertEquals("https://match/1", config.url)
     assertEquals(120, config.timeoutMinutes)
 
-    val liveData = assertNotNull(push.liveData)
+    val liveData = state.liveData
     assertEquals(2, liveData.homeTeamScore)
     assertEquals(1, liveData.awayTeamScore)
     assertEquals(MatchPhase.SECOND_HALF, liveData.status)
@@ -46,6 +49,47 @@ internal class LiveActivityPayloadParserTest {
   }
 
   @Test
+  fun `parsePush keeps a push without configuration`() {
+    val data = buildStartEnvelope().toMutableMap().apply { remove("configuration") }
+    val push = assertNotNull(LiveActivityPayloadParser.parsePush(data))
+
+    assertNull(push.configurationJson)
+    assertEquals(LIVE_DATA_JSON, push.liveDataJson)
+  }
+
+  @Test
+  fun `parseState needs both valid blocks`() {
+    val template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING
+
+    assertNull(LiveActivityPayloadParser.parseState(template, null, LIVE_DATA_JSON))
+    assertNull(LiveActivityPayloadParser.parseState(template, CONFIG_JSON, null))
+    assertNull(LiveActivityPayloadParser.parseState(template, "not json", LIVE_DATA_JSON))
+    assertNotNull(LiveActivityPayloadParser.parseState(template, CONFIG_JSON, LIVE_DATA_JSON))
+  }
+
+  @Test
+  fun `mergeState keeps missing blocks and pre-match countdown`() {
+    val current =
+      assertIs<FootballMatchState>(
+        LiveActivityPayloadParser.parseState(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING, CONFIG_JSON, LIVE_DATA_JSON),
+      ).copy(countdownMessage = "Kick-off soon", countdownEndAtMs = 1_000L)
+
+    val merged =
+      assertIs<FootballMatchState>(
+        LiveActivityPayloadParser.mergeState(
+          current,
+          configurationJson = null,
+          liveDataJson = """{"homeTeamScore":5,"awayTeamScore":1,"status":"SECOND_HALF"}""",
+        ),
+      )
+
+    assertEquals(5, merged.liveData.homeTeamScore)
+    assertEquals("Premier League", merged.configuration.content.title)
+    assertEquals("Kick-off soon", merged.countdownMessage)
+    assertEquals(1_000L, merged.countdownEndAtMs)
+  }
+
+  @Test
   fun `parsePush returns null without liveNotificationId`() {
     val data = buildStartEnvelope().toMutableMap().apply { remove("liveNotificationId") }
 
@@ -55,6 +99,20 @@ internal class LiveActivityPayloadParserTest {
   @Test
   fun `parsePush returns null for unknown event`() {
     val data = buildStartEnvelope().toMutableMap().apply { this["event"] = "bogus" }
+
+    assertNull(LiveActivityPayloadParser.parsePush(data))
+  }
+
+  @Test
+  fun `parsePush ignores a push without template`() {
+    val data = buildStartEnvelope().toMutableMap().apply { remove("template") }
+
+    assertNull(LiveActivityPayloadParser.parsePush(data))
+  }
+
+  @Test
+  fun `parsePush ignores unsupported template instead of falling back to football`() {
+    val data = buildStartEnvelope().toMutableMap().apply { this["template"] = "SOME_FUTURE_TEMPLATE" }
 
     assertNull(LiveActivityPayloadParser.parsePush(data))
   }

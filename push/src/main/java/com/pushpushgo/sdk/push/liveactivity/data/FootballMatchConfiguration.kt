@@ -2,11 +2,9 @@ package com.pushpushgo.sdk.push.liveactivity.data
 
 /**
  * Static configuration of a football match Live Activity, delivered in the
- * `configuration` field of the `start` push. Mirrors the backend / iOS
- * football match configuration DTO.
+ * `configuration` field of the `start` push.
  */
-data class FootballMatchConfiguration(
-  val template: LiveActivityTemplate,
+internal data class FootballMatchConfiguration(
   val content: FootballMatchContent,
   val design: FootballMatchAndroidDesign?,
   val statusLabels: Map<String, String>,
@@ -16,7 +14,7 @@ data class FootballMatchConfiguration(
 ) {
   /**
    * Display label for the given match phase. Falls back to the `OTHER` label,
-   * then to [MatchPhase.displayText] when the backend provides no override.
+   * then to [MatchPhase.displayText] when no label is provided.
    */
   fun label(status: MatchPhase): String =
     statusLabels[status.value]

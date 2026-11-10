@@ -15,7 +15,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.messaging.RemoteMessage
 import com.pushpushgo.sdk.push.PushNotifications
+import com.pushpushgo.sdk.push.push.service.FcmMessagingServiceDelegate
 import com.pushpushgo.sdk.sample.push.firebase.R
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -27,14 +29,15 @@ import timber.log.Timber
  * The "Backend" section uses [com.pushpushgo.sdk.push.liveactivity.LiveActivities.subscribe] to
  * register the device on a real campaign; the "Local simulation" section feeds
  * the SDK the same `Map<String, String>` envelope an FCM data push would carry
- * via [com.pushpushgo.sdk.push.liveactivity.LiveActivities.simulatePush], exercising the full
- * parse -> manage -> render pipeline without a backend.
+ * via [FcmMessagingServiceDelegate], exercising the full parse -> manage -> render
+ * pipeline without a backend.
  *
  * Live Activities require Android API 36+. On older devices the SDK ignores the
  * pushes and the buttons only update the local status readout.
  */
 class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activity) {
   private val liveActivities by lazy { PushNotifications.liveActivities }
+  private val fcmDelegate by lazy { FcmMessagingServiceDelegate(applicationContext) }
 
   // Local mirror of the match state so the buttons can evolve it over time.
   private var homeScore = 0
@@ -100,8 +103,8 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
     val id = liveNotificationId()
     lifecycleScope.launch {
       try {
-        val laSubscriberId = liveActivities.subscribe(id)
-        toast("Subscribed to $id (laSubscriberId=$laSubscriberId)")
+        liveActivities.subscribe(id)
+        toast("Subscribed to $id")
       } catch (error: Exception) {
         Timber.tag("PPGO_SAMPLE").e(error, "LiveActivities.subscribe failed")
         toast("Subscribe failed: ${error.message}")
@@ -128,8 +131,8 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
     hotMessage: String? = null,
   ) {
     val payload = buildEnvelope(event, includeConfiguration, hotMessage)
-    Timber.tag("PPGO_SAMPLE").d("LiveActivities.simulatePush: $payload")
-    liveActivities.simulatePush(payload)
+    Timber.tag("PPGO_SAMPLE").d("Simulated push: $payload")
+    fcmDelegate.onMessageReceived(RemoteMessage.Builder(SIMULATED_SENDER).setData(payload).build())
 
     if (!liveActivities.isSupported()) {
       toast("Device < API 36 - push ignored by SDK")
@@ -178,16 +181,12 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
 
   @SuppressLint("SetTextI18n")
   private fun renderStatus() {
-    val active = liveActivities.getActiveActivities()
+    val active = liveActivities.getActiveLiveActivities()
     val text =
       if (active.isEmpty()) {
         "No active live activities"
       } else {
-        active.joinToString("\n") { la ->
-          val c = la.configuration.content
-          "${la.id}\n  ${c.homeTeamName} ${la.liveData.scoreText} ${c.awayTeamName}" +
-            "\n  status=${la.liveData.status}  active=${liveActivities.isActive(la.id)}"
-        }
+        active.joinToString("\n") { la -> "${la.id}\n  template=${la.template}" }
       }
     findViewById<TextView>(R.id.la_status).text = text
   }
@@ -218,6 +217,7 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
 
   companion object {
     private const val LA_ID = "demo-match-1"
+    private const val SIMULATED_SENDER = "simulated@fcm.googleapis.com"
     private const val HOME_TEAM = "Arsenal"
     private const val AWAY_TEAM = "Chelsea"
     private const val REQ_NOTIFICATIONS = 1001
