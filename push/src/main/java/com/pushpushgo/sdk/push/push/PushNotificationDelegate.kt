@@ -162,6 +162,12 @@ internal class PushNotificationDelegate(
     logDebug("Refreshed token: $token")
 
     if (!PushNotifications.isInitialized()) return
+
+    // Live Activity subscriptions don't depend on the push subscription.
+    if (sharedPreferencesHelper.getLiveActivitySubscriptions().isNotEmpty()) {
+      uploadManager.updateLiveActivityEndpoints(token)
+    }
+
     if (!PushNotifications.isSubscriptionRequested()) return
     if (!PushNotifications.isSubscribed()) return
     if (!PushNotifications.areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")

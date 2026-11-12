@@ -286,6 +286,7 @@ internal class PushNotificationsRuntime(
 
     uploadManager.cancelAllJobs()
     uploadManager.cancelBeacons(owner.projectId)
+    uploadManager.cancelLiveActivityEndpointUpdate()
     discardPersistedLiveActivities()
 
     sharedPreferencesHelper.clearProjectData()

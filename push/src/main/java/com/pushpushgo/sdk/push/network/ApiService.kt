@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk.push.network
 
 import com.pushpushgo.sdk.push.data.Event
+import com.pushpushgo.sdk.push.network.data.LiveActivityEndpointUpdateRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeResponse
@@ -72,8 +73,8 @@ internal interface ApiService {
     @Body body: LiveActivityEventsRequest,
   ): Response<Void>
 
-  // Live Activity (live notification) subscriber endpoints live under
-  // `/core/projects/{project}/...`, a different base path than `/v1/{platform}/`,
+  // Live Activity (live notification) endpoints live under
+  // `/core/v1/android/projects/{project}/...`, a different base path than `/v1/{platform}/`,
   // so they take a fully-qualified @Url built by the repository.
   @POST
   suspend fun subscribeLiveActivity(
@@ -86,7 +87,7 @@ internal interface ApiService {
   suspend fun updateLiveActivitySubscriberEndpoint(
     @Url url: String,
     @Header("X-Token") token: String,
-    @Body body: LiveActivitySubscribeRequest,
+    @Body body: LiveActivityEndpointUpdateRequest,
   ): Response<Void>
 
   @DELETE
