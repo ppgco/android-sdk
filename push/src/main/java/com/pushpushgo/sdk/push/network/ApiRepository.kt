@@ -191,13 +191,15 @@ internal class ApiRepository(
     runCatching {
       apiService
         .getLiveActivity(
-          url = "${config.apiUrl}/core/projects/${config.projectId}/live-notifications/$liveNotificationId",
+          url = liveNotificationUrl(liveNotificationId),
           token = config.apiKey,
         ).string()
     }.onFailure { logError("fetchLiveActivity($liveNotificationId) failed", it) }.getOrNull()
 
-  private fun liveActivitySubscribersUrl(liveNotificationId: String): String =
-    "${config.apiUrl}/core/projects/${config.projectId}/live-notifications/$liveNotificationId/subscribers"
+  private fun liveNotificationUrl(liveNotificationId: String): String =
+    "${config.apiUrl}/core/v1/android/projects/${config.projectId}/live-notifications/$liveNotificationId"
+
+  private fun liveActivitySubscribersUrl(liveNotificationId: String): String = "${liveNotificationUrl(liveNotificationId)}/subscribers"
 
   private suspend fun buildLiveActivitySubscribeRequest(): LiveActivitySubscribeRequest {
     val transport =

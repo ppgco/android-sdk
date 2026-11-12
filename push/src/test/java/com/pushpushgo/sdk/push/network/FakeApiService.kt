@@ -9,6 +9,7 @@ import com.pushpushgo.sdk.push.network.data.TokenResponse
 import com.pushpushgo.sdk.push.network.data.TokenUpdateRequest
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 
 internal class FakeApiService : ApiService {
@@ -16,7 +17,9 @@ internal class FakeApiService : ApiService {
   val registeredTokens = mutableListOf<String>()
   val unregisteredSubscriberIds = mutableListOf<String>()
   val liveActivitySubscribeRequests = mutableListOf<LiveActivitySubscribeRequest>()
+  val liveActivitySubscribeUrls = mutableListOf<String>()
   val unsubscribedLiveActivityUrls = mutableListOf<String>()
+  val fetchedLiveActivityUrls = mutableListOf<String>()
   val updatedTokens = mutableListOf<String>()
   val sentBeacons = mutableListOf<RequestBody>()
   val sentEvents = mutableListOf<Event>()
@@ -82,6 +85,7 @@ internal class FakeApiService : ApiService {
     body: LiveActivitySubscribeRequest,
   ) = respond {
     liveActivitySubscribeRequests += body
+    liveActivitySubscribeUrls += url
     LiveActivitySubscribeResponse(id = LIVE_ACTIVITY_SUBSCRIBER_ID)
   }
 
@@ -102,7 +106,11 @@ internal class FakeApiService : ApiService {
   override suspend fun getLiveActivity(
     url: String,
     token: String,
-  ): ResponseBody = error("not used")
+  ): ResponseBody =
+    respond {
+      fetchedLiveActivityUrls += url
+      "{}".toResponseBody()
+    }
 
   private fun <T> respond(block: () -> T): T {
     exception?.let { throw it }

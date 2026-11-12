@@ -72,8 +72,8 @@ internal interface ApiService {
     @Body body: LiveActivityEventsRequest,
   ): Response<Void>
 
-  // Live Activity (live notification) subscriber endpoints live under
-  // `/core/projects/{project}/...`, a different base path than `/v1/{platform}/`,
+  // Live Activity (live notification) endpoints live under
+  // `/core/v1/android/projects/{project}/...`, a different base path than `/v1/{platform}/`,
   // so they take a fully-qualified @Url built by the repository.
   @POST
   suspend fun subscribeLiveActivity(

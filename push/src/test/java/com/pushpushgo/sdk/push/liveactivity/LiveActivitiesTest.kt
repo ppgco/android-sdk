@@ -101,7 +101,7 @@ class LiveActivitiesTest {
       liveActivities.unsubscribe("live-1")
 
       assertEquals(
-        listOf("${config.apiUrl}/core/projects/${config.projectId}/live-notifications/live-1/subscribers/live-sub-1"),
+        listOf("${config.apiUrl}/core/v1/android/projects/${config.projectId}/live-notifications/live-1/subscribers/live-sub-1"),
         apiService.unsubscribedLiveActivityUrls,
       )
       assertTrue(preferences.getLiveActivitySubscriberId("live-1").isEmpty())
