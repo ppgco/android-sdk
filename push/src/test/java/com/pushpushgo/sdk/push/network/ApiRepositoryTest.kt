@@ -100,6 +100,19 @@ class ApiRepositoryTest {
     }
 
   @Test
+  fun `updateLiveActivityEndpoint points the subscriber at the given token`() =
+    runTest {
+      repository.updateLiveActivityEndpoint("live-1", "live-sub-1", "new-token")
+
+      val (url, body) = apiService.updatedLiveActivityEndpoints.single()
+      assertEquals(
+        "${config.apiUrl}/core/v1/android/projects/${config.projectId}/live-notifications/live-1/subscribers/live-sub-1/endpoint",
+        url,
+      )
+      assertEquals("new-token", body.endpoint.pushToken)
+    }
+
+  @Test
   fun `unsubscribeFromLiveActivity treats missing live notification or subscriber as success`() =
     runTest {
       apiService.exception = PushPushException("Live notification not found", 400)

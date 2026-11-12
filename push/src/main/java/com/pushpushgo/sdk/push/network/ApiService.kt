@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk.push.network
 
 import com.pushpushgo.sdk.push.data.Event
+import com.pushpushgo.sdk.push.network.data.LiveActivityEndpointUpdateRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeResponse
@@ -86,7 +87,7 @@ internal interface ApiService {
   suspend fun updateLiveActivitySubscriberEndpoint(
     @Url url: String,
     @Header("X-Token") token: String,
-    @Body body: LiveActivitySubscribeRequest,
+    @Body body: LiveActivityEndpointUpdateRequest,
   ): Response<Void>
 
   @DELETE

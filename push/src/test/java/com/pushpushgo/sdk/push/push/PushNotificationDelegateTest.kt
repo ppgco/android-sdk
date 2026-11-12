@@ -140,6 +140,24 @@ class PushNotificationDelegateTest {
     assertEquals(listOf(Triple(otherProjectId, "subscriber-id", testConfig().projectId)), invalidProjects)
   }
 
+  @Test
+  fun `new token updates live activity subscriptions without a push subscription`() {
+    PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
+    PushNotifications.sharedPreferencesHelper.setLiveActivitySubscriberId("live-1", "live-sub-1")
+
+    delegate.onNewToken("new-token")
+
+    verify(exactly = 1) { uploadManager.updateLiveActivityEndpoints("new-token") }
+    verify(exactly = 0) { uploadManager.syncToken(any(), any()) }
+  }
+
+  @Test
+  fun `new token does not touch live activities without subscriptions`() {
+    delegate.onNewToken("new-token")
+
+    verify(exactly = 0) { uploadManager.updateLiveActivityEndpoints(any()) }
+  }
+
   private fun liveActivityPush(projectId: String) =
     PushMessage(
       from = "702491788352",

@@ -29,6 +29,15 @@ internal data class LiveActivityEndpoint(
   val pushToken: String,
 )
 
+/** Body of the request that points an existing LA subscriber at the current push token. */
+@JsonClass(generateAdapter = true)
+internal data class LiveActivityEndpointUpdateRequest(
+  @Json(name = "installationMetadata")
+  val installationMetadata: InstallationMetadata,
+  @Json(name = "endpoint")
+  val endpoint: LiveActivityEndpoint,
+)
+
 /** Response returned by the subscribe (POST) call: the LA subscriber id. */
 @JsonClass(generateAdapter = true)
 internal data class LiveActivitySubscribeResponse(

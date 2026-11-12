@@ -1,6 +1,7 @@
 package com.pushpushgo.sdk.push.network
 
 import com.pushpushgo.sdk.push.data.Event
+import com.pushpushgo.sdk.push.network.data.LiveActivityEndpointUpdateRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeResponse
@@ -20,6 +21,7 @@ internal class FakeApiService : ApiService {
   val liveActivitySubscribeUrls = mutableListOf<String>()
   val unsubscribedLiveActivityUrls = mutableListOf<String>()
   val fetchedLiveActivityUrls = mutableListOf<String>()
+  val updatedLiveActivityEndpoints = mutableListOf<Pair<String, LiveActivityEndpointUpdateRequest>>()
   val updatedTokens = mutableListOf<String>()
   val sentBeacons = mutableListOf<RequestBody>()
   val sentEvents = mutableListOf<Event>()
@@ -92,8 +94,11 @@ internal class FakeApiService : ApiService {
   override suspend fun updateLiveActivitySubscriberEndpoint(
     url: String,
     token: String,
-    body: LiveActivitySubscribeRequest,
-  ): Response<Void> = error("not used")
+    body: LiveActivityEndpointUpdateRequest,
+  ) = respond {
+    updatedLiveActivityEndpoints += url to body
+    Response.success<Void>(null)
+  }
 
   override suspend fun unsubscribeLiveActivity(
     url: String,

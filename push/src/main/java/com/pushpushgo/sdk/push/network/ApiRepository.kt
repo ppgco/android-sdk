@@ -8,6 +8,7 @@ import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.exception.isSubscriberInvalid
 import com.pushpushgo.sdk.push.network.data.InstallationMetadata
 import com.pushpushgo.sdk.push.network.data.LiveActivityEndpoint
+import com.pushpushgo.sdk.push.network.data.LiveActivityEndpointUpdateRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventDto
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
@@ -110,15 +111,20 @@ internal class ApiRepository(
     return response.id
   }
 
-  /** Pushes a refreshed push token / endpoint for an existing LA subscriber. */
+  /** Points an existing LA subscriber at [pushToken], e.g. after the push token changed. */
   suspend fun updateLiveActivityEndpoint(
     liveNotificationId: String,
     liveActivitySubscriberId: String,
+    pushToken: String,
   ) {
     apiService.updateLiveActivitySubscriberEndpoint(
       url = "${liveActivitySubscribersUrl(liveNotificationId)}/$liveActivitySubscriberId/endpoint",
       token = config.apiKey,
-      body = buildLiveActivitySubscribeRequest(),
+      body =
+        LiveActivityEndpointUpdateRequest(
+          installationMetadata = installationMetadata(),
+          endpoint = liveActivityEndpoint(pushToken),
+        ),
     )
   }
 
@@ -201,25 +207,26 @@ internal class ApiRepository(
 
   private fun liveActivitySubscribersUrl(liveNotificationId: String): String = "${liveNotificationUrl(liveNotificationId)}/subscribers"
 
-  private suspend fun buildLiveActivitySubscribeRequest(): LiveActivitySubscribeRequest {
+  private suspend fun buildLiveActivitySubscribeRequest(): LiveActivitySubscribeRequest =
+    LiveActivitySubscribeRequest(
+      installationId = sharedPref.installationId,
+      installationMetadata = installationMetadata(),
+      endpoint = liveActivityEndpoint(pushTokenProvider.getToken()),
+    )
+
+  private fun installationMetadata(): InstallationMetadata =
+    InstallationMetadata(
+      sdkVersion = PushNotifications.VERSION,
+      osVersion = osVersion(),
+    )
+
+  private fun liveActivityEndpoint(pushToken: String): LiveActivityEndpoint {
     val transport =
       when (getPlatformType()) {
         PlatformType.FCM -> "FCM"
         PlatformType.HCM -> "HMS"
       }
-    return LiveActivitySubscribeRequest(
-      installationId = sharedPref.installationId,
-      installationMetadata =
-        InstallationMetadata(
-          sdkVersion = PushNotifications.VERSION,
-          osVersion = osVersion(),
-        ),
-      endpoint =
-        LiveActivityEndpoint(
-          transport = transport,
-          pushToken = pushTokenProvider.getToken(),
-        ),
-    )
+    return LiveActivityEndpoint(transport = transport, pushToken = pushToken)
   }
 
   suspend fun getBitmapFromUrl(url: String?): Bitmap? {
