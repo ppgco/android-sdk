@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -141,6 +142,16 @@ class PushNotificationDelegateTest {
   }
 
   @Test
+  fun `live activity push that states no project is not reported as invalid`() {
+    var reported = false
+    callbacks.invalidProjectIdHandler = InvalidProjectIdHandler { _, _, _ -> reported = true }
+
+    delegate.onMessageReceived(liveActivityPush(projectId = null), context)
+
+    assertFalse(reported)
+  }
+
+  @Test
   fun `new token updates live activity subscriptions without a push subscription`() {
     PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
     PushNotifications.sharedPreferencesHelper.setLiveActivitySubscriberId("live-1", "live-sub-1")
@@ -158,17 +169,20 @@ class PushNotificationDelegateTest {
     verify(exactly = 0) { uploadManager.updateLiveActivityEndpoints(any()) }
   }
 
-  private fun liveActivityPush(projectId: String) =
+  /** A Live Activity push. The backend sends them without a project, so [projectId] is optional. */
+  private fun liveActivityPush(projectId: String?) =
     PushMessage(
       from = "702491788352",
       data =
-        mapOf(
-          "type" to "live_notification",
-          "liveNotificationId" to "live-1",
-          "event" to "update",
-          "project" to projectId,
-          "subscriber" to "subscriber-id",
-        ),
+        buildMap {
+          put("type", "live_notification")
+          put("liveNotificationId", "live-1")
+          put("event", "update")
+          if (projectId != null) {
+            put("project", projectId)
+            put("subscriber", "subscriber-id")
+          }
+        },
       notification = null,
     )
 
