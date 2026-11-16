@@ -115,11 +115,21 @@ class ApiRepositoryTest {
   @Test
   fun `unsubscribeFromLiveActivity treats missing live notification or subscriber as success`() =
     runTest {
-      apiService.exception = PushPushException("Live notification not found", 400)
+      apiService.exception = PushPushException("Live notification not found", 404)
       repository.unsubscribeFromLiveActivity("live-1", "live-activity-subscriber")
 
-      apiService.exception = PushPushException("Live notification subscriber not found", 400)
+      apiService.exception = PushPushException("Live notification subscriber not found", 404)
       repository.unsubscribeFromLiveActivity("live-1", "live-activity-subscriber")
+    }
+
+  @Test
+  fun `fetchLiveActivity returns null when the live notification is not running or the call fails`() =
+    runTest {
+      apiService.exception = PushPushException("Live notification not found", 404)
+      assertNull(repository.fetchLiveActivity("live-1"))
+
+      apiService.exception = PushPushException("Unexpected error", 500)
+      assertNull(repository.fetchLiveActivity("live-1"))
     }
 
   @Test

@@ -86,7 +86,7 @@ class LiveActivityEndpointWorkerTest {
   @Test
   fun `rejected subscriptions are not retried`() =
     runTest {
-      apiService.exception = PushPushException("Live notification subscriber not found", 400)
+      apiService.exception = PushPushException("Live notification subscriber not found", 404)
 
       val result = worker().doWork()
 

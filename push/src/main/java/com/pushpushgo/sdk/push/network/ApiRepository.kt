@@ -27,8 +27,7 @@ internal class ApiRepository(
   private val pushTokenProvider: PushTokenProvider,
 ) {
   companion object {
-    private const val LIVE_ACTIVITY_NOT_FOUND_MESSAGE = "Live notification not found"
-    private const val LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE = "Live notification subscriber not found"
+    private const val HTTP_NOT_FOUND = 404
   }
 
   suspend fun registerToken(token: String?) {
@@ -139,14 +138,8 @@ internal class ApiRepository(
         token = config.apiKey,
       )
     } catch (exception: PushPushException) {
-      val isAlreadyUnsubscribed =
-        exception.statusCode == 400 &&
-          (
-            exception.message == LIVE_ACTIVITY_NOT_FOUND_MESSAGE ||
-              exception.message == LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE
-          )
-
-      if (!isAlreadyUnsubscribed) throw exception
+      // The backend answers 404 when the live notification or the subscriber is already gone.
+      if (exception.statusCode != HTTP_NOT_FOUND) throw exception
 
       logDebug("Live Activity subscription is already unregistered")
     }
@@ -191,7 +184,8 @@ internal class ApiRepository(
   /**
    * Fetches the current live notification document (configuration + live data +
    * lifecycle) as raw JSON, used to catch up a subscriber that joined after the
-   * `start` push was already delivered. Returns null on any failure.
+   * `start` push was already delivered. Returns null on any failure, and when the
+   * live notification is not running: the backend serves the document only then.
    */
   suspend fun fetchLiveActivity(liveNotificationId: String): String? =
     runCatching {
@@ -200,7 +194,13 @@ internal class ApiRepository(
           url = liveNotificationUrl(liveNotificationId),
           token = config.apiKey,
         ).string()
-    }.onFailure { logError("fetchLiveActivity($liveNotificationId) failed", it) }.getOrNull()
+    }.onFailure {
+      if ((it as? PushPushException)?.statusCode == HTTP_NOT_FOUND) {
+        logDebug("Live notification $liveNotificationId is not running")
+      } else {
+        logError("fetchLiveActivity($liveNotificationId) failed", it)
+      }
+    }.getOrNull()
 
   private fun liveNotificationUrl(liveNotificationId: String): String =
     "${config.apiUrl}/core/v1/android/projects/${config.projectId}/live-notifications/$liveNotificationId"
