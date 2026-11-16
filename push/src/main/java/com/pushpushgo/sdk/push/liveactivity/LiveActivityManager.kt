@@ -40,10 +40,11 @@ internal class LiveActivityManager(
    * static `configuration` and dynamic `liveData` blocks of the push.
    */
   fun startActivity(push: LiveActivityPush): TrackedLiveActivity? {
+    val template = push.template
     val configurationJson = push.configurationJson
     val liveDataJson = push.liveDataJson
-    val state = LiveActivityPayloadParser.parseState(push.template, configurationJson, liveDataJson)
-    if (state == null || configurationJson == null || liveDataJson == null) {
+    val state = template?.let { LiveActivityPayloadParser.parseState(it, configurationJson, liveDataJson) }
+    if (template == null || state == null || configurationJson == null || liveDataJson == null) {
       logWarning("LiveActivityManager: cannot start activity ${push.id} — missing configuration/liveData")
       return null
     }
@@ -56,7 +57,7 @@ internal class LiveActivityManager(
         id = push.id,
         projectId = push.projectId,
         subscriberId = push.subscriberId,
-        template = push.template,
+        template = template,
         status = LiveActivityStatus.ACTIVE,
         state = state,
         hotMessage = push.hotMessage,
@@ -66,7 +67,7 @@ internal class LiveActivityManager(
     persistence.addActiveId(push.id)
     persistence.setNotificationId(push.id, notificationId)
     persistence.setStatus(push.id, LiveActivityStatus.ACTIVE)
-    persistence.setTemplate(push.id, push.template)
+    persistence.setTemplate(push.id, template)
     persistence.setProjectId(push.id, push.projectId)
     persistence.setSubscriberId(push.id, push.subscriberId)
     persistence.setConfigurationJson(push.id, configurationJson)
@@ -168,16 +169,17 @@ internal class LiveActivityManager(
 
   /**
    * Merge the push's template-specific blocks onto [current]. A push whose
-   * template differs from the tracked activity's can't be merged, so the
-   * current state is kept.
+   * blocks are of another template than the tracked activity's can't be merged,
+   * so the current state is kept.
    */
   private fun mergeState(
     current: TrackedLiveActivity,
     push: LiveActivityPush,
   ): LiveActivityState {
-    if (push.template != current.template) {
+    val template = push.template ?: return current.state
+    if (template != current.template) {
       logWarning(
-        "LiveActivityManager: ${push.template.value} push doesn't match ${current.template.value} activity ${push.id}, keeping state",
+        "LiveActivityManager: ${template.value} push doesn't match ${current.template.value} activity ${push.id}, keeping state",
       )
       return current.state
     }

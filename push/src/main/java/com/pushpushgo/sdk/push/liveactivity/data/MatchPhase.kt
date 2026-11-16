@@ -1,6 +1,12 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
-/** All possible phases of a football match, including the `OTHER` fallback bucket. */
+import com.squareup.moshi.JsonClass
+
+/**
+ * All possible phases of a football match, including the `OTHER` fallback bucket.
+ * Moshi reads them by constant name, and [JsonClass] keeps those names in minified apps.
+ */
+@JsonClass(generateAdapter = false)
 internal enum class MatchPhase(
   val value: String,
 ) {
@@ -96,9 +102,4 @@ internal enum class MatchPhase(
         PENALTY_SHOOTOUT -> 120
         OTHER -> 0
       }
-
-  companion object {
-    /** Tolerant lookup — unknown values map to [OTHER]. */
-    fun fromValue(value: String?): MatchPhase = entries.firstOrNull { it.value.equals(value, ignoreCase = true) } ?: OTHER
-  }
 }

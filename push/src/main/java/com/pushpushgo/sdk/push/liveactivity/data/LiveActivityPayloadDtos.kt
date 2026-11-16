@@ -1,154 +1,173 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
-import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import java.util.Date
 
-// JSON blocks of Live Activity payloads, read with LiveActivityJson. Every field is
-// optional: LiveActivityPayloadParser maps them to the domain models and decides
-// which ones are required.
+// Live Activity payloads as the backend sends them. The same data comes in two formats:
+// the blocks of a push, whose subtype is named by `template`, and the live notification
+// document, whose blocks name it by `type`. LiveActivityJson registers the subtypes.
+// Every key is required, a value is nullable only where the backend sends null, and
+// only the fields Android uses are declared.
 
-/** `configuration` block of the football match template. */
+// Blocks of a push
+
+/** `configuration` block of a push. */
+internal sealed interface LiveActivityConfigurationDto
+
 @JsonClass(generateAdapter = true)
 internal data class FootballMatchConfigurationDto(
-  @Json(name = "content")
-  val content: FootballMatchContentDto?,
-  @Json(name = "design")
-  val design: FootballMatchDesignDto?,
-  @Json(name = "statusLabels")
-  @StatusLabels
-  val statusLabels: Map<String, String>?,
-  /** Alternative name of [actions]; wins when both are present. */
-  @Json(name = "actionSet")
-  val actionSet: List<LiveActivityActionDto?>?,
-  @Json(name = "actions")
-  val actions: List<LiveActivityActionDto?>?,
-  @Json(name = "timeout")
-  val timeout: LiveActivityTimeoutDto?,
-  @Json(name = "url")
+  val content: FootballMatchContentDto,
+  val design: FootballMatchDesignDto,
+  /** Labels of the match phases, in the order of [MatchPhase]. */
+  val statusLabels: List<String>,
+  /** An action of a type this SDK version doesn't know is null. */
+  val actionSet: List<LiveActivityActionDto?>,
+  val timeout: LiveActivityTimeoutDto,
+  /** Deep link of the notification. A push doesn't carry it; a block built from the document does. */
   val url: String?,
-)
+) : LiveActivityConfigurationDto
 
-@JsonClass(generateAdapter = true)
-internal data class FootballMatchContentDto(
-  @Json(name = "title")
-  val title: String?,
-  @Json(name = "homeTeamName")
-  val homeTeamName: String?,
-  @Json(name = "homeTeamImage")
-  val homeTeamImage: String?,
-  @Json(name = "awayTeamName")
-  val awayTeamName: String?,
-  @Json(name = "awayTeamImage")
-  val awayTeamImage: String?,
-)
+/** `liveData` block of a push. */
+internal sealed interface LiveActivityLiveDataDto
 
-@JsonClass(generateAdapter = true)
-internal data class FootballMatchDesignDto(
-  @Json(name = "android")
-  val android: FootballMatchAndroidDesignDto?,
-)
-
-@JsonClass(generateAdapter = true)
-internal data class FootballMatchAndroidDesignDto(
-  @Json(name = "hasTrackerIcon")
-  val hasTrackerIcon: Boolean?,
-  @Json(name = "progressBarColor")
-  val progressBarColor: LiveActivityColorSetDto?,
-  @Json(name = "breakTimeBarColor")
-  val breakTimeBarColor: LiveActivityColorSetDto?,
-)
-
-@JsonClass(generateAdapter = true)
-internal data class LiveActivityColorSetDto(
-  @Json(name = "lightMode")
-  val lightMode: LiveActivityColor?,
-  @Json(name = "darkMode")
-  val darkMode: LiveActivityColor?,
-)
-
-@JsonClass(generateAdapter = true)
-internal data class LiveActivityActionDto(
-  @Json(name = "type")
-  val type: String?,
-  @Json(name = "name")
-  val name: String?,
-  @Json(name = "url")
-  val url: String?,
-)
-
-@JsonClass(generateAdapter = true)
-internal data class LiveActivityTimeoutDto(
-  @Json(name = "minutes")
-  val minutes: Int?,
-)
-
-/** `liveData` block of the football match template. */
 @JsonClass(generateAdapter = true)
 internal data class FootballMatchLiveDataDto(
-  @Json(name = "homeTeamScore")
-  val homeTeamScore: Int?,
-  @Json(name = "awayTeamScore")
-  val awayTeamScore: Int?,
-  @Json(name = "status")
-  val status: String?,
-  @Json(name = "statusChangedAt")
-  @EpochMillis
-  val statusChangedAt: Long?,
-  @Json(name = "version")
-  val version: Int?,
-)
+  val homeTeamScore: Int,
+  val awayTeamScore: Int,
+  val status: MatchPhase,
+  val statusChangedAt: Date,
+  val version: Int,
+) : LiveActivityLiveDataDto
 
 /** `hotMessage` block of a push. */
 @JsonClass(generateAdapter = true)
 internal data class HotMessageDto(
-  @Json(name = "id")
-  val id: String?,
-  @Json(name = "text")
-  val text: String?,
-  @Json(name = "timestamp")
-  @EpochMillis
-  val timestamp: Long?,
+  val id: String,
+  val text: String,
+  val expiresAt: Date,
 )
 
-/**
- * Live notification document of `GET /core/v1/android/projects/{project}/live-notifications/{id}`.
- * The template blocks stay raw JSON, in the form a push delivers them.
- */
+/** The part of a push block that names its template. */
+@JsonClass(generateAdapter = true)
+internal data class LiveActivityBlockDto(
+  val template: String?,
+)
+
+// Live notification document
+
+/** Document of `GET /core/v1/android/projects/{project}/live-notifications/{id}`. */
 @JsonClass(generateAdapter = true)
 internal data class LiveNotificationDocumentDto(
-  @Json(name = "id")
-  val id: String?,
-  @Json(name = "template")
-  val template: String?,
-  @Json(name = "configuration")
-  @RawJsonObject
-  val configuration: String?,
-  @Json(name = "liveData")
-  @RawJsonObject
-  val liveData: String?,
-  @Json(name = "lifecycle")
-  val lifecycle: LiveNotificationLifecycleDto?,
-  @Json(name = "startPolicy")
-  val startPolicy: LiveNotificationStartPolicyDto?,
+  val id: String,
+  val configuration: LiveNotificationConfigurationDto,
+  val liveData: LiveNotificationLiveDataDto,
+  val lifecycle: LiveNotificationLifecycleDto,
+  val startPolicy: LiveNotificationStartPolicyDto,
 )
+
+/** `configuration` of a document. */
+internal sealed interface LiveNotificationConfigurationDto
+
+@JsonClass(generateAdapter = true)
+internal data class FootballMatchDocumentConfigurationDto(
+  val url: String,
+  val content: FootballMatchContentDto,
+  val design: FootballMatchDesignDto,
+  /** Label of every match phase, keyed by the phase. */
+  val statusLabels: Map<String, String>,
+  /** An action of a type this SDK version doesn't know is null. */
+  val actions: List<LiveActivityActionDto?>,
+  val timeout: LiveActivityTimeoutDto,
+) : LiveNotificationConfigurationDto
+
+/** `liveData` of a document. It has no version. */
+internal sealed interface LiveNotificationLiveDataDto
+
+@JsonClass(generateAdapter = true)
+internal data class FootballMatchDocumentLiveDataDto(
+  val homeTeamScore: Int,
+  val awayTeamScore: Int,
+  val status: MatchPhase,
+  val statusChangedAt: Date,
+) : LiveNotificationLiveDataDto
 
 @JsonClass(generateAdapter = true)
 internal data class LiveNotificationLifecycleDto(
-  @Json(name = "status")
-  val status: String?,
+  val status: String,
 )
 
 @JsonClass(generateAdapter = true)
 internal data class LiveNotificationStartPolicyDto(
-  @Json(name = "scheduledAt")
-  @EpochMillis
-  val scheduledAt: Long?,
-  @Json(name = "countdown")
+  val scheduledAt: Date,
+  /** Null when no pre-match countdown is configured. */
   val countdown: LiveNotificationCountdownDto?,
 )
 
 @JsonClass(generateAdapter = true)
 internal data class LiveNotificationCountdownDto(
-  @Json(name = "message")
-  val message: String?,
+  val message: String,
+)
+
+// Parts both formats share
+
+@JsonClass(generateAdapter = true)
+internal data class FootballMatchContentDto(
+  val title: String,
+  val homeTeamName: String,
+  /** Null when the team has no image. */
+  val homeTeamImage: String?,
+  val awayTeamName: String,
+  /** Null when the team has no image. */
+  val awayTeamImage: String?,
+)
+
+@JsonClass(generateAdapter = true)
+internal data class FootballMatchDesignDto(
+  val android: FootballMatchAndroidDesignDto,
+)
+
+@JsonClass(generateAdapter = true)
+internal data class FootballMatchAndroidDesignDto(
+  val hasTrackerIcon: Boolean,
+  val progressBarColor: LiveActivityColorSetDto,
+  /** Null when the break bar has no color of its own. */
+  val breakTimeBarColor: LiveActivityColorSetDto?,
+)
+
+@JsonClass(generateAdapter = true)
+internal data class LiveActivityColorSetDto(
+  val lightMode: LiveActivityColorDto,
+  val darkMode: LiveActivityColorDto,
+)
+
+/** A solid color; Android designs have no gradients. */
+@JsonClass(generateAdapter = true)
+internal data class LiveActivityColorDto(
+  val hex: String,
+)
+
+/** Call-to-action button of a configuration. */
+internal sealed interface LiveActivityActionDto {
+  val name: String
+}
+
+@JsonClass(generateAdapter = true)
+internal data class UrlActionDto(
+  override val name: String,
+  val url: String,
+) : LiveActivityActionDto
+
+@JsonClass(generateAdapter = true)
+internal data class OpenAppActionDto(
+  override val name: String,
+) : LiveActivityActionDto
+
+@JsonClass(generateAdapter = true)
+internal data class CloseActionDto(
+  override val name: String,
+) : LiveActivityActionDto
+
+@JsonClass(generateAdapter = true)
+internal data class LiveActivityTimeoutDto(
+  val minutes: Int,
 )
