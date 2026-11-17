@@ -59,9 +59,9 @@ internal class PushNotificationDelegate(
   ) {
     logDebug("From: ${pushMessage.from}")
 
-    // A Live Activity push uses a dedicated envelope (type=live_notification) and may come
-    // without the `project` key of a regular push, so the project-id match check applies
-    // only when it states a project.
+    // A Live Activity push uses a dedicated envelope (type=live_notification) but states its
+    // `project` like a regular push, so it goes through the same project-id match check: after
+    // a project change the previous project may still send pushes until its cleanup completes.
     val isLiveActivityPush = LiveActivityPayloadParser.isLiveActivityPush(pushMessage.data)
 
     if (!isLiveActivityPush && !PushNotifications.isPushPushGoNotification(pushMessage.data)) {
@@ -75,9 +75,8 @@ internal class PushNotificationDelegate(
     val pushProjectId = pushMessage.data["project"].orEmpty()
     val pushSubscriberId = pushMessage.data["subscriber"].orEmpty()
     val initializedProjectId = PushNotifications.getProjectId()
-    val isProjectUnstated = isLiveActivityPush && pushProjectId.isEmpty()
     when {
-      pushProjectId != initializedProjectId && !isProjectUnstated ->
+      pushProjectId != initializedProjectId ->
         callbacks.notifyInvalidProjectId(pushProjectId, pushSubscriberId, initializedProjectId)
       isLiveActivityPush -> processLiveActivityPush(pushMessage, context)
       else -> processPushMessage(pushMessage, context)

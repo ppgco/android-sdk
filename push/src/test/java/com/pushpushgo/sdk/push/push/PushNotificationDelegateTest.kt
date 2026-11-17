@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -126,29 +125,21 @@ class PushNotificationDelegateTest {
   }
 
   @Test
-  fun `live activity push is reported as invalid only when it belongs to another project`() {
+  fun `live activity push is reported as invalid unless it states the current project`() {
     PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
+    val currentProjectId = testConfig().projectId
     val otherProjectId = otherProjectTestConfig().projectId
     val invalidProjects = mutableListOf<Triple<String, String, String>>()
     callbacks.invalidProjectIdHandler =
-      InvalidProjectIdHandler { pushProjectId, pushSubscriberId, currentProjectId ->
-        invalidProjects += Triple(pushProjectId, pushSubscriberId, currentProjectId)
+      InvalidProjectIdHandler { pushProjectId, pushSubscriberId, configuredProjectId ->
+        invalidProjects += Triple(pushProjectId, pushSubscriberId, configuredProjectId)
       }
 
     delegate.onMessageReceived(liveActivityPush(projectId = otherProjectId), context)
-    delegate.onMessageReceived(liveActivityPush(projectId = testConfig().projectId), context)
-
-    assertEquals(listOf(Triple(otherProjectId, "subscriber-id", testConfig().projectId)), invalidProjects)
-  }
-
-  @Test
-  fun `live activity push that states no project is not reported as invalid`() {
-    var reported = false
-    callbacks.invalidProjectIdHandler = InvalidProjectIdHandler { _, _, _ -> reported = true }
-
     delegate.onMessageReceived(liveActivityPush(projectId = null), context)
+    delegate.onMessageReceived(liveActivityPush(projectId = currentProjectId), context)
 
-    assertFalse(reported)
+    assertEquals(listOf(Triple(otherProjectId, "", currentProjectId), Triple("", "", currentProjectId)), invalidProjects)
   }
 
   @Test
@@ -169,19 +160,16 @@ class PushNotificationDelegateTest {
     verify(exactly = 0) { uploadManager.updateLiveActivityEndpoints(any()) }
   }
 
-  /** A Live Activity push. It states a project only when [projectId] is given. */
+  /** A Live Activity push of [projectId]. Null leaves the `project` key out. */
   private fun liveActivityPush(projectId: String?) =
     PushMessage(
       from = "702491788352",
       data =
         buildMap {
           put("type", "live_notification")
+          projectId?.let { put("project", it) }
           put("liveNotificationId", "live-1")
           put("event", "update")
-          if (projectId != null) {
-            put("project", projectId)
-            put("subscriber", "subscriber-id")
-          }
         },
       notification = null,
     )

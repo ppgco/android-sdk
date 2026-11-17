@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
 internal class LiveActivityPayloadParserTest {
   private val template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING
 
-  /** What [CONFIGURATION] parses to. A push carries no deep link. */
+  /** What [CONFIGURATION] parses to. */
   private val configuration =
     FootballMatchConfiguration(
       content =
@@ -48,7 +48,7 @@ internal class LiveActivityPayloadParserTest {
           LiveActivityAction(LiveActivityActionType.CLOSE, "Dismiss", null),
         ),
       timeoutMinutes = 120,
-      url = null,
+      url = "https://match/1",
     )
 
   /** What [liveData] parses to. */
@@ -75,7 +75,7 @@ internal class LiveActivityPayloadParserTest {
     assertEquals("match-001", push.id)
     assertEquals(LiveActivityEvent.START, push.event)
     assertEquals(template, push.template)
-    assertEquals("", push.projectId)
+    assertEquals(LiveActivityPayloads.PROJECT_ID, push.projectId)
     assertEquals("", push.subscriberId)
     assertNull(push.hotMessage)
     assertEquals(
@@ -182,13 +182,12 @@ internal class LiveActivityPayloadParserTest {
         .with(
           "\"breakTimeBarColor\":null",
           "\"breakTimeBarColor\":{\"lightMode\":{\"hex\":\"#FFC107\"},\"darkMode\":{\"hex\":\"#FFA000\"}}",
-        ).with("\"timeout\":{\"minutes\":120},", "\"timeout\":{\"minutes\":120},\"url\":\"https://match/1\",")
+        )
 
     val parsed = assertNotNull(LiveActivityPayloadParser.parseConfiguration(json))
 
     assertEquals("https://c.png", parsed.content.awayTeamImage)
     assertEquals(LiveActivityColorSet(LiveActivityColor("#FFC107"), LiveActivityColor("#FFA000")), parsed.design?.breakTimeBarColor)
-    assertEquals("https://match/1", parsed.url)
   }
 
   @Test
@@ -208,6 +207,8 @@ internal class LiveActivityPayloadParserTest {
       CONFIGURATION.with(TEMPLATE, "\"type\":\"FOOTBALL_MATCH_TRACKING\""),
       CONFIGURATION.with("\"statusLabels\":[", "\"statusLabels\":{},\"labels\":["),
       CONFIGURATION.with("\"actionSet\":[", "\"actions\":["),
+      CONFIGURATION.with("\"url\":\"https://match/1\",", ""),
+      CONFIGURATION.with("\"url\":\"https://match/1\"", "\"url\":null"),
       CONFIGURATION.with("\"url\":\"https://x\",", ""),
       CONFIGURATION.with("{\"hex\":\"#4CAF50\"}", "\"#4CAF50\""),
       "[]",
@@ -287,9 +288,9 @@ internal class LiveActivityPayloadParserTest {
     assertEquals(LiveActivityEvent.START, push.event)
     assertEquals(template, push.template)
     assertNull(push.hotMessage)
-    // The document adds the deep link and has no live data version.
+    // The document has no live data version.
     assertEquals(
-      FootballMatchState(configuration.copy(url = "https://match/1"), liveData.copy(liveDataVersion = 0)),
+      FootballMatchState(configuration, liveData.copy(liveDataVersion = 0)),
       LiveActivityPayloadParser.parseState(template, push.configurationJson, push.liveDataJson),
     )
   }

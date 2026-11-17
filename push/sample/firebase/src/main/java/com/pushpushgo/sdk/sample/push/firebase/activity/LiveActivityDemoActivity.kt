@@ -151,6 +151,7 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
     val envelope =
       mutableMapOf(
         "type" to "live_notification",
+        "project" to PushNotifications.getProjectId(),
         "liveNotificationId" to liveNotificationId(),
         "event" to event,
         "liveData" to liveDataJson(),
@@ -226,6 +227,7 @@ class LiveActivityDemoActivity : AppCompatActivity(R.layout.activity_live_activi
       """
       {
         "template":"FOOTBALL_MATCH_TRACKING",
+        "url":"app://sample/live-activities",
         "content":{
           "title":"Premier League",
           "homeTeamName":"$HOME_TEAM",

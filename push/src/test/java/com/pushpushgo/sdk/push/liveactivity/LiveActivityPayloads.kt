@@ -7,6 +7,7 @@ import com.pushpushgo.sdk.push.liveactivity.data.MatchPhase
  * the blocks of a push and the live notification document.
  */
 internal object LiveActivityPayloads {
+  const val PROJECT_ID = "proj-1"
   const val KICK_OFF = "2024-03-02T15:00:00Z"
   const val KICK_OFF_MS = 1_709_391_600_000L
 
@@ -42,6 +43,7 @@ internal object LiveActivityPayloads {
     """
     {
       "template":"FOOTBALL_MATCH_TRACKING",
+      "url":"https://match/1",
       "content":{
         "title":"Premier League",
         "homeTeamName":"Arsenal",
@@ -91,6 +93,7 @@ internal object LiveActivityPayloads {
   ): Map<String, String> =
     buildMap {
       put("type", "live_notification")
+      put("project", PROJECT_ID)
       put("event", event)
       put("liveNotificationId", "match-001")
       put("version", "8")
@@ -151,7 +154,7 @@ internal object LiveActivityPayloads {
     """
     {
       "id":"match-001",
-      "projectId":"proj-1",
+      "projectId":"$PROJECT_ID",
       "template":"FOOTBALL_MATCH_TRACKING",
       "configuration":$configuration,
       "liveData":$liveData,
