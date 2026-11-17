@@ -169,7 +169,7 @@ class PushNotificationDelegateTest {
     verify(exactly = 0) { uploadManager.updateLiveActivityEndpoints(any()) }
   }
 
-  /** A Live Activity push. The backend sends them without a project, so [projectId] is optional. */
+  /** A Live Activity push. It states a project only when [projectId] is given. */
   private fun liveActivityPush(projectId: String?) =
     PushMessage(
       from = "702491788352",

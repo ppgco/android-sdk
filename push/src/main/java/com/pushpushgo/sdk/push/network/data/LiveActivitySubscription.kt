@@ -47,7 +47,7 @@ internal data class LiveActivitySubscribeResponse(
 
 /**
  * Body for the Live Activity statistics endpoint
- * `POST /v1/{platform}/projects/{project}/live-notifications/{liveNotification}/events`.
+ * `POST /statistics/v1/{platform}/projects/{project}/live-notifications/{liveNotification}/events`.
  */
 @JsonClass(generateAdapter = true)
 internal data class LiveActivityEventsRequest(

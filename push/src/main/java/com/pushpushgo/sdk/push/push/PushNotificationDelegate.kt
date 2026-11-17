@@ -59,9 +59,9 @@ internal class PushNotificationDelegate(
   ) {
     logDebug("From: ${pushMessage.from}")
 
-    // Live Activity pushes use a dedicated envelope (type=live_notification) without the
-    // `project`/`subscriber` keys of a regular push, so only one that states a project can
-    // fail the project-id match check.
+    // A Live Activity push uses a dedicated envelope (type=live_notification) and may come
+    // without the `project` key of a regular push, so the project-id match check applies
+    // only when it states a project.
     val isLiveActivityPush = LiveActivityPayloadParser.isLiveActivityPush(pushMessage.data)
 
     if (!isLiveActivityPush && !PushNotifications.isPushPushGoNotification(pushMessage.data)) {

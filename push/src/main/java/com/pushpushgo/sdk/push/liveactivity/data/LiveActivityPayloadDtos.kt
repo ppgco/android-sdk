@@ -6,8 +6,8 @@ import java.util.Date
 // Live Activity payloads as the backend sends them. The same data comes in two formats:
 // the blocks of a push, whose subtype is named by `template`, and the live notification
 // document, whose blocks name it by `type`. LiveActivityJson registers the subtypes.
-// Every key is required, a value is nullable only where the backend sends null, and
-// only the fields Android uses are declared.
+// A key is required unless its comment says it is optional, a value is nullable only
+// where the backend sends null, and only the fields Android uses are declared.
 
 // Blocks of a push
 
@@ -23,7 +23,10 @@ internal data class FootballMatchConfigurationDto(
   /** An action of a type this SDK version doesn't know is null. */
   val actionSet: List<LiveActivityActionDto?>,
   val timeout: LiveActivityTimeoutDto,
-  /** Deep link of the notification. A push doesn't carry it; a block built from the document does. */
+  /**
+   * Deep link of the notification. Optional: a push may come without it, while a block
+   * built from the document always has it.
+   */
   val url: String?,
 ) : LiveActivityConfigurationDto
 
