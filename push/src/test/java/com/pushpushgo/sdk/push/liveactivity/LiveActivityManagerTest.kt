@@ -110,6 +110,16 @@ internal class LiveActivityManagerTest {
   }
 
   @Test
+  fun `endActivity accepts an end push, which has no blocks`() {
+    val started = assertNotNull(manager.startActivity(startPush()))
+
+    val ended = assertNotNull(manager.endActivity(endPush().copy(template = null, liveDataJson = null)))
+
+    assertEquals(LiveActivityStatus.ENDED, ended.status)
+    assertEquals(started.state, ended.state)
+  }
+
+  @Test
   fun `started activity is restored by a new manager`() {
     val started = assertNotNull(manager.startActivity(startPush()))
     val restartedManager = LiveActivityManager(persistence)
@@ -159,7 +169,7 @@ internal class LiveActivityManagerTest {
     homeScore: Int = 2,
     awayScore: Int = 1,
     status: MatchPhase = MatchPhase.FIRST_HALF,
-  ) = """{"homeTeamScore":$homeScore,"awayTeamScore":$awayScore,"status":"${status.value}"}"""
+  ) = LiveActivityPayloads.liveData(homeScore, awayScore, status.value)
 
   private fun startPush() =
     LiveActivityPush(
@@ -168,7 +178,7 @@ internal class LiveActivityManagerTest {
       subscriberId = "sub-1",
       template = LiveActivityTemplate.FOOTBALL_MATCH_TRACKING,
       event = LiveActivityEvent.START,
-      configurationJson = CONFIGURATION_JSON,
+      configurationJson = LiveActivityPayloads.CONFIGURATION,
       liveDataJson = liveDataJson(),
       hotMessage = null,
     )
@@ -189,10 +199,4 @@ internal class LiveActivityManagerTest {
 
   private val TrackedLiveActivity.football: FootballMatchState
     get() = assertIs(state)
-
-  private companion object {
-    const val CONFIGURATION_JSON =
-      """{"content":{"title":"Premier League","homeTeamName":"Arsenal","awayTeamName":"Chelsea"},""" +
-        """"statusLabels":{"FIRST_HALF":"1st Half"},"timeout":{"minutes":120},"url":"https://match/1"}"""
-  }
 }

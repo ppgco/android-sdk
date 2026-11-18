@@ -56,8 +56,9 @@ class ProjectCleanupWorkerTest {
 
       assertEquals(ListenableWorker.Result.success(), result)
       assertEquals(listOf("old-sub"), apiService.unregisteredSubscriberIds)
+      val projectUrl = "${previousProject.apiUrl}/core/v1/android/projects/${previousProject.projectId}"
       assertEquals(
-        listOf("${previousProject.apiUrl}/core/projects/${previousProject.projectId}/live-notifications/live-1/subscribers/live-sub-1"),
+        listOf("$projectUrl/live-notifications/live-1/subscribers/live-sub-1"),
         apiService.unsubscribedLiveActivityUrls,
       )
     }

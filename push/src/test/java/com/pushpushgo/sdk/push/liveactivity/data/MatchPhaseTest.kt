@@ -7,14 +7,6 @@ import kotlin.test.assertTrue
 
 internal class MatchPhaseTest {
   @Test
-  fun `fromValue maps known and unknown values`() {
-    assertEquals(MatchPhase.SECOND_HALF, MatchPhase.fromValue("SECOND_HALF"))
-    assertEquals(MatchPhase.FIRST_HALF, MatchPhase.fromValue("first_half"))
-    assertEquals(MatchPhase.OTHER, MatchPhase.fromValue("UNKNOWN_PHASE"))
-    assertEquals(MatchPhase.OTHER, MatchPhase.fromValue(null))
-  }
-
-  @Test
   fun `isPlaying covers active phases including added and extra time`() {
     assertTrue(MatchPhase.FIRST_HALF.isPlaying)
     assertTrue(MatchPhase.SECOND_HALF_ADDED_TIME.isPlaying)

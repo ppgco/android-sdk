@@ -87,13 +87,49 @@ class ApiRepositoryTest {
     }
 
   @Test
+  fun `live activity calls use the android endpoints`() =
+    runTest {
+      repository.subscribeToLiveActivity("live-1")
+      repository.fetchLiveActivity("live-1")
+      repository.unsubscribeFromLiveActivity("live-1", "live-sub-1")
+
+      val liveNotificationUrl = "${config.apiUrl}/core/v1/android/projects/${config.projectId}/live-notifications/live-1"
+      assertEquals(listOf("$liveNotificationUrl/subscribers"), apiService.liveActivitySubscribeUrls)
+      assertEquals(listOf(liveNotificationUrl), apiService.fetchedLiveActivityUrls)
+      assertEquals(listOf("$liveNotificationUrl/subscribers/live-sub-1"), apiService.unsubscribedLiveActivityUrls)
+    }
+
+  @Test
+  fun `updateLiveActivityEndpoint points the subscriber at the given token`() =
+    runTest {
+      repository.updateLiveActivityEndpoint("live-1", "live-sub-1", "new-token")
+
+      val (url, body) = apiService.updatedLiveActivityEndpoints.single()
+      assertEquals(
+        "${config.apiUrl}/core/v1/android/projects/${config.projectId}/live-notifications/live-1/subscribers/live-sub-1/endpoint",
+        url,
+      )
+      assertEquals("new-token", body.endpoint.pushToken)
+    }
+
+  @Test
   fun `unsubscribeFromLiveActivity treats missing live notification or subscriber as success`() =
     runTest {
-      apiService.exception = PushPushException("Live notification not found", 400)
+      apiService.exception = PushPushException("Live notification not found", 404)
       repository.unsubscribeFromLiveActivity("live-1", "live-activity-subscriber")
 
-      apiService.exception = PushPushException("Live notification subscriber not found", 400)
+      apiService.exception = PushPushException("Live notification subscriber not found", 404)
       repository.unsubscribeFromLiveActivity("live-1", "live-activity-subscriber")
+    }
+
+  @Test
+  fun `fetchLiveActivity returns null when the live notification is not running or the call fails`() =
+    runTest {
+      apiService.exception = PushPushException("Live notification not found", 404)
+      assertNull(repository.fetchLiveActivity("live-1"))
+
+      apiService.exception = PushPushException("Unexpected error", 500)
+      assertNull(repository.fetchLiveActivity("live-1"))
     }
 
   @Test

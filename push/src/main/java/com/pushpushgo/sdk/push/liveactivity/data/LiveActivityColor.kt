@@ -1,10 +1,6 @@
 package com.pushpushgo.sdk.push.liveactivity.data
 
-/**
- * A single color value resolved to a hex string: a solid color, or the first color
- * of a gradient, since [android.app.Notification.ProgressStyle] segments only support
- * solid colors.
- */
+/** A solid color, as a hex string. */
 internal data class LiveActivityColor(
   val hex: String,
 )

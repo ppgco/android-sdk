@@ -118,6 +118,8 @@
   `simulateLiveActivityPush(...)`. `liveActivities.subscribe(...)` no longer returns
   the Live Activity subscriber ID; the SDK keeps it internally.
 - `liveActivities.unsubscribe(...)` does nothing if the device is not subscribed.
+- Live Activity subscriptions follow push token changes, so Live Activity pushes
+  keep arriving after the token is refreshed.
 - Pushes with a missing template, or a template not supported by the SDK version,
   are ignored instead of being rendered as a football match.
 

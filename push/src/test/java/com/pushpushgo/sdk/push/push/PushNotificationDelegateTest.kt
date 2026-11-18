@@ -125,32 +125,52 @@ class PushNotificationDelegateTest {
   }
 
   @Test
-  fun `live activity push is reported as invalid only when it belongs to another project`() {
+  fun `live activity push is reported as invalid unless it states the current project`() {
     PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
+    val currentProjectId = testConfig().projectId
     val otherProjectId = otherProjectTestConfig().projectId
     val invalidProjects = mutableListOf<Triple<String, String, String>>()
     callbacks.invalidProjectIdHandler =
-      InvalidProjectIdHandler { pushProjectId, pushSubscriberId, currentProjectId ->
-        invalidProjects += Triple(pushProjectId, pushSubscriberId, currentProjectId)
+      InvalidProjectIdHandler { pushProjectId, pushSubscriberId, configuredProjectId ->
+        invalidProjects += Triple(pushProjectId, pushSubscriberId, configuredProjectId)
       }
 
     delegate.onMessageReceived(liveActivityPush(projectId = otherProjectId), context)
-    delegate.onMessageReceived(liveActivityPush(projectId = testConfig().projectId), context)
+    delegate.onMessageReceived(liveActivityPush(projectId = null), context)
+    delegate.onMessageReceived(liveActivityPush(projectId = currentProjectId), context)
 
-    assertEquals(listOf(Triple(otherProjectId, "subscriber-id", testConfig().projectId)), invalidProjects)
+    assertEquals(listOf(Triple(otherProjectId, "", currentProjectId), Triple("", "", currentProjectId)), invalidProjects)
   }
 
-  private fun liveActivityPush(projectId: String) =
+  @Test
+  fun `new token updates live activity subscriptions without a push subscription`() {
+    PushNotifications.sharedPreferencesHelper.subscriptionRequested = false
+    PushNotifications.sharedPreferencesHelper.setLiveActivitySubscriberId("live-1", "live-sub-1")
+
+    delegate.onNewToken("new-token")
+
+    verify(exactly = 1) { uploadManager.updateLiveActivityEndpoints("new-token") }
+    verify(exactly = 0) { uploadManager.syncToken(any(), any()) }
+  }
+
+  @Test
+  fun `new token does not touch live activities without subscriptions`() {
+    delegate.onNewToken("new-token")
+
+    verify(exactly = 0) { uploadManager.updateLiveActivityEndpoints(any()) }
+  }
+
+  /** A Live Activity push of [projectId]. Null leaves the `project` key out. */
+  private fun liveActivityPush(projectId: String?) =
     PushMessage(
       from = "702491788352",
       data =
-        mapOf(
-          "type" to "live_notification",
-          "liveNotificationId" to "live-1",
-          "event" to "update",
-          "project" to projectId,
-          "subscriber" to "subscriber-id",
-        ),
+        buildMap {
+          put("type", "live_notification")
+          projectId?.let { put("project", it) }
+          put("liveNotificationId", "live-1")
+          put("event", "update")
+        },
       notification = null,
     )
 

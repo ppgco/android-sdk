@@ -150,7 +150,7 @@ Everything below is driven by the campaign configuration — no app code needed.
   score/clock line (the team names stay visible), then the notification reverts
   automatically.
 - **Action buttons**: up to 3 buttons (Android limit) of types `OPEN_APP`,
-  `REDIRECT` (web URL or app deep link) and `CLOSE` (dismisses the activity).
+  `URL` (web URL or app deep link) and `CLOSE` (dismisses the activity).
 - **End state**: the final score is shown briefly after the `end` event, then
   the notification removes itself.
 

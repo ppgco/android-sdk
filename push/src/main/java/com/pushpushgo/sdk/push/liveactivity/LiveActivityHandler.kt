@@ -90,7 +90,7 @@ internal class LiveActivityHandler(
 
     val push = LiveActivityPayloadParser.parsePush(data)
     if (push == null) {
-      val template = data["template"]
+      val template = LiveActivityPayloadParser.templateName(data)
       if (LiveActivityTemplate.fromValue(template) == null) {
         logWarning("LiveActivityHandler: unsupported template '$template', ignoring push (requires a newer SDK)")
       } else {
@@ -152,7 +152,8 @@ internal class LiveActivityHandler(
       manager.updateActivity(push) ?: run {
         // Activity not tracked locally — fall back to a fresh start when the
         // push carries a full configuration (otherwise nothing to render).
-        if (LiveActivityPayloadParser.parseState(push.template, push.configurationJson, push.liveDataJson) != null) {
+        val state = push.template?.let { LiveActivityPayloadParser.parseState(it, push.configurationJson, push.liveDataJson) }
+        if (state != null) {
           logDebug("LiveActivityHandler: activity ${push.id} not found, treating update as start")
           handleStart(push)
         } else {
@@ -389,7 +390,7 @@ internal class LiveActivityHandler(
               requestOffset = index + 1,
               actionIndex = index,
             )
-          LiveActivityActionType.REDIRECT, LiveActivityActionType.URL ->
+          LiveActivityActionType.URL ->
             buildOpenAppIntent(
               activity,
               notificationId,

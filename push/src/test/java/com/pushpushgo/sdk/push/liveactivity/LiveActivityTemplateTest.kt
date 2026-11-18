@@ -28,7 +28,8 @@ internal class LiveActivityTemplateTest {
   fun `every supported template has a state parser`() {
     // Guards against adding a template constant without wiring its parser
     // (the template is not an enum, so the compiler can't check it).
-    val samples = mapOf(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING to ("""{"content":{}}""" to "{}"))
+    val samples =
+      mapOf(LiveActivityTemplate.FOOTBALL_MATCH_TRACKING to (LiveActivityPayloads.CONFIGURATION to LiveActivityPayloads.liveData()))
 
     assertEquals(LiveActivityTemplate.supported.toSet(), samples.keys)
     for ((template, blocks) in samples) {

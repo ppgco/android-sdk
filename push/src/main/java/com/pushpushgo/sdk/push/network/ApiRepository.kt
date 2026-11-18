@@ -8,6 +8,7 @@ import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.exception.isSubscriberInvalid
 import com.pushpushgo.sdk.push.network.data.InstallationMetadata
 import com.pushpushgo.sdk.push.network.data.LiveActivityEndpoint
+import com.pushpushgo.sdk.push.network.data.LiveActivityEndpointUpdateRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventDto
 import com.pushpushgo.sdk.push.network.data.LiveActivityEventsRequest
 import com.pushpushgo.sdk.push.network.data.LiveActivitySubscribeRequest
@@ -26,8 +27,7 @@ internal class ApiRepository(
   private val pushTokenProvider: PushTokenProvider,
 ) {
   companion object {
-    private const val LIVE_ACTIVITY_NOT_FOUND_MESSAGE = "Live notification not found"
-    private const val LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE = "Live notification subscriber not found"
+    private const val HTTP_NOT_FOUND = 404
   }
 
   suspend fun registerToken(token: String?) {
@@ -110,15 +110,20 @@ internal class ApiRepository(
     return response.id
   }
 
-  /** Pushes a refreshed push token / endpoint for an existing LA subscriber. */
+  /** Points an existing LA subscriber at [pushToken], e.g. after the push token changed. */
   suspend fun updateLiveActivityEndpoint(
     liveNotificationId: String,
     liveActivitySubscriberId: String,
+    pushToken: String,
   ) {
     apiService.updateLiveActivitySubscriberEndpoint(
       url = "${liveActivitySubscribersUrl(liveNotificationId)}/$liveActivitySubscriberId/endpoint",
       token = config.apiKey,
-      body = buildLiveActivitySubscribeRequest(),
+      body =
+        LiveActivityEndpointUpdateRequest(
+          installationMetadata = installationMetadata(),
+          endpoint = liveActivityEndpoint(pushToken),
+        ),
     )
   }
 
@@ -133,14 +138,8 @@ internal class ApiRepository(
         token = config.apiKey,
       )
     } catch (exception: PushPushException) {
-      val isAlreadyUnsubscribed =
-        exception.statusCode == 400 &&
-          (
-            exception.message == LIVE_ACTIVITY_NOT_FOUND_MESSAGE ||
-              exception.message == LIVE_ACTIVITY_SUBSCRIBER_NOT_FOUND_MESSAGE
-          )
-
-      if (!isAlreadyUnsubscribed) throw exception
+      // The backend answers 404 when the live notification or the subscriber is already gone.
+      if (exception.statusCode != HTTP_NOT_FOUND) throw exception
 
       logDebug("Live Activity subscription is already unregistered")
     }
@@ -185,39 +184,49 @@ internal class ApiRepository(
   /**
    * Fetches the current live notification document (configuration + live data +
    * lifecycle) as raw JSON, used to catch up a subscriber that joined after the
-   * `start` push was already delivered. Returns null on any failure.
+   * `start` push was already delivered. Returns null on any failure, and when the
+   * live notification is not running: the backend serves the document only then.
    */
   suspend fun fetchLiveActivity(liveNotificationId: String): String? =
     runCatching {
       apiService
         .getLiveActivity(
-          url = "${config.apiUrl}/core/projects/${config.projectId}/live-notifications/$liveNotificationId",
+          url = liveNotificationUrl(liveNotificationId),
           token = config.apiKey,
         ).string()
-    }.onFailure { logError("fetchLiveActivity($liveNotificationId) failed", it) }.getOrNull()
+    }.onFailure {
+      if ((it as? PushPushException)?.statusCode == HTTP_NOT_FOUND) {
+        logDebug("Live notification $liveNotificationId is not running")
+      } else {
+        logError("fetchLiveActivity($liveNotificationId) failed", it)
+      }
+    }.getOrNull()
 
-  private fun liveActivitySubscribersUrl(liveNotificationId: String): String =
-    "${config.apiUrl}/core/projects/${config.projectId}/live-notifications/$liveNotificationId/subscribers"
+  private fun liveNotificationUrl(liveNotificationId: String): String =
+    "${config.apiUrl}/core/v1/android/projects/${config.projectId}/live-notifications/$liveNotificationId"
 
-  private suspend fun buildLiveActivitySubscribeRequest(): LiveActivitySubscribeRequest {
+  private fun liveActivitySubscribersUrl(liveNotificationId: String): String = "${liveNotificationUrl(liveNotificationId)}/subscribers"
+
+  private suspend fun buildLiveActivitySubscribeRequest(): LiveActivitySubscribeRequest =
+    LiveActivitySubscribeRequest(
+      installationId = sharedPref.installationId,
+      installationMetadata = installationMetadata(),
+      endpoint = liveActivityEndpoint(pushTokenProvider.getToken()),
+    )
+
+  private fun installationMetadata(): InstallationMetadata =
+    InstallationMetadata(
+      sdkVersion = PushNotifications.VERSION,
+      osVersion = osVersion(),
+    )
+
+  private fun liveActivityEndpoint(pushToken: String): LiveActivityEndpoint {
     val transport =
       when (getPlatformType()) {
         PlatformType.FCM -> "FCM"
         PlatformType.HCM -> "HMS"
       }
-    return LiveActivitySubscribeRequest(
-      installationId = sharedPref.installationId,
-      installationMetadata =
-        InstallationMetadata(
-          sdkVersion = PushNotifications.VERSION,
-          osVersion = osVersion(),
-        ),
-      endpoint =
-        LiveActivityEndpoint(
-          transport = transport,
-          pushToken = pushTokenProvider.getToken(),
-        ),
-    )
+    return LiveActivityEndpoint(transport = transport, pushToken = pushToken)
   }
 
   suspend fun getBitmapFromUrl(url: String?): Bitmap? {

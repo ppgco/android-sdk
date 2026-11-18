@@ -43,6 +43,7 @@ internal class UploadManager(
     internal const val PERIODIC_TOKEN_SYNC_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token-periodic"
     internal const val PROJECT_CLEANUP_TAG = "com.pushpushgo.sdk.push.work:project-cleanup"
     internal const val SUBSCRIPTION_RECONCILE_WORK_NAME = "com.pushpushgo.sdk.push.work:reconcile-subscription"
+    internal const val LIVE_ACTIVITY_ENDPOINT_WORK_NAME = "com.pushpushgo.sdk.push.work:live-activity-endpoint"
     private const val BEACON_WORK_NAME = "com.pushpushgo.sdk.push.work:beacon"
 
     internal fun beaconWorkName(projectId: String) = "$BEACON_WORK_NAME:$projectId"
@@ -242,6 +243,34 @@ internal class UploadManager(
         .setConstraints(networkConstraints)
         .build(),
     )
+  }
+
+  /**
+   * Enqueues an update of every Live Activity subscription to [pushToken]. A newer update replaces
+   * a pending one. See [LiveActivityEndpointWorker].
+   */
+  fun updateLiveActivityEndpoints(pushToken: String) {
+    logDebug("Live Activity endpoint update enqueued")
+
+    workManager.enqueueUniqueWork(
+      LIVE_ACTIVITY_ENDPOINT_WORK_NAME,
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<LiveActivityEndpointWorker>()
+        .setInputData(
+          workDataOf(
+            LiveActivityEndpointWorker.PROJECT_ID to config.projectId,
+            LiveActivityEndpointWorker.API_KEY to config.apiKey,
+            LiveActivityEndpointWorker.API_URL to config.apiUrl,
+            LiveActivityEndpointWorker.PUSH_TOKEN to pushToken,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  fun cancelLiveActivityEndpointUpdate() {
+    workManager.cancelUniqueWork(LIVE_ACTIVITY_ENDPOINT_WORK_NAME)
   }
 
   fun cancelAllJobs() {

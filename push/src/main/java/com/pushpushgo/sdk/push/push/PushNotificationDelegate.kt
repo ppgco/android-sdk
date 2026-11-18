@@ -59,9 +59,9 @@ internal class PushNotificationDelegate(
   ) {
     logDebug("From: ${pushMessage.from}")
 
-    // Live Activity pushes use a dedicated envelope (type=live_notification) but carry the same
-    // `project`/`subscriber` keys, so they go through the same project-id match check - after a
-    // project change the previous project may still send them until its cleanup completes.
+    // A Live Activity push uses a dedicated envelope (type=live_notification) but states its
+    // `project` like a regular push, so it goes through the same project-id match check: after
+    // a project change the previous project may still send pushes until its cleanup completes.
     val isLiveActivityPush = LiveActivityPayloadParser.isLiveActivityPush(pushMessage.data)
 
     if (!isLiveActivityPush && !PushNotifications.isPushPushGoNotification(pushMessage.data)) {
@@ -162,6 +162,12 @@ internal class PushNotificationDelegate(
     logDebug("Refreshed token: $token")
 
     if (!PushNotifications.isInitialized()) return
+
+    // Live Activity subscriptions don't depend on the push subscription.
+    if (sharedPreferencesHelper.getLiveActivitySubscriptions().isNotEmpty()) {
+      uploadManager.updateLiveActivityEndpoints(token)
+    }
+
     if (!PushNotifications.isSubscriptionRequested()) return
     if (!PushNotifications.isSubscribed()) return
     if (!PushNotifications.areNotificationsEnabled()) return logDebug("Notifications are disabled. Skipping")
