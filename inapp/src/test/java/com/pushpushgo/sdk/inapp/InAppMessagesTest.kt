@@ -42,7 +42,7 @@ class InAppMessagesTest {
     every { retrofit.create(InAppListGetApi::class.java) } returns api
     every { retrofit.create(InAppEventApi::class.java) } returns mockk(relaxed = true)
     mockkObject(RetrofitProvider)
-    every { RetrofitProvider.buildRetrofit(any()) } returns retrofit
+    every { RetrofitProvider.buildRetrofit(any(), any()) } returns retrofit
     coEvery { api.getInAppMessages(any(), any(), any(), any(), any(), any(), any()) } returns
       Response.success(InAppMessagesResponse(data = emptyList(), metadata = Metadata(total = 0)))
   }

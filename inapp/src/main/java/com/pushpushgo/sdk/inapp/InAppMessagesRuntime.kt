@@ -37,7 +37,7 @@ internal class InAppMessagesRuntime(
   val customCodeHandler: CustomCodeHandler?,
 ) {
   private val retrofit: Retrofit by lazy {
-    RetrofitProvider.buildRetrofit(config.apiUrl)
+    RetrofitProvider.buildRetrofit(config.apiUrl, config.isDebug)
   }
   private val api: InAppListGetApi by lazy {
     retrofit.create(InAppListGetApi::class.java)
