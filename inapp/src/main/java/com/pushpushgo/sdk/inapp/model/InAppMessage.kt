@@ -97,12 +97,6 @@ internal enum class TriggerType {
 // --- Data classes ---
 
 @JsonClass(generateAdapter = true)
-internal data class Schedule(
-  val startTime: ZonedDateTime? = null,
-  val endTime: ZonedDateTime? = null,
-)
-
-@JsonClass(generateAdapter = true)
 internal data class InAppMessage(
   @Json(name = "id")
   val id: String,
@@ -136,6 +130,11 @@ internal data class InAppMessage(
   @Json(name = "settings")
   val settings: InAppMessageSettings,
   val dismissible: Boolean = true,
-  val schedule: Schedule? = null,
+  /** Start of the display window. Null when the message has no start date. */
+  @Json(name = "from")
+  val from: ZonedDateTime? = null,
+  /** End of the display window. Null when the message has no end date. */
+  @Json(name = "to")
+  val to: ZonedDateTime? = null,
   val expiration: ZonedDateTime? = null,
 )

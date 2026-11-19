@@ -437,27 +437,12 @@ internal class InAppMessageManagerImpl(
     return null
   }
 
+  /** Whether now is within the message's `from`/`to` window. A missing date leaves that side open. */
   private fun isInScheduleWindow(msg: InAppMessage): Boolean {
-    val schedule = msg.schedule ?: return true // No schedule means always in window
-
-    // Get current time in system default zone
-    val currentTime = ZonedDateTime.now()
-
-    // If there's no schedule constraints, message is always in window
-    if (schedule.startTime == null && schedule.endTime == null) {
-      return true
-    }
-
-    // Normalize time zones for accurate comparison
-    val normalizedStartTime = schedule.startTime?.withZoneSameInstant(currentTime.zone)
-    val normalizedEndTime = schedule.endTime?.withZoneSameInstant(currentTime.zone)
-
-    // Check if current time is within schedule bounds
-    val afterStart = normalizedStartTime == null || !currentTime.isBefore(normalizedStartTime)
-    val beforeEnd = normalizedEndTime == null || currentTime.isBefore(normalizedEndTime)
-    val isInWindow = afterStart && beforeEnd
-
-    return isInWindow
+    val now = ZonedDateTime.now()
+    val afterStart = msg.from == null || !now.isBefore(msg.from)
+    val beforeEnd = msg.to == null || now.isBefore(msg.to)
+    return afterStart && beforeEnd
   }
 
   private fun userMatchesAudienceType(audienceType: UserAudienceType): Boolean {
