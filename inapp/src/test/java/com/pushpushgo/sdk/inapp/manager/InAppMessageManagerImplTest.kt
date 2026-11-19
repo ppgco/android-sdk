@@ -68,6 +68,27 @@ internal class InAppMessageManagerImplTest {
       assertEquals("open", manager.trigger("open", null)?.id)
     }
 
+  @Test
+  fun `a triggered message is shown only on the device, OS and platform it targets`() =
+    runTest {
+      val manager =
+        managerWith(
+          message("ios", osTypes = "\"IOS\""),
+          message("desktop", devices = "\"DESKTOP\""),
+          message("tablet", devices = "\"TABLET\""),
+          message("web", platform = "WEB"),
+          message("android phone", osTypes = "\"ANDROID\"", devices = "\"MOBILE\"", platform = "MOBILE"),
+          message("everyone"),
+        )
+
+      assertNull(manager.trigger("ios", null))
+      assertNull(manager.trigger("desktop", null))
+      assertNull(manager.trigger("tablet", null))
+      assertNull(manager.trigger("web", null))
+      assertEquals("android phone", manager.trigger("android phone", null)?.id)
+      assertEquals("everyone", manager.trigger("everyone", null)?.id)
+    }
+
   private suspend fun managerWith(vararg messages: InAppMessage): InAppMessageManagerImpl {
     coEvery { repository.fetchMessages() } returns messages.toList()
     return InAppMessageManagerImpl(managerScope, repository, persistence, getApplicationContext()).apply { initialize() }

@@ -317,21 +317,11 @@ internal class InAppMessageManagerImpl(
                 emptyList()
               }
 
-            val deviceType = currentDeviceType
             val initiallyFiltered =
               eventBasedMessages.filter { msg ->
-                val enabled = msg.enabled
                 val notExpired =
                   msg.expiration == null || ZonedDateTime.now().isBefore(msg.expiration)
-                val correctDeviceType =
-                  msg.audience.device.contains(deviceType) ||
-                    msg.audience.device.contains(
-                      DeviceType.ALL,
-                    )
-                val correctOsType =
-                  msg.audience.osType.contains(currentOsType) || msg.audience.osType.contains(OSType.ALL)
-                val correctPlatform = msg.audience.platform == PlatformType.MOBILE || msg.audience.platform == PlatformType.ALL
-                enabled && notExpired && correctDeviceType && correctOsType && correctPlatform
+                msg.enabled && notExpired && targetsThisDevice(msg)
               }
 
             val finalEligibleMessages = mutableListOf<InAppMessage>()
@@ -401,7 +391,7 @@ internal class InAppMessageManagerImpl(
           val typeMatch = msg.settings.triggerType == TriggerType.CUSTOM_TRIGGER
           val keyMatch = msg.settings.customTriggerKey == key
           val valueMatch = (value == null || msg.settings.customTriggerValue == value)
-          typeMatch && keyMatch && valueMatch
+          typeMatch && keyMatch && valueMatch && targetsThisDevice(msg)
         } ?: emptyList()
       }
 
@@ -443,6 +433,15 @@ internal class InAppMessageManagerImpl(
     val afterStart = msg.from == null || !now.isBefore(msg.from)
     val beforeEnd = msg.to == null || now.isBefore(msg.to)
     return afterStart && beforeEnd
+  }
+
+  /** Whether the message targets this device type, this OS and the mobile platform. */
+  private fun targetsThisDevice(msg: InAppMessage): Boolean {
+    val audience = msg.audience
+    val deviceMatches = DeviceType.ALL in audience.device || currentDeviceType in audience.device
+    val osMatches = OSType.ALL in audience.osType || currentOsType in audience.osType
+    val platformMatches = audience.platform == PlatformType.MOBILE || audience.platform == PlatformType.ALL
+    return deviceMatches && osMatches && platformMatches
   }
 
   private fun userMatchesAudienceType(audienceType: UserAudienceType): Boolean {
