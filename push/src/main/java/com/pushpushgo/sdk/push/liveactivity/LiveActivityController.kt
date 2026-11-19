@@ -81,6 +81,8 @@ internal class LiveActivityController(
   suspend fun subscribe(liveActivityId: String) {
     val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)
     sharedPref.setLiveActivitySubscriberId(liveActivityId, laSubscriberId)
+    // Subscribing again shows an activity the user dismissed before.
+    manager?.clearDismissal(liveActivityId)
     // Catch up: render the current state for subscribers that joined after the
     // `start` push was already delivered (no-op if the LA isn't live yet).
     catchUp(liveActivityId)
