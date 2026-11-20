@@ -17,6 +17,8 @@ internal fun interface ApiServiceFactory {
 }
 
 internal object DefaultApiServiceFactory : ApiServiceFactory {
+  private const val API_KEY_HEADER = "X-Token"
+
   override fun create(config: Config): ApiService {
     val moshi = Moshi.Builder().build()
 
@@ -28,6 +30,8 @@ internal object DefaultApiServiceFactory : ApiServiceFactory {
         .addNetworkInterceptor(
           HttpLoggingInterceptor {
             logDebug(it)
+          }.apply {
+            redactHeader(API_KEY_HEADER)
           }.setLevel(
             if (config.isDebug) {
               HttpLoggingInterceptor.Level.BODY

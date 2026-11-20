@@ -8,13 +8,20 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 internal object RetrofitProvider {
-  fun buildRetrofit(baseUrl: String): Retrofit {
+  private const val API_KEY_HEADER = "X-Token"
+
+  /** HTTP traffic is logged only in debug mode. */
+  fun buildRetrofit(
+    baseUrl: String,
+    isDebug: Boolean,
+  ): Retrofit {
     val okHttpClient =
       OkHttpClient
         .Builder()
         .addInterceptor(
           HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (isDebug) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
+            redactHeader(API_KEY_HEADER)
           },
         ).build()
 

@@ -147,6 +147,10 @@ internal class LiveActivityPersistence(
     prefs.edit { putBoolean("$KEY_PREFIX_DISMISSED$liveActivityId", true) }
   }
 
+  fun clearDismissedByUser(liveActivityId: String) {
+    prefs.edit { remove("$KEY_PREFIX_DISMISSED$liveActivityId") }
+  }
+
   fun getProjectId(liveActivityId: String): String = prefs.getString("$KEY_PREFIX_PROJECT$liveActivityId", "").orEmpty()
 
   fun setProjectId(

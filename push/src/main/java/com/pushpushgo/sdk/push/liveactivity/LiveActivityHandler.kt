@@ -99,6 +99,13 @@ internal class LiveActivityHandler(
       return
     }
 
+    // A Live Activity the user dismissed stays closed. Its data is dropped once it ends.
+    if (manager.isDismissedByUser(push.id)) {
+      if (push.event == LiveActivityEvent.END) manager.removeActivity(push.id)
+      logDebug("LiveActivityHandler: ignoring event=${push.event.value} for ${push.id}, dismissed by the user")
+      return
+    }
+
     logDebug("LiveActivityHandler: handling event=${push.event.value}, id=${push.id}")
 
     scope.launch {

@@ -13,9 +13,11 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 internal class LiveActivityManagerTest {
@@ -163,6 +165,32 @@ internal class LiveActivityManagerTest {
 
     assertNull(persistence.rebuild("test-la-1"))
     assertEquals(emptySet(), persistence.getActiveIds())
+  }
+
+  @Test
+  fun `activity dismissed by the user is not restored after a restart`() {
+    manager.startActivity(startPush())
+    manager.markDismissedByUser("test-la-1")
+
+    val restartedManager = LiveActivityManager(persistence)
+    restartedManager.restoreFromPersistence()
+
+    assertTrue(restartedManager.isDismissedByUser("test-la-1"))
+    assertNull(restartedManager.getActivity("test-la-1"))
+    assertEquals(emptyList(), restartedManager.getActiveActivities())
+  }
+
+  @Test
+  fun `dismissal is forgotten when cleared or when the activity is removed`() {
+    manager.startActivity(startPush())
+
+    manager.markDismissedByUser("test-la-1")
+    manager.clearDismissal("test-la-1")
+    assertFalse(manager.isDismissedByUser("test-la-1"))
+
+    manager.markDismissedByUser("test-la-1")
+    manager.removeActivity("test-la-1")
+    assertFalse(manager.isDismissedByUser("test-la-1"))
   }
 
   private fun liveDataJson(
