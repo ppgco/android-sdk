@@ -1,0 +1,280 @@
+package com.pushpushgo.sdk.push.work
+
+import android.content.Context
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.pushpushgo.sdk.core.api.Config
+import com.pushpushgo.sdk.push.data.EventType
+import com.pushpushgo.sdk.push.utils.logDebug
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.BEACON
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.BEACON_PAYLOAD
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.BEACON_SUBSCRIBER_ID
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_BUTTON_ID
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_CAMPAIGN
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_SUBSCRIBER_ID
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.EVENT_TYPE
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_PERIODIC
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_SUBSCRIBER_ID
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.SYNC_TOKEN_TOKEN
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.TYPE
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_API_KEY
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_API_URL
+import com.pushpushgo.sdk.push.work.UploadWorker.Companion.WORK_PROJECT_ID
+import java.util.concurrent.TimeUnit
+
+internal class UploadManager(
+  context: Context,
+  private val config: Config,
+) {
+  companion object {
+    private const val UPLOAD_RETRY_DELAY = 30L
+    private const val TOKEN_SYNC_PERIOD_DAYS = 14L
+
+    internal const val SYNC_TOKEN_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token"
+    internal const val PERIODIC_TOKEN_SYNC_WORK_NAME = "com.pushpushgo.sdk.push.work:sync-token-periodic"
+    internal const val PROJECT_CLEANUP_TAG = "com.pushpushgo.sdk.push.work:project-cleanup"
+    internal const val SUBSCRIPTION_RECONCILE_WORK_NAME = "com.pushpushgo.sdk.push.work:reconcile-subscription"
+    internal const val LIVE_ACTIVITY_ENDPOINT_WORK_NAME = "com.pushpushgo.sdk.push.work:live-activity-endpoint"
+    private const val BEACON_WORK_NAME = "com.pushpushgo.sdk.push.work:beacon"
+
+    internal fun beaconWorkName(projectId: String) = "$BEACON_WORK_NAME:$projectId"
+  }
+
+  private val workManager = WorkManager.getInstance(context)
+
+  private val networkConstraints =
+    Constraints
+      .Builder()
+      .setRequiredNetworkType(NetworkType.CONNECTED)
+      .build()
+
+  fun syncToken(
+    subscriberId: String,
+    token: String?,
+  ) {
+    if (subscriberId.isBlank()) {
+      return logDebug("Token sync not enqueued. Reason: empty subscriberId")
+    }
+
+    workManager.enqueueUniqueWork(
+      SYNC_TOKEN_WORK_NAME,
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<UploadWorker>()
+        .setInputData(
+          workDataOf(
+            TYPE to SYNC_TOKEN,
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
+            SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+            SYNC_TOKEN_TOKEN to token,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  fun schedulePeriodicTokenSync(subscriberId: String) {
+    if (subscriberId.isBlank()) {
+      return logDebug("Periodic token sync not scheduled. Reason: empty subscriberId")
+    }
+
+    workManager.enqueueUniquePeriodicWork(
+      PERIODIC_TOKEN_SYNC_WORK_NAME,
+      ExistingPeriodicWorkPolicy.UPDATE,
+      PeriodicWorkRequestBuilder<UploadWorker>(
+        TOKEN_SYNC_PERIOD_DAYS,
+        TimeUnit.DAYS,
+      ).setInitialDelay(
+        TOKEN_SYNC_PERIOD_DAYS,
+        TimeUnit.DAYS,
+      ).setInputData(
+        workDataOf(
+          TYPE to SYNC_TOKEN_PERIODIC,
+          WORK_PROJECT_ID to config.projectId,
+          WORK_API_KEY to config.apiKey,
+          WORK_API_URL to config.apiUrl,
+          SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+        ),
+      ).setBackoffCriteria(BackoffPolicy.LINEAR, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  /**
+   * Enqueues a delivery/click event for durable, retried upload. Events are
+   * fire-and-forget at the call site but survive process death and transient
+   * network loss because they run as a [UploadWorker] job with exponential
+   * backoff.
+   *
+   * Not unique work: events are never de-duplicated against one another.
+   */
+  fun sendEvent(
+    type: EventType,
+    buttonId: Int,
+    campaign: String,
+    subscriberId: String?,
+  ) {
+    logDebug("Event enqueued: ${type.value}")
+
+    workManager.enqueue(
+      OneTimeWorkRequestBuilder<UploadWorker>()
+        .setInputData(
+          workDataOf(
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
+            TYPE to EVENT,
+            EVENT_TYPE to type.name,
+            EVENT_BUTTON_ID to buttonId,
+            EVENT_CAMPAIGN to campaign,
+            EVENT_SUBSCRIBER_ID to subscriberId,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  /**
+   * Enqueues [payload] for [subscriberId] at the end of the project's beacon chain, so beacons are
+   * sent in order. [UploadWorker] discards it once [subscriberId] is no longer the active subscriber.
+   */
+  fun enqueueBeacon(
+    subscriberId: String,
+    payload: String,
+  ) {
+    workManager.enqueueUniqueWork(
+      beaconWorkName(config.projectId),
+      ExistingWorkPolicy.APPEND_OR_REPLACE,
+      OneTimeWorkRequestBuilder<UploadWorker>()
+        .setInputData(
+          workDataOf(
+            TYPE to BEACON,
+            WORK_PROJECT_ID to config.projectId,
+            WORK_API_KEY to config.apiKey,
+            WORK_API_URL to config.apiUrl,
+            BEACON_SUBSCRIBER_ID to subscriberId,
+            BEACON_PAYLOAD to payload,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  fun cancelBeacons(projectId: String) {
+    workManager.cancelUniqueWork(beaconWorkName(projectId))
+  }
+
+  /**
+   * Enqueues durable removal of [subscriberId] and [liveActivitySubscriptions] (live notification
+   * id to Live Activity subscriber id) from [project], using that project's credentials rather
+   * than the current configuration. See [ProjectCleanupWorker].
+   *
+   * A newer cleanup of the same subscriber replaces a pending one. [cancelAllJobs] leaves these
+   * jobs alone.
+   */
+  fun scheduleProjectCleanup(
+    project: Config,
+    subscriberId: String?,
+    liveActivitySubscriptions: Map<String, String>,
+  ) {
+    logDebug("Project ${project.projectId} cleanup enqueued")
+
+    val liveActivities = liveActivitySubscriptions.toList()
+
+    workManager.enqueueUniqueWork(
+      projectCleanupWorkName(project.projectId, subscriberId),
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<ProjectCleanupWorker>()
+        .setInputData(
+          workDataOf(
+            ProjectCleanupWorker.PROJECT_ID to project.projectId,
+            ProjectCleanupWorker.API_KEY to project.apiKey,
+            ProjectCleanupWorker.API_URL to project.apiUrl,
+            ProjectCleanupWorker.SUBSCRIBER_ID to subscriberId,
+            ProjectCleanupWorker.LIVE_ACTIVITY_IDS to liveActivities.map { it.first }.toTypedArray(),
+            ProjectCleanupWorker.LIVE_ACTIVITY_SUBSCRIBER_IDS to liveActivities.map { it.second }.toTypedArray(),
+          ),
+        ).addTag(PROJECT_CLEANUP_TAG)
+        .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  /** Cancels a pending removal of [subscriberId] from [projectId], e.g. once it is in use again. */
+  fun cancelProjectCleanup(
+    projectId: String,
+    subscriberId: String,
+  ) {
+    workManager.cancelUniqueWork(projectCleanupWorkName(projectId, subscriberId))
+  }
+
+  private fun projectCleanupWorkName(
+    projectId: String,
+    subscriberId: String?,
+  ) = "$PROJECT_CLEANUP_TAG:$projectId:${subscriberId.orEmpty()}"
+
+  /**
+   * Enqueues a [SubscriptionReconcileWorker] that runs once the network is available. [cancelAllJobs]
+   * leaves it alone.
+   */
+  fun scheduleSubscriptionReconcile() {
+    logDebug("Subscription reconciliation enqueued")
+
+    workManager.enqueueUniqueWork(
+      SUBSCRIPTION_RECONCILE_WORK_NAME,
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<SubscriptionReconcileWorker>()
+        .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  /**
+   * Enqueues an update of every Live Activity subscription to [pushToken]. A newer update replaces
+   * a pending one. See [LiveActivityEndpointWorker].
+   */
+  fun updateLiveActivityEndpoints(pushToken: String) {
+    logDebug("Live Activity endpoint update enqueued")
+
+    workManager.enqueueUniqueWork(
+      LIVE_ACTIVITY_ENDPOINT_WORK_NAME,
+      ExistingWorkPolicy.REPLACE,
+      OneTimeWorkRequestBuilder<LiveActivityEndpointWorker>()
+        .setInputData(
+          workDataOf(
+            LiveActivityEndpointWorker.PROJECT_ID to config.projectId,
+            LiveActivityEndpointWorker.API_KEY to config.apiKey,
+            LiveActivityEndpointWorker.API_URL to config.apiUrl,
+            LiveActivityEndpointWorker.PUSH_TOKEN to pushToken,
+          ),
+        ).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UPLOAD_RETRY_DELAY, TimeUnit.SECONDS)
+        .setConstraints(networkConstraints)
+        .build(),
+    )
+  }
+
+  fun cancelLiveActivityEndpointUpdate() {
+    workManager.cancelUniqueWork(LIVE_ACTIVITY_ENDPOINT_WORK_NAME)
+  }
+
+  fun cancelAllJobs() {
+    workManager.cancelUniqueWork(SYNC_TOKEN_WORK_NAME)
+    workManager.cancelUniqueWork(PERIODIC_TOKEN_SYNC_WORK_NAME)
+  }
+}
