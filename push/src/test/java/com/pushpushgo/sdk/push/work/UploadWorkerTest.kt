@@ -1,22 +1,31 @@
 package com.pushpushgo.sdk.push.work
 
+import android.Manifest
+import android.app.Application
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
+import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.EventType
+import com.pushpushgo.sdk.push.exception.PushPushException
 import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
 import com.pushpushgo.sdk.push.network.FakeApiService
 import com.pushpushgo.sdk.push.network.SharedPreferencesHelper
 import com.pushpushgo.sdk.push.testConfig
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockkObject
+import io.mockk.runs
 import io.mockk.unmockkObject
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +46,7 @@ class UploadWorkerTest {
   @After
   fun tearDown() {
     SharedPreferencesHelper(getApplicationContext()).clearProjectData()
-    unmockkObject(DefaultApiServiceFactory)
+    unmockkObject(DefaultApiServiceFactory, PushNotifications)
   }
 
   @Test
@@ -94,6 +103,35 @@ class UploadWorkerTest {
     }
 
   @Test
+  fun `token sync replaces a subscriber the API no longer accepts`() =
+    runTest {
+      setActiveSubscriber("S")
+      grantNotifications()
+      apiService.tokenUpdateException = PushPushException("Subscriber not exists", 404)
+      mockkObject(PushNotifications)
+      coEvery { PushNotifications.replaceInvalidSubscriber(config, "S") } just runs
+
+      val result = tokenSyncWorker(subscriberId = "S").doWork()
+
+      assertEquals(ListenableWorker.Result.success(), result)
+      coVerify(exactly = 1) { PushNotifications.replaceInvalidSubscriber(config, "S") }
+    }
+
+  @Test
+  fun `token sync keeps the subscriber when the API rejects the credentials`() =
+    runTest {
+      setActiveSubscriber("S")
+      grantNotifications()
+      apiService.tokenUpdateException = PushPushException("Illegal access to use-case", 403)
+      mockkObject(PushNotifications)
+
+      val result = tokenSyncWorker(subscriberId = "S").doWork()
+
+      assertEquals(ListenableWorker.Result.failure(), result)
+      coVerify(exactly = 0) { PushNotifications.replaceInvalidSubscriber(any(), any()) }
+    }
+
+  @Test
   fun `beacon is discarded when its subscriber is no longer active`() =
     runTest {
       setActiveSubscriber("new-subscriber")
@@ -134,6 +172,24 @@ class UploadWorkerTest {
       subscriptionRequested = true
     }
   }
+
+  private fun grantNotifications() {
+    shadowOf(getApplicationContext<Application>()).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+  }
+
+  private fun tokenSyncWorker(subscriberId: String): UploadWorker =
+    TestListenableWorkerBuilder<UploadWorker>(
+      context = getApplicationContext(),
+      inputData =
+        workDataOf(
+          UploadWorker.TYPE to UploadWorker.SYNC_TOKEN,
+          UploadWorker.WORK_PROJECT_ID to config.projectId,
+          UploadWorker.WORK_API_KEY to config.apiKey,
+          UploadWorker.WORK_API_URL to config.apiUrl,
+          UploadWorker.SYNC_TOKEN_SUBSCRIBER_ID to subscriberId,
+          UploadWorker.SYNC_TOKEN_TOKEN to "new-token",
+        ),
+    ).build()
 
   private fun beaconWorker(subscriberId: String): UploadWorker =
     TestListenableWorkerBuilder<UploadWorker>(

@@ -8,6 +8,8 @@ import com.pushpushgo.sdk.push.PushNotifications
 import com.pushpushgo.sdk.push.data.Event
 import com.pushpushgo.sdk.push.data.EventType
 import com.pushpushgo.sdk.push.data.Payload
+import com.pushpushgo.sdk.push.exception.PushPushException
+import com.pushpushgo.sdk.push.exception.isSubscriberInvalid
 import com.pushpushgo.sdk.push.exception.isTransientApiError
 import com.pushpushgo.sdk.push.network.ApiService
 import com.pushpushgo.sdk.push.network.DefaultApiServiceFactory
@@ -18,6 +20,7 @@ import com.pushpushgo.sdk.push.utils.PlatformPushTokenProvider
 import com.pushpushgo.sdk.push.utils.isSameProjectAs
 import com.pushpushgo.sdk.push.utils.logDebug
 import com.pushpushgo.sdk.push.utils.logError
+import com.pushpushgo.sdk.push.utils.logWarning
 import com.pushpushgo.sdk.push.utils.osVersion
 import kotlinx.coroutines.coroutineScope
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -219,18 +222,25 @@ internal class UploadWorker(
       return logDebug("Token sync skipped - token unchanged")
     }
 
-    apiService.updateSubscriberToken(
-      token = config.apiKey,
-      projectId = config.projectId,
-      subscriberId = subscriberId,
-      body =
-        TokenUpdateRequest(
-          token = token,
-          sdkVersion = PushNotifications.VERSION,
-          osVersion = osVersion(),
-          installationId = sharedPreferencesHelper.installationId,
-        ),
-    )
+    try {
+      apiService.updateSubscriberToken(
+        token = config.apiKey,
+        projectId = config.projectId,
+        subscriberId = subscriberId,
+        body =
+          TokenUpdateRequest(
+            token = token,
+            sdkVersion = PushNotifications.VERSION,
+            osVersion = osVersion(),
+            installationId = sharedPreferencesHelper.installationId,
+          ),
+      )
+    } catch (e: PushPushException) {
+      if (!e.isSubscriberInvalid()) throw e
+
+      logWarning("Subscriber $subscriberId is no longer valid (${e.message}), registering again")
+      return PushNotifications.replaceInvalidSubscriber(config, subscriberId)
+    }
 
     sharedPreferencesHelper.onPushTokenUpdated(subscriberId, token)
   }

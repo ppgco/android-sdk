@@ -160,15 +160,31 @@ internal class PushNotificationsRuntime(
 
   /** Runs [reconcile] in the background; a transient failure is retried by SubscriptionReconcileWorker. */
   fun requestReconcile() {
-    sdkScope.launch {
-      try {
-        reconcile()
-      } catch (e: CancellationException) {
-        throw e
-      } catch (e: Exception) {
-        logError("Subscription reconciliation failed", e)
-        if (e.isTransientApiError()) uploadManager.scheduleSubscriptionReconcile()
+    sdkScope.launch { reconcileOrRetryLater() }
+  }
+
+  suspend fun replaceInvalidSubscriber(
+    project: Config,
+    subscriberId: String,
+  ) {
+    val isActiveSubscriber =
+      operationMutex.withLock {
+        val isActive = !isReleased && config.isSameProjectAs(project) && sharedPreferencesHelper.subscriberId == subscriberId
+        if (isActive) sharedPreferencesHelper.subscriberId = null
+        isActive
       }
+
+    if (isActiveSubscriber) reconcileOrRetryLater()
+  }
+
+  private suspend fun reconcileOrRetryLater() {
+    try {
+      reconcile()
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      logError("Subscription reconciliation failed", e)
+      if (e.isTransientApiError()) uploadManager.scheduleSubscriptionReconcile()
     }
   }
 
