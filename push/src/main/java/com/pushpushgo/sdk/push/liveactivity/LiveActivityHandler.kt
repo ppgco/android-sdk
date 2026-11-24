@@ -51,6 +51,7 @@ internal class LiveActivityHandler(
       liveDataVersion: Int,
     ) -> Unit
   )? = null,
+  private val catchUpUntracked: suspend (liveActivityId: String) -> Boolean = { false },
 ) {
   companion object {
     const val ACTION_DISMISS = "com.pushpushgo.sdk.push.LIVE_ACTIVITY_DISMISS"
@@ -157,14 +158,15 @@ internal class LiveActivityHandler(
   private suspend fun handleUpdate(push: LiveActivityPush) {
     val updatedActivity =
       manager.updateActivity(push) ?: run {
-        // Activity not tracked locally — fall back to a fresh start when the
-        // push carries a full configuration (otherwise nothing to render).
+        // Untracked e.g. after an update from SDK 3.x, whose persisted state cannot be rebuilt
         val state = push.template?.let { LiveActivityPayloadParser.parseState(it, push.configurationJson, push.liveDataJson) }
-        if (state != null) {
-          logDebug("LiveActivityHandler: activity ${push.id} not found, treating update as start")
-          handleStart(push)
-        } else {
-          logWarning("LiveActivityHandler: dropping update for untracked activity ${push.id}")
+        when {
+          state != null -> {
+            logDebug("LiveActivityHandler: activity ${push.id} not found, treating update as start")
+            handleStart(push)
+          }
+          catchUpUntracked(push.id) -> logDebug("LiveActivityHandler: activity ${push.id} not found, caught up from the API")
+          else -> logWarning("LiveActivityHandler: dropping update for untracked activity ${push.id}")
         }
         return
       }
