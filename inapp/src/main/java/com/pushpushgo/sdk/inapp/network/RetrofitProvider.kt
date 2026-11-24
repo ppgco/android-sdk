@@ -10,7 +10,6 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 internal object RetrofitProvider {
   private const val API_KEY_HEADER = "X-Token"
 
-  /** HTTP traffic is logged only in debug mode. */
   fun buildRetrofit(
     baseUrl: String,
     isDebug: Boolean,

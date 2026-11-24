@@ -427,7 +427,6 @@ internal class InAppMessageManagerImpl(
     return null
   }
 
-  /** Whether now is within the message's `from`/`to` window. A missing date leaves that side open. */
   private fun isInScheduleWindow(msg: InAppMessage): Boolean {
     val now = ZonedDateTime.now()
     val afterStart = msg.from == null || !now.isBefore(msg.from)
@@ -435,7 +434,6 @@ internal class InAppMessageManagerImpl(
     return afterStart && beforeEnd
   }
 
-  /** Whether the message targets this device type, this OS and the mobile platform. */
   private fun targetsThisDevice(msg: InAppMessage): Boolean {
     val audience = msg.audience
     val deviceMatches = DeviceType.ALL in audience.device || currentDeviceType in audience.device

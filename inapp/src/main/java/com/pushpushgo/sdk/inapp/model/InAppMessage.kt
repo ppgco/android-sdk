@@ -130,10 +130,8 @@ internal data class InAppMessage(
   @Json(name = "settings")
   val settings: InAppMessageSettings,
   val dismissible: Boolean = true,
-  /** Start of the display window. Null when the message has no start date. */
   @Json(name = "from")
   val from: ZonedDateTime? = null,
-  /** End of the display window. Null when the message has no end date. */
   @Json(name = "to")
   val to: ZonedDateTime? = null,
   val expiration: ZonedDateTime? = null,
