@@ -20,7 +20,6 @@ internal class LiveActivityManager(
     val ids = persistence.getActiveIds()
     logDebug("LiveActivityManager: restoring ${ids.size} activities from persistence")
     for (id in ids) {
-      // An activity the user dismissed stays closed, also after a restart.
       if (persistence.isDismissedByUser(id)) continue
       val status = persistence.getStatus(id)
       if (status == null || status == LiveActivityStatus.ENDED) {
@@ -163,10 +162,8 @@ internal class LiveActivityManager(
     logDebug("LiveActivityManager: activity $id dismissed by user")
   }
 
-  /** Whether the user dismissed the activity. Its pushes are then ignored until the device subscribes to it again. */
   fun isDismissedByUser(id: String): Boolean = persistence.isDismissedByUser(id)
 
-  /** Lets a dismissed activity show again, e.g. when the user subscribes to it once more. */
   fun clearDismissal(id: String) {
     persistence.clearDismissedByUser(id)
   }

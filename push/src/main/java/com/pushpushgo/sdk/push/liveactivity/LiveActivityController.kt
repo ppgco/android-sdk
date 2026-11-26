@@ -11,6 +11,7 @@ import com.pushpushgo.sdk.push.utils.logError
 import com.pushpushgo.sdk.push.utils.logWarning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Owns the Live Activity subsystem (persistence + manager + push handler) and
@@ -31,6 +32,8 @@ internal class LiveActivityController(
   private val manager: LiveActivityManager? by lazy {
     if (Build.VERSION.SDK_INT >= 36) LiveActivityManager(persistence) else null
   }
+
+  private val catchUpsInProgress: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
   val handler: LiveActivityHandler? by lazy {
     val manager = manager ?: return@lazy null
@@ -65,7 +68,12 @@ internal class LiveActivityController(
           }
         }
       },
+      catchUpUntracked = ::catchUpIfSubscribed,
     )
+  }
+
+  init {
+    apiRepository.onLiveActivityAccessRevoked = ::removeAllActivities
   }
 
   fun restoreFromPersistence() {
@@ -78,10 +86,18 @@ internal class LiveActivityController(
 
   fun getActiveLiveActivities(): List<LiveActivity> = manager?.getActiveActivities()?.map { it.toLiveActivity() } ?: emptyList()
 
+  private fun removeAllActivities() {
+    val handler = handler ?: return
+    val activities = manager?.getActiveActivities().orEmpty()
+    if (activities.isEmpty()) return
+
+    logWarning("Live Activities are no longer available for this key, removing ${activities.size}")
+    activities.forEach { handler.removeActivity(it.id) }
+  }
+
   suspend fun subscribe(liveActivityId: String) {
     val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)
     sharedPref.setLiveActivitySubscriberId(liveActivityId, laSubscriberId)
-    // Subscribing again shows an activity the user dismissed before.
     manager?.clearDismissal(liveActivityId)
     // Catch up: render the current state for subscribers that joined after the
     // `start` push was already delivered (no-op if the LA isn't live yet).
@@ -134,5 +150,20 @@ internal class LiveActivityController(
     val json = apiRepository.fetchLiveActivity(liveNotificationId) ?: return
     val envelope = LiveActivityPayloadParser.buildCatchUpEnvelope(json) ?: return
     handler.handlePush(envelope)
+  }
+
+  // Pushes queued while offline arrive together, and one fetch is enough for all of them.
+  private suspend fun catchUpIfSubscribed(liveNotificationId: String): Boolean {
+    if (sharedPref.getLiveActivitySubscriberId(liveNotificationId).isEmpty()) return false
+
+    if (catchUpsInProgress.add(liveNotificationId)) {
+      try {
+        catchUp(liveNotificationId)
+      } finally {
+        catchUpsInProgress.remove(liveNotificationId)
+      }
+    }
+
+    return true
   }
 }

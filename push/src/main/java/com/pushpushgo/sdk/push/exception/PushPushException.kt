@@ -19,6 +19,11 @@ internal fun Throwable.isTransientApiError(): Boolean {
   return statusCode == null || statusCode == 429 || statusCode >= 500
 }
 
+internal fun Throwable.isAccessRevoked(): Boolean {
+  val statusCode = (this as? PushPushException)?.statusCode
+  return statusCode == 401 || statusCode == 403
+}
+
 internal fun PushPushException.isSubscriberInvalid(): Boolean =
   statusCode == 404 ||
     (statusCode == 400 && message == INACTIVE_SUBSCRIBER_MESSAGE) ||

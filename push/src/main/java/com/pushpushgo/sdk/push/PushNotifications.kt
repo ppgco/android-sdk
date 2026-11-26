@@ -353,6 +353,13 @@ object PushNotifications {
     runtime?.reconcile()
   }
 
+  internal suspend fun replaceInvalidSubscriber(
+    project: Config,
+    subscriberId: String,
+  ) {
+    runtime?.replaceInvalidSubscriber(project, subscriberId)
+  }
+
   @VisibleForTesting
   internal suspend fun reset() {
     lifecycleMutex.withLock {

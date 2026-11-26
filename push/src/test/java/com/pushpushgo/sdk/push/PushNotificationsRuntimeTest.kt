@@ -95,6 +95,37 @@ class PushNotificationsRuntimeTest {
     }
 
   @Test
+  fun `invalid subscriber is replaced by a new registration`() =
+    runTest(dispatcher) {
+      grantNotifications()
+      preferences.subscriberId = "removed-subscriber"
+      preferences.subscriptionRequested = true
+
+      runtime.replaceInvalidSubscriber(config, "removed-subscriber")
+
+      assertEquals(FakeApiService.SUBSCRIBER_ID, preferences.subscriberId)
+      assertEquals(listOf("push-token"), apiService.registeredTokens)
+      assertEquals(
+        SubscriptionStatus.Subscribed(subscriberId = FakeApiService.SUBSCRIBER_ID, projectId = config.projectId),
+        callbacks.subscriptionStatusFlow.value,
+      )
+    }
+
+  @Test
+  fun `invalid subscriber report is ignored once another subscriber is active`() =
+    runTest(dispatcher) {
+      grantNotifications()
+      preferences.subscriberId = "current-subscriber"
+      preferences.subscriptionRequested = true
+
+      runtime.replaceInvalidSubscriber(config, "removed-subscriber")
+      runtime.replaceInvalidSubscriber(otherProjectTestConfig(), "current-subscriber")
+
+      assertEquals("current-subscriber", preferences.subscriberId)
+      assertTrue(apiService.registeredTokens.isEmpty())
+    }
+
+  @Test
   fun `beacon is discarded when the subscription is not requested`() {
     preferences.subscriberId = FakeApiService.SUBSCRIBER_ID
     preferences.subscriptionRequested = false

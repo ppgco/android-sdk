@@ -15,6 +15,7 @@ import retrofit2.Response
 
 internal class FakeApiService : ApiService {
   var exception: Exception? = null
+  var tokenUpdateException: Exception? = null
   val registeredTokens = mutableListOf<String>()
   val unregisteredSubscriberIds = mutableListOf<String>()
   val liveActivitySubscribeRequests = mutableListOf<LiveActivitySubscribeRequest>()
@@ -50,6 +51,7 @@ internal class FakeApiService : ApiService {
     subscriberId: String,
     body: TokenUpdateRequest,
   ) = respond {
+    tokenUpdateException?.let { throw it }
     updatedTokens += body.token
     Response.success<Void>(null)
   }
@@ -79,7 +81,7 @@ internal class FakeApiService : ApiService {
     url: String,
     token: String,
     body: LiveActivityEventsRequest,
-  ): Response<Void> = error("not used")
+  ) = respond { Response.success<Void>(null) }
 
   override suspend fun subscribeLiveActivity(
     url: String,
