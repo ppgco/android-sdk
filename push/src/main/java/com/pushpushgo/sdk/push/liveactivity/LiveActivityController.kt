@@ -72,6 +72,10 @@ internal class LiveActivityController(
     )
   }
 
+  init {
+    apiRepository.onLiveActivityAccessRevoked = ::removeAllActivities
+  }
+
   fun restoreFromPersistence() {
     if (Build.VERSION.SDK_INT >= 36) {
       manager?.restoreFromPersistence()
@@ -81,6 +85,15 @@ internal class LiveActivityController(
   fun isSupported(): Boolean = Build.VERSION.SDK_INT >= 36
 
   fun getActiveLiveActivities(): List<LiveActivity> = manager?.getActiveActivities()?.map { it.toLiveActivity() } ?: emptyList()
+
+  private fun removeAllActivities() {
+    val handler = handler ?: return
+    val activities = manager?.getActiveActivities().orEmpty()
+    if (activities.isEmpty()) return
+
+    logWarning("Live Activities are no longer available for this key, removing ${activities.size}")
+    activities.forEach { handler.removeActivity(it.id) }
+  }
 
   suspend fun subscribe(liveActivityId: String) {
     val laSubscriberId = apiRepository.subscribeToLiveActivity(liveActivityId)

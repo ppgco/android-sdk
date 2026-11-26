@@ -81,7 +81,7 @@ internal class FakeApiService : ApiService {
     url: String,
     token: String,
     body: LiveActivityEventsRequest,
-  ): Response<Void> = error("not used")
+  ) = respond { Response.success<Void>(null) }
 
   override suspend fun subscribeLiveActivity(
     url: String,

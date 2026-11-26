@@ -142,4 +142,38 @@ class ApiRepositoryTest {
 
       assertSame(expected, actual)
     }
+
+  @Test
+  fun `live activity calls rejected for the key report the revoked access`() =
+    runTest {
+      var reports = 0
+      repository.onLiveActivityAccessRevoked = { reports++ }
+
+      for (code in listOf(401, 403)) {
+        apiService.exception = PushPushException("Illegal access to use-case", code)
+
+        assertNull(repository.fetchLiveActivity("live-1"))
+        assertFailsWith<PushPushException> { repository.subscribeToLiveActivity("live-1") }
+        assertFailsWith<PushPushException> { repository.updateLiveActivityEndpoint("live-1", "live-sub-1", "push-token") }
+        assertFailsWith<PushPushException> { repository.unsubscribeFromLiveActivity("live-1", "live-sub-1") }
+        assertFailsWith<PushPushException> { repository.sendLiveActivityEvent("live-1", "clicked", 1, "live-sub-1") }
+      }
+
+      assertEquals(10, reports)
+    }
+
+  @Test
+  fun `other live activity errors do not report revoked access`() =
+    runTest {
+      var reports = 0
+      repository.onLiveActivityAccessRevoked = { reports++ }
+
+      apiService.exception = PushPushException("Live notification not found", 404)
+      assertNull(repository.fetchLiveActivity("live-1"))
+      repository.unsubscribeFromLiveActivity("live-1", "live-sub-1")
+      apiService.exception = PushPushException("Internal Server Error", 500)
+      assertFailsWith<PushPushException> { repository.sendLiveActivityEvent("live-1", "clicked", 1, "live-sub-1") }
+
+      assertEquals(0, reports)
+    }
 }
