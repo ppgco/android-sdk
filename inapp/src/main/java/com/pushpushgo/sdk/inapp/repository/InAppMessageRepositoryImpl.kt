@@ -65,6 +65,12 @@ internal class InAppMessageRepositoryImpl(
             }
           }
 
+          401, 403 -> {
+            Log.w(InAppMessages.TAG, "[Repository] In-app messages are not available for this key (${response.code()}), clearing cache")
+            persistence.clearCache()
+            emptyList()
+          }
+
           else -> {
             Log.e(InAppMessages.TAG, "[Repository] Error fetching messages from API: ${response.code()}")
 
